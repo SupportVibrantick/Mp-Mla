@@ -8,93 +8,153 @@ const prisma = new PrismaClient();
 // ═══════════════════════════════════════════════════════════
 
 const ALL_PERMISSIONS = [
-  { module: "dashboard",        action: "read",    description: "View overview dashboard" },
+  {
+    module: "dashboard",
+    action: "read",
+    description: "View overview dashboard",
+  },
 
-  { module: "wards",            action: "create",  description: "Create ward" },
-  { module: "wards",            action: "read",    description: "View wards" },
-  { module: "wards",            action: "update",  description: "Edit ward" },
-  { module: "wards",            action: "delete",  description: "Delete ward" },
+  { module: "wards", action: "create", description: "Create ward" },
+  { module: "wards", action: "read", description: "View wards" },
+  { module: "wards", action: "update", description: "Edit ward" },
+  { module: "wards", action: "delete", description: "Delete ward" },
 
-  { module: "institutions",     action: "create",  description: "Add institution" },
-  { module: "institutions",     action: "read",    description: "View institutions" },
-  { module: "institutions",     action: "update",  description: "Edit institution" },
-  { module: "institutions",     action: "delete",  description: "Delete institution" },
-  { module: "institutions",     action: "export",  description: "Export institutions" },
+  { module: "institutions", action: "create", description: "Add institution" },
+  { module: "institutions", action: "read", description: "View institutions" },
+  { module: "institutions", action: "update", description: "Edit institution" },
+  {
+    module: "institutions",
+    action: "delete",
+    description: "Delete institution",
+  },
+  {
+    module: "institutions",
+    action: "export",
+    description: "Export institutions",
+  },
 
-  { module: "incharges",        action: "create",  description: "Add incharge" },
-  { module: "incharges",        action: "read",    description: "View incharges" },
-  { module: "incharges",        action: "update",  description: "Edit incharge" },
-  { module: "incharges",        action: "delete",  description: "Delete incharge" },
+  { module: "incharges", action: "create", description: "Add incharge" },
+  { module: "incharges", action: "read", description: "View incharges" },
+  { module: "incharges", action: "update", description: "Edit incharge" },
+  { module: "incharges", action: "delete", description: "Delete incharge" },
 
-  { module: "grievances",       action: "create",  description: "Register grievance" },
-  { module: "grievances",       action: "read",    description: "View grievances" },
-  { module: "grievances",       action: "update",  description: "Update grievance" },
-  { module: "grievances",       action: "delete",  description: "Delete grievance" },
-  { module: "grievances",       action: "export",  description: "Export grievances" },
+  { module: "grievances", action: "create", description: "Register grievance" },
+  { module: "grievances", action: "read", description: "View grievances" },
+  { module: "grievances", action: "update", description: "Update grievance" },
+  { module: "grievances", action: "delete", description: "Delete grievance" },
+  { module: "grievances", action: "export", description: "Export grievances" },
 
-  { module: "projects",         action: "create",  description: "Create project" },
-  { module: "projects",         action: "read",    description: "View projects" },
-  { module: "projects",         action: "update",  description: "Update project" },
-  { module: "projects",         action: "delete",  description: "Delete project" },
-  { module: "projects",         action: "export",  description: "Export projects" },
+  { module: "projects", action: "create", description: "Create project" },
+  { module: "projects", action: "read", description: "View projects" },
+  { module: "projects", action: "update", description: "Update project" },
+  { module: "projects", action: "delete", description: "Delete project" },
+  { module: "projects", action: "export", description: "Export projects" },
 
-  { module: "schemes",          action: "create",  description: "Add scheme" },
-  { module: "schemes",          action: "read",    description: "View schemes" },
-  { module: "schemes",          action: "update",  description: "Edit scheme" },
-  { module: "schemes",          action: "delete",  description: "Delete scheme" },
-  { module: "schemes",          action: "export",  description: "Export schemes" },
+  { module: "schemes", action: "create", description: "Add scheme" },
+  { module: "schemes", action: "read", description: "View schemes" },
+  { module: "schemes", action: "update", description: "Edit scheme" },
+  { module: "schemes", action: "delete", description: "Delete scheme" },
+  { module: "schemes", action: "export", description: "Export schemes" },
 
-  { module: "community_groups", action: "create",  description: "Add community group" },
-  { module: "community_groups", action: "read",    description: "View community groups" },
-  { module: "community_groups", action: "update",  description: "Edit community group" },
-  { module: "community_groups", action: "delete",  description: "Delete community group" },
+  {
+    module: "community_groups",
+    action: "create",
+    description: "Add community group",
+  },
+  {
+    module: "community_groups",
+    action: "read",
+    description: "View community groups",
+  },
+  {
+    module: "community_groups",
+    action: "update",
+    description: "Edit community group",
+  },
+  {
+    module: "community_groups",
+    action: "delete",
+    description: "Delete community group",
+  },
 
-  { module: "demographics",     action: "create",  description: "Add demographics" },
-  { module: "demographics",     action: "read",    description: "View demographics" },
-  { module: "demographics",     action: "update",  description: "Edit demographics" },
-  { module: "demographics",     action: "export",  description: "Export demographics" },
+  { module: "demographics", action: "create", description: "Add demographics" },
+  { module: "demographics", action: "read", description: "View demographics" },
+  {
+    module: "demographics",
+    action: "update",
+    description: "Edit demographics",
+  },
+  {
+    module: "demographics",
+    action: "export",
+    description: "Export demographics",
+  },
 
-  { module: "funds",            action: "create",  description: "Create fund record" },
-  { module: "funds",            action: "read",    description: "View funds" },
-  { module: "funds",            action: "update",  description: "Update funds" },
-  { module: "funds",            action: "export",  description: "Export funds" },
+  { module: "funds", action: "create", description: "Create fund record" },
+  { module: "funds", action: "read", description: "View funds" },
+  { module: "funds", action: "update", description: "Update funds" },
+  { module: "funds", action: "export", description: "Export funds" },
 
-  { module: "departments",      action: "create",  description: "Add department" },
-  { module: "departments",      action: "read",    description: "View departments" },
-  { module: "departments",      action: "update",  description: "Edit department" },
-  { module: "departments",      action: "delete",  description: "Delete department" },
+  { module: "departments", action: "create", description: "Add department" },
+  { module: "departments", action: "read", description: "View departments" },
+  { module: "departments", action: "update", description: "Edit department" },
+  { module: "departments", action: "delete", description: "Delete department" },
 
-  { module: "tasks",            action: "create",  description: "Create task" },
-  { module: "tasks",            action: "read",    description: "View tasks" },
-  { module: "tasks",            action: "update",  description: "Update task" },
-  { module: "tasks",            action: "delete",  description: "Delete task" },
+  { module: "tasks", action: "create", description: "Create task" },
+  { module: "tasks", action: "read", description: "View tasks" },
+  { module: "tasks", action: "update", description: "Update task" },
+  { module: "tasks", action: "delete", description: "Delete task" },
 
-  { module: "notifications",    action: "send",    description: "Send notifications" },
-  { module: "notifications",    action: "read",    description: "View notifications" },
-  { module: "notifications",    action: "create",  description: "Create notification template" },
-  { module: "notifications",    action: "update",  description: "Edit notification template" },
+  {
+    module: "notifications",
+    action: "send",
+    description: "Send notifications",
+  },
+  {
+    module: "notifications",
+    action: "read",
+    description: "View notifications",
+  },
+  {
+    module: "notifications",
+    action: "create",
+    description: "Create notification template",
+  },
+  {
+    module: "notifications",
+    action: "update",
+    description: "Edit notification template",
+  },
 
-  { module: "reports",          action: "read",    description: "View reports" },
-  { module: "reports",          action: "export",  description: "Export reports" },
+  { module: "reports", action: "read", description: "View reports" },
+  { module: "reports", action: "export", description: "Export reports" },
 
-  { module: "users",            action: "create",  description: "Create user account" },
-  { module: "users",            action: "read",    description: "View user list" },
-  { module: "users",            action: "update",  description: "Edit user account" },
-  { module: "users",            action: "delete",  description: "Deactivate user" },
+  { module: "users", action: "create", description: "Create user account" },
+  { module: "users", action: "read", description: "View user list" },
+  { module: "users", action: "update", description: "Edit user account" },
+  { module: "users", action: "delete", description: "Deactivate user" },
 
-  { module: "audit_logs",       action: "read",    description: "View audit logs" },
+  { module: "audit_logs", action: "read", description: "View audit logs" },
 
-  { module: "backups",          action: "create",  description: "Trigger backup" },
-  { module: "backups",          action: "read",    description: "View backup history" },
-  { module: "backups",          action: "restore", description: "Restore from backup" },
+  { module: "backups", action: "create", description: "Trigger backup" },
+  { module: "backups", action: "read", description: "View backup history" },
+  { module: "backups", action: "restore", description: "Restore from backup" },
 
-  { module: "settings",         action: "read",    description: "View system settings" },
-  { module: "settings",         action: "update",  description: "Update system settings" },
+  { module: "settings", action: "read", description: "View system settings" },
+  {
+    module: "settings",
+    action: "update",
+    description: "Update system settings",
+  },
 
-  { module: "branding",         action: "read",    description: "View branding" },
-  { module: "branding",         action: "update",  description: "Update branding/logo" },
+  { module: "branding", action: "read", description: "View branding" },
+  { module: "branding", action: "update", description: "Update branding/logo" },
 
-  { module: "data_import",      action: "create",  description: "Import data via Excel" },
+  {
+    module: "data_import",
+    action: "create",
+    description: "Import data via Excel",
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -103,7 +163,10 @@ const ALL_PERMISSIONS = [
 
 const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
   // Admin gets everything
-  SYSTEM_ADMIN: ALL_PERMISSIONS.map((p) => ({ module: p.module, action: p.action })),
+  SYSTEM_ADMIN: ALL_PERMISSIONS.map((p) => ({
+    module: p.module,
+    action: p.action,
+  })),
 
   // MLA — read + export + tasks only
   MLA_MP: [
@@ -213,7 +276,9 @@ async function main() {
 
   // ─── 3. Role Default Permissions ─────────────────────
   const allPerms = await prisma.permission.findMany();
-  const permMap = new Map(allPerms.map((p) => [`${p.module}:${p.action}`, p.id]));
+  const permMap = new Map(
+    allPerms.map((p) => [`${p.module}:${p.action}`, p.id]),
+  );
 
   for (const role of Object.keys(ROLE_MAP) as UserRole[]) {
     const rolePerms = ROLE_MAP[role];
@@ -303,9 +368,18 @@ async function main() {
   const sendNotifPermId = permMap.get("notifications:send");
   if (sendNotifPermId) {
     await prisma.userPermission.upsert({
-      where: { userId_permissionId: { userId: staff2.id, permissionId: sendNotifPermId } },
+      where: {
+        userId_permissionId: {
+          userId: staff2.id,
+          permissionId: sendNotifPermId,
+        },
+      },
       update: { granted: false },
-      create: { userId: staff2.id, permissionId: sendNotifPermId, granted: false },
+      create: {
+        userId: staff2.id,
+        permissionId: sendNotifPermId,
+        granted: false,
+      },
     });
     console.log(`✅ Revoked notifications:send for ${staff2.email}`);
   }
@@ -314,9 +388,18 @@ async function main() {
   const deleteGrievPermId = permMap.get("grievances:delete");
   if (deleteGrievPermId) {
     await prisma.userPermission.upsert({
-      where: { userId_permissionId: { userId: staff1.id, permissionId: deleteGrievPermId } },
+      where: {
+        userId_permissionId: {
+          userId: staff1.id,
+          permissionId: deleteGrievPermId,
+        },
+      },
       update: { granted: true },
-      create: { userId: staff1.id, permissionId: deleteGrievPermId, granted: true },
+      create: {
+        userId: staff1.id,
+        permissionId: deleteGrievPermId,
+        granted: true,
+      },
     });
     console.log(`✅ Granted grievances:delete for ${staff1.email}`);
   }
@@ -349,34 +432,364 @@ async function main() {
 
   // ─── 7. Wards ────────────────────────────────────────
   const wardsData = [
-    { wardNumber: 1, name: "Ward 1 - Sadar Bazar", population: 45000, areaType: "Urban", areaName: "Sadar Bazar" },
-    { wardNumber: 2, name: "Ward 2 - Civil Lines", population: 32000, areaType: "Urban", areaName: "Civil Lines" },
-    { wardNumber: 3, name: "Ward 3 - Laxmi Nagar", population: 55000, areaType: "Urban", areaName: "Laxmi Nagar" },
-    { wardNumber: 4, name: "Ward 4 - Gandhi Colony", population: 28000, areaType: "Semi-Urban", areaName: "Gandhi Colony" },
-    { wardNumber: 5, name: "Ward 5 - Rajpur", population: 15000, areaType: "Rural", areaName: "Rajpur" },
+    {
+      wardNumber: 1,
+      name: "Shivaji Nagar",
+      zone: "A",
+      areaType: "Urban",
+      status: "ACTIVE" as const,
+      description: "Major commercial and residential ward in central area",
+      establishedDate: new Date("2020-01-15"),
+      areas: [
+        {
+          name: "Sector 1",
+          areaType: "RESIDENTIAL" as const,
+          population: 8000,
+          households: 1600,
+          maleCount: 4200,
+          femaleCount: 3800,
+        },
+        {
+          name: "Market Area",
+          areaType: "COMMERCIAL" as const,
+          population: 5500,
+          households: 1100,
+          maleCount: 3000,
+          femaleCount: 2500,
+        },
+        {
+          name: "Old Town",
+          areaType: "MIXED_USE" as const,
+          population: 10000,
+          households: 2000,
+          maleCount: 5100,
+          femaleCount: 4900,
+        },
+        {
+          name: "Industrial Belt",
+          areaType: "INDUSTRIAL" as const,
+          population: 5000,
+          households: 1000,
+          maleCount: 2800,
+          femaleCount: 2200,
+        },
+      ],
+      councillor: {
+        name: "Suresh Patil",
+        phone: "9876000001",
+        partyName: "BJP",
+        sinceDate: new Date("2020-01-15"),
+      },
+    },
+    {
+      wardNumber: 2,
+      name: "Civil Lines",
+      zone: "A",
+      areaType: "Urban",
+      status: "ACTIVE" as const,
+      description: "Upscale residential area with government offices",
+      establishedDate: new Date("2020-01-15"),
+      areas: [
+        {
+          name: "Govt Colony",
+          areaType: "INSTITUTIONAL" as const,
+          population: 6000,
+          households: 1200,
+          maleCount: 3200,
+          femaleCount: 2800,
+        },
+        {
+          name: "Judges Enclave",
+          areaType: "RESIDENTIAL" as const,
+          population: 4000,
+          households: 800,
+          maleCount: 2000,
+          femaleCount: 2000,
+        },
+        {
+          name: "Mall Road",
+          areaType: "COMMERCIAL" as const,
+          population: 8000,
+          households: 1600,
+          maleCount: 4300,
+          femaleCount: 3700,
+        },
+      ],
+      councillor: {
+        name: "Priya Sharma",
+        phone: "9876000002",
+        partyName: "INC",
+        sinceDate: new Date("2020-01-15"),
+      },
+    },
+    {
+      wardNumber: 3,
+      name: "Laxmi Nagar",
+      zone: "B",
+      areaType: "Urban",
+      status: "ACTIVE" as const,
+      description: "Densely populated commercial hub",
+      establishedDate: new Date("2020-01-15"),
+      areas: [
+        {
+          name: "Main Market",
+          areaType: "COMMERCIAL" as const,
+          population: 12000,
+          households: 2400,
+          maleCount: 6500,
+          femaleCount: 5500,
+        },
+        {
+          name: "Pocket A",
+          areaType: "RESIDENTIAL" as const,
+          population: 15000,
+          households: 3000,
+          maleCount: 7800,
+          femaleCount: 7200,
+        },
+        {
+          name: "Pocket B",
+          areaType: "RESIDENTIAL" as const,
+          population: 13000,
+          households: 2600,
+          maleCount: 6500,
+          femaleCount: 6500,
+        },
+        {
+          name: "EWS Colony",
+          areaType: "SLUM" as const,
+          population: 8000,
+          households: 1500,
+          maleCount: 4200,
+          femaleCount: 3800,
+        },
+        {
+          name: "Metro Station Area",
+          areaType: "MIXED_USE" as const,
+          population: 7000,
+          households: 1400,
+          maleCount: 3700,
+          femaleCount: 3300,
+        },
+      ],
+      councillor: {
+        name: "Ramesh Verma",
+        phone: "9876000003",
+        partyName: "AAP",
+        sinceDate: new Date("2020-01-15"),
+      },
+    },
+    {
+      wardNumber: 4,
+      name: "Gandhi Colony",
+      zone: "B",
+      areaType: "Semi-Urban",
+      status: "ACTIVE" as const,
+      description: "Mixed residential area with educational institutions",
+      establishedDate: new Date("2020-01-15"),
+      areas: [
+        {
+          name: "Education City",
+          areaType: "INSTITUTIONAL" as const,
+          population: 5000,
+          households: 1000,
+          maleCount: 2600,
+          femaleCount: 2400,
+        },
+        {
+          name: "Nehru Block",
+          areaType: "RESIDENTIAL" as const,
+          population: 12000,
+          households: 2400,
+          maleCount: 6100,
+          femaleCount: 5900,
+        },
+        {
+          name: "Ambedkar Basti",
+          areaType: "SLUM" as const,
+          population: 11000,
+          households: 2200,
+          maleCount: 5800,
+          femaleCount: 5200,
+        },
+      ],
+      councillor: {
+        name: "Meena Devi",
+        phone: "9876000004",
+        partyName: "BSP",
+        sinceDate: new Date("2020-01-15"),
+      },
+    },
+    {
+      wardNumber: 5,
+      name: "Rajpur",
+      zone: "C",
+      areaType: "Rural",
+      status: "ACTIVE" as const,
+      description: "Rural ward with agricultural land and villages",
+      establishedDate: new Date("2020-01-15"),
+      areas: [
+        {
+          name: "Rajpur Village",
+          areaType: "RESIDENTIAL" as const,
+          population: 5000,
+          households: 1000,
+          maleCount: 2600,
+          femaleCount: 2400,
+        },
+        {
+          name: "Kisan Colony",
+          areaType: "AGRICULTURAL" as const,
+          population: 4000,
+          households: 800,
+          maleCount: 2100,
+          femaleCount: 1900,
+        },
+        {
+          name: "NH-24 Strip",
+          areaType: "COMMERCIAL" as const,
+          population: 6000,
+          households: 1200,
+          maleCount: 3400,
+          femaleCount: 2600,
+        },
+      ],
+      councillor: {
+        name: "Hari Singh",
+        phone: "9876000005",
+        partyName: "BJP",
+        sinceDate: new Date("2020-01-15"),
+      },
+    },
   ];
 
   const wards: any[] = [];
-  for (const w of wardsData) {
+  for (const wd of wardsData) {
+    // Compute aggregates from areas
+    const totalPop = wd.areas.reduce((s, a) => s + a.population, 0);
+    const totalHH = wd.areas.reduce((s, a) => s + a.households, 0);
+    const totalMale = wd.areas.reduce((s, a) => s + a.maleCount, 0);
+    const totalFemale = wd.areas.reduce((s, a) => s + a.femaleCount, 0);
+
     const ward = await prisma.ward.upsert({
-      where: { wardNumber: w.wardNumber },
+      where: { wardNumber: wd.wardNumber },
       update: {},
-      create: w,
+      create: {
+        wardNumber: wd.wardNumber,
+        name: wd.name,
+        zone: wd.zone,
+        status: wd.status,
+        areaType: wd.areaType,
+        description: wd.description,
+        establishedDate: wd.establishedDate,
+        totalPopulation: totalPop,
+        totalHouseholds: totalHH,
+        totalAreas: wd.areas.length,
+        totalMale: totalMale,
+        totalFemale: totalFemale,
+      },
     });
     wards.push(ward);
+
+    // Create areas
+    for (const area of wd.areas) {
+      await prisma.wardArea.upsert({
+        where: { wardId_name: { wardId: ward.id, name: area.name } },
+        update: {},
+        create: {
+          wardId: ward.id,
+          name: area.name,
+          areaType: area.areaType,
+          population: area.population,
+          households: area.households,
+          maleCount: area.maleCount,
+          femaleCount: area.femaleCount,
+        },
+      });
+    }
+
+    // Create councillor
+    await prisma.wardCouncillor.create({
+      data: {
+        wardId: ward.id,
+        name: wd.councillor.name,
+        phone: wd.councillor.phone,
+        partyName: wd.councillor.partyName,
+        sinceDate: wd.councillor.sinceDate,
+        isCurrent: true,
+      },
+    });
   }
-  console.log(`✅ ${wards.length} wards created`);
+  console.log(
+    `✅ ${wards.length} wards with ${wardsData.reduce((s, w) => s + w.areas.length, 0)} areas created`,
+  );
 
   // ─── 8. Institutions ─────────────────────────────────
   const institutions = [
-    { name: "City Hospital", category: "HOSPITAL" as const, address: "Main Road, Sadar Bazar", wardId: wards[0].id, contactNo: "0111234567", status: "ACTIVE" as const },
-    { name: "Govt School No. 1", category: "SCHOOL" as const, address: "School Lane, Civil Lines", wardId: wards[1].id, contactNo: "0111234568", status: "ACTIVE" as const },
-    { name: "Shiv Temple", category: "TEMPLE" as const, address: "Temple Road, Laxmi Nagar", wardId: wards[2].id, contactNo: "0111234569", status: "ACTIVE" as const },
-    { name: "Police Station Sadar", category: "POLICE_STATION" as const, address: "PS Road, Sadar Bazar", wardId: wards[0].id, contactNo: "0111234570", status: "ACTIVE" as const },
-    { name: "Community Health Center", category: "CLINIC" as const, address: "CHC Road, Gandhi Colony", wardId: wards[3].id, contactNo: "0111234571", status: "ACTIVE" as const },
-    { name: "Gandhi Public School", category: "SCHOOL" as const, address: "Education Sector", wardId: wards[3].id, contactNo: "0111234572", status: "ACTIVE" as const },
-    { name: "Youth Fitness Club", category: "GYM" as const, address: "Sports Complex, Civil Lines", wardId: wards[1].id, contactNo: "0111234574", status: "ACTIVE" as const },
-    { name: "Jan Seva NGO", category: "NGO" as const, address: "Service Road, Laxmi Nagar", wardId: wards[2].id, contactNo: "0111234575", status: "ACTIVE" as const },
+    {
+      name: "City Hospital",
+      category: "HOSPITAL" as const,
+      address: "Main Road, Sadar Bazar",
+      wardId: wards[0].id,
+      contactNo: "0111234567",
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Govt School No. 1",
+      category: "SCHOOL" as const,
+      address: "School Lane, Civil Lines",
+      wardId: wards[1].id,
+      contactNo: "0111234568",
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Shiv Temple",
+      category: "TEMPLE" as const,
+      address: "Temple Road, Laxmi Nagar",
+      wardId: wards[2].id,
+      contactNo: "0111234569",
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Police Station Sadar",
+      category: "POLICE_STATION" as const,
+      address: "PS Road, Sadar Bazar",
+      wardId: wards[0].id,
+      contactNo: "0111234570",
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Community Health Center",
+      category: "CLINIC" as const,
+      address: "CHC Road, Gandhi Colony",
+      wardId: wards[3].id,
+      contactNo: "0111234571",
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Gandhi Public School",
+      category: "SCHOOL" as const,
+      address: "Education Sector",
+      wardId: wards[3].id,
+      contactNo: "0111234572",
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Youth Fitness Club",
+      category: "GYM" as const,
+      address: "Sports Complex, Civil Lines",
+      wardId: wards[1].id,
+      contactNo: "0111234574",
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Jan Seva NGO",
+      category: "NGO" as const,
+      address: "Service Road, Laxmi Nagar",
+      wardId: wards[2].id,
+      contactNo: "0111234575",
+      status: "ACTIVE" as const,
+    },
   ];
 
   for (const inst of institutions) {
@@ -401,12 +814,67 @@ async function main() {
 
   // ─── 10. Grievances ──────────────────────────────────
   const grievances = [
-    { ticketNumber: "GRV-2025-00001", category: "Water Supply", description: "No water supply in Block C for 3 days.", wardId: wards[0].id, assignedDept: "Jal Board", status: "OPEN" as const, priority: "HIGH" as const, createdById: staff1.id },
-    { ticketNumber: "GRV-2025-00002", category: "Road Damage", description: "Large pothole on Main Road near market.", wardId: wards[0].id, assignedDept: "Public Works Department", status: "IN_PROGRESS" as const, priority: "URGENT" as const, createdById: staff1.id },
-    { ticketNumber: "GRV-2025-00003", category: "Sanitation", description: "Garbage not collected in Lane 3.", wardId: wards[1].id, assignedDept: "Sanitation", status: "RESOLVED" as const, priority: "MEDIUM" as const, resolvedAt: new Date("2025-01-20"), createdById: staff1.id },
-    { ticketNumber: "GRV-2025-00004", category: "Electricity", description: "Frequent power cuts lasting 4-5 hours daily.", wardId: wards[2].id, assignedDept: "Electricity Board", status: "OPEN" as const, priority: "HIGH" as const, createdById: staff2.id },
-    { ticketNumber: "GRV-2025-00005", category: "Street Light", description: "Street lights not working in Sector 5.", wardId: wards[3].id, assignedDept: "Electricity Board", status: "IN_PROGRESS" as const, priority: "MEDIUM" as const, createdById: staff2.id },
-    { ticketNumber: "GRV-2025-00006", category: "Drainage", description: "Blocked drainage causing waterlogging.", wardId: wards[4].id, assignedDept: "Public Works Department", status: "OPEN" as const, priority: "LOW" as const, createdById: staff1.id },
+    {
+      ticketNumber: "GRV-2025-00001",
+      category: "Water Supply",
+      description: "No water supply in Block C for 3 days.",
+      wardId: wards[0].id,
+      assignedDept: "Jal Board",
+      status: "OPEN" as const,
+      priority: "HIGH" as const,
+      createdById: staff1.id,
+    },
+    {
+      ticketNumber: "GRV-2025-00002",
+      category: "Road Damage",
+      description: "Large pothole on Main Road near market.",
+      wardId: wards[0].id,
+      assignedDept: "Public Works Department",
+      status: "IN_PROGRESS" as const,
+      priority: "URGENT" as const,
+      createdById: staff1.id,
+    },
+    {
+      ticketNumber: "GRV-2025-00003",
+      category: "Sanitation",
+      description: "Garbage not collected in Lane 3.",
+      wardId: wards[1].id,
+      assignedDept: "Sanitation",
+      status: "RESOLVED" as const,
+      priority: "MEDIUM" as const,
+      resolvedAt: new Date("2025-01-20"),
+      createdById: staff1.id,
+    },
+    {
+      ticketNumber: "GRV-2025-00004",
+      category: "Electricity",
+      description: "Frequent power cuts lasting 4-5 hours daily.",
+      wardId: wards[2].id,
+      assignedDept: "Electricity Board",
+      status: "OPEN" as const,
+      priority: "HIGH" as const,
+      createdById: staff2.id,
+    },
+    {
+      ticketNumber: "GRV-2025-00005",
+      category: "Street Light",
+      description: "Street lights not working in Sector 5.",
+      wardId: wards[3].id,
+      assignedDept: "Electricity Board",
+      status: "IN_PROGRESS" as const,
+      priority: "MEDIUM" as const,
+      createdById: staff2.id,
+    },
+    {
+      ticketNumber: "GRV-2025-00006",
+      category: "Drainage",
+      description: "Blocked drainage causing waterlogging.",
+      wardId: wards[4].id,
+      assignedDept: "Public Works Department",
+      status: "OPEN" as const,
+      priority: "LOW" as const,
+      createdById: staff1.id,
+    },
   ];
 
   for (const g of grievances) {
@@ -424,10 +892,66 @@ async function main() {
 
   // ─── 11. Projects ────────────────────────────────────
   const projects = [
-    { projectCode: "PRJ-2025-00001", name: "Road Widening - Sadar Main Road", category: "Infrastructure", department: "Public Works Department", contractor: "ABC Construction", wardId: wards[0].id, startDate: new Date("2025-01-15"), expectedEndDate: new Date("2025-12-31"), budgetSanctioned: 8000000, budgetReleased: 5000000, budgetUsed: 3200000, status: "RUNNING" as const, completionPercent: 40, createdById: staff1.id },
-    { projectCode: "PRJ-2025-00002", name: "Community Park Development", category: "Green Space", department: "Horticulture", wardId: wards[1].id, startDate: new Date("2025-03-01"), budgetSanctioned: 2000000, budgetReleased: 1500000, budgetUsed: 800000, status: "RUNNING" as const, completionPercent: 55, createdById: staff1.id },
-    { projectCode: "PRJ-2025-00003", name: "Street Light Installation", category: "Infrastructure", department: "Electricity Board", contractor: "Power Solutions Ltd", wardId: wards[2].id, startDate: new Date("2024-11-01"), expectedEndDate: new Date("2025-03-15"), actualEndDate: new Date("2025-03-10"), budgetSanctioned: 1200000, budgetReleased: 1200000, budgetUsed: 1200000, status: "COMPLETED" as const, completionPercent: 100, createdById: staff1.id },
-    { projectCode: "PRJ-2025-00004", name: "Water Pipeline Extension", category: "Water Supply", department: "Jal Board", wardId: wards[3].id, budgetSanctioned: 3500000, budgetReleased: 0, budgetUsed: 0, status: "PENDING" as const, completionPercent: 0, createdById: staff2.id },
+    {
+      projectCode: "PRJ-2025-00001",
+      name: "Road Widening - Sadar Main Road",
+      category: "Infrastructure",
+      department: "Public Works Department",
+      contractor: "ABC Construction",
+      wardId: wards[0].id,
+      startDate: new Date("2025-01-15"),
+      expectedEndDate: new Date("2025-12-31"),
+      budgetSanctioned: 8000000,
+      budgetReleased: 5000000,
+      budgetUsed: 3200000,
+      status: "RUNNING" as const,
+      completionPercent: 40,
+      createdById: staff1.id,
+    },
+    {
+      projectCode: "PRJ-2025-00002",
+      name: "Community Park Development",
+      category: "Green Space",
+      department: "Horticulture",
+      wardId: wards[1].id,
+      startDate: new Date("2025-03-01"),
+      budgetSanctioned: 2000000,
+      budgetReleased: 1500000,
+      budgetUsed: 800000,
+      status: "RUNNING" as const,
+      completionPercent: 55,
+      createdById: staff1.id,
+    },
+    {
+      projectCode: "PRJ-2025-00003",
+      name: "Street Light Installation",
+      category: "Infrastructure",
+      department: "Electricity Board",
+      contractor: "Power Solutions Ltd",
+      wardId: wards[2].id,
+      startDate: new Date("2024-11-01"),
+      expectedEndDate: new Date("2025-03-15"),
+      actualEndDate: new Date("2025-03-10"),
+      budgetSanctioned: 1200000,
+      budgetReleased: 1200000,
+      budgetUsed: 1200000,
+      status: "COMPLETED" as const,
+      completionPercent: 100,
+      createdById: staff1.id,
+    },
+    {
+      projectCode: "PRJ-2025-00004",
+      name: "Water Pipeline Extension",
+      category: "Water Supply",
+      department: "Jal Board",
+      wardId: wards[3].id,
+      budgetSanctioned: 3500000,
+      budgetReleased: 0,
+      budgetUsed: 0,
+      status: "PENDING" as const,
+      completionPercent: 0,
+      createdById: staff2.id,
+    },
   ];
 
   for (const p of projects) {
@@ -437,10 +961,38 @@ async function main() {
 
   // ─── 12. Schemes ─────────────────────────────────────
   const schemes = [
-    { name: "PM Awas Yojana", department: "Housing", level: "Central", description: "Housing for all under poverty line", budget: 50000000, status: "ACTIVE" as const },
-    { name: "Swachh Bharat Mission", department: "Sanitation", level: "Central", description: "Clean India initiative", budget: 15000000, status: "ACTIVE" as const },
-    { name: "Ayushman Bharat", department: "Health", level: "Central", description: "Free health insurance", budget: 30000000, status: "ACTIVE" as const },
-    { name: "PM Kisan Samman", department: "Agriculture", level: "Central", description: "Income support for farmers", budget: 10000000, status: "ACTIVE" as const },
+    {
+      name: "PM Awas Yojana",
+      department: "Housing",
+      level: "Central",
+      description: "Housing for all under poverty line",
+      budget: 50000000,
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Swachh Bharat Mission",
+      department: "Sanitation",
+      level: "Central",
+      description: "Clean India initiative",
+      budget: 15000000,
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "Ayushman Bharat",
+      department: "Health",
+      level: "Central",
+      description: "Free health insurance",
+      budget: 30000000,
+      status: "ACTIVE" as const,
+    },
+    {
+      name: "PM Kisan Samman",
+      department: "Agriculture",
+      level: "Central",
+      description: "Income support for farmers",
+      budget: 10000000,
+      status: "ACTIVE" as const,
+    },
   ];
 
   for (const s of schemes) {
@@ -461,44 +1013,309 @@ async function main() {
 
   // ─── 13. Demographics ────────────────────────────────
   const demographics = [
-    { wardId: wards[0].id, communityGroup: "RWA", maleCount: 12000, femaleCount: 11000, age0to18: 5000, age19to35: 8000, age36to60: 7000, age60plus: 3000 },
-    { wardId: wards[0].id, communityGroup: "Markets", maleCount: 3000, femaleCount: 1500, age0to18: 200, age19to35: 1800, age36to60: 2000, age60plus: 500 },
-    { wardId: wards[1].id, communityGroup: "Senior Citizens", maleCount: 2000, femaleCount: 2500, age0to18: 0, age19to35: 0, age36to60: 0, age60plus: 4500 },
-    { wardId: wards[2].id, communityGroup: "Youth Groups", maleCount: 5000, femaleCount: 4500, age0to18: 3000, age19to35: 6500, age36to60: 0, age60plus: 0 },
-    { wardId: wards[3].id, communityGroup: "Women Groups", maleCount: 0, femaleCount: 6000, age0to18: 500, age19to35: 2500, age36to60: 2500, age60plus: 500 },
-    { wardId: wards[4].id, communityGroup: "Slums", maleCount: 4000, femaleCount: 3500, age0to18: 2500, age19to35: 2000, age36to60: 2000, age60plus: 1000 },
+    {
+      wardId: wards[0].id,
+      communityGroup: "RWA",
+      maleCount: 12000,
+      femaleCount: 11000,
+      age0to18: 5000,
+      age19to35: 8000,
+      age36to60: 7000,
+      age60plus: 3000,
+    },
+    {
+      wardId: wards[0].id,
+      communityGroup: "Markets",
+      maleCount: 3000,
+      femaleCount: 1500,
+      age0to18: 200,
+      age19to35: 1800,
+      age36to60: 2000,
+      age60plus: 500,
+    },
+    {
+      wardId: wards[1].id,
+      communityGroup: "Senior Citizens",
+      maleCount: 2000,
+      femaleCount: 2500,
+      age0to18: 0,
+      age19to35: 0,
+      age36to60: 0,
+      age60plus: 4500,
+    },
+    {
+      wardId: wards[2].id,
+      communityGroup: "Youth Groups",
+      maleCount: 5000,
+      femaleCount: 4500,
+      age0to18: 3000,
+      age19to35: 6500,
+      age36to60: 0,
+      age60plus: 0,
+    },
+    {
+      wardId: wards[3].id,
+      communityGroup: "Women Groups",
+      maleCount: 0,
+      femaleCount: 6000,
+      age0to18: 500,
+      age19to35: 2500,
+      age36to60: 2500,
+      age60plus: 500,
+    },
+    {
+      wardId: wards[4].id,
+      communityGroup: "Slums",
+      maleCount: 4000,
+      femaleCount: 3500,
+      age0to18: 2500,
+      age19to35: 2000,
+      age36to60: 2000,
+      age60plus: 1000,
+    },
   ];
 
-  for (const d of demographics) {
-    await prisma.demographics.create({ data: d });
+  // Ward-level demographics
+  for (const ward of wards) {
+    const wardData = wardsData.find((w) => w.wardNumber === ward.wardNumber)!;
+    const totalPop = wardData.areas.reduce((s, a) => s + a.population, 0);
+    const totalMale = wardData.areas.reduce((s, a) => s + a.maleCount, 0);
+    const totalFemale = wardData.areas.reduce((s, a) => s + a.femaleCount, 0);
+    const totalHH = wardData.areas.reduce((s, a) => s + a.households, 0);
+
+    await prisma.demographics.create({
+      data: {
+        wardId: ward.id,
+        wardAreaId: null, // ward-level
+        totalPopulation: totalPop,
+        maleCount: totalMale,
+        femaleCount: totalFemale,
+        age0to6: Math.round(totalPop * 0.08),
+        age7to18: Math.round(totalPop * 0.18),
+        age19to35: Math.round(totalPop * 0.3),
+        age36to60: Math.round(totalPop * 0.28),
+        age60plus: Math.round(totalPop * 0.16),
+        totalHouseholds: totalHH,
+        bplHouseholds: Math.round(totalHH * 0.15),
+        aplHouseholds: Math.round(totalHH * 0.85),
+        generalCount: Math.round(totalPop * 0.35),
+        obcCount: Math.round(totalPop * 0.28),
+        scCount: Math.round(totalPop * 0.2),
+        stCount: Math.round(totalPop * 0.08),
+        minorityCount: Math.round(totalPop * 0.09),
+        literacyRate: 72 + Math.random() * 15,
+        totalVoters: Math.round(totalPop * 0.55),
+        maleVoters: Math.round(totalMale * 0.55),
+        femaleVoters: Math.round(totalFemale * 0.55),
+        source: "Ward Survey 2024",
+        surveyDate: new Date("2024-06-01"),
+      },
+    });
   }
-  console.log(`✅ ${demographics.length} demographics records created`);
+  console.log(`✅ ${wards.length} ward-level demographics created`);
 
   // ─── 14. Community Groups ────────────────────────────
-  const communityGroups = [
-    { name: "Sadar Bazar RWA", type: "RWA" as const, wardId: wards[0].id, headName: "Ramesh Gupta", headPhone: "9876543001", memberCount: 500 },
-    { name: "Civil Lines Market Association", type: "MARKET" as const, wardId: wards[1].id, headName: "Suresh Jain", headPhone: "9876543002", memberCount: 150 },
-    { name: "Laxmi Nagar Youth Club", type: "YOUTH_GROUP" as const, wardId: wards[2].id, headName: "Vikram Singh", headPhone: "9876543003", memberCount: 80 },
-    { name: "Gandhi Colony Senior Citizens Forum", type: "SENIOR_CITIZEN" as const, wardId: wards[3].id, headName: "Dr. Sharma", headPhone: "9876543004", memberCount: 200 },
-    { name: "Rajpur Slum Committee", type: "SLUM" as const, wardId: wards[4].id, headName: "Meena Devi", headPhone: "9876543005", memberCount: 300 },
+
+  const cgData = [
+    {
+      name: "Shivaji Nagar RWA",
+      type: "RWA" as const,
+      wardIdx: 0,
+      areaName: "Sector 1",
+      headName: "Ramesh Gupta",
+      headPhone: "9876543001",
+      memberCount: 500,
+      maleMembers: 320,
+      femaleMembers: 180,
+    },
+    {
+      name: "Market Traders Association",
+      type: "MARKET" as const,
+      wardIdx: 0,
+      areaName: "Market Area",
+      headName: "Suresh Jain",
+      headPhone: "9876543002",
+      memberCount: 150,
+      maleMembers: 120,
+      femaleMembers: 30,
+    },
+    {
+      name: "Old Town Senior Citizens",
+      type: "SENIOR_CITIZEN" as const,
+      wardIdx: 0,
+      areaName: "Old Town",
+      headName: "Dr. Sharma",
+      headPhone: "9876543003",
+      memberCount: 200,
+      maleMembers: 110,
+      femaleMembers: 90,
+    },
+    {
+      name: "Civil Lines Youth Club",
+      type: "YOUTH_GROUP" as const,
+      wardIdx: 1,
+      areaName: "Mall Road",
+      headName: "Vikram Singh",
+      headPhone: "9876543004",
+      memberCount: 80,
+      maleMembers: 50,
+      femaleMembers: 30,
+    },
+    {
+      name: "Laxmi Nagar Women Welfare",
+      type: "WOMEN_GROUP" as const,
+      wardIdx: 2,
+      areaName: "Pocket A",
+      headName: "Sunita Rani",
+      headPhone: "9876543005",
+      memberCount: 350,
+      maleMembers: 0,
+      femaleMembers: 350,
+    },
+    {
+      name: "EWS Slum Committee",
+      type: "SLUM" as const,
+      wardIdx: 2,
+      areaName: "EWS Colony",
+      headName: "Meena Devi",
+      headPhone: "9876543006",
+      memberCount: 600,
+      maleMembers: 380,
+      femaleMembers: 220,
+    },
+    {
+      name: "Gandhi Colony Buddhijeevi Manch",
+      type: "BUDDHIJEEVI" as const,
+      wardIdx: 3,
+      headName: "Prof. Verma",
+      headPhone: "9876543007",
+      memberCount: 45,
+      maleMembers: 30,
+      femaleMembers: 15,
+    },
+    {
+      name: "Kisan Sangh Rajpur",
+      type: "TRADE_UNION" as const,
+      wardIdx: 4,
+      areaName: "Kisan Colony",
+      headName: "Hari Prasad",
+      headPhone: "9876543008",
+      memberCount: 300,
+      maleMembers: 250,
+      femaleMembers: 50,
+    },
+    {
+      name: "Rajpur Cricket Club",
+      type: "SPORTS_TEAM" as const,
+      wardIdx: 4,
+      areaName: "Rajpur Village",
+      headName: "Ajay Yadav",
+      headPhone: "9876543009",
+      memberCount: 25,
+      maleMembers: 25,
+      femaleMembers: 0,
+    },
+    {
+      name: "Diwali Utsav Samiti",
+      type: "FESTIVAL_COMMITTEE" as const,
+      wardIdx: 0,
+      headName: "Anil Sharma",
+      headPhone: "9876543010",
+      memberCount: 100,
+      maleMembers: 70,
+      femaleMembers: 30,
+    },
   ];
 
-  for (const cg of communityGroups) {
-    await prisma.communityGroup.create({ data: cg });
+  for (const cg of cgData) {
+    // Find area if specified
+    let wardAreaId: string | null = null;
+    if (cg.areaName) {
+      const area = await prisma.wardArea.findUnique({
+        where: {
+          wardId_name: { wardId: wards[cg.wardIdx].id, name: cg.areaName },
+        },
+      });
+      wardAreaId = area?.id || null;
+    }
+
+    await prisma.communityGroup.create({
+      data: {
+        name: cg.name,
+        type: cg.type,
+        wardId: wards[cg.wardIdx].id,
+        wardAreaId,
+        headName: cg.headName,
+        headPhone: cg.headPhone,
+        memberCount: cg.memberCount,
+        maleMembers: cg.maleMembers,
+        femaleMembers: cg.femaleMembers,
+        isActive: true,
+      },
+    });
   }
-  console.log(`✅ ${communityGroups.length} community groups created`);
+  console.log(`✅ ${cgData.length} community groups created`);
 
   // ─── 15. System Settings ─────────────────────────────
   const settings = [
-    { key: "org_name", value: "MP/MLA Constituency Office", group: "general", description: "Organization name" },
-    { key: "org_address", value: "Constituency Office, Main Road", group: "general", description: "Address" },
-    { key: "org_phone", value: "+91 11 1234 5678", group: "general", description: "Phone" },
-    { key: "timezone", value: "Asia/Kolkata", group: "general", description: "Timezone" },
-    { key: "default_language", value: "en", group: "general", description: "Default language" },
-    { key: "grievance_sla_days", value: "7", group: "general", type: "number", description: "Default SLA for grievances" },
-    { key: "session_timeout_minutes", value: "30", group: "security", type: "number", description: "Session timeout" },
-    { key: "max_failed_logins", value: "5", group: "security", type: "number", description: "Max failed logins before lock" },
-    { key: "password_min_length", value: "8", group: "security", type: "number", description: "Min password length" },
+    {
+      key: "org_name",
+      value: "MP/MLA Constituency Office",
+      group: "general",
+      description: "Organization name",
+    },
+    {
+      key: "org_address",
+      value: "Constituency Office, Main Road",
+      group: "general",
+      description: "Address",
+    },
+    {
+      key: "org_phone",
+      value: "+91 11 1234 5678",
+      group: "general",
+      description: "Phone",
+    },
+    {
+      key: "timezone",
+      value: "Asia/Kolkata",
+      group: "general",
+      description: "Timezone",
+    },
+    {
+      key: "default_language",
+      value: "en",
+      group: "general",
+      description: "Default language",
+    },
+    {
+      key: "grievance_sla_days",
+      value: "7",
+      group: "general",
+      type: "number",
+      description: "Default SLA for grievances",
+    },
+    {
+      key: "session_timeout_minutes",
+      value: "30",
+      group: "security",
+      type: "number",
+      description: "Session timeout",
+    },
+    {
+      key: "max_failed_logins",
+      value: "5",
+      group: "security",
+      type: "number",
+      description: "Max failed logins before lock",
+    },
+    {
+      key: "password_min_length",
+      value: "8",
+      group: "security",
+      type: "number",
+      description: "Min password length",
+    },
   ];
 
   for (const s of settings) {
@@ -512,10 +1329,31 @@ async function main() {
 
   // ─── 16. Notification Templates ──────────────────────
   const templates = [
-    { name: "grievance_created_sms", channel: "SMS" as const, body: "Your complaint {{ticketNumber}} has been registered. Category: {{category}}. We will resolve it soon. - Constituency Office", variables: ["ticketNumber", "category"] },
-    { name: "grievance_resolved_sms", channel: "SMS" as const, body: "Your complaint {{ticketNumber}} has been resolved. Thank you. - Constituency Office", variables: ["ticketNumber"] },
-    { name: "grievance_created_whatsapp", channel: "WHATSAPP" as const, body: "🏛️ *Complaint Registered*\n\nTicket: {{ticketNumber}}\nCategory: {{category}}\nWard: {{wardName}}\n\nWe are working on it.", variables: ["ticketNumber", "category", "wardName"] },
-    { name: "welcome_email", channel: "EMAIL" as const, subject: "Welcome to Constituency Portal", body: "Dear {{name}},\n\nYour account has been created.\nEmail: {{email}}\n\nPlease login and change your password.", variables: ["name", "email"] },
+    {
+      name: "grievance_created_sms",
+      channel: "SMS" as const,
+      body: "Your complaint {{ticketNumber}} has been registered. Category: {{category}}. We will resolve it soon. - Constituency Office",
+      variables: ["ticketNumber", "category"],
+    },
+    {
+      name: "grievance_resolved_sms",
+      channel: "SMS" as const,
+      body: "Your complaint {{ticketNumber}} has been resolved. Thank you. - Constituency Office",
+      variables: ["ticketNumber"],
+    },
+    {
+      name: "grievance_created_whatsapp",
+      channel: "WHATSAPP" as const,
+      body: "🏛️ *Complaint Registered*\n\nTicket: {{ticketNumber}}\nCategory: {{category}}\nWard: {{wardName}}\n\nWe are working on it.",
+      variables: ["ticketNumber", "category", "wardName"],
+    },
+    {
+      name: "welcome_email",
+      channel: "EMAIL" as const,
+      subject: "Welcome to Constituency Portal",
+      body: "Dear {{name}},\n\nYour account has been created.\nEmail: {{email}}\n\nPlease login and change your password.",
+      variables: ["name", "email"],
+    },
   ];
 
   for (const t of templates) {

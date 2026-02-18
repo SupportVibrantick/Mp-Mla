@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, TokenPayload } from "../lib/jwt.js";
+import { verifyAccessToken, AccessTokenPayload } from "../lib/jwt.js";
 import logger from "../utils/logger.js";
 import { ApiError } from "../utils/ApiError.js";
 import prisma from "../lib/prisma.js";
@@ -9,7 +9,7 @@ import prisma from "../lib/prisma.js";
 declare global {
   namespace Express {
     interface Request {
-      user?: TokenPayload;
+      user?: AccessTokenPayload;
     }
   }
 }

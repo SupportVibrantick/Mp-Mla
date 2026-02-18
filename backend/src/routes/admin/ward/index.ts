@@ -1,21 +1,107 @@
 import { Router } from "express";
-import { create } from "./create.js";
-import { readAll, readOne } from "./read.js";
-import { update } from "./update.js";
-import { remove } from "./delete.js";
-import { authenticate, authorize } from "../../../middleware/auth.js";
+import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
-import { auditLog } from "../../../middleware/auditLog.js";
-import { createWardSchema, updateWardSchema } from "../../../schemas/admin/ward/index.js";
+import { listWards, getWard, getWardStats } from "./read.js";
+import { createWard, createWardSchema } from "./create.js";
+import { updateWard, updateWardSchema } from "./update.js";
+import { deleteWard } from "./delete.js";
+import {
+  listAreas,
+  getArea,
+  createArea,
+  createAreaSchema,
+  updateArea,
+  updateAreaSchema,
+  deleteArea,
+} from "./areas.js";
+import {
+  listCouncillors,
+  createCouncillor,
+  createCouncillorSchema,
+  updateCouncillor,
+  updateCouncillorSchema,
+} from "./councillors.js";
+import {
+  getWardDemographics,
+  upsertWardDemographics,
+  wardDemographicsSchema,
+} from "./demographics.js";
 
 const router = Router();
 
-router.use(authenticate);
+// ─── Ward CRUD ──────────────────────────────────────────
+router.get("/", requirePermission("wards", "read"), listWards);
+router.get("/stats", requirePermission("wards", "read"), getWardStats);
+router.get("/:id", requirePermission("wards", "read"), getWard);
+router.post(
+  "/",
+  requirePermission("wards", "create"),
+  validate(createWardSchema),
+  createWard,
+);
+router.put(
+  "/:id",
+  requirePermission("wards", "update"),
+  validate(updateWardSchema),
+  updateWard,
+);
+router.delete("/:id", requirePermission("wards", "delete"), deleteWard);
 
-router.get("/", readAll);
-router.get("/:id", readOne);
-router.post("/", authorize("SYSTEM_ADMIN", "STAFF"), validate(createWardSchema), auditLog("ward", "CREATE"), create);
-router.patch("/:id", authorize("SYSTEM_ADMIN", "STAFF"), validate(updateWardSchema), auditLog("ward", "UPDATE"), update);
-router.delete("/:id", authorize("SYSTEM_ADMIN"), auditLog("ward", "DELETE"), remove);
+// ─── Ward Areas ─────────────────────────────────────────
+router.get("/:wardId/areas", requirePermission("wards", "read"), listAreas);
+router.get(
+  "/:wardId/areas/:areaId",
+  requirePermission("wards", "read"),
+  getArea,
+);
+router.post(
+  "/:wardId/areas",
+  requirePermission("wards", "create"),
+  validate(createAreaSchema),
+  createArea,
+);
+router.put(
+  "/:wardId/areas/:areaId",
+  requirePermission("wards", "update"),
+  validate(updateAreaSchema),
+  updateArea,
+);
+router.delete(
+  "/:wardId/areas/:areaId",
+  requirePermission("wards", "delete"),
+  deleteArea,
+);
+
+// ─── Ward Councillors ───────────────────────────────────
+router.get(
+  "/:wardId/councillors",
+  requirePermission("wards", "read"),
+  listCouncillors,
+);
+router.post(
+  "/:wardId/councillors",
+  requirePermission("wards", "create"),
+  validate(createCouncillorSchema),
+  createCouncillor,
+);
+router.put(
+  "/:wardId/councillors/:councillorId",
+  requirePermission("wards", "update"),
+  validate(updateCouncillorSchema),
+  updateCouncillor,
+);
+
+// ─── Ward Demographics ──────────────────────────────────
+router.get(
+  "/:wardId/demographics",
+  requirePermission("demographics", "read"),
+  getWardDemographics,
+);
+router.put(
+  "/:wardId/demographics",
+  requirePermission("demographics", "update"),
+  validate(wardDemographicsSchema),
+  upsertWardDemographics,
+);
 
 export default router;

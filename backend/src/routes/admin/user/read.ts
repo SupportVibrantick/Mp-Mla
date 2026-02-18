@@ -1,66 +1,112 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
-import { buildPaginationResponse } from "../../../schemas/common/index.js";
-import catchAsync from "../../../utils/catchAsync.js";
+import { ApiError } from "../../../utils/ApiError.js";
+import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
-import ApiError from "../../../utils/ApiError.js";
-import pick from "../../../utils/pick.js";
+import catchAsync from "../../../utils/catchAsync.js";
 
 /**
- * @route GET /api/admin/users
- * @desc Get all users with filters and pagination
- * @access Admin
+ * GET /api/admin/users
  */
-export const readAll = catchAsync(async (req: Request, res: Response) => {
-    const filters = pick(req.query, ["role", "isActive"]);
-    const search = req.query.search as string;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+export const listUsers = catchAsync(async (req: Request, res: Response) => {
+  const { page, limit, skip } = parsePagination(req.query);
+  const { role, status, search } = req.query as Record<string, string>;
 
-    const where: any = { ...filters };
-    if (search) {
-        where.OR = [
-            { name: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-        ];
-    }
+  const where: any = {};
+  if (role) where.role = role;
+  if (status) where.status = status;
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { phone: { contains: search, mode: "insensitive" } },
+    ];
+  }
 
-    const [users, total] = await Promise.all([
-        prisma.user.findMany({
-            where,
-            select: { id: true, name: true, email: true, role: true, phone: true, isActive: true, lastLoginAt: true, createdAt: true },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: limit,
-        }),
-        prisma.user.count({ where }),
-    ]);
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        avatarUrl: true,
+        lastLoginAt: true,
+        forcePasswordChange: true,
+        createdAt: true,
+        createdByAdmin: { select: { id: true, name: true } },
+        _count: {
+          select: {
+            tasksAssigned: true,
+            grievancesCreated: true,
+            projectsCreated: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
+  //  Build pagination metadata
+  const pagination = buildPagination(total, page, limit);
 
-    res.status(200).json(
-        new ApiResponse(200, {
-            users,
-            pagination: buildPaginationResponse(total, page, limit),
-        })
-    );
+  //  Standard response
+  res.json(
+    ApiResponse.success(
+      {
+        users,
+        pagination,
+      },
+      "Users fetched successfully",
+    ),
+  );
 });
 
 /**
- * @route GET /api/admin/users/:id
- * @desc Get single user by ID
- * @access Admin
+ * GET /api/admin/users/:id
  */
-export const readOne = catchAsync(async (req: Request, res: Response) => {
-    const { id } = req.params;
+export const getUser = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.params.id as string;
 
-    const user = await prisma.user.findUnique({
-        where: { id },
-        select: { id: true, name: true, email: true, role: true, phone: true, avatar: true, isActive: true, lastLoginAt: true, createdAt: true, updatedAt: true },
-    });
+  if (!userId) {
+    throw ApiError.badRequest("User ID required");
+  }
 
-    if (!user) {
-        throw new ApiError(404, "User not found");
-    }
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      status: true,
+      avatarUrl: true,
+      lastLoginAt: true,
+      lastLoginIp: true,
+      failedLoginCount: true,
+      forcePasswordChange: true,
+      passwordChangedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      createdByAdmin: { select: { id: true, name: true, email: true } },
+      _count: {
+        select: {
+          tasksAssigned: true,
+          tasksCreated: true,
+          grievancesCreated: true,
+          projectsCreated: true,
+        },
+      },
+    },
+  });
 
-    res.status(200).json(ApiResponse.success(user));
+  if (!user) throw ApiError.notFound("User not found");
+
+  res.json(ApiResponse.success(user, "User fetched successfully"));
 });

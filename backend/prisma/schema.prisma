@@ -604,6 +604,35 @@ enum TaskPriority {
   URGENT
 }
 
+enum WardStatus {
+  ACTIVE
+  INACTIVE
+  PROPOSED
+  MERGED
+  DELIMITATION_PENDING
+}
+
+enum WardAreaType {
+  RESIDENTIAL
+  COMMERCIAL
+  INDUSTRIAL
+  MIXED_USE
+  AGRICULTURAL
+  INSTITUTIONAL
+  SLUM
+  CANTONMENT
+  OTHER
+}
+
+enum SocialCategory {
+  GENERAL
+  OBC
+  SC
+  ST
+  MINORITY
+  OTHER
+}
+
 // ════════════════════════════════════════════════════════
 // ORGANIZATION & BRANDING
 // ════════════════════════════════════════════════════════
@@ -751,16 +780,33 @@ model UserPermission {
 // ════════════════════════════════════════════════════════
 
 model Ward {
-  id         String  @id @default(cuid())
-  wardNumber Int     @unique
-  name       String  @unique
-  population Int?
-  areaType   String  @default("Urban")
-  areaName   String?
+  id         String     @id @default(cuid())
+  wardNumber Int        @unique
+  name       String     @unique
+  zone       String? // "A", "B", "C" etc.
+  status     WardStatus @default(ACTIVE)
+
+  // Aggregate fields (computed from areas, cached for performance)
+  totalPopulation Int @default(0)
+  totalHouseholds Int @default(0)
+  totalAreas      Int @default(0)
+  totalMale       Int @default(0)
+  totalFemale     Int @default(0)
+
+  areaType        String    @default("Urban") // Overall classification
+  pincode         String?
+  latitude        Float?
+  longitude       Float?
+  boundaryGeoJson Json? // GeoJSON polygon for map rendering
+  description     String?
+  establishedDate DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  areas               WardArea[]
+  councillors         WardCouncillor[]
   institutions        Institution[]
   grievances          Grievance[]
   projects            Project[]
@@ -768,7 +814,62 @@ model Ward {
   communityGroups     CommunityGroup[]
   schemeBeneficiaries SchemeBeneficiary[]
 
+  @@index([status])
+  @@index([zone])
   @@map("wards")
+}
+
+model WardArea {
+  id          String       @id @default(cuid())
+  wardId      String
+  name        String
+  areaType    WardAreaType @default(RESIDENTIAL)
+  population  Int          @default(0)
+  households  Int          @default(0)
+  maleCount   Int          @default(0)
+  femaleCount Int          @default(0)
+  pincode     String?
+  landmark    String?
+  description String?
+  latitude    Float?
+  longitude   Float?
+  isActive    Boolean      @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward            Ward             @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  demographics    Demographics[]
+  communityGroups CommunityGroup[]
+
+  @@unique([wardId, name])
+  @@index([wardId])
+  @@index([areaType])
+  @@map("ward_areas")
+}
+
+model WardCouncillor {
+  id          String    @id @default(cuid())
+  wardId      String
+  name        String
+  phone       String?
+  email       String?
+  partyName   String?
+  photoUrl    String?
+  address     String?
+  designation String    @default("Ward Councillor")
+  sinceDate   DateTime?
+  untilDate   DateTime? // null = currently active
+  isCurrent   Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward Ward @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+  @@index([wardId])
+  @@index([isCurrent])
+  @@map("ward_councillors")
 }
 
 // ════════════════════════════════════════════════════════
@@ -835,21 +936,29 @@ model CommunityGroup {
   name            String
   type            CommunityGroupType
   wardId          String
+  wardAreaId      String? // optional: linked to specific area
   address         String?
   description     String?
   memberCount     Int?
+  maleMembers     Int?
+  femaleMembers   Int?
   headName        String?
   headPhone       String?
   headEmail       String?
   headDesignation String?
+  headPhotoUrl    String?
+  foundedDate     DateTime?
+  registrationNo  String?
   isActive        Boolean            @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ward Ward @relation(fields: [wardId], references: [id])
+  ward     Ward      @relation(fields: [wardId], references: [id])
+  wardArea WardArea? @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
 
   @@index([wardId])
+  @@index([wardAreaId])
   @@index([type])
   @@map("community_groups")
 }
@@ -859,23 +968,59 @@ model CommunityGroup {
 // ════════════════════════════════════════════════════════
 
 model Demographics {
-  id             String   @id @default(cuid())
-  wardId         String
-  communityGroup String
-  maleCount      Int      @default(0)
-  femaleCount    Int      @default(0)
-  age0to18       Int      @default(0)
-  age19to35      Int      @default(0)
-  age36to60      Int      @default(0)
-  age60plus      Int      @default(0)
-  surveyDate     DateTime @default(now())
+  id         String  @id @default(cuid())
+  wardId     String
+  wardAreaId String? // null = ward-level, set = area-level
+
+  // Population
+  totalPopulation  Int @default(0)
+  maleCount        Int @default(0)
+  femaleCount      Int @default(0)
+  transgenderCount Int @default(0)
+
+  // Age Distribution
+  age0to6   Int @default(0)
+  age7to18  Int @default(0)
+  age19to35 Int @default(0)
+  age36to60 Int @default(0)
+  age60plus Int @default(0)
+
+  // Households
+  totalHouseholds Int @default(0)
+  bplHouseholds   Int @default(0)
+  aplHouseholds   Int @default(0)
+
+  // Social Category Distribution
+  generalCount  Int @default(0)
+  obcCount      Int @default(0)
+  scCount       Int @default(0)
+  stCount       Int @default(0)
+  minorityCount Int @default(0)
+  otherCount    Int @default(0)
+
+  // Literacy & Education
+  literacyRate       Float?
+  maleLiteracyRate   Float?
+  femaleLiteracyRate Float?
+
+  // Voters
+  totalVoters  Int @default(0)
+  maleVoters   Int @default(0)
+  femaleVoters Int @default(0)
+
+  // Source & Date
+  surveyDate DateTime @default(now())
+  source     String? // "Census 2021", "Ward Survey 2024", etc.
+  notes      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ward Ward @relation(fields: [wardId], references: [id])
+  ward     Ward      @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  wardArea WardArea? @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
 
   @@index([wardId])
+  @@index([wardAreaId])
   @@map("demographics")
 }
 

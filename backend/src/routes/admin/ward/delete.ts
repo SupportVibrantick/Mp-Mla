@@ -1,15 +1,51 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
+import {
+  createAuditLog,
+  getRequestMeta,
+} from "../../../middleware/auditLog.js";
+import { ApiError } from "../../../utils/ApiError.js";
 
-export async function remove(req: Request, res: Response): Promise<void> {
-    try {
-        const id = parseInt(req.params.id);
-        const existing = await prisma.ward.findUnique({ where: { id } });
-        if (!existing) { res.status(404).json({ success: false, message: "Ward not found." }); return; }
+export async function deleteWard(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const wardId = req.params.id as string;
 
-        await prisma.ward.delete({ where: { id } });
-        res.json({ success: true, message: "Ward deleted successfully" });
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message });
+    const ward = await prisma.ward.findUnique({
+      where: { id: wardId },
+      include: {
+        _count: {
+          select: { grievances: true, projects: true, institutions: true },
+        },
+      },
+    });
+
+    if (!ward) throw ApiError.notFound("Ward not found");
+
+    const total =
+      ward._count.grievances + ward._count.projects + ward._count.institutions;
+    if (total > 0) {
+      throw ApiError.badRequest(
+        `Cannot delete ward with ${ward._count.grievances} grievances, ${ward._count.projects} projects, and ${ward._count.institutions} institutions. Deactivate instead.`,
+      );
     }
+
+    await prisma.ward.delete({ where: { id: wardId } });
+
+    await createAuditLog({
+      userId: req.user!.id,
+      action: "DELETE",
+      module: "wards",
+      recordId: ward.id,
+      description: `Deleted ward #${ward.wardNumber} "${ward.name}"`,
+      ...getRequestMeta(req),
+    });
+
+    res.json({ success: true, message: `Ward "${ward.name}" deleted` });
+  } catch (error) {
+    next(error);
+  }
 }

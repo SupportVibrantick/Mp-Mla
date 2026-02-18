@@ -22,8 +22,8 @@ export class ApiError extends Error {
     }
   }
 
-  static badRequest(message = "Bad request") {
-    return new ApiError(400, message);
+  static badRequest(message = "Bad request", errors?: any) {
+    return new ApiError(400, message, errors);
   }
 
   static unauthorized(message = "Unauthorized") {
@@ -36,6 +36,10 @@ export class ApiError extends Error {
 
   static notFound(message = "Not found") {
     return new ApiError(404, message);
+  }
+
+  static conflict(message = "Conflict") {
+    return new ApiError(409, message);
   }
 
   static internal(message = "Internal server error") {

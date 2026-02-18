@@ -3,5 +3,7 @@ dist/
 .env
 uploads/
 *.log
-public
+
 /prisma/migrations
+/public/logs
+/public/uploads

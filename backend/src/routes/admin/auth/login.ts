@@ -164,7 +164,7 @@ export async function login(
     });
 
     const refreshToken = generateRefreshToken({
-      id: user.id,
+      userId: user.id,
       tokenId: refreshRecord.id,
     });
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { MOCK_DATA } from "@/lib/mock-data";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -12,15 +12,17 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, title = "Dashboard" }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       <Sidebar
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
-        user={MOCK_DATA.user}
       />
-      
+
+
+
       <div
         className={cn(
           "transition-all duration-300 min-h-screen flex flex-col",

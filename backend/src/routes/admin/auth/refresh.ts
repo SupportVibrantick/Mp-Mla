@@ -7,7 +7,11 @@ import {
 } from "../../../lib/jwt.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
-export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function refresh(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { refreshToken } = req.body;
 
@@ -33,7 +37,9 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
           data: { isRevoked: true },
         });
       }
-      throw ApiError.unauthorized("Refresh token invalid, expired, or already used.");
+      throw ApiError.unauthorized(
+        "Refresh token invalid, expired, or already used.",
+      );
     }
 
     if (stored.user.status !== "ACTIVE") {
@@ -65,7 +71,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
     });
 
     const newRefreshToken = generateRefreshToken({
-      id: stored.user.id,
+      userId: stored.user.id,
       tokenId: newRefreshRecord.id,
     });
 
