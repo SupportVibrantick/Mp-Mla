@@ -1,0 +1,1284 @@
+// // Prisma Schema for MP/MLA Constituency Management Portal
+
+// generator client {
+//   provider = "prisma-client-js"
+// }
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
+// // ─── Enums ──────────────────────────────────────────────
+
+// enum UserRole {
+//   MLA_MP
+//   OFFICE_STAFF
+//   SYSTEM_ADMIN
+// }
+
+// enum UserStatus {
+//   ACTIVE
+//   INACTIVE
+//   SUSPENDED
+// }
+
+// enum ProjectStatus {
+//   COMPLETED
+//   RUNNING
+//   PENDING
+//   CANCELLED
+//   ON_HOLD
+// }
+
+// enum GrievanceStatus {
+//   OPEN
+//   IN_PROGRESS
+//   RESOLVED
+//   CLOSED
+//   REJECTED
+//   ESCALATED
+// }
+
+// enum GrievancePriority {
+//   LOW
+//   MEDIUM
+//   HIGH
+//   URGENT
+// }
+
+// enum InstitutionStatus {
+//   ACTIVE
+//   INACTIVE
+//   UNDER_MAINTENANCE
+//   CLOSED
+//   PROPOSED
+// }
+
+// enum InstitutionCategory {
+//   TEMPLE
+//   MOSQUE
+//   GURUDWARA
+//   CHURCH
+//   HOSPITAL
+//   CLINIC
+//   SCHOOL
+//   COLLEGE
+//   UNIVERSITY
+//   COACHING_CENTER
+//   POLICE_STATION
+//   GOVT_OFFICE
+//   NGO
+//   GYM
+//   SPORTS_FACILITY
+//   COMMUNITY_HALL
+//   LIBRARY
+//   MARKET
+//   OTHER
+// }
+
+// enum CommunityGroupType {
+//   MARKET
+//   SLUM
+//   SPORTS_TEAM
+//   CLUB
+//   RWA
+//   SENIOR_CITIZEN
+//   BUDDHIJEEVI
+//   WOMEN_GROUP
+//   YOUTH_GROUP
+//   CULTURAL_ORG
+//   NGO
+//   FESTIVAL_COMMITTEE
+//   TRADE_UNION
+//   OTHER
+// }
+
+// enum AreaType {
+//   URBAN
+//   SEMI_URBAN
+//   RURAL
+//   SLUM
+//   INDUSTRIAL
+//   COMMERCIAL
+//   RESIDENTIAL
+// }
+
+// enum SchemeStatus {
+//   ACTIVE
+//   INACTIVE
+//   EXPIRED
+//   UPCOMING
+//   SUSPENDED
+// }
+
+// enum NotificationChannel {
+//   SMS
+//   EMAIL
+//   WHATSAPP
+//   IN_APP
+// }
+
+// enum NotificationStatus {
+//   PENDING
+//   SENT
+//   FAILED
+//   DELIVERED
+//   READ
+// }
+
+// enum BackupStatus {
+//   IN_PROGRESS
+//   COMPLETED
+//   FAILED
+// }
+
+// enum TaskStatus {
+//   TODO
+//   IN_PROGRESS
+//   COMPLETED
+//   OVERDUE
+//   CANCELLED
+// }
+
+// enum TaskPriority {
+//   LOW
+//   MEDIUM
+//   HIGH
+//   URGENT
+// }
+
+// enum FundType {
+//   MPLAD
+//   MLALAD
+//   STATE_FUND
+//   CENTRAL_FUND
+//   CSR
+//   OTHER
+// }
+
+// enum AuditAction {
+//   CREATE
+//   UPDATE
+//   DELETE
+//   LOGIN
+//   LOGOUT
+//   EXPORT
+//   IMPORT
+//   BACKUP
+//   RESTORE
+//   PASSWORD_CHANGE
+//   ROLE_CHANGE
+//   STATUS_CHANGE
+//   SEND_NOTIFICATION
+// }
+
+// // ─── Models ─────────────────────────────────────────────
+
+// model Organization {
+//   id               String  @id @default(cuid())
+//   name             String
+//   tagline          String?
+//   logoUrl          String?
+//   faviconUrl       String?
+//   primaryColor     String  @default("#1e40af")
+//   secondaryColor   String  @default("#3b82f6")
+//   constituencyName String
+//   state            String
+//   district         String
+//   address          String?
+//   phone            String?
+//   email            String?
+//   website          String?
+
+//   // MLA/MP Profile
+//   representativeName  String
+//   representativeTitle String // "Member of Parliament" / "Member of Legislative Assembly"
+//   representativePhoto String?
+//   partyName           String?
+//   partyLogoUrl        String?
+//   termStartDate       DateTime?
+//   termEndDate         DateTime?
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@map("organizations")
+// }
+
+// model User {
+//   id               String     @id @default(uuid())
+//   email            String     @unique
+//   phone            String?    @unique
+//   password         String
+//   name             String
+//   role             UserRole   @default(OFFICE_STAFF)
+//   status           UserStatus @default(ACTIVE)
+//   avatar           String?
+//   // 2FA
+//   twoFactorEnabled Boolean    @default(false)
+//   twoFactorSecret  String?
+//   // Session management
+//   lastLoginAt      DateTime?
+//   lastLoginIp      String?
+//   failedLoginCount Int        @default(0)
+//   lockedUntil      DateTime?
+
+//   // Password policy
+//   passwordChangedAt   DateTime @default(now())
+//   forcePasswordChange Boolean  @default(false)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   // Relations
+//   permissions       UserPermission[]
+//   sessions          Session[]
+//   grievancesCreated Grievance[]      @relation("GrievanceCreatedBy")
+//   projectsCreated   Project[]        @relation("ProjectCreatedBy")
+//   auditLogs         AuditLog[]
+//   notifications     Notification[]
+
+//   @@map("users")
+// }
+
+// model Ward {
+//   id         Int      @id @default(autoincrement())
+//   name       String   @unique
+//   population Int      @default(0)
+//   areaType   String // Urban, Rural, Semi-Urban
+//   areaName   String
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   // Relations
+//   projects     Project[]
+//   grievances   Grievance[]
+//   institutions Institution[]
+//   demographics Demographics[]
+//   schemes      SchemeWard[]
+
+//   @@map("wards")
+// }
+
+// model Project {
+//   id               Int           @id @default(autoincrement())
+//   name             String
+//   category         String
+//   department       String
+//   contractor       String?
+//   wardId           Int
+//   startDate        DateTime
+//   endDate          DateTime?
+//   budgetReleased   Float         @default(0)
+//   budgetSanctioned Float         @default(0)
+//   budgetUsed       Float         @default(0)
+//   status           ProjectStatus @default(PENDING)
+//   description      String?
+//   documents        String[] // File paths
+//   createdById      String?
+//   createdAt        DateTime      @default(now())
+//   updatedAt        DateTime      @updatedAt
+
+//   // Relations
+//   ward      Ward  @relation(fields: [wardId], references: [id], onDelete: Cascade)
+//   createdBy User? @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+//   @@map("projects")
+// }
+
+// model Grievance {
+//   id           Int               @id @default(autoincrement())
+//   category     String
+//   description  String
+//   wardId       Int
+//   assignedDept String?
+//   status       GrievanceStatus   @default(OPEN)
+//   priority     GrievancePriority @default(MEDIUM)
+//   resolution   String?
+//   attachments  String[] // File paths
+//   createdById  String?
+//   createdAt    DateTime          @default(now())
+//   resolvedAt   DateTime?
+//   updatedAt    DateTime          @updatedAt
+
+//   // Relations
+//   ward      Ward  @relation(fields: [wardId], references: [id], onDelete: Cascade)
+//   createdBy User? @relation("GrievanceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+//   @@map("grievances")
+// }
+
+// model Institution {
+//   id        Int                 @id @default(autoincrement())
+//   name      String
+//   category  InstitutionCategory
+//   address   String
+//   wardId    Int
+//   contactNo String?
+//   status    InstitutionStatus   @default(ACTIVE)
+//   image     String?
+//   createdAt DateTime            @default(now())
+//   updatedAt DateTime            @updatedAt
+
+//   // Relations
+//   ward      Ward       @relation(fields: [wardId], references: [id], onDelete: Cascade)
+//   incharges Incharge[]
+
+//   @@map("institutions")
+// }
+
+// model Incharge {
+//   id            Int       @id @default(autoincrement())
+//   institutionId Int
+//   name          String
+//   designation   String
+//   contactNo     String?
+//   dob           DateTime?
+//   photo         String?
+//   createdAt     DateTime  @default(now())
+//   updatedAt     DateTime  @updatedAt
+
+//   // Relations
+//   institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+//   @@map("incharges")
+// }
+
+// model Demographics {
+//   id             Int      @id @default(autoincrement())
+//   wardId         Int
+//   communityGroup String // Markets, Slums, Sports teams, Clubs, RWA, Senior citizens, Buddhijiwis, Women & Youth groups
+//   maleCount      Int      @default(0)
+//   femaleCount    Int      @default(0)
+//   age0to18       Int      @default(0)
+//   age19to35      Int      @default(0)
+//   age36to60      Int      @default(0)
+//   age60plus      Int      @default(0)
+//   createdAt      DateTime @default(now())
+//   updatedAt      DateTime @updatedAt
+
+//   // Relations
+//   ward Ward @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+//   @@unique([wardId, communityGroup])
+//   @@map("demographics")
+// }
+
+// model Scheme {
+//   id               Int          @id @default(autoincrement())
+//   name             String
+//   department       String
+//   description      String?
+//   budget           Float        @default(0)
+//   status           SchemeStatus @default(ACTIVE)
+//   beneficiaryCount Int          @default(0)
+//   startDate        DateTime?
+//   endDate          DateTime?
+//   documents        String[] // File paths
+//   createdAt        DateTime     @default(now())
+//   updatedAt        DateTime     @updatedAt
+
+//   // Relations
+//   wards SchemeWard[]
+
+//   @@map("schemes")
+// }
+
+// model SchemeWard {
+//   id       Int @id @default(autoincrement())
+//   schemeId Int
+//   wardId   Int
+
+//   scheme Scheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+//   ward   Ward   @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+//   @@unique([schemeId, wardId])
+//   @@map("scheme_wards")
+// }
+
+// model AuditLog {
+//   id        Int         @id @default(autoincrement())
+//   userId    String?
+//   action    AuditAction
+//   entity    String // Table name (e.g. "project", "grievance")
+//   entityId  String? // ID of the affected record
+//   oldData   Json?
+//   newData   Json?
+//   ipAddress String?
+//   userAgent String?
+//   createdAt DateTime    @default(now())
+
+//   // Relations
+//   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+//   @@map("audit_logs")
+// }
+
+// model Notification {
+//   id        Int      @id @default(autoincrement())
+//   title     String
+//   message   String
+//   type      String   @default("info") // info, warning, success, error
+//   isRead    Boolean  @default(false)
+//   userId    String
+//   createdAt DateTime @default(now())
+
+//   // Relations
+//   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   @@map("notifications")
+// }
+
+// model SystemSetting {
+//   id          Int      @id @default(autoincrement())
+//   key         String   @unique
+//   value       String
+//   description String?
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+
+//   @@map("system_settings")
+// }
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ════════════════════════════════════════════════════════
+// ENUMS
+// ════════════════════════════════════════════════════════
+
+enum UserRole {
+  SYSTEM_ADMIN
+  MLA_MP
+  OFFICE_STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ProjectStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum GrievanceStatus {
+  OPEN
+  IN_PROGRESS
+  ESCALATED
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum GrievancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InstitutionStatus {
+  ACTIVE
+  INACTIVE
+  UNDER_MAINTENANCE
+  CLOSED
+  PROPOSED
+}
+
+enum InstitutionCategory {
+  TEMPLE
+  MOSQUE
+  GURUDWARA
+  CHURCH
+  HOSPITAL
+  CLINIC
+  SCHOOL
+  COLLEGE
+  UNIVERSITY
+  COACHING_CENTER
+  POLICE_STATION
+  GOVT_OFFICE
+  NGO
+  GYM
+  SPORTS_FACILITY
+  COMMUNITY_HALL
+  LIBRARY
+  MARKET
+  RWA
+  OLD_AGE_HOME
+  OTHER
+}
+
+enum CommunityGroupType {
+  MARKET
+  SLUM
+  SPORTS_TEAM
+  CLUB
+  RWA
+  SENIOR_CITIZEN
+  BUDDHIJEEVI
+  WOMEN_GROUP
+  YOUTH_GROUP
+  CULTURAL_ORG
+  NGO
+  FESTIVAL_COMMITTEE
+  TRADE_UNION
+  OTHER
+}
+
+enum SchemeStatus {
+  ACTIVE
+  EXPIRED
+  UPCOMING
+  SUSPENDED
+}
+
+enum FundType {
+  MPLAD
+  MLALAD
+  STATE_FUND
+  CENTRAL_FUND
+  CSR
+  OTHER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  EXPORT
+  IMPORT
+  PASSWORD_CHANGE
+  PERMISSION_CHANGE
+  STATUS_CHANGE
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  SEND_NOTIFICATION
+  BACKUP
+  RESTORE
+}
+
+enum NotificationChannel {
+  SMS
+  EMAIL
+  WHATSAPP
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+  READ
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ════════════════════════════════════════════════════════
+// ORGANIZATION & BRANDING
+// ════════════════════════════════════════════════════════
+
+model Organization {
+  id               String  @id @default(cuid())
+  name             String
+  tagline          String?
+  constituencyName String
+  state            String
+  district         String
+  address          String?
+  phone            String?
+  email            String?
+  website          String?
+  logoUrl          String?
+  faviconUrl       String?
+  primaryColor     String  @default("#1e40af")
+  secondaryColor   String  @default("#3b82f6")
+
+  representativeName  String
+  representativeTitle String
+  representativePhoto String?
+  partyName           String?
+  partyLogoUrl        String?
+  termStartDate       DateTime?
+  termEndDate         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+// ════════════════════════════════════════════════════════
+// USERS & AUTH
+// ════════════════════════════════════════════════════════
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  phone     String?    @unique
+  password  String
+  name      String
+  role      UserRole
+  status    UserStatus @default(ACTIVE)
+  avatarUrl String?
+
+  // Security
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+  failedLoginCount    Int       @default(0)
+  lockedUntil         DateTime?
+  passwordChangedAt   DateTime  @default(now())
+  forcePasswordChange Boolean   @default(false)
+
+  // Who created this user
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdByAdmin User?  @relation("UserCreatedBy", fields: [createdById], references: [id])
+  usersCreated   User[] @relation("UserCreatedBy")
+
+  permissions       UserPermission[]
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
+  tasksAssigned     Task[]           @relation("TaskAssignedTo")
+  tasksCreated      Task[]           @relation("TaskCreatedBy")
+  grievancesCreated Grievance[]      @relation("GrievanceCreatedBy")
+  projectsCreated   Project[]        @relation("ProjectCreatedBy")
+  notifications     Notification[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ════════════════════════════════════════════════════════
+// PERMISSIONS (Database-driven RBAC)
+// ════════════════════════════════════════════════════════
+
+model Permission {
+  id          String  @id @default(cuid())
+  module      String
+  action      String
+  description String?
+
+  roleDefaults    RoleDefaultPermission[]
+  userPermissions UserPermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RoleDefaultPermission {
+  id           String   @id @default(cuid())
+  role         UserRole
+  permissionId String
+  granted      Boolean  @default(true)
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@map("role_default_permissions")
+}
+
+model UserPermission {
+  id           String  @id @default(cuid())
+  userId       String
+  permissionId String
+  granted      Boolean @default(true)
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@index([userId])
+  @@map("user_permissions")
+}
+
+// ════════════════════════════════════════════════════════
+// WARDS
+// ════════════════════════════════════════════════════════
+
+model Ward {
+  id         String  @id @default(cuid())
+  wardNumber Int     @unique
+  name       String  @unique
+  population Int?
+  areaType   String  @default("Urban")
+  areaName   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  institutions        Institution[]
+  grievances          Grievance[]
+  projects            Project[]
+  demographics        Demographics[]
+  communityGroups     CommunityGroup[]
+  schemeBeneficiaries SchemeBeneficiary[]
+
+  @@map("wards")
+}
+
+// ════════════════════════════════════════════════════════
+// INSTITUTIONS
+// ════════════════════════════════════════════════════════
+
+model Institution {
+  id              String              @id @default(cuid())
+  name            String
+  category        InstitutionCategory
+  subcategory     String?
+  address         String
+  latitude        Float?
+  longitude       Float?
+  wardId          String
+  contactNo       String?
+  email           String?
+  website         String?
+  status          InstitutionStatus   @default(ACTIVE)
+  description     String?
+  photoUrl        String?
+  capacity        Int?
+  establishedDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward      Ward       @relation(fields: [wardId], references: [id])
+  incharges Incharge[]
+
+  @@index([wardId])
+  @@index([category])
+  @@index([status])
+  @@map("institutions")
+}
+
+model Incharge {
+  id            String    @id @default(cuid())
+  institutionId String
+  name          String
+  designation   String
+  contactNo     String
+  email         String?
+  dateOfBirth   DateTime?
+  photoUrl      String?
+  appointedDate DateTime?
+  isActive      Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  @@index([institutionId])
+  @@map("incharges")
+}
+
+// ════════════════════════════════════════════════════════
+// COMMUNITY GROUPS
+// ════════════════════════════════════════════════════════
+
+model CommunityGroup {
+  id              String             @id @default(cuid())
+  name            String
+  type            CommunityGroupType
+  wardId          String
+  address         String?
+  description     String?
+  memberCount     Int?
+  headName        String?
+  headPhone       String?
+  headEmail       String?
+  headDesignation String?
+  isActive        Boolean            @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward Ward @relation(fields: [wardId], references: [id])
+
+  @@index([wardId])
+  @@index([type])
+  @@map("community_groups")
+}
+
+// ════════════════════════════════════════════════════════
+// DEMOGRAPHICS
+// ════════════════════════════════════════════════════════
+
+model Demographics {
+  id             String   @id @default(cuid())
+  wardId         String
+  communityGroup String
+  maleCount      Int      @default(0)
+  femaleCount    Int      @default(0)
+  age0to18       Int      @default(0)
+  age19to35      Int      @default(0)
+  age36to60      Int      @default(0)
+  age60plus      Int      @default(0)
+  surveyDate     DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward Ward @relation(fields: [wardId], references: [id])
+
+  @@index([wardId])
+  @@map("demographics")
+}
+
+// ════════════════════════════════════════════════════════
+// GRIEVANCES
+// ════════════════════════════════════════════════════════
+
+model Grievance {
+  id           String            @id @default(cuid())
+  ticketNumber String            @unique
+  category     String
+  subcategory  String?
+  description  String
+  wardId       String
+  assignedDept String
+  status       GrievanceStatus   @default(OPEN)
+  priority     GrievancePriority @default(MEDIUM)
+
+  complainantName    String?
+  complainantPhone   String?
+  complainantEmail   String?
+  complainantAddress String?
+
+  locationAddress String?
+  latitude        Float?
+  longitude       Float?
+
+  resolutionNotes        String?
+  resolvedAt             DateTime?
+  escalatedAt            DateTime?
+  escalationReason       String?
+  expectedResolutionDate DateTime?
+
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward        Ward                  @relation(fields: [wardId], references: [id])
+  createdBy   User?                 @relation("GrievanceCreatedBy", fields: [createdById], references: [id])
+  timeline    GrievanceTimeline[]
+  attachments GrievanceAttachment[]
+
+  @@index([wardId])
+  @@index([status])
+  @@index([priority])
+  @@index([assignedDept])
+  @@index([createdAt])
+  @@index([ticketNumber])
+  @@map("grievances")
+}
+
+model GrievanceTimeline {
+  id          String          @id @default(cuid())
+  grievanceId String
+  status      GrievanceStatus
+  comment     String?
+  changedBy   String?
+  createdAt   DateTime        @default(now())
+
+  grievance Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
+
+  @@index([grievanceId])
+  @@map("grievance_timeline")
+}
+
+model GrievanceAttachment {
+  id          String   @id @default(cuid())
+  grievanceId String
+  fileUrl     String
+  fileName    String
+  fileType    String?
+  fileSize    Int?
+  createdAt   DateTime @default(now())
+
+  grievance Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
+
+  @@map("grievance_attachments")
+}
+
+// ════════════════════════════════════════════════════════
+// PROJECTS
+// ════════════════════════════════════════════════════════
+
+model Project {
+  id              String  @id @default(cuid())
+  projectCode     String  @unique
+  name            String
+  category        String
+  department      String
+  contractor      String?
+  contractorPhone String?
+  wardId          String
+
+  startDate       DateTime?
+  expectedEndDate DateTime?
+  actualEndDate   DateTime?
+
+  budgetSanctioned Float    @default(0)
+  budgetReleased   Float    @default(0)
+  budgetUsed       Float    @default(0)
+  fundType         FundType @default(OTHER)
+
+  status            ProjectStatus @default(PENDING)
+  completionPercent Int           @default(0)
+
+  description String?
+  address     String?
+  latitude    Float?
+  longitude   Float?
+
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward        Ward                @relation(fields: [wardId], references: [id])
+  createdBy   User?               @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  milestones  ProjectMilestone[]
+  updates     ProjectUpdate[]
+  attachments ProjectAttachment[]
+
+  @@index([wardId])
+  @@index([status])
+  @@index([department])
+  @@index([createdAt])
+  @@map("projects")
+}
+
+model ProjectMilestone {
+  id            String    @id @default(cuid())
+  projectId     String
+  title         String
+  description   String?
+  targetDate    DateTime?
+  completedDate DateTime?
+  isCompleted   Boolean   @default(false)
+  orderIndex    Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_milestones")
+}
+
+model ProjectUpdate {
+  id         String   @id @default(cuid())
+  projectId  String
+  updateText String
+  updatedBy  String
+  photoUrl   String?
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_updates")
+}
+
+model ProjectAttachment {
+  id        String   @id @default(cuid())
+  projectId String
+  fileUrl   String
+  fileName  String
+  fileType  String?
+  fileSize  Int?
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_attachments")
+}
+
+// ════════════════════════════════════════════════════════
+// SCHEMES
+// ════════════════════════════════════════════════════════
+
+model Scheme {
+  id             String       @id @default(cuid())
+  name           String
+  department     String
+  level          String       @default("Central")
+  description    String?
+  eligibility    String?
+  benefits       String?
+  applicationUrl String?
+  budget         Float        @default(0)
+  status         SchemeStatus @default(ACTIVE)
+  startDate      DateTime?
+  endDate        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  beneficiaries SchemeBeneficiary[]
+
+  @@map("schemes")
+}
+
+model SchemeBeneficiary {
+  id               String   @id @default(cuid())
+  schemeId         String
+  wardId           String
+  beneficiaryCount Int      @default(0)
+  targetCount      Int      @default(0)
+  amountDisbursed  Float    @default(0)
+  reportDate       DateTime @default(now())
+
+  scheme Scheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  ward   Ward   @relation(fields: [wardId], references: [id])
+
+  @@unique([schemeId, wardId])
+  @@index([schemeId])
+  @@index([wardId])
+  @@map("scheme_beneficiaries")
+}
+
+// ════════════════════════════════════════════════════════
+// DEPARTMENTS (Configurable)
+// ════════════════════════════════════════════════════════
+
+model Department {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  code        String  @unique
+  description String?
+  headName    String?
+  headPhone   String?
+  headEmail   String?
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("departments")
+}
+
+// ════════════════════════════════════════════════════════
+// FUNDS
+// ════════════════════════════════════════════════════════
+
+model Fund {
+  id             String   @id @default(cuid())
+  fundType       FundType
+  financialYear  String
+  totalAllocated Float    @default(0)
+  totalReleased  Float    @default(0)
+  totalUtilized  Float    @default(0)
+
+  transactions FundTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fundType, financialYear])
+  @@map("funds")
+}
+
+model FundTransaction {
+  id          String   @id @default(cuid())
+  fundId      String
+  amount      Float
+  type        String // ALLOCATION, RELEASE, UTILIZATION
+  description String?
+  projectId   String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  fund Fund @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  @@index([fundId])
+  @@map("fund_transactions")
+}
+
+// ════════════════════════════════════════════════════════
+// TASKS
+// ════════════════════════════════════════════════════════
+
+model Task {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  assignedToId String
+  createdById  String
+  priority     TaskPriority @default(MEDIUM)
+  status       TaskStatus   @default(TODO)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  grievanceId  String?
+  projectId    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedTo User @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User @relation("TaskCreatedBy", fields: [createdById], references: [id])
+
+  @@index([assignedToId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+// ════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════════════
+
+model Notification {
+  id             String              @id @default(cuid())
+  userId         String?
+  channel        NotificationChannel
+  title          String
+  message        String
+  status         NotificationStatus  @default(PENDING)
+  recipientPhone String?
+  recipientEmail String?
+  sentAt         DateTime?
+  readAt         DateTime?
+  failReason     String?
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id        String              @id @default(cuid())
+  name      String              @unique
+  channel   NotificationChannel
+  subject   String?
+  body      String
+  variables String[]
+  isActive  Boolean             @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_templates")
+}
+
+// ════════════════════════════════════════════════════════
+// AUDIT LOGS
+// ════════════════════════════════════════════════════════
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  action      AuditAction
+  module      String
+  recordId    String?
+  description String
+  oldData     Json?
+  newData     Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([module])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ════════════════════════════════════════════════════════
+// SYSTEM SETTINGS
+// ════════════════════════════════════════════════════════
+
+model SystemSetting {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  value       String
+  type        String  @default("string")
+  group       String  @default("general")
+  description String?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+// ════════════════════════════════════════════════════════
+// BACKUPS
+// ════════════════════════════════════════════════════════
+
+model Backup {
+  id          String    @id @default(cuid())
+  fileName    String
+  fileSize    BigInt?
+  fileUrl     String?
+  status      String    @default("IN_PROGRESS")
+  type        String    @default("MANUAL")
+  triggeredBy String?
+  notes       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@map("backups")
+}

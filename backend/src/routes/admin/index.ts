@@ -1,0 +1,45 @@
+import { Router } from "express";
+import { authenticate, requireActiveUser } from "../../middleware/auth.js";
+
+import authRoutes from "./auth/index.js";
+import userRoutes from "./user/index.js";
+import permissionRoutes from "./permission/index.js";
+import wardRoutes from "./ward/index.js";
+import institutionRoutes from "./institution/index.js";
+import inchargeRoutes from "./incharge/index.js";
+import grievanceRoutes from "./grievance/index.js";
+import projectRoutes from "./project/index.js";
+import schemeRoutes from "./scheme/index.js";
+import demographicsRoutes from "./demographics/index.js";
+import departmentRoutes from "./department/index.js";
+import taskRoutes from "./task/index.js";
+import dashboardRoutes from "./dashboard/index.js";
+import auditLogRoutes from "./auditLog/index.js";
+import settingsRoutes from "./settings/index.js";
+import notificationRoutes from "./notification/index.js";
+
+const router = Router();
+
+// ─── Public: No auth needed ─────────────────────────────
+router.use("/auth", authRoutes);
+
+// ─── Protected: All routes below require auth ───────────
+router.use(authenticate, requireActiveUser);
+
+// router.use("/users", userRoutes);
+// router.use("/permissions", permissionRoutes);
+// router.use("/wards", wardRoutes);
+// router.use("/institutions", institutionRoutes);
+// router.use("/incharges", inchargeRoutes);
+// router.use("/grievances", grievanceRoutes);
+// router.use("/projects", projectRoutes);
+// router.use("/schemes", schemeRoutes);
+// router.use("/demographics", demographicsRoutes);
+// router.use("/departments", departmentRoutes);
+// router.use("/tasks", taskRoutes);
+// router.use("/dashboard", dashboardRoutes);
+// router.use("/audit-logs", auditLogRoutes);
+// router.use("/settings", settingsRoutes);
+// router.use("/notifications", notificationRoutes);
+
+export default router;
