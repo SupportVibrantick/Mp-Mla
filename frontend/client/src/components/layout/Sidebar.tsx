@@ -14,6 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  BarChart4,
+  BarChart,
+  Landmark,
+  IndianRupeeIcon,
+  Cake,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,15 +56,48 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       href: "/institutions",
       module: "institutions",
     },
+    // {
+    //   label: "Community",
+    //   icon: Users,
+    //   href: "/community",
+    //   module: "demographics",
+    // },
     {
       label: "Community",
       icon: Users,
       href: "/community",
       module: "demographics",
     },
+
     { label: "Schemes", icon: FileText, href: "/schemes", module: "schemes" },
     { label: "Wards", icon: Map, href: "/wards", module: "wards" },
+    {
+      label: "Demographies",
+      icon: BarChart,
+      href: "/demographics",
+      module: "demographics",
+    },
     { label: "Reports", icon: BarChart3, href: "/reports", module: "reports" },
+    {
+      label: "Departments",
+      icon: Landmark,
+      href: "/departments",
+      module: "departments",
+    },
+    {
+      label: "Funds",
+      icon: IndianRupeeIcon,
+      href: "/funds",
+      module: "funds",
+    },
+    // { type: "divider", label: "People" },
+    { label: "Leaders", icon: Users, href: "/leaders", module: "leaders" },
+    {
+      label: "Birthdays",
+      icon: Cake,
+      href: "/leaders/birthdays",
+      module: "leaders",
+    },
   ];
 
   const filteredNavItems = navItems.filter(

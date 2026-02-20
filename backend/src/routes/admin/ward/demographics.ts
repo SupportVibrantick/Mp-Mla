@@ -36,6 +36,14 @@ export const wardDemographicsSchema = z.object({
   source: z.string().optional(),
   notes: z.string().optional(),
   surveyDate: z.string().datetime().optional(),
+
+  hinduCount: z.number().int().min(0).default(0),
+  muslimCount: z.number().int().min(0).default(0),
+  sikhCount: z.number().int().min(0).default(0),
+  christianCount: z.number().int().min(0).default(0),
+  buddhistCount: z.number().int().min(0).default(0),
+  jainCount: z.number().int().min(0).default(0),
+  otherReligionCount: z.number().int().min(0).default(0),
 });
 
 export async function getWardDemographics(
@@ -45,17 +53,14 @@ export async function getWardDemographics(
 ): Promise<void> {
   try {
     const wardId = req.params.wardId as string;
-
     const ward = await prisma.ward.findUnique({ where: { id: wardId } });
     if (!ward) throw ApiError.notFound("Ward not found");
 
-    // Ward-level demographics
     const wardLevel = await prisma.demographics.findFirst({
       where: { wardId, wardAreaId: null },
       orderBy: { surveyDate: "desc" },
     });
 
-    // Area-level demographics
     const areaLevel = await prisma.demographics.findMany({
       where: { wardId, wardAreaId: { not: null } },
       include: {
@@ -64,56 +69,57 @@ export async function getWardDemographics(
       orderBy: { surveyDate: "desc" },
     });
 
-    // Gender summary
-    const genderDistribution = [
-      {
-        label: "Male",
-        value: wardLevel?.maleCount || ward.totalMale,
-        color: "#3b82f6",
-      },
-      {
-        label: "Female",
-        value: wardLevel?.femaleCount || ward.totalFemale,
-        color: "#ec4899",
-      },
-    ];
+    const totalPop = wardLevel?.totalPopulation || ward.totalPopulation || 1;
 
-    // Age summary
-    const ageDistribution = wardLevel
-      ? [
-          { label: "0-6", value: wardLevel.age0to6 },
-          { label: "7-18", value: wardLevel.age7to18 },
-          { label: "19-35", value: wardLevel.age19to35 },
-          { label: "36-60", value: wardLevel.age36to60 },
-          { label: "60+", value: wardLevel.age60plus },
-        ]
-      : [];
+    const charts = wardLevel
+      ? {
+          genderDistribution: [
+            { label: "Male", value: wardLevel.maleCount, color: "#3b82f6" },
+            { label: "Female", value: wardLevel.femaleCount, color: "#ec4899" },
+          ],
+          ageDistribution: [
+            { label: "0-6", value: wardLevel.age0to6 },
+            { label: "7-18", value: wardLevel.age7to18 },
+            { label: "19-35", value: wardLevel.age19to35 },
+            { label: "36-60", value: wardLevel.age36to60 },
+            { label: "60+", value: wardLevel.age60plus },
+          ],
+          casteDistribution: [
+            { label: "General", value: wardLevel.generalCount },
+            { label: "OBC", value: wardLevel.obcCount },
+            { label: "SC", value: wardLevel.scCount },
+            { label: "ST", value: wardLevel.stCount },
+            { label: "Minority", value: wardLevel.minorityCount },
+          ],
+          religionDistribution: [
+            { label: "Hindu", value: wardLevel.hinduCount, color: "#f97316" },
+            { label: "Muslim", value: wardLevel.muslimCount, color: "#16a34a" },
+            { label: "Sikh", value: wardLevel.sikhCount, color: "#2563eb" },
+            {
+              label: "Christian",
+              value: wardLevel.christianCount,
+              color: "#ef4444",
+            },
+            {
+              label: "Buddhist",
+              value: wardLevel.buddhistCount,
+              color: "#ca8a04",
+            },
+            { label: "Jain", value: wardLevel.jainCount, color: "#9333ea" },
+            {
+              label: "Other",
+              value: wardLevel.otherReligionCount,
+              color: "#6b7280",
+            },
+          ].filter((r) => r.value > 0),
+        }
+      : null;
 
-    // Social category summary
-    const categoryDistribution = wardLevel
-      ? [
-          { label: "General", value: wardLevel.generalCount },
-          { label: "OBC", value: wardLevel.obcCount },
-          { label: "SC", value: wardLevel.scCount },
-          { label: "ST", value: wardLevel.stCount },
-          { label: "Minority", value: wardLevel.minorityCount },
-          { label: "Other", value: wardLevel.otherCount },
-        ]
-      : [];
-
-    res.json({
-      success: true,
-      data: {
-        wardLevel,
-        areaLevel,
-        charts: { genderDistribution, ageDistribution, categoryDistribution },
-      },
-    });
+    res.json({ success: true, data: { wardLevel, areaLevel, charts } });
   } catch (error) {
     next(error);
   }
 }
-
 export async function upsertWardDemographics(
   req: Request,
   res: Response,

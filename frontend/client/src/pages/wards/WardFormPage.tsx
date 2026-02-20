@@ -130,29 +130,42 @@ const emptyArea: AreaFormData = {
 // It maps 1:1 to the Demographics model fields in the backend.
 
 interface DemoFormData {
+  // Age
   age0to6: number;
   age7to18: number;
   age19to35: number;
   age36to60: number;
   age60plus: number;
+  // Caste
   generalCount: number;
   obcCount: number;
   scCount: number;
   stCount: number;
   minorityCount: number;
   otherCount: number;
+  // Religion
+  hinduCount: number;
+  muslimCount: number;
+  sikhCount: number;
+  christianCount: number;
+  buddhistCount: number;
+  jainCount: number;
+  otherReligionCount: number;
+  // Economic
   bplHouseholds: number;
   aplHouseholds: number;
+  // Literacy
   literacyRate: number;
   maleLiteracyRate: number;
   femaleLiteracyRate: number;
+  // Voters
   totalVoters: number;
   maleVoters: number;
   femaleVoters: number;
+  // Meta
   source: string;
   surveyDate: string;
 }
-
 const emptyDemoForm: DemoFormData = {
   age0to6: 0,
   age7to18: 0,
@@ -165,6 +178,13 @@ const emptyDemoForm: DemoFormData = {
   stCount: 0,
   minorityCount: 0,
   otherCount: 0,
+  hinduCount: 0,
+  muslimCount: 0,
+  sikhCount: 0,
+  christianCount: 0,
+  buddhistCount: 0,
+  jainCount: 0,
+  otherReligionCount: 0,
   bplHouseholds: 0,
   aplHouseholds: 0,
   literacyRate: 0,
@@ -326,6 +346,15 @@ export default function WardFormPage() {
       femaleVoters: d.femaleVoters || 0,
       source: d.source || "",
       surveyDate: d.surveyDate ? d.surveyDate.split("T")[0] : "",
+
+      // Religion
+      hinduCount: d.hinduCount || 0,
+      muslimCount: d.muslimCount || 0,
+      sikhCount: d.sikhCount || 0,
+      christianCount: d.christianCount || 0,
+      buddhistCount: d.buddhistCount || 0,
+      jainCount: d.jainCount || 0,
+      otherReligionCount: d.otherReligionCount || 0,
     });
   }, [demoRes, isEdit]);
 
@@ -919,6 +948,41 @@ export default function WardFormPage() {
               </div>
             </div>
 
+            {/* Regious  */}
+            {/* Religion Distribution */}
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Religion Distribution
+              </Label>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mt-2">
+                {(
+                  [
+                    { key: "hinduCount", label: "Hindu 🕉️" },
+                    { key: "muslimCount", label: "Muslim ☪️" },
+                    { key: "sikhCount", label: "Sikh 🙏" },
+                    { key: "christianCount", label: "Christian ✝️" },
+                    { key: "buddhistCount", label: "Buddhist ☸️" },
+                    { key: "jainCount", label: "Jain 🙏" },
+                    { key: "otherReligionCount", label: "Other" },
+                  ] as const
+                ).map((f) => (
+                  <div key={f.key} className="space-y-1">
+                    <Label className="text-xs">{f.label}</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={demoForm[f.key] || ""}
+                      onChange={(e) =>
+                        setDemoForm((p) => ({
+                          ...p,
+                          [f.key]: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
             {/* Economic + Literacy + Voters */}
             <div className="grid md:grid-cols-3 gap-6">
               <div>

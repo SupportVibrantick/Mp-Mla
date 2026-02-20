@@ -1,15 +1,30 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
+import {
+  createAuditLog,
+  getRequestMeta,
+} from "../../../middleware/auditLog.js";
+import { ApiError } from "../../../utils/ApiError.js";
 
-export async function remove(req: Request, res: Response): Promise<void> {
-    try {
-        const id = parseInt(req.params.id);
-        const existing = await prisma.project.findUnique({ where: { id } });
-        if (!existing) { res.status(404).json({ success: false, message: "Project not found." }); return; }
-
-        await prisma.project.delete({ where: { id } });
-        res.json({ success: true, message: "Project deleted successfully" });
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+export async function deleteProject(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const p = await prisma.project.findUnique({ where: { id: req.params.id } });
+    if (!p) throw ApiError.notFound("Project not found");
+    await prisma.project.delete({ where: { id: req.params.id } });
+    await createAuditLog({
+      userId: req.user!.id,
+      action: "DELETE",
+      module: "projects",
+      recordId: p.id,
+      description: `Deleted project ${p.projectCode}`,
+      ...getRequestMeta(req),
+    });
+    res.json({ success: true, message: `${p.projectCode} deleted` });
+  } catch (error) {
+    next(error);
+  }
 }

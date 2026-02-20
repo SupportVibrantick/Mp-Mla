@@ -1,21 +1,72 @@
 import { Router } from "express";
-import { create } from "./create.js";
-import { readAll, readOne } from "./read.js";
-import { update } from "./update.js";
-import { remove } from "./delete.js";
-import { authenticate, authorize } from "../../../middleware/auth.js";
+import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
-import { auditLog } from "../../../middleware/auditLog.js";
-import { createGrievanceSchema, updateGrievanceSchema } from "../../../schemas/admin/grievance/index.js";
+import {
+  listGrievances,
+  getGrievance,
+  getGrievanceStats,
+  getGrievanceAnalytics,
+} from "./read.js";
+import { createGrievance, createGrievanceSchema } from "./create.js";
+import {
+  updateGrievance,
+  updateGrievanceSchema,
+  changeStatus,
+  changeStatusSchema,
+  assignGrievance,
+  assignSchema,
+} from "./update.js";
+import { deleteGrievance } from "./delete.js";
+import { addTimelineEntry, timelineSchema } from "./timeline.js";
 
 const router = Router();
 
-router.use(authenticate);
-
-router.get("/", readAll);
-router.get("/:id", readOne);
-router.post("/", authorize("SYSTEM_ADMIN", "STAFF"), validate(createGrievanceSchema), auditLog("grievance", "CREATE"), create);
-router.patch("/:id", authorize("SYSTEM_ADMIN", "STAFF"), validate(updateGrievanceSchema), auditLog("grievance", "UPDATE"), update);
-router.delete("/:id", authorize("SYSTEM_ADMIN"), auditLog("grievance", "DELETE"), remove);
+router.get("/", requirePermission("grievances", "read"), listGrievances);
+router.get(
+  "/stats",
+  requirePermission("grievances", "read"),
+  getGrievanceStats,
+);
+router.get(
+  "/analytics",
+  requirePermission("grievances", "read"),
+  getGrievanceAnalytics,
+);
+router.get("/:id", requirePermission("grievances", "read"), getGrievance);
+router.post(
+  "/",
+  requirePermission("grievances", "create"),
+  validate(createGrievanceSchema),
+  createGrievance,
+);
+router.put(
+  "/:id",
+  requirePermission("grievances", "update"),
+  validate(updateGrievanceSchema),
+  updateGrievance,
+);
+router.delete(
+  "/:id",
+  requirePermission("grievances", "delete"),
+  deleteGrievance,
+);
+router.patch(
+  "/:id/status",
+  requirePermission("grievances", "update"),
+  validate(changeStatusSchema),
+  changeStatus,
+);
+router.patch(
+  "/:id/assign",
+  requirePermission("grievances", "update"),
+  validate(assignSchema),
+  assignGrievance,
+);
+router.post(
+  "/:id/timeline",
+  requirePermission("grievances", "update"),
+  validate(timelineSchema),
+  addTimelineEntry,
+);
 
 export default router;

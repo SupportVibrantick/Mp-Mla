@@ -970,7 +970,7 @@ export default function WardDetailPage() {
           </TabsContent>
 
           {/* Demographics Tab */}
-          <TabsContent value="demographics">
+          {/* <TabsContent value="demographics">
             {demographics?.wardLevel ? (
               <div className="grid md:grid-cols-2 gap-4">
                 <Card>
@@ -1119,6 +1119,372 @@ export default function WardDetailPage() {
             ) : (
               <Card className="p-8 text-center text-muted-foreground">
                 No demographic data available for this ward.
+              </Card>
+            )}
+          </TabsContent> */}
+          {/* Inside TabsContent value="demographics" */}
+          <TabsContent value="demographics">
+            {demographics?.wardLevel ? (
+              <div className="space-y-4">
+                {/* Row 1: Gender + Age */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">
+                        Gender Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {[
+                        {
+                          label: "Male",
+                          value: demographics.wardLevel.maleCount,
+                          color: "bg-blue-500",
+                          total: demographics.wardLevel.totalPopulation,
+                        },
+                        {
+                          label: "Female",
+                          value: demographics.wardLevel.femaleCount,
+                          color: "bg-pink-500",
+                          total: demographics.wardLevel.totalPopulation,
+                        },
+                      ].map((g) => (
+                        <div key={g.label}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium">{g.label}</span>
+                            <span className="font-mono">
+                              {g.value.toLocaleString()} (
+                              {((g.value / (g.total || 1)) * 100).toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${g.color} rounded-full`}
+                              style={{
+                                width: `${(g.value / (g.total || 1)) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">
+                        Age Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {(demographics.charts?.ageDistribution || []).map(
+                        (age: any) => (
+                          <div
+                            key={age.label}
+                            className="flex items-center gap-3"
+                          >
+                            <span className="text-xs w-12 text-muted-foreground">
+                              {age.label}
+                            </span>
+                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full"
+                                style={{
+                                  width: `${(age.value / (demographics.wardLevel.totalPopulation || 1)) * 100}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs w-16 text-right">
+                              {age.value.toLocaleString()}
+                            </span>
+                          </div>
+                        ),
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Row 2: Religion + Caste */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">
+                        Religion Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        {
+                          label: "Hindu 🕉️",
+                          value: demographics.wardLevel.hinduCount,
+                          color: "bg-orange-500",
+                        },
+                        {
+                          label: "Muslim ☪️",
+                          value: demographics.wardLevel.muslimCount,
+                          color: "bg-green-600",
+                        },
+                        {
+                          label: "Sikh 🙏",
+                          value: demographics.wardLevel.sikhCount,
+                          color: "bg-blue-600",
+                        },
+                        {
+                          label: "Christian ✝️",
+                          value: demographics.wardLevel.christianCount,
+                          color: "bg-red-500",
+                        },
+                        {
+                          label: "Buddhist ☸️",
+                          value: demographics.wardLevel.buddhistCount,
+                          color: "bg-yellow-600",
+                        },
+                        {
+                          label: "Jain",
+                          value: demographics.wardLevel.jainCount,
+                          color: "bg-purple-500",
+                        },
+                        {
+                          label: "Other",
+                          value: demographics.wardLevel.otherReligionCount,
+                          color: "bg-gray-500",
+                        },
+                      ]
+                        .filter((r) => r.value > 0)
+                        .map((r) => (
+                          <div
+                            key={r.label}
+                            className="flex items-center gap-3"
+                          >
+                            <span className="text-xs w-24">{r.label}</span>
+                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${r.color} rounded-full`}
+                                style={{
+                                  width: `${(r.value / (demographics.wardLevel.totalPopulation || 1)) * 100}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs w-20 text-right">
+                              {r.value.toLocaleString()} (
+                              {(
+                                (r.value /
+                                  (demographics.wardLevel.totalPopulation ||
+                                    1)) *
+                                100
+                              ).toFixed(1)}
+                              %)
+                            </span>
+                          </div>
+                        ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">
+                        Social Category (Caste)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        {
+                          label: "General",
+                          value: demographics.wardLevel.generalCount,
+                          color: "bg-slate-500",
+                        },
+                        {
+                          label: "OBC",
+                          value: demographics.wardLevel.obcCount,
+                          color: "bg-amber-500",
+                        },
+                        {
+                          label: "SC",
+                          value: demographics.wardLevel.scCount,
+                          color: "bg-blue-500",
+                        },
+                        {
+                          label: "ST",
+                          value: demographics.wardLevel.stCount,
+                          color: "bg-emerald-500",
+                        },
+                        {
+                          label: "Minority",
+                          value: demographics.wardLevel.minorityCount,
+                          color: "bg-purple-500",
+                        },
+                      ]
+                        .filter((c) => c.value > 0)
+                        .map((c) => (
+                          <div
+                            key={c.label}
+                            className="flex items-center gap-3"
+                          >
+                            <span className="text-xs w-16">{c.label}</span>
+                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${c.color} rounded-full`}
+                                style={{
+                                  width: `${(c.value / (demographics.wardLevel.totalPopulation || 1)) * 100}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs w-20 text-right">
+                              {c.value.toLocaleString()} (
+                              {(
+                                (c.value /
+                                  (demographics.wardLevel.totalPopulation ||
+                                    1)) *
+                                100
+                              ).toFixed(1)}
+                              %)
+                            </span>
+                          </div>
+                        ))}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Row 3: Economic + Literacy + Voters */}
+                <div className="grid md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Economic</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          BPL Households
+                        </span>
+                        <span className="font-mono font-medium">
+                          {demographics.wardLevel.bplHouseholds.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          APL Households
+                        </span>
+                        <span className="font-mono font-medium">
+                          {demographics.wardLevel.aplHouseholds.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="h-3 bg-muted rounded-full overflow-hidden flex">
+                        <div
+                          className="h-full bg-red-400"
+                          style={{
+                            width: `${(demographics.wardLevel.bplHouseholds / (demographics.wardLevel.totalHouseholds || 1)) * 100}%`,
+                          }}
+                        />
+                        <div className="h-full bg-green-400 flex-1" />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>
+                          BPL{" "}
+                          {(
+                            (demographics.wardLevel.bplHouseholds /
+                              (demographics.wardLevel.totalHouseholds || 1)) *
+                            100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                        <span>
+                          APL{" "}
+                          {(
+                            (demographics.wardLevel.aplHouseholds /
+                              (demographics.wardLevel.totalHouseholds || 1)) *
+                            100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Literacy</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {[
+                        {
+                          label: "Overall",
+                          value: demographics.wardLevel.literacyRate,
+                        },
+                        {
+                          label: "Male",
+                          value: demographics.wardLevel.maleLiteracyRate,
+                        },
+                        {
+                          label: "Female",
+                          value: demographics.wardLevel.femaleLiteracyRate,
+                        },
+                      ].map((l) => (
+                        <div key={l.label}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-muted-foreground">
+                              {l.label}
+                            </span>
+                            <span className="font-mono">
+                              {l.value ? `${l.value.toFixed(1)}%` : "N/A"}
+                            </span>
+                          </div>
+                          {l.value && (
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full"
+                                style={{ width: `${l.value}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Voters</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold">
+                          {demographics.wardLevel.totalVoters.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Total Voters
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-center">
+                        <div>
+                          <p className="text-lg font-bold text-blue-600">
+                            {demographics.wardLevel.maleVoters.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Male
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-pink-600">
+                            {demographics.wardLevel.femaleVoters.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Female
+                          </p>
+                        </div>
+                      </div>
+                      {demographics.wardLevel.source && (
+                        <p className="text-[10px] text-muted-foreground text-center border-t pt-2">
+                          Source: {demographics.wardLevel.source}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            ) : (
+              <Card className="p-8 text-center text-muted-foreground">
+                No demographic data available. Edit this ward to add
+                demographics.
               </Card>
             )}
           </TabsContent>

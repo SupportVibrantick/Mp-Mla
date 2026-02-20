@@ -25,6 +25,30 @@ import Reports from "./pages/Reports";
 import WardsPage from "./pages/wards/AllWards";
 import WardFormPage from "./pages/wards/WardFormPage";
 import WardDetailPage from "./pages/wards/WardDetailPage";
+import CommunityListPage from "./pages/community/CommunityListPage";
+import CommunityFormPage from "./pages/community/CommunityFormPage";
+import CommunityDetailPage from "./pages/community/CommunityDetailPage";
+import InstitutionListPage from "./pages/institutions/InstitutionListPage";
+import InstitutionFormPage from "./pages/institutions/InstitutionFormPage";
+import InstitutionDetailPage from "./pages/institutions/InstitutionDetailPage";
+import GrievanceListPage from "./pages/grievances/GrievanceListPage";
+import GrievanceFormPage from "./pages/grievances/GrievanceFormPage";
+import GrievanceDetailPage from "./pages/grievances/GrievanceDetailPage";
+import DepartmentListPage from "./pages/departments/DepartmentListPage";
+import ProjectListPage from "./pages/projects/ProjectListPage";
+import ProjectFormPage from "./pages/projects/ProjectFormPage";
+import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
+import FundsPage from "./pages/funds/FundsPage";
+import SchemeListPage from "./pages/schemes/SchemeListPage";
+import SchemeFormPage from "./pages/schemes/SchemeFormPage";
+import SchemeDetailPage from "./pages/schemes/SchemeDetailPage";
+import FundsOverviewPage from "./pages/funds/FundsOverviewPage";
+import FundDetailPage from "./pages/funds/FundDetailPage";
+import ReportsPage from "./pages/reports/ReportsPage";
+import BirthdaysPage from "./pages/leaders/BirthdaysPage";
+import LeaderFormPage from "./pages/leaders/LeaderFormPage";
+import LeaderListPage from "./pages/leaders/LeaderListPage";
+import LeaderDetailPage from "./pages/leaders/LeaderDetailPage";
 
 function Router() {
   return (
@@ -47,20 +71,89 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/grievances">
+      {/* <Route path="/grievances">
         <ProtectedRoute module="grievances" action="view">
           <Grievances />
         </ProtectedRoute>
-      </Route>
+      </Route> */}
 
+      <Route path="/grievances">
+        <ProtectedRoute module="grievances" action="read">
+          <GrievanceListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/grievances/new">
+        <ProtectedRoute module="grievances" action="create">
+          <GrievanceFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/grievances/:id/edit">
+        <ProtectedRoute module="grievances" action="update">
+          <GrievanceFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/grievances/:id">
+        <ProtectedRoute module="grievances" action="read">
+          <GrievanceDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/departments">
+        <ProtectedRoute module="departments" action="read">
+          <DepartmentListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/departments/:id">
+        <ProtectedRoute module="departments" action="read">
+          <DepartmentListPage />
+        </ProtectedRoute>
+      </Route>
       <Route path="/projects">
-        <ProtectedRoute module="projects" action="view">
-          <Projects />
+        <ProtectedRoute module="projects" action="read">
+          <ProjectListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/projects/new">
+        <ProtectedRoute module="projects" action="create">
+          <ProjectFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/projects/:id/edit">
+        <ProtectedRoute module="projects" action="update">
+          <ProjectFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/projects/:id">
+        <ProtectedRoute module="projects" action="read">
+          <ProjectDetailPage />
         </ProtectedRoute>
       </Route>
       <Route path="/users">
         <ProtectedRoute module="projects" action="view">
           <UserManagement />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/community">
+        <ProtectedRoute module="community_groups" action="read">
+          <CommunityListPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/community/new">
+        <ProtectedRoute module="community_groups" action="create">
+          <CommunityFormPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/community/:id/edit">
+        <ProtectedRoute module="community_groups" action="update">
+          <CommunityFormPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/community/:id">
+        <ProtectedRoute module="community_groups" action="read">
+          <CommunityDetailPage />
         </ProtectedRoute>
       </Route>
       <Route path="/wards">
@@ -94,29 +187,114 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/institutions">
+      {/* <Route path="/institutions">
         <ProtectedRoute module="institutions" action="view">
           <Institutions />
         </ProtectedRoute>
+      </Route> */}
+      <Route path="/institutions">
+        <ProtectedRoute module="institutions" action="read">
+          <InstitutionListPage />
+        </ProtectedRoute>
       </Route>
-      <Route path="/reports">
+      <Route path="/institutions/new">
+        <ProtectedRoute module="institutions" action="create">
+          <InstitutionFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/institutions/:id/edit">
+        <ProtectedRoute module="institutions" action="update">
+          <InstitutionFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/institutions/:id">
+        <ProtectedRoute module="institutions" action="read">
+          <InstitutionDetailPage />
+        </ProtectedRoute>
+      </Route>
+      {/* <Route path="/reports">
         <ProtectedRoute module="institutions" action="view">
           <Reports />
         </ProtectedRoute>
-      </Route>
+      </Route> */}
 
-      <Route path="/community">
+      <Route path="/leaders">
+        <ProtectedRoute module="leaders" action="read">
+          <LeaderListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/leaders/birthdays">
+        <ProtectedRoute module="leaders" action="read">
+          <BirthdaysPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/leaders/new">
+        <ProtectedRoute module="leaders" action="create">
+          <LeaderFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/leaders/:id/edit">
+        <ProtectedRoute module="leaders" action="update">
+          <LeaderFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/leaders/:id">
+        <ProtectedRoute module="leaders" action="read">
+          <LeaderDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/reports">
+        <ProtectedRoute module="reports" action="read">
+          <ReportsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/demographics">
         <ProtectedRoute module="demographics" action="view">
           <Community />
         </ProtectedRoute>
       </Route>
 
-      <Route path="/schemes">
+      {/* <Route path="/schemes">
         <ProtectedRoute module="schemes" action="view">
           <Schemes />
         </ProtectedRoute>
-      </Route>
+      </Route> */}
+      {/* <Route path="/funds">
+        <ProtectedRoute module="funds" action="read">
+          <FundsPage />
+        </ProtectedRoute>
+      </Route> */}
 
+      <Route path="/funds">
+        <ProtectedRoute module="funds" action="read">
+          <FundsOverviewPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/funds/:id">
+        <ProtectedRoute module="funds" action="read">
+          <FundDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes">
+        <ProtectedRoute module="schemes" action="read">
+          <SchemeListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/new">
+        <ProtectedRoute module="schemes" action="create">
+          <SchemeFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/:id/edit">
+        <ProtectedRoute module="schemes" action="update">
+          <SchemeFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/:id">
+        <ProtectedRoute module="schemes" action="read">
+          <SchemeDetailPage />
+        </ProtectedRoute>
+      </Route>
       {/* <Route path="/wards">
         <ProtectedRoute module="wards" action="view">
           <Wards />

@@ -1,250 +1,464 @@
 // import { Router } from "express";
-// import { Request, Response } from "express";
 // import prisma from "../../../lib/prisma.js";
-// import { authenticate, authorize } from "../../../middleware/auth.js";
-// import { validate } from "../../../middleware/validate.js";
-// import { auditLog } from "../../../middleware/auditLog.js";
-// import { createDemographicsSchema, updateDemographicsSchema } from "../../../schemas/admin/demographics/index.js";
-// import { buildPaginationResponse } from "../../../schemas/common/index.js";
+// import { requirePermission } from "../../../middleware/permission.js";
+// import { buildPagination, parsePagination } from "../../../utils/helpers.js";
+// import catchAsync from "@/utils/catchAsync.js";
 
 // const router = Router();
-// router.use(authenticate);
 
-// // GET all demographics
-// router.get("/", async (req: Request, res: Response): Promise<void> => {
-//     try {
-//         const page = parseInt(req.query.page as string) || 1;
-//         const limit = parseInt(req.query.limit as string) || 10;
-//         const wardId = req.query.wardId ? parseInt(req.query.wardId as string) : undefined;
-//         const communityGroup = req.query.communityGroup as string;
-//         const skip = (page - 1) * limit;
+// // GET /api/admin/demographics — Constituency-wide summary (for Community page)
+// router.get(
+//   "/summary",
+//   requirePermission("demographics", "read"),
+//   catchAsync(async (req, res) => {
+//     const wardId = req.query.wardId as string;
+//     const where = wardId ? { id: wardId } : { status: "ACTIVE" as const };
 
-//         const where: any = {};
-//         if (wardId) where.wardId = wardId;
-//         if (communityGroup) where.communityGroup = { contains: communityGroup, mode: "insensitive" };
+//     const wards = await prisma.ward.findMany({
+//       where,
+//       select: {
+//         id: true,
+//         name: true,
+//         wardNumber: true,
+//         zone: true,
+//         totalPopulation: true,
+//         totalMale: true,
+//         totalFemale: true,
+//         totalHouseholds: true,
+//         totalAreas: true,
+//       },
+//       orderBy: { wardNumber: "asc" },
+//     });
 
-//         const [demographics, total] = await Promise.all([
-//             prisma.demographics.findMany({
-//                 where,
-//                 include: { ward: { select: { id: true, name: true } } },
-//                 orderBy: { createdAt: "desc" },
-//                 skip,
-//                 take: limit,
-//             }),
-//             prisma.demographics.count({ where }),
-//         ]);
+//     const totalPop = wards.reduce((s, w) => s + w.totalPopulation, 0);
+//     const totalMale = wards.reduce((s, w) => s + w.totalMale, 0);
+//     const totalFemale = wards.reduce((s, w) => s + w.totalFemale, 0);
+//     const totalHH = wards.reduce((s, w) => s + w.totalHouseholds, 0);
 
-//         res.json({ success: true, data: demographics, pagination: buildPaginationResponse(total, page, limit) });
-//     } catch (error: any) {
-//         res.status(500).json({ success: false, message: error.message });
-//     }
-// });
+//     // Age from demographics table
+//     const demoWhere = wardId
+//       ? { wardId, wardAreaId: null }
+//       : { wardAreaId: null };
+//     const demos = await prisma.demographics.findMany({ where: demoWhere });
 
-// // GET one
-// router.get("/:id", async (req: Request, res: Response): Promise<void> => {
-//     try {
-//         const id = parseInt(req.params.id);
-//         const demographics = await prisma.demographics.findUnique({ where: { id }, include: { ward: true } });
-//         if (!demographics) { res.status(404).json({ success: false, message: "Demographics record not found." }); return; }
-//         res.json({ success: true, data: demographics });
-//     } catch (error: any) {
-//         res.status(500).json({ success: false, message: error.message });
-//     }
-// });
+//     const ageDistribution = [
+//       { label: "0-6", value: demos.reduce((s, d) => s + d.age0to6, 0) },
+//       { label: "7-18", value: demos.reduce((s, d) => s + d.age7to18, 0) },
+//       { label: "19-35", value: demos.reduce((s, d) => s + d.age19to35, 0) },
+//       { label: "36-60", value: demos.reduce((s, d) => s + d.age36to60, 0) },
+//       { label: "60+", value: demos.reduce((s, d) => s + d.age60plus, 0) },
+//     ];
 
-// // GET ward summary (aggregate demographics for a ward)
-// router.get("/ward/:wardId/summary", async (req: Request, res: Response): Promise<void> => {
-//     try {
-//         const wardId = parseInt(req.params.wardId);
-//         const demographics = await prisma.demographics.findMany({ where: { wardId } });
+//     const categoryDistribution = [
+//       {
+//         label: "General",
+//         value: demos.reduce((s, d) => s + d.generalCount, 0),
+//       },
+//       { label: "OBC", value: demos.reduce((s, d) => s + d.obcCount, 0) },
+//       { label: "SC", value: demos.reduce((s, d) => s + d.scCount, 0) },
+//       { label: "ST", value: demos.reduce((s, d) => s + d.stCount, 0) },
+//       {
+//         label: "Minority",
+//         value: demos.reduce((s, d) => s + d.minorityCount, 0),
+//       },
+//     ];
 
-//         const summary = demographics.reduce(
-//             (acc, d) => ({
-//                 totalMale: acc.totalMale + d.maleCount,
-//                 totalFemale: acc.totalFemale + d.femaleCount,
-//                 totalAge0to18: acc.totalAge0to18 + d.age0to18,
-//                 totalAge19to35: acc.totalAge19to35 + d.age19to35,
-//                 totalAge36to60: acc.totalAge36to60 + d.age36to60,
-//                 totalAge60plus: acc.totalAge60plus + d.age60plus,
-//                 communityGroups: [...acc.communityGroups, d.communityGroup],
-//             }),
-//             { totalMale: 0, totalFemale: 0, totalAge0to18: 0, totalAge19to35: 0, totalAge36to60: 0, totalAge60plus: 0, communityGroups: [] as string[] }
-//         );
+//     const communityGroupCount = await prisma.communityGroup.count({
+//       where: wardId ? { wardId } : { isActive: true },
+//     });
 
-//         res.json({ success: true, data: { wardId, ...summary, totalRecords: demographics.length } });
-//     } catch (error: any) {
-//         res.status(500).json({ success: false, message: error.message });
-//     }
-// });
+//     const communityByType = await prisma.communityGroup.groupBy({
+//       by: ["type"],
+//       where: wardId ? { wardId } : { isActive: true },
+//       _count: true,
+//       _sum: { memberCount: true },
+//     });
 
-// // POST
-// router.post("/", authorize("SYSTEM_ADMIN", "STAFF"), validate(createDemographicsSchema), auditLog("demographics", "CREATE"), async (req: Request, res: Response): Promise<void> => {
-//     try {
-//         const demographics = await prisma.demographics.create({ data: req.body, include: { ward: { select: { name: true } } } });
-//         res.status(201).json({ success: true, message: "Demographics created successfully", data: demographics });
-//     } catch (error: any) {
-//         res.status(500).json({ success: false, message: error.message });
-//     }
-// });
+//     res.json({
+//       success: true,
+//       data: {
+//         totalPopulation: totalPop,
+//         totalMale: totalMale,
+//         totalFemale: totalFemale,
+//         totalHouseholds: totalHH,
+//         communityGroupCount,
+//         genderDistribution: [
+//           { label: "Male", value: totalMale, color: "#3b82f6" },
+//           { label: "Female", value: totalFemale, color: "#ec4899" },
+//         ],
+//         ageDistribution,
+//         categoryDistribution,
+//         communityByType: communityByType.map((c) => ({
+//           type: c.type,
+//           count: c._count,
+//           members: c._sum.memberCount || 0,
+//         })),
+//         wards,
+//         bplHouseholds: demos.reduce((s, d) => s + d.bplHouseholds, 0),
+//         aplHouseholds: demos.reduce((s, d) => s + d.aplHouseholds, 0),
+//       },
+//     });
+//   }),
+// );
 
-// // PATCH
-// router.patch("/:id", authorize("SYSTEM_ADMIN", "STAFF"), validate(updateDemographicsSchema), auditLog("demographics", "UPDATE"), async (req: Request, res: Response): Promise<void> => {
-//     try {
-//         const id = parseInt(req.params.id);
-//         const existing = await prisma.demographics.findUnique({ where: { id } });
-//         if (!existing) { res.status(404).json({ success: false, message: "Demographics not found." }); return; }
-//         const demographics = await prisma.demographics.update({ where: { id }, data: req.body });
-//         res.json({ success: true, message: "Demographics updated successfully", data: demographics });
-//     } catch (error: any) {
-//         res.status(500).json({ success: false, message: error.message });
-//     }
-// });
+// // GET /api/admin/demographics — List all records
+// router.get(
+//   "/",
+//   requirePermission("demographics", "read"),
+//   catchAsync(async (req, res) => {
+//     const { page, limit, skip } = parsePagination(req.query);
+//     const wardId = req.query.wardId as string;
+//     const where: any = {};
+//     if (wardId) where.wardId = wardId;
 
-// // DELETE
-// router.delete("/:id", authorize("SYSTEM_ADMIN"), auditLog("demographics", "DELETE"), async (req: Request, res: Response): Promise<void> => {
-//     try {
-//         const id = parseInt(req.params.id);
-//         await prisma.demographics.delete({ where: { id } });
-//         res.json({ success: true, message: "Demographics deleted successfully" });
-//     } catch (error: any) {
-//         res.status(500).json({ success: false, message: error.message });
-//     }
-// });
+//     const [data, total] = await Promise.all([
+//       prisma.demographics.findMany({
+//         where,
+//         include: {
+//           ward: { select: { id: true, name: true, wardNumber: true } },
+//           wardArea: { select: { id: true, name: true, areaType: true } },
+//         },
+//         orderBy: { surveyDate: "desc" },
+//         skip,
+//         take: limit,
+//       }),
+//       prisma.demographics.count({ where }),
+//     ]);
+
+//     res.json({
+//       success: true,
+//       data,
+//       pagination: buildPagination(total, page, limit),
+//     });
+//   }),
+// );
 
 // export default router;
 
 import { Router } from "express";
 import prisma from "../../../lib/prisma.js";
 import { requirePermission } from "../../../middleware/permission.js";
-import { buildPagination, parsePagination } from "../../../utils/helpers.js";
+import { ApiError } from "../../../utils/ApiError.js";
+import {
+  createAuditLog,
+  getRequestMeta,
+} from "../../../middleware/auditLog.js";
+import { validate } from "../../../middleware/validate.js";
+import { demographicsZodSchema } from "../ward/helpers.js";
+import { z } from "zod";
 import catchAsync from "@/utils/catchAsync.js";
 
 const router = Router();
 
-// GET /api/admin/demographics — Constituency-wide summary (for Community page)
+// ─── Constituency-wide Summary ──────────────────────────
+
 router.get(
   "/summary",
   requirePermission("demographics", "read"),
   catchAsync(async (req, res) => {
-    const wardId = req.query.wardId as string;
-    const where = wardId ? { id: wardId } : { status: "ACTIVE" as const };
-
-    const wards = await prisma.ward.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        wardNumber: true,
-        zone: true,
-        totalPopulation: true,
-        totalMale: true,
-        totalFemale: true,
-        totalHouseholds: true,
-        totalAreas: true,
+    // Get all ward-level demographics (wardAreaId = null)
+    const wardDemos = await prisma.demographics.findMany({
+      where: { wardAreaId: null },
+      include: {
+        ward: {
+          select: {
+            id: true,
+            name: true,
+            wardNumber: true,
+            zone: true,
+            status: true,
+            totalPopulation: true,
+            totalHouseholds: true,
+            areaType: true,
+          },
+        },
       },
-      orderBy: { wardNumber: "asc" },
+      orderBy: { ward: { wardNumber: "asc" } },
     });
 
-    const totalPop = wards.reduce((s, w) => s + w.totalPopulation, 0);
-    const totalMale = wards.reduce((s, w) => s + w.totalMale, 0);
-    const totalFemale = wards.reduce((s, w) => s + w.totalFemale, 0);
-    const totalHH = wards.reduce((s, w) => s + w.totalHouseholds, 0);
+    // Aggregate totals
+    const sum = (field: string) =>
+      wardDemos.reduce((s, d) => s + (Number((d as any)[field]) || 0), 0);
 
-    // Age from demographics table
-    const demoWhere = wardId
-      ? { wardId, wardAreaId: null }
-      : { wardAreaId: null };
-    const demos = await prisma.demographics.findMany({ where: demoWhere });
+    const totals = {
+      totalPopulation: sum("totalPopulation"),
+      maleCount: sum("maleCount"),
+      femaleCount: sum("femaleCount"),
+      transgenderCount: sum("transgenderCount"),
+      // Age
+      age0to6: sum("age0to6"),
+      age7to18: sum("age7to18"),
+      age19to35: sum("age19to35"),
+      age36to60: sum("age36to60"),
+      age60plus: sum("age60plus"),
+      // Households
+      totalHouseholds: sum("totalHouseholds"),
+      bplHouseholds: sum("bplHouseholds"),
+      aplHouseholds: sum("aplHouseholds"),
+      // Caste
+      generalCount: sum("generalCount"),
+      obcCount: sum("obcCount"),
+      scCount: sum("scCount"),
+      stCount: sum("stCount"),
+      minorityCount: sum("minorityCount"),
+      otherCasteCount: sum("otherCasteCount"),
+      // Religion
+      hinduCount: sum("hinduCount"),
+      muslimCount: sum("muslimCount"),
+      sikhCount: sum("sikhCount"),
+      christianCount: sum("christianCount"),
+      buddhistCount: sum("buddhistCount"),
+      jainCount: sum("jainCount"),
+      otherReligionCount: sum("otherReligionCount"),
+      // Voters
+      totalVoters: sum("totalVoters"),
+      maleVoters: sum("maleVoters"),
+      femaleVoters: sum("femaleVoters"),
+    };
 
-    const ageDistribution = [
-      { label: "0-6", value: demos.reduce((s, d) => s + d.age0to6, 0) },
-      { label: "7-18", value: demos.reduce((s, d) => s + d.age7to18, 0) },
-      { label: "19-35", value: demos.reduce((s, d) => s + d.age19to35, 0) },
-      { label: "36-60", value: demos.reduce((s, d) => s + d.age36to60, 0) },
-      { label: "60+", value: demos.reduce((s, d) => s + d.age60plus, 0) },
+    // Weighted literacy
+    const popWithLit = wardDemos.filter((d) => d.literacyRate !== null);
+    let avgLiteracy: number | null = null;
+    let avgMaleLiteracy: number | null = null;
+    let avgFemaleLiteracy: number | null = null;
+
+    if (popWithLit.length > 0) {
+      const totalLitPop = popWithLit.reduce((s, d) => s + d.totalPopulation, 0);
+      avgLiteracy =
+        popWithLit.reduce(
+          (s, d) => s + (d.literacyRate || 0) * d.totalPopulation,
+          0,
+        ) / (totalLitPop || 1);
+      avgMaleLiteracy =
+        popWithLit.reduce(
+          (s, d) => s + (d.maleLiteracyRate || 0) * d.maleCount,
+          0,
+        ) / (totals.maleCount || 1);
+      avgFemaleLiteracy =
+        popWithLit.reduce(
+          (s, d) => s + (d.femaleLiteracyRate || 0) * d.femaleCount,
+          0,
+        ) / (totals.femaleCount || 1);
+    }
+
+    // Build chart data
+    const genderChart = [
+      { label: "Male", value: totals.maleCount, color: "#3b82f6" },
+      { label: "Female", value: totals.femaleCount, color: "#ec4899" },
+      ...(totals.transgenderCount > 0
+        ? [
+            {
+              label: "Transgender",
+              value: totals.transgenderCount,
+              color: "#a855f7",
+            },
+          ]
+        : []),
     ];
 
-    const categoryDistribution = [
+    const ageChart = [
+      { label: "0-6", value: totals.age0to6, color: "#f97316" },
+      { label: "7-18", value: totals.age7to18, color: "#3b82f6" },
+      { label: "19-35", value: totals.age19to35, color: "#10b981" },
+      { label: "36-60", value: totals.age36to60, color: "#f59e0b" },
+      { label: "60+", value: totals.age60plus, color: "#8b5cf6" },
+    ];
+
+    const religionChart = [
+      { label: "Hindu", value: totals.hinduCount, color: "#f97316" },
+      { label: "Muslim", value: totals.muslimCount, color: "#16a34a" },
+      { label: "Sikh", value: totals.sikhCount, color: "#2563eb" },
+      { label: "Christian", value: totals.christianCount, color: "#ef4444" },
+      { label: "Buddhist", value: totals.buddhistCount, color: "#ca8a04" },
+      { label: "Jain", value: totals.jainCount, color: "#9333ea" },
       {
-        label: "General",
-        value: demos.reduce((s, d) => s + d.generalCount, 0),
+        label: "Other",
+        value: totals.otherReligionCount,
+        color: "#6b7280",
       },
-      { label: "OBC", value: demos.reduce((s, d) => s + d.obcCount, 0) },
-      { label: "SC", value: demos.reduce((s, d) => s + d.scCount, 0) },
-      { label: "ST", value: demos.reduce((s, d) => s + d.stCount, 0) },
+    ].filter((r) => r.value > 0);
+
+    const casteChart = [
+      { label: "General", value: totals.generalCount, color: "#64748b" },
+      { label: "OBC", value: totals.obcCount, color: "#f59e0b" },
+      { label: "SC", value: totals.scCount, color: "#3b82f6" },
+      { label: "ST", value: totals.stCount, color: "#10b981" },
+      { label: "Minority", value: totals.minorityCount, color: "#8b5cf6" },
+    ].filter((c) => c.value > 0);
+
+    const economicChart = [
+      { label: "BPL", value: totals.bplHouseholds, color: "#ef4444" },
+      { label: "APL", value: totals.aplHouseholds, color: "#22c55e" },
+    ];
+
+    const voterChart = [
+      { label: "Male Voters", value: totals.maleVoters, color: "#3b82f6" },
       {
-        label: "Minority",
-        value: demos.reduce((s, d) => s + d.minorityCount, 0),
+        label: "Female Voters",
+        value: totals.femaleVoters,
+        color: "#ec4899",
       },
     ];
 
-    const communityGroupCount = await prisma.communityGroup.count({
-      where: wardId ? { wardId } : { isActive: true },
+    // Ward-wise comparison table
+    const wardComparison = wardDemos.map((d) => ({
+      wardId: d.ward.id,
+      wardName: d.ward.name,
+      wardNumber: d.ward.wardNumber,
+      zone: d.ward.zone,
+      areaType: d.ward.areaType,
+      totalPopulation: d.totalPopulation,
+      maleCount: d.maleCount,
+      femaleCount: d.femaleCount,
+      age0to6: d.age0to6,
+      age7to18: d.age7to18,
+      age19to35: d.age19to35,
+      age36to60: d.age36to60,
+      age60plus: d.age60plus,
+      totalHouseholds: d.totalHouseholds,
+      bplHouseholds: d.bplHouseholds,
+      aplHouseholds: d.aplHouseholds,
+      generalCount: d.generalCount,
+      obcCount: d.obcCount,
+      scCount: d.scCount,
+      stCount: d.stCount,
+      minorityCount: d.minorityCount,
+      hinduCount: d.hinduCount,
+      muslimCount: d.muslimCount,
+      sikhCount: d.sikhCount,
+      christianCount: d.christianCount,
+      buddhistCount: d.buddhistCount,
+      jainCount: d.jainCount,
+      otherReligionCount: d.otherReligionCount,
+      literacyRate: d.literacyRate,
+      totalVoters: d.totalVoters,
+      maleVoters: d.maleVoters,
+      femaleVoters: d.femaleVoters,
+      source: d.source,
+      surveyDate: d.surveyDate,
+    }));
+
+    // Zone-wise aggregation
+    const zoneMap: Record<string, typeof wardDemos> = {};
+    wardDemos.forEach((d) => {
+      const zone = d.ward.zone || "Unzoned";
+      if (!zoneMap[zone]) zoneMap[zone] = [];
+      zoneMap[zone].push(d);
     });
 
-    const communityByType = await prisma.communityGroup.groupBy({
-      by: ["type"],
-      where: wardId ? { wardId } : { isActive: true },
-      _count: true,
-      _sum: { memberCount: true },
-    });
+    const byZone = Object.entries(zoneMap).map(([zone, demos]) => ({
+      zone,
+      wardCount: demos.length,
+      totalPopulation: demos.reduce((s, d) => s + d.totalPopulation, 0),
+      maleCount: demos.reduce((s, d) => s + d.maleCount, 0),
+      femaleCount: demos.reduce((s, d) => s + d.femaleCount, 0),
+      totalVoters: demos.reduce((s, d) => s + d.totalVoters, 0),
+      bplHouseholds: demos.reduce((s, d) => s + d.bplHouseholds, 0),
+    }));
 
     res.json({
       success: true,
       data: {
-        totalPopulation: totalPop,
-        totalMale: totalMale,
-        totalFemale: totalFemale,
-        totalHouseholds: totalHH,
-        communityGroupCount,
-        genderDistribution: [
-          { label: "Male", value: totalMale, color: "#3b82f6" },
-          { label: "Female", value: totalFemale, color: "#ec4899" },
-        ],
-        ageDistribution,
-        categoryDistribution,
-        communityByType: communityByType.map((c) => ({
-          type: c.type,
-          count: c._count,
-          members: c._sum.memberCount || 0,
-        })),
-        wards,
-        bplHouseholds: demos.reduce((s, d) => s + d.bplHouseholds, 0),
-        aplHouseholds: demos.reduce((s, d) => s + d.aplHouseholds, 0),
+        totals: {
+          ...totals,
+          literacyRate: avgLiteracy,
+          maleLiteracyRate: avgMaleLiteracy,
+          femaleLiteracyRate: avgFemaleLiteracy,
+        },
+        charts: {
+          gender: genderChart,
+          age: ageChart,
+          religion: religionChart,
+          caste: casteChart,
+          economic: economicChart,
+          voter: voterChart,
+        },
+        wardComparison,
+        byZone,
+        totalWards: wardDemos.length,
       },
     });
   }),
 );
 
-// GET /api/admin/demographics — List all records
+// ─── Single Ward Demographics (already in ward routes, expose here too)
+
 router.get(
-  "/",
+  "/ward/:wardId",
   requirePermission("demographics", "read"),
   catchAsync(async (req, res) => {
-    const { page, limit, skip } = parsePagination(req.query);
-    const wardId = req.query.wardId as string;
-    const where: any = {};
-    if (wardId) where.wardId = wardId;
+    const { wardId } = req.params;
 
-    const [data, total] = await Promise.all([
-      prisma.demographics.findMany({
-        where,
-        include: {
-          ward: { select: { id: true, name: true, wardNumber: true } },
-          wardArea: { select: { id: true, name: true, areaType: true } },
-        },
-        orderBy: { surveyDate: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.demographics.count({ where }),
-    ]);
-
-    res.json({
-      success: true,
-      data,
-      pagination: buildPagination(total, page, limit),
+    const ward = await prisma.ward.findUnique({
+      where: { id: wardId },
+      select: { id: true, name: true, wardNumber: true },
     });
+    if (!ward) throw ApiError.notFound("Ward not found");
+
+    const wardLevel = await prisma.demographics.findFirst({
+      where: { wardId, wardAreaId: null },
+      orderBy: { surveyDate: "desc" },
+    });
+
+    const areaLevel = await prisma.demographics.findMany({
+      where: { wardId, wardAreaId: { not: null } },
+      include: {
+        wardArea: { select: { id: true, name: true, areaType: true } },
+      },
+      orderBy: { wardArea: { name: "asc" } },
+    });
+
+    res.json({ success: true, data: { ward, wardLevel, areaLevel } });
+  }),
+);
+
+// ─── Update ward demographics (upsert) ─────────────────
+
+const upsertSchema = z.object({
+  wardAreaId: z.string().optional().nullable(),
+  ...demographicsZodSchema!.shape,
+});
+
+router.put(
+  "/ward/:wardId",
+  requirePermission("demographics", "update"),
+  catchAsync(async (req, res) => {
+    const { wardId } = req.params;
+    const { wardAreaId, ...demoData } = req.body;
+
+    const ward = await prisma.ward.findUnique({ where: { id: wardId } });
+    if (!ward) throw ApiError.notFound("Ward not found");
+
+    if (demoData.surveyDate)
+      demoData.surveyDate = new Date(demoData.surveyDate);
+
+    const existing = await prisma.demographics.findFirst({
+      where: { wardId, wardAreaId: wardAreaId || null },
+    });
+
+    let demo;
+    if (existing) {
+      demo = await prisma.demographics.update({
+        where: { id: existing.id },
+        data: demoData,
+      });
+    } else {
+      demo = await prisma.demographics.create({
+        data: { wardId, wardAreaId: wardAreaId || null, ...demoData },
+      });
+    }
+
+    await createAuditLog({
+      userId: req.user!.id,
+      action: "UPDATE",
+      module: "demographics",
+      recordId: demo.id,
+      description: `Updated demographics for ward "${ward.name}"`,
+      newData: demoData,
+      ...getRequestMeta(req),
+    });
+
+    res.json({ success: true, data: demo });
   }),
 );
 

@@ -93,6 +93,7 @@ const ALL_PERMISSIONS = [
   { module: "funds", action: "create", description: "Create fund record" },
   { module: "funds", action: "read", description: "View funds" },
   { module: "funds", action: "update", description: "Update funds" },
+  { module: "funds", action: "delete", description: "Delete funds" },
   { module: "funds", action: "export", description: "Export funds" },
 
   { module: "departments", action: "create", description: "Add department" },
@@ -104,6 +105,12 @@ const ALL_PERMISSIONS = [
   { module: "tasks", action: "read", description: "View tasks" },
   { module: "tasks", action: "update", description: "Update task" },
   { module: "tasks", action: "delete", description: "Delete task" },
+
+  { module: "leaders", action: "read", description: "View leaders" },
+  { module: "leaders", action: "create", description: "Add leader" },
+  { module: "leaders", action: "update", description: "Edit leader" },
+  { module: "leaders", action: "delete", description: "Delete leader" },
+  { module: "leaders", action: "export", description: "Export leaders" },
 
   {
     module: "notifications",
@@ -162,13 +169,11 @@ const ALL_PERMISSIONS = [
 // ═══════════════════════════════════════════════════════════
 
 const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
-  // Admin gets everything
   SYSTEM_ADMIN: ALL_PERMISSIONS.map((p) => ({
     module: p.module,
     action: p.action,
   })),
 
-  // MLA — read + export + tasks only
   MLA_MP: [
     { module: "dashboard", action: "read" },
     { module: "wards", action: "read" },
@@ -190,13 +195,18 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "tasks", action: "create" },
     { module: "tasks", action: "read" },
     { module: "tasks", action: "update" },
+    // ── Leaders ──
+    { module: "leaders", action: "read" },
+    { module: "leaders", action: "create" },
+    { module: "leaders", action: "update" },
+    { module: "leaders", action: "export" },
+    // ─────────────
     { module: "notifications", action: "read" },
     { module: "reports", action: "read" },
     { module: "reports", action: "export" },
     { module: "audit_logs", action: "read" },
   ],
 
-  // Staff — create + read + update (no delete except tasks)
   OFFICE_STAFF: [
     { module: "dashboard", action: "read" },
     { module: "wards", action: "read" },
@@ -233,6 +243,12 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "tasks", action: "create" },
     { module: "tasks", action: "read" },
     { module: "tasks", action: "update" },
+    // ── Leaders ──
+    { module: "leaders", action: "read" },
+    { module: "leaders", action: "create" },
+    { module: "leaders", action: "update" },
+    { module: "leaders", action: "export" },
+    // ─────────────
     { module: "notifications", action: "send" },
     { module: "notifications", action: "read" },
     { module: "reports", action: "read" },
@@ -240,6 +256,27 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "data_import", action: "create" },
   ],
 };
+
+// ═══════════════════════════════════════════════════════════
+// HELPER: get today's date with custom month/day for DOB
+// ═══════════════════════════════════════════════════════════
+
+function dobWithToday(birthYear: number): Date {
+  const now = new Date();
+  return new Date(birthYear, now.getMonth(), now.getDate());
+}
+
+function dobTomorrow(birthYear: number): Date {
+  const t = new Date();
+  t.setDate(t.getDate() + 1);
+  return new Date(birthYear, t.getMonth(), t.getDate());
+}
+
+function dobInDays(birthYear: number, days: number): Date {
+  const t = new Date();
+  t.setDate(t.getDate() + days);
+  return new Date(birthYear, t.getMonth(), t.getDate());
+}
 
 // ═══════════════════════════════════════════════════════════
 // SEED FUNCTION
@@ -363,8 +400,7 @@ async function main() {
   });
   console.log(`✅ Staff DE: ${staff2.email}`);
 
-  // ─── 5. Per-User Permission Overrides (Example) ──────
-  // Revoke notification:send from data entry staff
+  // ─── 5. Per-User Permission Overrides ────────────────
   const sendNotifPermId = permMap.get("notifications:send");
   if (sendNotifPermId) {
     await prisma.userPermission.upsert({
@@ -384,7 +420,6 @@ async function main() {
     console.log(`✅ Revoked notifications:send for ${staff2.email}`);
   }
 
-  // Grant grievances:delete to PA (beyond role default)
   const deleteGrievPermId = permMap.get("grievances:delete");
   if (deleteGrievPermId) {
     await prisma.userPermission.upsert({
@@ -665,7 +700,6 @@ async function main() {
 
   const wards: any[] = [];
   for (const wd of wardsData) {
-    // Compute aggregates from areas
     const totalPop = wd.areas.reduce((s, a) => s + a.population, 0);
     const totalHH = wd.areas.reduce((s, a) => s + a.households, 0);
     const totalMale = wd.areas.reduce((s, a) => s + a.maleCount, 0);
@@ -691,24 +725,14 @@ async function main() {
     });
     wards.push(ward);
 
-    // Create areas
     for (const area of wd.areas) {
       await prisma.wardArea.upsert({
         where: { wardId_name: { wardId: ward.id, name: area.name } },
         update: {},
-        create: {
-          wardId: ward.id,
-          name: area.name,
-          areaType: area.areaType,
-          population: area.population,
-          households: area.households,
-          maleCount: area.maleCount,
-          femaleCount: area.femaleCount,
-        },
+        create: { wardId: ward.id, ...area },
       });
     }
 
-    // Create councillor
     await prisma.wardCouncillor.create({
       data: {
         wardId: ward.id,
@@ -720,9 +744,7 @@ async function main() {
       },
     });
   }
-  console.log(
-    `✅ ${wards.length} wards with ${wardsData.reduce((s, w) => s + w.areas.length, 0)} areas created`,
-  );
+  console.log(`✅ ${wards.length} wards with areas created`);
 
   // ─── 8. Institutions ─────────────────────────────────
   const institutions = [
@@ -882,13 +904,20 @@ async function main() {
     await prisma.grievanceTimeline.create({
       data: {
         grievanceId: created.id,
-        status: g.status,
+
+        action: "CREATED",
+
+        fromStatus: null,
+
+        toStatus: g.status,
+
         comment: "Grievance registered",
+
         changedBy: "System (Seed)",
       },
     });
   }
-  console.log(`✅ ${grievances.length} grievances created with timeline`);
+  console.log(`✅ ${grievances.length} grievances created`);
 
   // ─── 11. Projects ────────────────────────────────────
   const projects = [
@@ -955,8 +984,13 @@ async function main() {
   ];
 
   for (const p of projects) {
-    await prisma.project.create({ data: p });
+    await prisma.project.upsert({
+      where: { projectCode: p.projectCode },
+      update: {},
+      create: p,
+    });
   }
+
   console.log(`✅ ${projects.length} projects created`);
 
   // ─── 12. Schemes ─────────────────────────────────────
@@ -997,7 +1031,6 @@ async function main() {
 
   for (const s of schemes) {
     const scheme = await prisma.scheme.create({ data: s });
-    // Link to first 3 wards
     for (const w of wards.slice(0, 3)) {
       await prisma.schemeBeneficiary.create({
         data: {
@@ -1009,84 +1042,19 @@ async function main() {
       });
     }
   }
-  console.log(`✅ ${schemes.length} schemes created with beneficiaries`);
+  console.log(`✅ ${schemes.length} schemes created`);
 
   // ─── 13. Demographics ────────────────────────────────
-  const demographics = [
-    {
-      wardId: wards[0].id,
-      communityGroup: "RWA",
-      maleCount: 12000,
-      femaleCount: 11000,
-      age0to18: 5000,
-      age19to35: 8000,
-      age36to60: 7000,
-      age60plus: 3000,
-    },
-    {
-      wardId: wards[0].id,
-      communityGroup: "Markets",
-      maleCount: 3000,
-      femaleCount: 1500,
-      age0to18: 200,
-      age19to35: 1800,
-      age36to60: 2000,
-      age60plus: 500,
-    },
-    {
-      wardId: wards[1].id,
-      communityGroup: "Senior Citizens",
-      maleCount: 2000,
-      femaleCount: 2500,
-      age0to18: 0,
-      age19to35: 0,
-      age36to60: 0,
-      age60plus: 4500,
-    },
-    {
-      wardId: wards[2].id,
-      communityGroup: "Youth Groups",
-      maleCount: 5000,
-      femaleCount: 4500,
-      age0to18: 3000,
-      age19to35: 6500,
-      age36to60: 0,
-      age60plus: 0,
-    },
-    {
-      wardId: wards[3].id,
-      communityGroup: "Women Groups",
-      maleCount: 0,
-      femaleCount: 6000,
-      age0to18: 500,
-      age19to35: 2500,
-      age36to60: 2500,
-      age60plus: 500,
-    },
-    {
-      wardId: wards[4].id,
-      communityGroup: "Slums",
-      maleCount: 4000,
-      femaleCount: 3500,
-      age0to18: 2500,
-      age19to35: 2000,
-      age36to60: 2000,
-      age60plus: 1000,
-    },
-  ];
-
-  // Ward-level demographics
   for (const ward of wards) {
-    const wardData = wardsData.find((w) => w.wardNumber === ward.wardNumber)!;
-    const totalPop = wardData.areas.reduce((s, a) => s + a.population, 0);
-    const totalMale = wardData.areas.reduce((s, a) => s + a.maleCount, 0);
-    const totalFemale = wardData.areas.reduce((s, a) => s + a.femaleCount, 0);
-    const totalHH = wardData.areas.reduce((s, a) => s + a.households, 0);
+    const wd = wardsData.find((w) => w.wardNumber === ward.wardNumber)!;
+    const totalPop = wd.areas.reduce((s, a) => s + a.population, 0);
+    const totalMale = wd.areas.reduce((s, a) => s + a.maleCount, 0);
+    const totalFemale = wd.areas.reduce((s, a) => s + a.femaleCount, 0);
+    const totalHH = wd.areas.reduce((s, a) => s + a.households, 0);
 
     await prisma.demographics.create({
       data: {
         wardId: ward.id,
-        wardAreaId: null, // ward-level
         totalPopulation: totalPop,
         maleCount: totalMale,
         femaleCount: totalFemale,
@@ -1112,10 +1080,9 @@ async function main() {
       },
     });
   }
-  console.log(`✅ ${wards.length} ward-level demographics created`);
+  console.log(`✅ ${wards.length} ward demographics created`);
 
   // ─── 14. Community Groups ────────────────────────────
-
   const cgData = [
     {
       name: "Shivaji Nagar RWA",
@@ -1228,7 +1195,6 @@ async function main() {
   ];
 
   for (const cg of cgData) {
-    // Find area if specified
     let wardAreaId: string | null = null;
     if (cg.areaName) {
       const area = await prisma.wardArea.findUnique({
@@ -1238,7 +1204,6 @@ async function main() {
       });
       wardAreaId = area?.id || null;
     }
-
     await prisma.communityGroup.create({
       data: {
         name: cg.name,
@@ -1256,7 +1221,461 @@ async function main() {
   }
   console.log(`✅ ${cgData.length} community groups created`);
 
-  // ─── 15. System Settings ─────────────────────────────
+  // ════════════════════════════════════════════════════════
+  // 15. LEADERS (NEW)
+  // ════════════════════════════════════════════════════════
+
+  const now = new Date();
+  const thisYear = now.getFullYear();
+
+  const leadersData = [
+    // ── 2 leaders with birthday TODAY (for testing) ──
+    {
+      name: "Shri Ramesh Chandra Gupta",
+      category: "PARTY_LEADER" as const,
+      designation: "District President",
+      organization: "BJP",
+      partyName: "BJP",
+      dateOfBirth: dobWithToday(1970),
+      gender: "Male",
+      address: "12, Civil Lines, Ward 1",
+      wardId: wards[0].id,
+      phone: "9811000001",
+      whatsapp: "919811000001",
+      email: "ramesh.gupta@email.com",
+      relation: "Supporter",
+      influence: "High",
+      notes:
+        "Key supporter since 2014. Active in all ward programs. Former Municipal Councillor.",
+      tags: ["VIP", "Core Team", "Ward 1 Incharge"],
+    },
+    {
+      name: "Smt. Kavita Sharma",
+      category: "WOMEN_LEADER" as const,
+      designation: "President, Mahila Morcha",
+      organization: "Women Wing",
+      partyName: "BJP",
+      dateOfBirth: dobWithToday(1978),
+      gender: "Female",
+      address: "45, Laxmi Nagar",
+      wardId: wards[2].id,
+      phone: "9811000002",
+      whatsapp: "919811000002",
+      email: "kavita.sharma@email.com",
+      relation: "Supporter",
+      influence: "High",
+      notes:
+        "Heads the women's wing. Very active in social causes. Organizes monthly health camps.",
+      tags: ["Women Wing", "Health Camps"],
+    },
+
+    // ── 1 leader with birthday TOMORROW ──
+    {
+      name: "Dr. Anil Mehta",
+      category: "ACADEMIC" as const,
+      designation: "Principal",
+      organization: "DAV Public School",
+      dateOfBirth: dobTomorrow(1965),
+      gender: "Male",
+      address: "Education City, Gandhi Colony",
+      wardId: wards[3].id,
+      phone: "9811000003",
+      whatsapp: "919811000003",
+      email: "dr.anil@dav.edu.in",
+      relation: "Neutral",
+      influence: "Medium",
+      notes:
+        "Respected educationist. Invited to all official functions. Helps with youth programs.",
+      tags: ["Education", "Youth"],
+    },
+
+    // ── 1 leader in 3 days ──
+    {
+      name: "Haji Mohammad Salim",
+      category: "RELIGIOUS_LEADER" as const,
+      designation: "Imam",
+      organization: "Jama Masjid Committee",
+      dateOfBirth: dobInDays(1960, 3),
+      gender: "Male",
+      address: "Near Jama Masjid, Old Town",
+      wardId: wards[0].id,
+      phone: "9811000004",
+      whatsapp: "919811000004",
+      relation: "Alliance",
+      influence: "High",
+      notes:
+        "Very influential in Muslim community. Peace committee member. Helps during festivals.",
+      tags: ["Religious", "Peace Committee", "Minority"],
+    },
+
+    // ── 1 leader in 5 days ──
+    {
+      name: "Shri Vikram Singh Chauhan",
+      category: "YOUTH_LEADER" as const,
+      designation: "President, Yuva Morcha",
+      organization: "BJP Youth Wing",
+      partyName: "BJP",
+      dateOfBirth: dobInDays(1992, 5),
+      gender: "Male",
+      address: "Mall Road, Civil Lines",
+      wardId: wards[1].id,
+      phone: "9811000005",
+      whatsapp: "919811000005",
+      instagramUrl: "https://instagram.com/vikramsingh",
+      twitterUrl: "https://twitter.com/vikramsingh",
+      relation: "Supporter",
+      influence: "Medium",
+      notes:
+        "Energetic youth leader. Organizes sports events and employment drives.",
+      tags: ["Youth", "Sports", "Employment"],
+    },
+
+    // ── Opposition leader ──
+    {
+      name: "Shri Rajendra Prasad Yadav",
+      category: "OPPOSITION_LEADER" as const,
+      designation: "Block President",
+      organization: "INC",
+      partyName: "Congress",
+      dateOfBirth: new Date(1968, 6, 15),
+      gender: "Male",
+      address: "23, Gandhi Colony",
+      wardId: wards[3].id,
+      phone: "9811000006",
+      whatsapp: "919811000006",
+      relation: "Opposition",
+      influence: "High",
+      notes:
+        "Strong opposition leader. Has good grassroots network. Ex-MLA candidate.",
+      tags: ["Opposition", "Ex-Candidate"],
+    },
+
+    // ── Business leaders ──
+    {
+      name: "Shri Manoj Jain",
+      category: "BUSINESS_LEADER" as const,
+      designation: "President, Traders Association",
+      organization: "Laxmi Nagar Market Association",
+      dateOfBirth: new Date(1972, 3, 22),
+      gender: "Male",
+      address: "Main Market, Laxmi Nagar",
+      wardId: wards[2].id,
+      phone: "9811000007",
+      whatsapp: "919811000007",
+      email: "manoj.jain@traders.com",
+      relation: "Supporter",
+      influence: "High",
+      notes:
+        "Controls 500+ shops association. Major fundraiser. Helps in event organization.",
+      tags: ["Business", "Market", "Fundraiser"],
+    },
+    {
+      name: "Smt. Nisha Agarwal",
+      category: "BUSINESS_LEADER" as const,
+      designation: "CEO",
+      organization: "Agarwal Industries Pvt Ltd",
+      dateOfBirth: new Date(1980, 10, 8),
+      gender: "Female",
+      address: "Industrial Belt, Shivaji Nagar",
+      wardId: wards[0].id,
+      phone: "9811000008",
+      whatsapp: "919811000008",
+      email: "nisha@agarwalindustries.com",
+      facebookUrl: "https://facebook.com/nishaagarwal",
+      relation: "Neutral",
+      influence: "Medium",
+      notes: "Runs CSR programs. Potential ally for infrastructure projects.",
+      tags: ["Industry", "CSR", "Women Entrepreneur"],
+    },
+
+    // ── Bureaucrat ──
+    {
+      name: "Shri R.K. Mishra (IAS)",
+      category: "BUREAUCRAT" as const,
+      designation: "District Magistrate",
+      organization: "District Administration",
+      dateOfBirth: new Date(1975, 0, 10),
+      gender: "Male",
+      phone: "9811000009",
+      email: "dm.centraldelhi@gov.in",
+      relation: "Neutral",
+      influence: "High",
+      notes:
+        "Current DM. Key for all government approvals. Professional and efficient.",
+      tags: ["IAS", "Administration", "VIP"],
+    },
+
+    // ── Community leader ──
+    {
+      name: "Shri Dharamveer Singh",
+      category: "COMMUNITY_LEADER" as const,
+      designation: "Pradhan",
+      organization: "Rajpur Gram Panchayat",
+      dateOfBirth: new Date(1962, 8, 25),
+      gender: "Male",
+      address: "Rajpur Village",
+      wardId: wards[4].id,
+      phone: "9811000010",
+      whatsapp: "919811000010",
+      relation: "Alliance",
+      influence: "Medium",
+      notes:
+        "Village head. Strong influence in rural ward. Helps with farmer issues.",
+      tags: ["Rural", "Farmer", "Pradhan"],
+    },
+
+    // ── Media person ──
+    {
+      name: "Shri Pankaj Tiwari",
+      category: "MEDIA_PERSON" as const,
+      designation: "Bureau Chief",
+      organization: "Dainik Jagran",
+      dateOfBirth: new Date(1982, 4, 12),
+      gender: "Male",
+      phone: "9811000011",
+      whatsapp: "919811000011",
+      email: "pankaj.tiwari@jagran.com",
+      twitterUrl: "https://twitter.com/pankajtiwari",
+      relation: "Neutral",
+      influence: "Medium",
+      notes:
+        "Covers constituency news. Good for positive media coverage. Handle carefully.",
+      tags: ["Media", "Press", "Print"],
+    },
+
+    // ── Senior citizen ──
+    {
+      name: "Shri Babu Lal Verma",
+      category: "SENIOR_CITIZEN" as const,
+      designation: "Retired Judge",
+      organization: "Senior Citizens Forum",
+      dateOfBirth: new Date(1948, 11, 3),
+      gender: "Male",
+      address: "Judges Enclave, Civil Lines",
+      wardId: wards[1].id,
+      phone: "9811000012",
+      relation: "Supporter",
+      influence: "Low",
+      notes:
+        "Retired High Court Judge. Respected elder. Invited as chief guest at events.",
+      tags: ["Legal", "Senior", "Respected Elder"],
+    },
+
+    // ── Medical ──
+    {
+      name: "Dr. Sunita Reddy",
+      category: "MEDICAL" as const,
+      designation: "Chief Medical Officer",
+      organization: "City Hospital",
+      dateOfBirth: dobInDays(1974, 12),
+      gender: "Female",
+      wardId: wards[0].id,
+      phone: "9811000013",
+      whatsapp: "919811000013",
+      email: "dr.sunita@cityhospital.in",
+      relation: "Neutral",
+      influence: "Medium",
+      notes:
+        "Key for health camps. Coordinates free medical camps. COVID warrior.",
+      tags: ["Medical", "Health Camps", "COVID Warrior"],
+    },
+
+    // ── NGO Head ──
+    {
+      name: "Shri Ashok Kumar Pandey",
+      category: "NGO_HEAD" as const,
+      designation: "Founder & Director",
+      organization: "Jan Seva Foundation",
+      dateOfBirth: dobInDays(1976, 20),
+      gender: "Male",
+      address: "Service Road, Laxmi Nagar",
+      wardId: wards[2].id,
+      phone: "9811000014",
+      whatsapp: "919811000014",
+      email: "ashok@janseva.org",
+      facebookUrl: "https://facebook.com/jansevafoundation",
+      relation: "Alliance",
+      influence: "Medium",
+      notes:
+        "Runs education and livelihood programs. 500+ volunteers. Good outreach partner.",
+      tags: ["NGO", "Education", "Livelihood", "Volunteers"],
+    },
+
+    // ── Trade union (birthday was recent) ──
+    {
+      name: "Shri Ratan Lal Kashyap",
+      category: "TRADE_UNION" as const,
+      designation: "General Secretary",
+      organization: "Mazdoor Sangh",
+      dateOfBirth: new Date(
+        1966,
+        now.getMonth(),
+        Math.max(1, now.getDate() - 5),
+      ),
+      gender: "Male",
+      address: "Industrial Belt",
+      wardId: wards[0].id,
+      phone: "9811000015",
+      whatsapp: "919811000015",
+      relation: "Alliance",
+      influence: "Medium",
+      notes:
+        "Controls 2000+ workers union. Important for labour votes. Can mobilize crowds.",
+      tags: ["Labour", "Union", "Mobilization"],
+    },
+  ];
+
+  const createdLeaders: any[] = [];
+
+  for (const ld of leadersData) {
+    const leader = await prisma.leader.create({
+      data: {
+        name: ld.name,
+        category: ld.category,
+        designation: ld.designation || null,
+        organization: ld.organization || null,
+        partyName: ld.partyName || null,
+        dateOfBirth: ld.dateOfBirth,
+        gender: ld.gender || null,
+        address: ld.address || null,
+        wardId: ld.wardId || null,
+        phone: ld.phone || null,
+        whatsapp: ld.whatsapp || null,
+        email: ld.email || null,
+        facebookUrl: ld.facebookUrl || null,
+        twitterUrl: ld.twitterUrl || null,
+        instagramUrl: ld.instagramUrl || null,
+        relation: ld.relation || null,
+        influence: ld.influence || null,
+        notes: ld.notes || null,
+        tags: ld.tags || [],
+        isActive: true,
+      },
+    });
+    createdLeaders.push(leader);
+  }
+  console.log(`✅ ${createdLeaders.length} leaders created`);
+
+  // ────────────────────────────────────────────────────
+  // 15b. LEADER GREETINGS (past birthday greetings)
+  // ────────────────────────────────────────────────────
+
+  const greetingsData = [
+    // Last year birthday greetings for first few leaders
+    {
+      leaderIdx: 0,
+      type: "BIRTHDAY",
+      channel: "WHATSAPP" as const,
+      message: `Respected Shri Ramesh Chandra Gupta ji, wishing you a very Happy Birthday! 🎂 May this year bring you great health, happiness, and continued success. Warm regards from Constituency Office.`,
+      status: "SENT" as const,
+      sentBy: "Rajesh Kumar (PA)",
+      year: thisYear - 1,
+      sentAt: new Date(thisYear - 1, now.getMonth(), now.getDate(), 8, 0, 0),
+    },
+    {
+      leaderIdx: 0,
+      type: "BIRTHDAY",
+      channel: "SMS" as const,
+      message: `Happy Birthday Shri Ramesh Gupta ji! 🎂 Warm wishes from MP Office.`,
+      status: "SENT" as const,
+      sentBy: "Rajesh Kumar (PA)",
+      year: thisYear - 1,
+      sentAt: new Date(thisYear - 1, now.getMonth(), now.getDate(), 8, 5, 0),
+    },
+    {
+      leaderIdx: 1,
+      type: "BIRTHDAY",
+      channel: "WHATSAPP" as const,
+      message: `Dear Smt. Kavita Sharma ji, Happy Birthday! 🎉🎂 Wishing you a wonderful year ahead filled with joy and achievements.`,
+      status: "SENT" as const,
+      sentBy: "Priya Sharma (Data Entry)",
+      year: thisYear - 1,
+      sentAt: new Date(thisYear - 1, now.getMonth(), now.getDate(), 9, 0, 0),
+    },
+    {
+      leaderIdx: 5,
+      type: "BIRTHDAY",
+      channel: "SMS" as const,
+      message: `Respected Shri Rajendra Prasad Yadav ji, wishing you a Happy Birthday! 🎂`,
+      status: "SENT" as const,
+      sentBy: "Rajesh Kumar (PA)",
+      year: thisYear - 1,
+      sentAt: new Date(thisYear - 1, 6, 15, 8, 30, 0),
+    },
+    {
+      leaderIdx: 6,
+      type: "BIRTHDAY",
+      channel: "WHATSAPP" as const,
+      message: `Happy Birthday Shri Manoj Jain ji! 🎂🎉 May your business prosper and you keep serving the trader community. Warm regards.`,
+      status: "SENT" as const,
+      sentBy: "Rajesh Kumar (PA)",
+      year: thisYear - 1,
+      sentAt: new Date(thisYear - 1, 3, 22, 7, 45, 0),
+    },
+    // A failed greeting
+    {
+      leaderIdx: 8,
+      type: "BIRTHDAY",
+      channel: "EMAIL" as const,
+      message: `Happy Birthday Shri R.K. Mishra ji!`,
+      status: "FAILED" as const,
+      sentBy: "System",
+      year: thisYear - 1,
+      sentAt: null,
+      failReason: "Email delivery failed — invalid address",
+    },
+    // Festival greeting example
+    {
+      leaderIdx: 3,
+      type: "FESTIVAL",
+      channel: "WHATSAPP" as const,
+      message: `Eid Mubarak! 🌙 Wishing you and your family peace, happiness, and prosperity. — Constituency Office`,
+      status: "SENT" as const,
+      sentBy: "Rajesh Kumar (PA)",
+      year: thisYear,
+      sentAt: new Date(thisYear, 2, 31, 7, 0, 0),
+    },
+    // Recent birthday that was greeted (Ratan Lal — 5 days ago)
+    {
+      leaderIdx: 14,
+      type: "BIRTHDAY",
+      channel: "WHATSAPP" as const,
+      message: `Happy Birthday Shri Ratan Lal Kashyap ji! 🎂 Wishing you great health and strength. Thank you for your service to the workers.`,
+      status: "SENT" as const,
+      sentBy: "Rajesh Kumar (PA)",
+      year: thisYear,
+      sentAt: new Date(
+        thisYear,
+        now.getMonth(),
+        Math.max(1, now.getDate() - 5),
+        8,
+        0,
+        0,
+      ),
+    },
+  ];
+
+  for (const gd of greetingsData) {
+    const leader = createdLeaders[gd.leaderIdx];
+    if (!leader) continue;
+
+    await prisma.leaderGreeting.create({
+      data: {
+        leaderId: leader.id,
+        type: gd.type,
+        channel: gd.channel,
+        message: gd.message,
+        status: gd.status,
+        sentAt: gd.sentAt || null,
+        sentBy: gd.sentBy,
+        year: gd.year,
+        failReason: (gd as any).failReason || null,
+      },
+    });
+  }
+  console.log(`✅ ${greetingsData.length} leader greetings history created`);
+
+  // ─── 16. System Settings ─────────────────────────────
   const settings = [
     {
       key: "org_name",
@@ -1327,7 +1746,7 @@ async function main() {
   }
   console.log(`✅ ${settings.length} system settings created`);
 
-  // ─── 16. Notification Templates ──────────────────────
+  // ─── 17. Notification Templates ──────────────────────
   const templates = [
     {
       name: "grievance_created_sms",
@@ -1354,6 +1773,19 @@ async function main() {
       body: "Dear {{name}},\n\nYour account has been created.\nEmail: {{email}}\n\nPlease login and change your password.",
       variables: ["name", "email"],
     },
+    // ── NEW: Birthday templates ──
+    {
+      name: "birthday_whatsapp",
+      channel: "WHATSAPP" as const,
+      body: "🎂 *Happy Birthday {{name}} ji!*\n\nWishing you a wonderful year ahead filled with health, happiness, and great achievements.\n\nWarm regards,\n{{orgName}}",
+      variables: ["name", "orgName"],
+    },
+    {
+      name: "birthday_sms",
+      channel: "SMS" as const,
+      body: "Happy Birthday {{name}} ji! 🎂 Wishing you health, happiness & success. - {{orgName}}",
+      variables: ["name", "orgName"],
+    },
   ];
 
   for (const t of templates) {
@@ -1367,16 +1799,18 @@ async function main() {
 
   // ═══════════════════════════════════════════════════════
   console.log("\n🎉 Seed completed successfully!\n");
-  console.log("╔══════════════════════════════════════════════════════╗");
-  console.log("║  Login Credentials                                  ║");
-  console.log("╠══════════════════════════════════════════════════════╣");
-  console.log("║  Admin:  admin@constituency.gov.in  / Admin@123456  ║");
-  console.log("║  MLA:    mla@constituency.gov.in    / Mla@123456    ║");
-  console.log("║  PA:     pa@constituency.gov.in     / Staff@123456  ║");
-  console.log("║  DE:     dataentry@constituency.gov.in / Staff@123456║");
-  console.log("╚══════════════════════════════════════════════════════╝\n");
+  console.log("╔══════════════════════════════════════════════════════════╗");
+  console.log("║  Login Credentials                                      ║");
+  console.log("╠══════════════════════════════════════════════════════════╣");
+  console.log("║  Admin:  admin@constituency.gov.in    / Admin@123456    ║");
+  console.log("║  MLA:    mla@constituency.gov.in      / Mla@123456     ║");
+  console.log("║  PA:     pa@constituency.gov.in       / Staff@123456   ║");
+  console.log("║  DE:     dataentry@constituency.gov.in / Staff@123456  ║");
+  console.log("╠══════════════════════════════════════════════════════════╣");
+  console.log("║  Leaders: 15 (2 birthdays TODAY for testing)            ║");
+  console.log("║  Greetings: 8 history records                           ║");
+  console.log("╚══════════════════════════════════════════════════════════╝\n");
 }
-
 main()
   .catch((e) => {
     console.error("❌ Seed failed:", e);
