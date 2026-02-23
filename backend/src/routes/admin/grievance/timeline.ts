@@ -15,7 +15,7 @@ export async function addTimelineEntry(
 ): Promise<void> {
   try {
     const grievance = await prisma.grievance.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!grievance) throw ApiError.notFound("Grievance not found");
 

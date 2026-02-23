@@ -15,7 +15,7 @@ export async function addUpdate(
 ): Promise<void> {
   try {
     const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!project) throw ApiError.notFound("Project not found");
     const entry = await prisma.projectUpdate.create({

@@ -227,7 +227,7 @@ router.get(
   requirePermission("departments", "read"),
   catchAsync(async (req, res) => {
     const dept = await prisma.department.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!dept) throw ApiError.notFound("Department not found");
 
@@ -307,8 +307,9 @@ router.put(
   requirePermission("departments", "update"),
   validate(updateSchema),
   catchAsync(async (req, res) => {
+    const departmentId = req.params.id as string;
     const old = await prisma.department.findUnique({
-      where: { id: req.params.id },
+      where: { id: departmentId },
     });
     if (!old) throw ApiError.notFound("Department not found");
 
@@ -323,7 +324,7 @@ router.put(
     }
 
     const dept = await prisma.department.update({
-      where: { id: req.params.id },
+      where: { id: departmentId },
       data,
     });
 
@@ -348,8 +349,9 @@ router.delete(
   "/:id",
   requirePermission("departments", "delete"),
   catchAsync(async (req, res) => {
+    const departmentId = req.params.id as string;
     const dept = await prisma.department.findUnique({
-      where: { id: req.params.id },
+      where: { id: departmentId },
     });
     if (!dept) throw ApiError.notFound("Department not found");
 
@@ -364,7 +366,7 @@ router.delete(
       );
     }
 
-    await prisma.department.delete({ where: { id: req.params.id } });
+    await prisma.department.delete({ where: { id: departmentId } });
 
     await createAuditLog({
       userId: req.user!.id,
@@ -385,13 +387,14 @@ router.patch(
   "/:id/toggle-active",
   requirePermission("departments", "update"),
   catchAsync(async (req, res) => {
+    const departmentId = req.params.id as string;
     const dept = await prisma.department.findUnique({
-      where: { id: req.params.id },
+      where: { id: departmentId },
     });
     if (!dept) throw ApiError.notFound("Department not found");
 
     const updated = await prisma.department.update({
-      where: { id: req.params.id },
+      where: { id: departmentId },
       data: { isActive: !dept.isActive },
     });
 

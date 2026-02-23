@@ -20,6 +20,8 @@ import departmentRoutes from "./department/index.js";
 import reportRoutes from "./report/index.js";
 import dashboardRoutes from "./dashboard/index.js";
 import leaderRoutes from "./leader/index.js";
+import settingsRoutes from "./settings/index.js";
+import auditLogRoutes from "./auditLog/index.js";
 
 // import auditLogRoutes from "./auditLog/index.js";
 // import settingsRoutes from "./settings/index.js";
@@ -45,6 +47,8 @@ router.use("/grievances", grievanceRoutes);
 router.use("/projects", projectRoutes);
 router.use("/funds", fundRoutes);
 
+router.use("/settings", settingsRoutes);
+router.use("/audit-logs", auditLogRoutes);
 router.use("/leaders", leaderRoutes);
 router.use("/reports", reportRoutes);
 router.use("/schemes", schemeRoutes);

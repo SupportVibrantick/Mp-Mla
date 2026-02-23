@@ -111,7 +111,7 @@ export async function getGrievance(
 ): Promise<void> {
   try {
     const grievance = await prisma.grievance.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         ward: {
           select: {

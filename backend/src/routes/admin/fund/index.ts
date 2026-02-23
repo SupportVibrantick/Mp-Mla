@@ -729,8 +729,9 @@ router.get(
   "/:id",
   requirePermission("funds", "read"),
   catchAsync(async (req, res) => {
+    const fundId = req.params.id as string;
     const fund = await prisma.fund.findUnique({
-      where: { id: req.params.id },
+      where: { id: fundId },
       include: {
         transactions: {
           orderBy: { date: "desc" },
@@ -904,13 +905,14 @@ router.put(
   requirePermission("funds", "update"),
   validate(updateFundSchema),
   catchAsync(async (req, res) => {
+    const fundId = req.params.id as string;
     const old = await prisma.fund.findUnique({
-      where: { id: req.params.id },
+      where: { id: fundId },
     });
     if (!old) throw ApiError.notFound("Fund not found");
 
     const fund = await prisma.fund.update({
-      where: { id: req.params.id },
+      where: { id: fundId },
       data: req.body,
     });
 
@@ -945,13 +947,14 @@ router.delete(
   "/:id",
   requirePermission("funds", "delete"),
   catchAsync(async (req, res) => {
+    const fundId = req.params.id as string;
     const fund = await prisma.fund.findUnique({
-      where: { id: req.params.id },
+      where: { id: fundId },
     });
     if (!fund) throw ApiError.notFound("Fund not found");
 
     // Cascade deletes transactions via Prisma relation
-    await prisma.fund.delete({ where: { id: req.params.id } });
+    await prisma.fund.delete({ where: { id: fundId } });
 
     await createAuditLog({
       userId: req.user!.id,
@@ -979,7 +982,7 @@ router.post(
   validate(transactionSchema),
   catchAsync(async (req, res) => {
     const fund = await prisma.fund.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!fund) throw ApiError.notFound("Fund not found");
 
@@ -1078,7 +1081,7 @@ router.delete(
   requirePermission("funds", "delete"),
   catchAsync(async (req, res) => {
     const txn = await prisma.fundTransaction.findUnique({
-      where: { id: req.params.txnId },
+      where: { id: req.params.txnId as string },
     });
     if (!txn) throw ApiError.notFound("Transaction not found");
     if (txn.fundId !== req.params.id)

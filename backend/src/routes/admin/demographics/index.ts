@@ -387,7 +387,7 @@ router.get(
   "/ward/:wardId",
   requirePermission("demographics", "read"),
   catchAsync(async (req, res) => {
-    const { wardId } = req.params;
+    const wardId = req.params.wardId as string;
 
     const ward = await prisma.ward.findUnique({
       where: { id: wardId },
@@ -416,14 +416,14 @@ router.get(
 
 const upsertSchema = z.object({
   wardAreaId: z.string().optional().nullable(),
-  ...demographicsZodSchema!.shape,
+  ...demographicsZodSchema.unwrap().shape,
 });
 
 router.put(
   "/ward/:wardId",
   requirePermission("demographics", "update"),
   catchAsync(async (req, res) => {
-    const { wardId } = req.params;
+    const wardId = req.params.wardId as string;
     const { wardAreaId, ...demoData } = req.body;
 
     const ward = await prisma.ward.findUnique({ where: { id: wardId } });

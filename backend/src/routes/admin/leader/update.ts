@@ -15,8 +15,9 @@ export async function updateLeader(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const lenderId = req.params.id as string;
     const old = await prisma.leader.findUnique({
-      where: { id: req.params.id },
+      where: { id: lenderId },
     });
     if (!old) throw ApiError.notFound("Leader not found");
 
@@ -25,7 +26,7 @@ export async function updateLeader(
     if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
 
     const leader = await prisma.leader.update({
-      where: { id: req.params.id },
+      where: { id: lenderId },
       data,
       include: {
         ward: { select: { name: true, wardNumber: true } },

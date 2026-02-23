@@ -76,7 +76,7 @@ export async function getInstitution(
 ): Promise<void> {
   try {
     const institution = await prisma.institution.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         ward: {
           select: {

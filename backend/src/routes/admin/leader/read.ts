@@ -97,7 +97,7 @@ export async function getLeader(
 ): Promise<void> {
   try {
     const leader = await prisma.leader.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         ward: {
           select: {

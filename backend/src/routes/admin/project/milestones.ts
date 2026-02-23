@@ -16,7 +16,7 @@ export async function addMilestone(
 ): Promise<void> {
   try {
     const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!project) throw ApiError.notFound("Project not found");
     const count = await prisma.projectMilestone.count({
@@ -45,15 +45,16 @@ export async function updateMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const milestoneId = req.params.msId as string;
     const ms = await prisma.projectMilestone.findUnique({
-      where: { id: req.params.msId },
+      where: { id: milestoneId },
     });
     if (!ms) throw ApiError.notFound("Milestone not found");
     const data: any = { ...req.body };
     if (data.targetDate) data.targetDate = new Date(data.targetDate);
     if (data.completedDate) data.completedDate = new Date(data.completedDate);
     const updated = await prisma.projectMilestone.update({
-      where: { id: req.params.msId },
+      where: { id: milestoneId },
       data,
     });
     res.json({ success: true, message: "Milestone updated", data: updated });
@@ -68,7 +69,9 @@ export async function deleteMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
-    await prisma.projectMilestone.delete({ where: { id: req.params.msId } });
+    await prisma.projectMilestone.delete({
+      where: { id: req.params.msId as string },
+    });
     res.json({ success: true, message: "Milestone removed" });
   } catch (error) {
     next(error);
@@ -81,12 +84,13 @@ export async function toggleMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const milstoneId = req.params.msId as string;
     const ms = await prisma.projectMilestone.findUnique({
-      where: { id: req.params.msId },
+      where: { id: milstoneId },
     });
     if (!ms) throw ApiError.notFound("Milestone not found");
     const updated = await prisma.projectMilestone.update({
-      where: { id: req.params.msId },
+      where: { id: milstoneId },
       data: {
         isCompleted: !ms.isCompleted,
         completedDate: !ms.isCompleted ? new Date() : null,

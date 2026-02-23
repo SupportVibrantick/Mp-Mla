@@ -12,9 +12,10 @@ export async function deleteProject(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const p = await prisma.project.findUnique({ where: { id: req.params.id } });
+    const projectId = req.params.id as string;
+    const p = await prisma.project.findUnique({ where: { id: projectId } });
     if (!p) throw ApiError.notFound("Project not found");
-    await prisma.project.delete({ where: { id: req.params.id } });
+    await prisma.project.delete({ where: { id: projectId } });
     await createAuditLog({
       userId: req.user!.id,
       action: "DELETE",

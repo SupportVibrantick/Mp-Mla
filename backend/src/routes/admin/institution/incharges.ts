@@ -37,7 +37,7 @@ export async function listIncharges(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { institutionId } = req.params;
+    const institutionId = req.params.institutionId as string;
     const inst = await getInstitutionOrThrow(institutionId);
 
     const incharges = await prisma.incharge.findMany({
@@ -63,7 +63,7 @@ export async function getIncharge(
 ): Promise<void> {
   try {
     const incharge = await prisma.incharge.findUnique({
-      where: { id: req.params.inchargeId },
+      where: { id: req.params.inchargeId as string },
       include: {
         institution: {
           select: {
@@ -90,7 +90,7 @@ export async function createIncharge(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { institutionId } = req.params;
+    const institutionId = req.params.institutionId as string;
     const inst = await getInstitutionOrThrow(institutionId);
 
     const data: any = { ...req.body, institutionId };
@@ -132,8 +132,9 @@ export async function updateIncharge(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const inchargeId = req.params.inchargeId as string;
     const old = await prisma.incharge.findUnique({
-      where: { id: req.params.inchargeId },
+      where: { id: inchargeId },
     });
     if (!old) throw ApiError.notFound("Incharge not found");
 
@@ -143,7 +144,7 @@ export async function updateIncharge(
     if (data.appointedDate) data.appointedDate = new Date(data.appointedDate);
 
     const incharge = await prisma.incharge.update({
-      where: { id: req.params.inchargeId },
+      where: { id: inchargeId },
       data,
     });
 
@@ -180,13 +181,15 @@ export async function deleteIncharge(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const inchargeId = req.params.inchargeId as string;
+
     const incharge = await prisma.incharge.findUnique({
-      where: { id: req.params.inchargeId },
+      where: { id: inchargeId },
     });
     if (!incharge) throw ApiError.notFound("Incharge not found");
 
     await prisma.incharge.delete({
-      where: { id: req.params.inchargeId },
+      where: { id: inchargeId },
     });
 
     await createAuditLog({
@@ -215,13 +218,15 @@ export async function toggleInchargeActive(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const inchargeId = req.params.inchargeId as string;
+
     const incharge = await prisma.incharge.findUnique({
-      where: { id: req.params.inchargeId },
+      where: { id: inchargeId },
     });
     if (!incharge) throw ApiError.notFound("Incharge not found");
 
     const updated = await prisma.incharge.update({
-      where: { id: req.params.inchargeId },
+      where: { id: inchargeId },
       data: { isActive: !incharge.isActive },
     });
 

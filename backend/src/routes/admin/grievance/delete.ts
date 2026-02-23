@@ -12,13 +12,14 @@ export async function deleteGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const grievanceId = req.params.id as string;
     const g = await prisma.grievance.findUnique({
-      where: { id: req.params.id },
+      where: { id: grievanceId },
     });
     if (!g) throw ApiError.notFound("Grievance not found");
 
     await prisma.grievance.delete({
-      where: { id: req.params.id },
+      where: { id: grievanceId },
     });
 
     await createAuditLog({

@@ -17,8 +17,9 @@ export async function updateInstitution(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const institutionId = req.params.id as string;
     const old = await prisma.institution.findUnique({
-      where: { id: req.params.id },
+      where: { id: institutionId },
     });
     if (!old) throw ApiError.notFound("Institution not found");
 
@@ -36,7 +37,7 @@ export async function updateInstitution(
     }
 
     const institution = await prisma.institution.update({
-      where: { id: req.params.id },
+      where: { id: institutionId },
       data,
       include: {
         ward: { select: { name: true, wardNumber: true } },

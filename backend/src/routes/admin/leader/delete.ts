@@ -12,13 +12,14 @@ export async function deleteLeader(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const lenderId = req.params.id as string;
     const leader = await prisma.leader.findUnique({
-      where: { id: req.params.id },
+      where: { id: lenderId },
     });
     if (!leader) throw ApiError.notFound("Leader not found");
 
     await prisma.leader.delete({
-      where: { id: req.params.id },
+      where: { id: lenderId },
     });
 
     await createAuditLog({

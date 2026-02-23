@@ -13,13 +13,13 @@ export async function deleteInstitution(
 ): Promise<void> {
   try {
     const institution = await prisma.institution.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { _count: { select: { incharges: true } } },
     });
     if (!institution) throw ApiError.notFound("Institution not found");
 
     // Cascade deletes incharges via schema relation
-    await prisma.institution.delete({ where: { id: req.params.id } });
+    await prisma.institution.delete({ where: { id: req.params.id as string } });
 
     await createAuditLog({
       userId: req.user!.id,

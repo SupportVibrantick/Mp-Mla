@@ -22,8 +22,9 @@ export async function updateProject(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const projectId = req.params.id as string;
     const old = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: projectId },
     });
     if (!old) throw ApiError.notFound("Project not found");
 
@@ -33,7 +34,7 @@ export async function updateProject(
       data.expectedEndDate = new Date(data.expectedEndDate);
 
     const project = await prisma.project.update({
-      where: { id: req.params.id },
+      where: { id: projectId },
       data,
       include: { ward: { select: { name: true } } },
     });
@@ -70,7 +71,7 @@ export async function updateStatus(
 ): Promise<void> {
   try {
     const old = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!old) throw ApiError.notFound("Project not found");
 
@@ -84,7 +85,7 @@ export async function updateStatus(
     }
 
     const project = await prisma.project.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data,
     });
 
@@ -108,4 +109,3 @@ export async function updateStatus(
     next(error);
   }
 }
-

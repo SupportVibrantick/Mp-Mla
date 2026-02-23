@@ -31,7 +31,7 @@ export async function sendGreeting(
 ): Promise<void> {
   try {
     const leader = await prisma.leader.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!leader) throw ApiError.notFound("Leader not found");
 
@@ -178,7 +178,7 @@ export async function getGreetingHistory(
 ): Promise<void> {
   try {
     const greetings = await prisma.leaderGreeting.findMany({
-      where: { leaderId: req.params.id },
+      where: { leaderId: req.params.id as string },
       orderBy: { createdAt: "desc" },
       take: 50,
     });

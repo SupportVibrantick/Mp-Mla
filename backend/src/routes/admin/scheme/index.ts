@@ -230,8 +230,9 @@ router.get(
   "/:id",
   requirePermission("schemes", "read"),
   catchAsync(async (req, res) => {
+    const schemeId = req.params.id as string;
     const scheme = await prisma.scheme.findUnique({
-      where: { id: req.params.id },
+      where: { id: schemeId },
       include: {
         beneficiaries: {
           include: {
@@ -330,8 +331,10 @@ router.put(
   requirePermission("schemes", "update"),
   validate(updateSchemeSchema),
   catchAsync(async (req, res) => {
+    const schemeId = req.params.id as string;
+
     const old = await prisma.scheme.findUnique({
-      where: { id: req.params.id },
+      where: { id: schemeId },
     });
     if (!old) throw ApiError.notFound("Scheme not found");
 
@@ -341,7 +344,7 @@ router.put(
     if (data.endDate) data.endDate = new Date(data.endDate);
 
     const scheme = await prisma.scheme.update({
-      where: { id: req.params.id },
+      where: { id: schemeId },
       data,
     });
 
@@ -374,13 +377,14 @@ router.delete(
   "/:id",
   requirePermission("schemes", "delete"),
   catchAsync(async (req, res) => {
+    const schemeId = req.params.id as string;
     const scheme = await prisma.scheme.findUnique({
-      where: { id: req.params.id },
+      where: { id: schemeId },
     });
     if (!scheme) throw ApiError.notFound("Scheme not found");
 
     await prisma.scheme.delete({
-      where: { id: req.params.id },
+      where: { id: schemeId },
     });
 
     await createAuditLog({
@@ -406,8 +410,10 @@ router.post(
   requirePermission("schemes", "update"),
   validate(beneficiarySchema),
   catchAsync(async (req, res) => {
+    const schemeId = req.params.id as string;
+
     const scheme = await prisma.scheme.findUnique({
-      where: { id: req.params.id },
+      where: { id: schemeId },
     });
     if (!scheme) throw ApiError.notFound("Scheme not found");
 
@@ -462,8 +468,10 @@ router.post(
   requirePermission("schemes", "update"),
   validate(bulkBeneficiarySchema),
   catchAsync(async (req, res) => {
+    const schemeId = req.params.id as string;
+
     const scheme = await prisma.scheme.findUnique({
-      where: { id: req.params.id },
+      where: { id: schemeId },
     });
     if (!scheme) throw ApiError.notFound("Scheme not found");
 
@@ -522,7 +530,7 @@ router.delete(
   requirePermission("schemes", "delete"),
   catchAsync(async (req, res) => {
     await prisma.schemeBeneficiary.delete({
-      where: { id: req.params.beneficiaryId },
+      where: { id: req.params.beneficiaryId as string },
     });
     res.json({
       success: true,

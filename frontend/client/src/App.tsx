@@ -49,6 +49,8 @@ import BirthdaysPage from "./pages/leaders/BirthdaysPage";
 import LeaderFormPage from "./pages/leaders/LeaderFormPage";
 import LeaderListPage from "./pages/leaders/LeaderListPage";
 import LeaderDetailPage from "./pages/leaders/LeaderDetailPage";
+import SettingsPage from "./pages/settings/SettingsPage";
+import AuditLogsPage from "./pages/auditLogs/AuditLogsPage";
 
 function Router() {
   return (
@@ -278,6 +280,16 @@ function Router() {
       <Route path="/schemes">
         <ProtectedRoute module="schemes" action="read">
           <SchemeListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute module="settings" action="read">
+          <SettingsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/audit-logs">
+        <ProtectedRoute module="audit_logs" action="read">
+          <AuditLogsPage />
         </ProtectedRoute>
       </Route>
       <Route path="/schemes/new">

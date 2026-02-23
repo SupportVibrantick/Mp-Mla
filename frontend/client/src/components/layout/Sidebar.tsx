@@ -112,7 +112,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const bottomItems = [
     { label: "Settings", icon: Settings, href: "/settings" },
-    { label: "Admin Panel", icon: Shield, href: "/admin", adminOnly: true },
+    // { label: "Admin Panel", icon: Shield, href: "/admin", adminOnly: true },
+    {
+      label: "Audit Logs",
+      icon: Shield,
+      href: "/audit-logs",
+    },
   ];
 
   return (

@@ -77,7 +77,7 @@ export async function getProject(
 ): Promise<void> {
   try {
     const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         ward: {
           select: { id: true, name: true, wardNumber: true, zone: true },

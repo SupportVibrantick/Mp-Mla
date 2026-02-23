@@ -58,8 +58,9 @@ export async function updateGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const grievanceId = req.params.id as string;
     const old = await prisma.grievance.findUnique({
-      where: { id: req.params.id },
+      where: { id: grievanceId },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
 
@@ -78,7 +79,7 @@ export async function updateGrievance(
     }
 
     const grievance = await prisma.grievance.update({
-      where: { id: req.params.id },
+      where: { id: grievanceId },
       data,
       include: {
         ward: { select: { name: true, wardNumber: true } },
@@ -137,7 +138,7 @@ export async function changeStatus(
 ): Promise<void> {
   try {
     const old = await prisma.grievance.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
 
@@ -188,7 +189,7 @@ export async function changeStatus(
     }
 
     const grievance = await prisma.grievance.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: updateData,
       include: {
         ward: { select: { name: true } },
@@ -245,8 +246,9 @@ export async function assignGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const grievanceId = req.params.id as string;
     const old = await prisma.grievance.findUnique({
-      where: { id: req.params.id },
+      where: { id: grievanceId },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
 
@@ -259,7 +261,7 @@ export async function assignGrievance(
       updateData.assignedDept = assignedDept || null;
 
     const grievance = await prisma.grievance.update({
-      where: { id: req.params.id },
+      where: { id: grievanceId },
       data: updateData,
       include: {
         assignedTo: { select: { name: true } },
