@@ -14,7 +14,7 @@ export interface User {
   phone: string | null;
   avatarUrl: string | null;
   forcePasswordChange: boolean;
-  lastLoginAt: string | null;
+  lastLoginAt: string | null; 
 }
 
 export interface Permission {
