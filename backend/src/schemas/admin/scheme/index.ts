@@ -1,28 +1,36 @@
 import { z } from "zod";
 
 export const createSchemeSchema = z.object({
-    name: z.string().min(1, "Scheme name is required"),
-    department: z.string().min(1, "Department is required"),
-    description: z.string().optional(),
-    budget: z.number().min(0).default(0),
-    status: z.enum(["ACTIVE", "INACTIVE", "UPCOMING", "EXPIRED"]).default("ACTIVE"),
-    beneficiaryCount: z.number().int().min(0).default(0),
-    startDate: z.string().or(z.date()).optional().transform((val) => val ? new Date(val) : undefined),
-    endDate: z.string().or(z.date()).optional().transform((val) => val ? new Date(val) : undefined),
-    wardIds: z.array(z.number().int().positive()).optional(), // Link to wards
+  name: z.string().min(1, "Name required"),
+  department: z.string().min(1, "Department required"),
+  level: z.enum(["Central", "State", "Local"]).default("Central"),
+  description: z.string().optional(),
+  eligibility: z.string().optional(),
+  benefits: z.string().optional(),
+  applicationUrl: z.string().url().optional().or(z.literal("")),
+  budget: z.number().min(0).default(0),
+  status: z
+    .enum(["ACTIVE", "EXPIRED", "UPCOMING", "SUSPENDED"])
+    .default("ACTIVE"),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
 });
 
-export const updateSchemeSchema = z.object({
-    name: z.string().min(1).optional(),
-    department: z.string().min(1).optional(),
-    description: z.string().optional(),
-    budget: z.number().min(0).optional(),
-    status: z.enum(["ACTIVE", "INACTIVE", "UPCOMING", "EXPIRED"]).optional(),
-    beneficiaryCount: z.number().int().min(0).optional(),
-    startDate: z.string().or(z.date()).optional().nullable().transform((val) => val ? new Date(val) : null),
-    endDate: z.string().or(z.date()).optional().nullable().transform((val) => val ? new Date(val) : null),
-    wardIds: z.array(z.number().int().positive()).optional(),
+export const updateSchemeSchema = createSchemeSchema.partial();
+
+export const beneficiarySchema = z.object({
+  wardId: z.string().min(1, "Ward required"),
+  beneficiaryCount: z.number().int().min(0).default(0),
+  targetCount: z.number().int().min(0).default(0),
+  amountDisbursed: z.number().min(0).default(0),
+  reportDate: z.string().datetime().optional(),
+});
+
+export const bulkBeneficiarySchema = z.object({
+  entries: z.array(beneficiarySchema),
 });
 
 export type CreateSchemeInput = z.infer<typeof createSchemeSchema>;
 export type UpdateSchemeInput = z.infer<typeof updateSchemeSchema>;
+export type bulkBeneficiaryInput = z.infer<typeof bulkBeneficiarySchema>;
+export type beneficiaryInput = z.infer<typeof beneficiarySchema>;

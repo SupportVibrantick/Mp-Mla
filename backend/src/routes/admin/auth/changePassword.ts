@@ -1,10 +1,18 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../../../lib/prisma.js";
-import { createAuditLog, getRequestMeta } from "../../../middleware/auditLog.js";
+import {
+  createAuditLog,
+  getRequestMeta,
+} from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { env } from "../../../lib/env.js";
 
-export async function changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -17,9 +25,10 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
 
     // Prevent reusing same password
     const isSame = await bcrypt.compare(newPassword, user.password);
-    if (isSame) throw ApiError.badRequest("New password must be different from current.");
+    if (isSame)
+      throw ApiError.badRequest("New password must be different from current.");
 
-    const hashed = await bcrypt.hash(newPassword, 12);
+    const hashed = await bcrypt.hash(newPassword, env.BCRYPT_SALT_ROUNDS);
 
     await prisma.user.update({
       where: { id: user.id },

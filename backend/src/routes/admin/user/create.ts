@@ -6,25 +6,9 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
 import catchAsync from "../../../utils/catchAsync.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
-
-export const createUserSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(100),
-  email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Min 8 characters")
-    .regex(/[A-Z]/, "Must contain uppercase letter")
-    .regex(/[0-9]/, "Must contain a number"),
-  phone: z.string().min(10).max(15).optional(),
-  role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"], {
-    errorMap: () => ({
-      message: "Role must be SYSTEM_ADMIN, MLA_MP, or OFFICE_STAFF",
-    }),
-  }),
-});
+import { env } from "@/lib/env.js";
 
 /**
  * POST /api/admin/users
@@ -53,7 +37,7 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await bcrypt.hash(password, env.BCRYPT_SALT_ROUNDS);
 
   //  Create user
   const user = await prisma.user.create({

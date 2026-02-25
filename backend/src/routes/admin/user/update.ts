@@ -7,15 +7,6 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
-
-export const updateUserSchema = z.object({
-  name: z.string().min(2).max(100).optional(),
-  phone: z.string().min(10).max(15).optional().nullable(),
-  role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"]).optional(),
-  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
-});
-
 /**
  * PUT /api/admin/users/:id
  */
