@@ -2,8 +2,8 @@ import { Router } from "express";
 import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
 import { listLeaders, getLeader, getLeaderStats } from "./read.js";
-import { createLeader, createSchema } from "./create.js";
-import { updateLeader, updateSchema } from "./update.js";
+import { createLeader } from "./create.js";
+import { updateLeader } from "./update.js";
 import { deleteLeader } from "./delete.js";
 import {
   getTodayBirthdays,
@@ -18,6 +18,7 @@ import {
   bulkGreetingSchema,
   getGreetingHistory,
 } from "./greetings.js";
+import { createSchema, updateSchema } from "@/schemas/admin/leader/index.js";
 
 const router = Router();
 

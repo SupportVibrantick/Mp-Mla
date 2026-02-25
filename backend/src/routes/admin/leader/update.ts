@@ -5,9 +5,6 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { createSchema } from "./create.js";
-
-export const updateSchema = createSchema.partial();
 
 export async function updateLeader(
   req: Request,
