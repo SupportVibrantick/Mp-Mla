@@ -35,8 +35,33 @@ export async function recomputeWardDemographics(wardId: string) {
   const areaDemos = await prisma.demographics.findMany({
     where: { wardId, wardAreaId: { not: null } },
   });
-  if (areaDemos.length === 0) return;
+  type Area = Awaited<ReturnType<typeof prisma.wardArea.findMany>>[number];
 
+  if (areaDemos.length === 0) {
+    const areas = await prisma.wardArea.findMany({
+      where: { wardId, isActive: true },
+    });
+
+    const sum = (field: keyof Area) =>
+      areas.reduce((s, a) => s + (Number(a[field]) || 0), 0);
+    const data = {
+      totalPopulation: sum("population"),
+      maleCount: sum("maleCount"),
+      femaleCount: sum("femaleCount"),
+      totalHouseholds: sum("households"),
+      source: "Aggregated from ward areas",
+    };
+    const existing = await prisma.demographics.findFirst({
+      where: { wardId, wardAreaId: null },
+    });
+    if (existing)
+      await prisma.demographics.update({ where: { id: existing.id }, data });
+    else
+      await prisma.demographics.create({
+        data: { wardId, wardAreaId: null, ...data },
+      });
+    return;
+  }
   const sum = (field: keyof (typeof areaDemos)[0]) =>
     areaDemos.reduce((s, d) => s + (Number(d[field]) || 0), 0);
 

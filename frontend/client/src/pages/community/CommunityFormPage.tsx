@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ArrowLeft, Save, Users, User, MapPin, Loader2 } from "lucide-react";
+import { Field } from "@/components/ui/field";
 
 // ─── Schema ─────────────────────────────────────────────
 
@@ -72,6 +73,7 @@ export default function CommunityFormPage() {
     setValue,
     watch,
     reset,
+    control,
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -208,21 +210,34 @@ export default function CommunityFormPage() {
                 <Label>
                   Type <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("type")}
-                  onValueChange={(v) => setValue("type", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COMMUNITY_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.icon} {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMUNITY_TYPES.map((t) => {
+                          const Icon = t.icon;
+                          return (
+                            <SelectItem key={t.value} value={t.value}>
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4" />
+                                {t.label}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.type && (
                   <p className="text-xs text-destructive">
                     {errors.type.message}
@@ -236,24 +251,32 @@ export default function CommunityFormPage() {
                 <Label>
                   Ward <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("wardId")}
-                  onValueChange={(v) => {
-                    setValue("wardId", v);
-                    setValue("wardAreaId", null);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ward" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wards.map((w: any) => (
-                      <SelectItem key={w.id} value={w.id}>
-                        #{w.wardNumber} {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="wardId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setValue("wardAreaId", null);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ward" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {wards.map((w: any) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            #{w.wardNumber} {w.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+
                 {errors.wardId && (
                   <p className="text-xs text-destructive">
                     {errors.wardId.message}
@@ -262,25 +285,34 @@ export default function CommunityFormPage() {
               </div>
               <div className="space-y-2">
                 <Label>Area (Optional)</Label>
-                <Select
-                  value={watch("wardAreaId") || "none"}
-                  onValueChange={(v) =>
-                    setValue("wardAreaId", v === "none" ? null : v)
-                  }
-                  disabled={!selectedWardId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— Ward Level —</SelectItem>
-                    {areas.map((a: any) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name} ({a.areaType.replace("_", " ")})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="wardAreaId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value ?? "none"}
+                      onValueChange={(value) =>
+                        field.onChange(value === "none" ? null : value)
+                      }
+                      disabled={!selectedWardId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select area" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        <SelectItem value="none">— Ward Level —</SelectItem>
+
+                        {areas.map((a: any) => (
+                          <SelectItem key={a.id} value={a.id}>
+                            {a.name} ({a.areaType.replace("_", " ")})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
 

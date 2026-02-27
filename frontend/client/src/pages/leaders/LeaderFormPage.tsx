@@ -3,6 +3,8 @@ import { useParams, useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Controller } from "react-hook-form";
+
 import {
   useLeader,
   useCreateLeader,
@@ -69,7 +71,31 @@ export default function LeaderFormPage() {
     setValue,
     watch,
     reset,
-  } = useForm<FV>({ resolver: zodResolver(schema) });
+    control,
+  } = useForm<FV>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: "",
+      category: "",
+      designation: "",
+      organization: "",
+      partyName: "",
+      dateOfBirth: "",
+      gender: "",
+      address: "",
+      wardId: "",
+      phone: "",
+      altPhone: "",
+      email: "",
+      whatsapp: "",
+      facebookUrl: "",
+      twitterUrl: "",
+      instagramUrl: "",
+      relation: "",
+      influence: "",
+      notes: "",
+    },
+  });
 
   useEffect(() => {
     if (!l || !isEdit) return;
@@ -162,21 +188,28 @@ export default function LeaderFormPage() {
                 <Label>
                   Category <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("category")}
-                  onValueChange={(v) => setValue("category", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LEADER_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.icon} {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value} // ← critical fix
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LEADER_CATEGORIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.icon} {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.category && (
                   <p className="text-xs text-destructive">
                     {errors.category.message}
@@ -198,42 +231,54 @@ export default function LeaderFormPage() {
               </div>
               <div className="space-y-2">
                 <Label>Gender</Label>
-                <Select
-                  value={watch("gender") || ""}
-                  onValueChange={(v) => setValue("gender", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value} // ← critical fix
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Ward</Label>
-                <Select
-                  value={watch("wardId") || "none"}
-                  onValueChange={(v) =>
-                    setValue("wardId", v === "none" ? "" : v)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Optional" />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    <SelectItem value="none">— None —</SelectItem>
-
-                    {wards.map((w) => (
-                      <SelectItem key={w.id} value={w.id}>
-                        #{w.wardNumber} {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="wardId"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value} // ← critical fix
+                      value={field.value || "none"}
+                      onValueChange={(v) =>
+                        field.onChange(v === "none" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Optional" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— None —</SelectItem>
+                        {wards.map((w) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            #{w.wardNumber} {w.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
@@ -299,39 +344,53 @@ export default function LeaderFormPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Relation</Label>
-                <Select
-                  value={watch("relation") || ""}
-                  onValueChange={(v) => setValue("relation", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RELATIONS.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="relation"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value} // ← critical fix
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RELATIONS.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Influence Level</Label>
-                <Select
-                  value={watch("influence") || ""}
-                  onValueChange={(v) => setValue("influence", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INFLUENCES.map((i) => (
-                      <SelectItem key={i} value={i}>
-                        {i}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="influence"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value} // ← critical fix
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INFLUENCES.map((i) => (
+                          <SelectItem key={i} value={i}>
+                            {i}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="space-y-2">

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -60,6 +60,7 @@ export default function SchemeFormPage() {
     setValue,
     watch,
     reset,
+    control,
   } = useForm<FV>({
     resolver: zodResolver(formSchema),
     defaultValues: { level: "Central", status: "ACTIVE", budget: 0 },
@@ -155,21 +156,28 @@ export default function SchemeFormPage() {
                 <Label>
                   Department <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("department")}
-                  onValueChange={(v) => setValue("department", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d: any) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="department"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d: any) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.department && (
                   <p className="text-xs text-destructive">
                     {errors.department.message}
@@ -178,39 +186,53 @@ export default function SchemeFormPage() {
               </div>
               <div className="space-y-2">
                 <Label>Level</Label>
-                <Select
-                  value={watch("level")}
-                  onValueChange={(v) => setValue("level", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SCHEME_LEVELS.map((l) => (
-                      <SelectItem key={l.value} value={l.value}>
-                        {l.icon} {l.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="level"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCHEME_LEVELS.map((l) => (
+                          <SelectItem key={l.value} value={l.value}>
+                            {l.icon} {l.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select
-                  value={watch("status")}
-                  onValueChange={(v) => setValue("status", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SCHEME_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCHEME_STATUSES.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="space-y-2">

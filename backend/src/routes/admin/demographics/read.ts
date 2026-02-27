@@ -52,7 +52,7 @@ export const summaryDemographics = catchAsync(async (req, res) => {
     scCount: sum("scCount"),
     stCount: sum("stCount"),
     minorityCount: sum("minorityCount"),
-    otherCasteCount: sum("otherCasteCount"),
+    otherCount: sum("otherCount"),
     // Religion
     hinduCount: sum("hinduCount"),
     muslimCount: sum("muslimCount"),

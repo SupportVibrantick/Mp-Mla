@@ -185,6 +185,8 @@ export default function CommunityListPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 {stats.byType.map((t: any) => {
                   const info = getTypeInfo(t.type);
+                  const Icon = info.icon;
+
                   return (
                     <div
                       key={t.type}
@@ -194,7 +196,7 @@ export default function CommunityListPage() {
                         setPage(1);
                       }}
                     >
-                      <span className="text-2xl">{info.icon}</span>
+                      <Icon className="h-6 w-6 mx-auto" />{" "}
                       <p className="text-lg font-bold mt-1">{t.count}</p>
                       <p className="text-[10px] text-muted-foreground leading-tight">
                         {info.label}
@@ -260,11 +262,17 @@ export default function CommunityListPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    {COMMUNITY_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.icon} {t.label}
-                      </SelectItem>
-                    ))}
+                    {COMMUNITY_TYPES.map((t) => {
+                      const Icon = t.icon;
+                      return (
+                        <SelectItem key={t.value} value={t.value}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            {t.label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
 
@@ -335,6 +343,7 @@ export default function CommunityListPage() {
                   ) : (
                     groups.map((g: any) => {
                       const info = getTypeInfo(g.type);
+                      const Icon = info.icon;
                       return (
                         <TableRow key={g.id} className="hover:bg-muted/50">
                           <TableCell>
@@ -354,7 +363,8 @@ export default function CommunityListPage() {
                               variant="secondary"
                               className="text-xs gap-1"
                             >
-                              <span>{info.icon}</span>
+                              <Icon className="h-3 w-3" />
+
                               {info.label}
                             </Badge>
                           </TableCell>

@@ -4,21 +4,42 @@ import { useToast } from "@/hooks/use-toast";
 
 // ─── Types ──────────────────────────────────────────────
 
+// communityTypes.ts
+import {
+  Store,
+  Home,
+  Dumbbell,
+  Palette,
+  Building2,
+  Users,
+  UserRound,
+  GraduationCap,
+  Sparkles,
+  Handshake,
+  PartyPopper,
+  Hammer,
+  CircleEllipsis,
+} from "lucide-react";
+
 export const COMMUNITY_TYPES = [
-  { value: "MARKET", label: "Market Association", icon: "🏪" },
-  { value: "SLUM", label: "Slum Committee", icon: "🏘️" },
-  { value: "SPORTS_TEAM", label: "Sports Team", icon: "⚽" },
-  { value: "CLUB", label: "Club", icon: "🎭" },
-  { value: "RWA", label: "RWA", icon: "🏠" },
-  { value: "SENIOR_CITIZEN", label: "Senior Citizens", icon: "👴" },
-  { value: "BUDDHIJEEVI", label: "Buddhijeevi", icon: "📚" },
-  { value: "WOMEN_GROUP", label: "Women Group", icon: "👩" },
-  { value: "YOUTH_GROUP", label: "Youth Group", icon: "🧑" },
-  { value: "CULTURAL_ORG", label: "Cultural Org", icon: "🎨" },
-  { value: "NGO", label: "NGO", icon: "🤝" },
-  { value: "FESTIVAL_COMMITTEE", label: "Festival Committee", icon: "🎉" },
-  { value: "TRADE_UNION", label: "Trade Union", icon: "⚒️" },
-  { value: "OTHER", label: "Other", icon: "📋" },
+  { value: "MARKET", label: "Market Association", icon: Store },
+  { value: "SLUM", label: "Slum Committee", icon: Home },
+  { value: "SPORTS_TEAM", label: "Sports Team", icon: Dumbbell }, // or Trophy
+  { value: "CLUB", label: "Club", icon: Palette }, // arts/culture club
+  { value: "RWA", label: "RWA", icon: Building2 },
+  { value: "SENIOR_CITIZEN", label: "Senior Citizens", icon: UserRound },
+  { value: "BUDDHIJEEVI", label: "Buddhijeevi", icon: GraduationCap },
+  { value: "WOMEN_GROUP", label: "Women Group", icon: Users },
+  { value: "YOUTH_GROUP", label: "Youth Group", icon: Users },
+  { value: "CULTURAL_ORG", label: "Cultural Org", icon: Sparkles },
+  { value: "NGO", label: "NGO", icon: Handshake },
+  {
+    value: "FESTIVAL_COMMITTEE",
+    label: "Festival Committee",
+    icon: PartyPopper,
+  },
+  { value: "TRADE_UNION", label: "Trade Union", icon: Hammer },
+  { value: "OTHER", label: "Other", icon: CircleEllipsis },
 ] as const;
 
 export function getTypeInfo(type: string) {

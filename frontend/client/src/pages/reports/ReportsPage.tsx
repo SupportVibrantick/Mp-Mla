@@ -687,7 +687,7 @@ export default function ReportsPage() {
                             />
                             <XAxis dataKey="name" fontSize={10} />
                             <YAxis fontSize={10} />
-                            <Tooltip />
+                            <Tooltip formatter={(v) => `₹${v} L`} />
                             <Bar
                               dataKey="budget"
                               fill="#6366f1"
@@ -959,38 +959,49 @@ export default function ReportsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[280px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={d.rows.map((s: any) => ({
-                            name:
-                              s.name.length > 16
-                                ? s.name.slice(0, 16) + "…"
-                                : s.name,
-                            target: s.totalTarget,
-                            actual: s.totalBeneficiaries,
-                          }))}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                          <XAxis dataKey="name" fontSize={9} />
-                          <YAxis fontSize={10} />
-                          <Tooltip />
-                          <Legend />
-                          <Bar
-                            dataKey="target"
-                            fill="#94a3b8"
-                            name="Target"
-                            radius={[4, 4, 0, 0]}
-                          />
-                          <Bar
-                            dataKey="actual"
-                            fill="#22c55e"
-                            name="Actual"
-                            radius={[4, 4, 0, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                    {d.rows.length === 0 ? (
+                      <div className="h-[280px] flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground">
+                          No schemes available for selected ward
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={d.rows.map((s: any) => ({
+                              name:
+                                s.name.length > 16
+                                  ? s.name.slice(0, 16) + "…"
+                                  : s.name,
+                              target: s.totalTarget,
+                              actual: s.totalBeneficiaries,
+                            }))}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              opacity={0.1}
+                            />
+                            <XAxis dataKey="name" fontSize={9} />
+                            <YAxis fontSize={10} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar
+                              dataKey="target"
+                              fill="#94a3b8"
+                              name="Target"
+                              radius={[4, 4, 0, 0]}
+                            />
+                            <Bar
+                              dataKey="actual"
+                              fill="#22c55e"
+                              name="Actual"
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
                 <Card>

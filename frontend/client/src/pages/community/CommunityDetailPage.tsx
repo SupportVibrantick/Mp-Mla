@@ -94,11 +94,12 @@ export default function CommunityDetailPage() {
     await deleteMut.mutateAsync(group.id);
     navigate("/community");
   };
-
+  const Icon = info.icon;
   return (
     <MainLayout title="Community Group">
       <div className="space-y-6 max-w-4xl mx-auto">
         {/* Header */}
+
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
             <Link to="/community">
@@ -106,9 +107,10 @@ export default function CommunityDetailPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
+
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-3xl">{info.icon}</span>
+                <Icon className="h-8 w-8 text-primary" />
                 <h1 className="text-2xl font-bold">{group.name}</h1>
                 <Badge
                   className={`text-[10px] ${
@@ -405,13 +407,15 @@ export default function CommunityDetailPage() {
               <div className="flex flex-wrap gap-2">
                 {group.relatedGroups.map((rg: any) => {
                   const rgInfo = getTypeInfo(rg.type);
+                  const RgIcon = rgInfo.icon;
+
                   return (
                     <Link key={rg.id} to={`/community/${rg.id}`}>
                       <Badge
                         variant="outline"
-                        className="cursor-pointer hover:bg-muted gap-1 py-1.5"
+                        className="cursor-pointer hover:bg-muted gap-1 py-1.5 flex items-center"
                       >
-                        <span>{rgInfo.icon}</span>
+                        <RgIcon className="h-3 w-3" />
                         {rg.name}
                         {rg.memberCount > 0 && (
                           <span className="text-muted-foreground ml-1">

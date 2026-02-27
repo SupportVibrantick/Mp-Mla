@@ -586,6 +586,7 @@ model Demographics {
   ward     Ward      @relation(fields: [wardId], references: [id], onDelete: Cascade)
   wardArea WardArea? @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
 
+  @@unique([wardId, wardAreaId])
   @@index([wardId])
   @@index([wardAreaId])
   @@map("demographics")

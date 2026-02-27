@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -228,6 +228,7 @@ export default function WardFormPage() {
     setValue,
     watch,
     reset,
+    control,
   } = useForm<WardFormValues>({
     resolver: zodResolver(wardSchema),
     defaultValues: {
@@ -623,53 +624,56 @@ export default function WardFormPage() {
             <div className="grid md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Zone</Label>
-                <Select
-                  value={watch("zone")}
-                  onValueChange={(v) => setValue("zone", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["A", "B", "C", "D", "E"].map((z) => (
-                      <SelectItem key={z} value={z}>
-                        Zone {z}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  {...register("zone")}
+                  placeholder="e.g. A, North, Central, Zone 1"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Area Type</Label>
-                <Select
-                  value={watch("areaType")}
-                  onValueChange={(v) => setValue("areaType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Urban">Urban</SelectItem>
-                    <SelectItem value="Semi-Urban">Semi-Urban</SelectItem>
-                    <SelectItem value="Rural">Rural</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="areaType"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Urban">Urban</SelectItem>
+                        <SelectItem value="Semi-Urban">Semi-Urban</SelectItem>
+                        <SelectItem value="Rural">Rural</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select
-                  value={watch("status")}
-                  onValueChange={(v) => setValue("status", v as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
-                    <SelectItem value="PROPOSED">Proposed</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="INACTIVE">Inactive</SelectItem>
+                        <SelectItem value="PROPOSED">Proposed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Established Date</Label>

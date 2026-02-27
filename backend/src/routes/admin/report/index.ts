@@ -397,40 +397,62 @@ router.get(
   catchAsync(async (req, res) => {
     const { wardId } = req.query as Record<string, string>;
 
+    const schemeWhere: any = {};
+
+    // Filter schemes that HAVE beneficiaries in that ward
+    if (wardId && wardId !== "all") {
+      schemeWhere.beneficiaries = {
+        some: { wardId },
+      };
+    }
+
     const schemes = await prisma.scheme.findMany({
+      where: schemeWhere,
       include: {
         beneficiaries: {
-          ...(wardId ? { where: { wardId } } : {}),
-          include: { ward: { select: { name: true, wardNumber: true } } },
+          ...(wardId && wardId !== "all"
+            ? { where: { wardId } }
+            : {}),
+          include: {
+            ward: { select: { name: true, wardNumber: true } },
+          },
         },
       },
       orderBy: { name: "asc" },
     });
 
     const deptIds = [...new Set(schemes.map((s) => s.department))];
+
     const depts = await prisma.department.findMany({
       where: { id: { in: deptIds } },
       select: { id: true, name: true },
     });
-    const deptMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
+
+    const deptMap = Object.fromEntries(
+      depts.map((d) => [d.id, d.name]),
+    );
 
     const rows = schemes.map((s) => {
       const totalBeneficiaries = s.beneficiaries.reduce(
         (sum, b) => sum + b.beneficiaryCount,
         0,
       );
+
       const totalTarget = s.beneficiaries.reduce(
         (sum, b) => sum + b.targetCount,
         0,
       );
+
       const totalDisbursed = s.beneficiaries.reduce(
         (sum, b) => sum + b.amountDisbursed,
         0,
       );
+
       const coverage =
         totalTarget > 0
           ? Math.round((totalBeneficiaries / totalTarget) * 100)
           : 0;
+
       return {
         id: s.id,
         name: s.name,

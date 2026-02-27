@@ -452,10 +452,10 @@ export default function Dashboard() {
     <MainLayout title="Dashboard">
       <div className="space-y-6">
         {/* ═══ Row 1: Key Stat Cards ══════════════════ */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4">
           {/* Wards */}
           <Link to="/wards">
-            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-l-4 border-l-indigo-500">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer  ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <Map className="h-4 w-4 text-indigo-500" />
@@ -473,7 +473,7 @@ export default function Dashboard() {
 
           {/* Open Grievances */}
           <Link to="/grievances?status=OPEN">
-            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-l-4 border-l-blue-500">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <MessageSquare className="h-4 w-4 text-blue-500" />
@@ -496,7 +496,7 @@ export default function Dashboard() {
 
           {/* Overdue */}
           <Link to="/grievances?overdue=true">
-            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-l-4 border-l-red-500">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -516,7 +516,7 @@ export default function Dashboard() {
 
           {/* Projects */}
           <Link to="/projects">
-            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-l-4 border-l-amber-500">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <FolderKanban className="h-4 w-4 text-amber-500" />
@@ -534,7 +534,7 @@ export default function Dashboard() {
 
           {/* Fund Utilization */}
           <Link to="/funds">
-            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-l-4 border-l-green-500">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <IndianRupee className="h-4 w-4 text-green-500" />
@@ -550,7 +550,7 @@ export default function Dashboard() {
 
           {/* Schemes */}
           <Link to="/schemes">
-            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border-l-4 border-l-purple-500">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <FileText className="h-4 w-4 text-purple-500" />

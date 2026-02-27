@@ -10,12 +10,7 @@ import { GuestRoute } from "./components/auth/GuestRoute";
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
-import Grievances from "@/pages/Grievances";
-import Projects from "@/pages/Projects";
-import Institutions from "@/pages/Institutions";
-import Community from "@/pages/Community";
-import Schemes from "@/pages/Schemes";
-import Wards from "@/pages/Wards";
+
 import Login from "@/pages/Login";
 import ChangePassword from "@/pages/ChangePassword";
 import UserManagement from "@/pages/admin/User";
@@ -51,6 +46,7 @@ import LeaderListPage from "./pages/leaders/LeaderListPage";
 import LeaderDetailPage from "./pages/leaders/LeaderDetailPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import AuditLogsPage from "./pages/auditLogs/AuditLogsPage";
+import DemographicsPage from "@/pages/Demographics";
 
 function Router() {
   return (
@@ -252,7 +248,7 @@ function Router() {
       </Route>
       <Route path="/demographics">
         <ProtectedRoute module="demographics" action="view">
-          <Community />
+          <DemographicsPage />
         </ProtectedRoute>
       </Route>
 
