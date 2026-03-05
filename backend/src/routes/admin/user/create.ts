@@ -9,6 +9,7 @@ import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "../../../utils/catchAsync.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { env } from "@/lib/env.js";
+import { validatePasswordComplexity } from "../../../lib/authUtils.js";
 
 /**
  * POST /api/admin/users
@@ -36,6 +37,9 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
       throw ApiError.conflict("User with this phone number already exists.");
     }
   }
+
+  // Validate complexity
+  await validatePasswordComplexity(password);
 
   const hashedPassword = await bcrypt.hash(password, env.BCRYPT_SALT_ROUNDS);
 

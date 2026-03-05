@@ -3,11 +3,6 @@ import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { z } from "zod";
 
-export const timelineSchema = z.object({
-  action: z.enum(["COMMENT", "INTERNAL_NOTE", "FOLLOW_UP", "FIELD_VISIT"]),
-  comment: z.string().min(1, "Comment required"),
-});
-
 export async function addTimelineEntry(
   req: Request,
   res: Response,

@@ -5,11 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { createInstitutionSchema } from "./create.js";
 
-export const updateInstitutionSchema = createInstitutionSchema
-  .omit({ incharges: true })
-  .partial();
 
 export async function updateInstitution(
   req: Request,

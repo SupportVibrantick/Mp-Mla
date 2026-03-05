@@ -153,7 +153,7 @@ export async function getGrievance(
     if (grievance.resolvedAt) {
       resolutionDays = Math.floor(
         (grievance.resolvedAt.getTime() - grievance.createdAt.getTime()) /
-          (1000 * 60 * 60 * 24),
+        (1000 * 60 * 60 * 24),
       );
     }
 
@@ -164,7 +164,7 @@ export async function getGrievance(
         where: { id: grievance.assignedDept },
         select: { name: true },
       });
-      departmentName = dept?.name || null;
+      departmentName = dept?.name || grievance.assignedDept;
     }
 
     res.json({

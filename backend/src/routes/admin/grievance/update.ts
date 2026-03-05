@@ -5,52 +5,11 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
 import {
   isValidTransition,
   getTransitionLabel,
   calculateExpectedDate,
 } from "./helpers.js";
-
-export const updateGrievanceSchema = z
-  .object({
-    subject: z.string().min(1).optional(),
-    category: z.string().optional(),
-    subcategory: z.string().optional(),
-    description: z.string().optional(),
-    wardId: z.string().optional(),
-    priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional(),
-    source: z.string().optional(),
-    complainantName: z.string().optional(),
-    complainantPhone: z.string().optional(),
-    complainantEmail: z.string().optional(),
-    complainantAddress: z.string().optional(),
-    locationAddress: z.string().optional(),
-    expectedResolutionDate: z.string().datetime().optional(),
-  })
-  .partial();
-
-export const changeStatusSchema = z.object({
-  status: z.enum([
-    "OPEN",
-    "IN_PROGRESS",
-    "ESCALATED",
-    "RESOLVED",
-    "CLOSED",
-    "REJECTED",
-  ]),
-  comment: z.string().optional(),
-  resolutionNotes: z.string().optional(),
-  rejectionReason: z.string().optional(),
-  escalationReason: z.string().optional(),
-  satisfactionRating: z.number().int().min(1).max(5).optional(),
-});
-
-export const assignSchema = z.object({
-  assignedToId: z.string().optional().nullable(),
-  assignedDept: z.string().optional().nullable(),
-  comment: z.string().optional(),
-});
 
 export async function updateGrievance(
   req: Request,
@@ -163,6 +122,8 @@ export async function changeStatus(
     switch (status) {
       case "RESOLVED":
         updateData.resolvedAt = now;
+        updateData.closedAt = null;
+        updateData.rejectionReason = null;
         if (resolutionNotes) updateData.resolutionNotes = resolutionNotes;
         break;
       case "CLOSED":
@@ -175,16 +136,28 @@ export async function changeStatus(
         if (escalationReason) updateData.escalationReason = escalationReason;
         break;
       case "REJECTED":
-        if (rejectionReason) updateData.rejectionReason = rejectionReason;
+        updateData.rejectionReason = rejectionReason || "Rejected by administrator";
+        updateData.resolvedAt = null;
+        updateData.closedAt = null;
+        updateData.resolutionNotes = null;
         break;
-      case "OPEN":
-        if (["RESOLVED", "CLOSED", "REJECTED"].includes(old.status)) {
+      case "IN_PROGRESS":
+        if (old.status === "RESOLVED" || old.status === "CLOSED" || old.status === "REJECTED") {
           updateData.resolvedAt = null;
           updateData.closedAt = null;
           updateData.resolutionNotes = null;
           updateData.rejectionReason = null;
           updateData.satisfactionRating = null;
         }
+        break;
+      case "OPEN":
+        updateData.resolvedAt = null;
+        updateData.closedAt = null;
+        updateData.resolutionNotes = null;
+        updateData.rejectionReason = null;
+        updateData.satisfactionRating = null;
+        updateData.escalatedAt = null;
+        updateData.escalationReason = null;
         break;
     }
 

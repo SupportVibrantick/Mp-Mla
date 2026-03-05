@@ -3,7 +3,7 @@ import { login } from "./login.js";
 import { refresh } from "./refresh.js";
 import { logout } from "./logout.js";
 import { changePassword } from "./changePassword.js";
-import { getMe, getMyPermissions } from "./me.js";
+import { getMe, getMyPermissions, updateMe } from "./me.js";
 import { authenticate } from "../../../middleware/auth.js";
 import { validate } from "../../../middleware/validate.js";
 import {
@@ -27,6 +27,7 @@ router.post(
   changePassword,
 );
 router.get("/me", authenticate, getMe);
+router.patch("/me", authenticate, updateMe);
 router.get("/me/permissions", authenticate, getMyPermissions);
 
 export default router;

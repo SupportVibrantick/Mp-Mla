@@ -12,7 +12,7 @@ import institutionRoutes from "./institution";
 // import inchargeRoutes from "./incharge/index.js";
 import grievanceRoutes from "./grievance/index.js";
 import projectRoutes from "./project/index.js";
-import schemeRoutes from "./scheme/index.js";
+// import schemeRoutes from "./scheme/index.js";
 import fundRoutes from "./fund/index.js";
 // import demographicsRoutes from "./demographics/index.js";
 import departmentRoutes from "./department/index.js";
@@ -29,8 +29,9 @@ import auditLogRoutes from "./auditLog/index.js";
 
 const router = Router();
 
-// ─── Public: No auth needed ─────────────────────────────
+// ─── Semi-Public: settings contains a public route for branding ────────
 router.use("/auth", authRoutes);
+router.use("/settings", settingsRoutes);
 
 // ─── Protected: All routes below require auth ───────────
 router.use(authenticate, requireActiveUser);
@@ -47,11 +48,10 @@ router.use("/grievances", grievanceRoutes);
 router.use("/projects", projectRoutes);
 router.use("/funds", fundRoutes);
 
-router.use("/settings", settingsRoutes);
 router.use("/audit-logs", auditLogRoutes);
 router.use("/leaders", leaderRoutes);
 router.use("/reports", reportRoutes);
-router.use("/schemes", schemeRoutes);
+// router.use("/schemes", schemeRoutes);
 // router.use("/demographics", demographicsRoutes);
 // router.use("/departments", departmentRoutes);
 // router.use("/tasks", taskRoutes);

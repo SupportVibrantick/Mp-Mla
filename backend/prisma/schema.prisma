@@ -96,12 +96,12 @@ enum CommunityGroupType {
   OTHER
 }
 
-enum SchemeStatus {
-  ACTIVE
-  EXPIRED
-  UPCOMING
-  SUSPENDED
-}
+// enum SchemeStatus {
+//   ACTIVE
+//   EXPIRED
+//   UPCOMING
+//   SUSPENDED
+// }
 
 enum FundType {
   MPLAD
@@ -229,14 +229,17 @@ model Organization {
 // ════════════════════════════════════════════════════════
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  phone     String?    @unique
-  password  String
-  name      String
-  role      UserRole
-  status    UserStatus @default(ACTIVE)
-  avatarUrl String?
+  id          String     @id @default(cuid())
+  email       String     @unique
+  phone       String?    @unique
+  password    String
+  name        String
+  role        UserRole
+  status      UserStatus @default(ACTIVE)
+  avatarUrl   String?
+  designation String?
+  department  String?
+  bio         String?
 
   // Security
   lastLoginAt         DateTime?
@@ -363,15 +366,15 @@ model Ward {
   updatedAt DateTime @updatedAt
 
   // Relations
-  areas               WardArea[]
-  councillors         WardCouncillor[]
-  institutions        Institution[]
-  grievances          Grievance[]
-  projects            Project[]
-  demographics        Demographics[]
-  communityGroups     CommunityGroup[]
-  schemeBeneficiaries SchemeBeneficiary[]
-  leaders             Leader[]
+  areas           WardArea[]
+  councillors     WardCouncillor[]
+  institutions    Institution[]
+  grievances      Grievance[]
+  projects        Project[]
+  demographics    Demographics[]
+  communityGroups CommunityGroup[]
+  // schemeBeneficiaries SchemeBeneficiary[]
+  leaders         Leader[]
 
   @@index([status])
   @@index([zone])
@@ -781,45 +784,45 @@ model ProjectAttachment {
 // SCHEMES
 // ════════════════════════════════════════════════════════
 
-model Scheme {
-  id             String       @id @default(cuid())
-  name           String
-  department     String
-  level          String       @default("Central")
-  description    String?
-  eligibility    String?
-  benefits       String?
-  applicationUrl String?
-  budget         Float        @default(0)
-  status         SchemeStatus @default(ACTIVE)
-  startDate      DateTime?
-  endDate        DateTime?
+// model Scheme {
+//   id             String       @id @default(cuid())
+//   name           String
+//   department     String
+//   level          String       @default("Central")
+//   description    String?
+//   eligibility    String?
+//   benefits       String?
+//   applicationUrl String?
+//   budget         Float        @default(0)
+//   status         SchemeStatus @default(ACTIVE)
+//   startDate      DateTime?
+//   endDate        DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
 
-  beneficiaries SchemeBeneficiary[]
+//   beneficiaries SchemeBeneficiary[]
 
-  @@map("schemes")
-}
+//   @@map("schemes")
+// }
 
-model SchemeBeneficiary {
-  id               String   @id @default(cuid())
-  schemeId         String
-  wardId           String
-  beneficiaryCount Int      @default(0)
-  targetCount      Int      @default(0)
-  amountDisbursed  Float    @default(0)
-  reportDate       DateTime @default(now())
+// model SchemeBeneficiary {
+//   id               String   @id @default(cuid())
+//   schemeId         String
+//   wardId           String
+//   beneficiaryCount Int      @default(0)
+//   targetCount      Int      @default(0)
+//   amountDisbursed  Float    @default(0)
+//   reportDate       DateTime @default(now())
 
-  scheme Scheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
-  ward   Ward   @relation(fields: [wardId], references: [id])
+//   scheme Scheme @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+//   ward   Ward   @relation(fields: [wardId], references: [id])
 
-  @@unique([schemeId, wardId])
-  @@index([schemeId])
-  @@index([wardId])
-  @@map("scheme_beneficiaries")
-}
+//   @@unique([schemeId, wardId])
+//   @@index([schemeId])
+//   @@index([wardId])
+//   @@map("scheme_beneficiaries")
+// }
 
 // ════════════════════════════════════════════════════════
 // DEPARTMENTS (Configurable)

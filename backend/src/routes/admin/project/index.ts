@@ -2,22 +2,23 @@ import { Router } from "express";
 import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
 import { listProjects, getProject, getProjectStats } from "./read.js";
-import { createProject, createSchema } from "./create.js";
-import {
-  updateProject,
-  updateSchema,
-  updateStatus,
-  statusSchema,
-} from "./update.js";
+import { createProject } from "./create.js";
+import { updateProject, updateStatus } from "./update.js";
 import { deleteProject } from "./delete.js";
 import {
   addMilestone,
-  milestoneSchema,
   updateMilestone,
   deleteMilestone,
   toggleMilestone,
 } from "./milestones.js";
-import { addUpdate, updateEntrySchema } from "./updates.js";
+import { addUpdate } from "./updates.js";
+import {
+  createProjectSchema,
+  updateProjectSchema,
+  statusSchema,
+  updateEntrySchema,
+  milestoneSchema,
+} from "@/schemas/admin/project/index.js";
 
 const router = Router();
 
@@ -27,13 +28,13 @@ router.get("/:id", requirePermission("projects", "read"), getProject);
 router.post(
   "/",
   requirePermission("projects", "create"),
-  validate(createSchema),
+  validate(createProjectSchema),
   createProject,
 );
 router.put(
   "/:id",
   requirePermission("projects", "update"),
-  validate(updateSchema),
+  validate(updateProjectSchema),
   updateProject,
 );
 router.delete("/:id", requirePermission("projects", "delete"), deleteProject);

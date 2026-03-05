@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface PermissionGateProps {
@@ -5,27 +6,45 @@ interface PermissionGateProps {
   action: string;
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  showIfDenied?: boolean; // if true, it will render children but disabled if possible
 }
 
 /**
- * Conditionally render children based on permission.
- * Use inside any page to show/hide Create buttons, Delete buttons, etc.
+ * PermissionGate
  *
+ * Wraps components to show/hide them based on user permissions.
+ *
+ * Usage:
  * <PermissionGate module="grievances" action="create">
- *   <Button>+ New Grievance</Button>
+ *   <Button>Add Grievance</Button>
  * </PermissionGate>
  */
-export function PermissionGate({
+export const PermissionGate: React.FC<PermissionGateProps> = ({
   module,
   action,
   children,
   fallback = null,
-}: PermissionGateProps) {
-  const { can } = useAuth();
+  showIfDenied = false,
+}) => {
+  const { can, user } = useAuth();
 
-  if (!can(module, action)) {
-    return <>{fallback}</>;
+  // System Admin bypass
+  const hasPermission = user?.role === "SYSTEM_ADMIN" || can(module, action);
+
+  if (hasPermission) {
+    return <>{children}</>;
   }
 
-  return <>{children}</>;
-}
+  if (showIfDenied) {
+    // Attempt to clone children and add disabled prop if it's a button-like element
+    return (
+      <div className="opacity-50 cursor-not-allowed grayscale pointer-events-none">
+        {children}
+      </div>
+    );
+  }
+
+  return <>{fallback}</>;
+};
+
+export default PermissionGate;

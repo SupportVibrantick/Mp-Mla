@@ -1,5 +1,6 @@
 import prisma from "../lib/prisma.js";
 import logger from "../utils/logger.js";
+import { getSetting } from "../lib/settings.js";
 import { AuditAction } from "@prisma/client";
 import { Request } from "express";
 
@@ -27,37 +28,36 @@ interface AuditLogInput {
  * Create audit log (NON-BLOCKING)
  * Never affects main request performance
  */
-export function createAuditLog(input: AuditLogInput): void {
-  prisma.auditLog
-    .create({
-      data: {
-        userId: input.userId ?? undefined,
+export async function createAuditLog(input: AuditLogInput): Promise<void> {
+  try {
+    const isEnabled = await getSetting("enable_audit_log");
+    if (isEnabled === "false") return;
 
-        action: input.action,
-
-        module: input.module,
-
-        recordId: input.recordId ?? undefined,
-
-        description: input.description,
-
-        oldData: input.oldData ?? undefined,
-
-        newData: input.newData ?? undefined,
-
-        ipAddress: input.ipAddress ?? undefined,
-
-        userAgent: input.userAgent ?? undefined,
-      },
-    })
-    .then(() => {
-      logger.debug(
-        `Audit: ${input.action} ${input.module} ${input.recordId ?? ""}`,
-      );
-    })
-    .catch((error) => {
-      logger.error(`Audit log failed: ${error.message}`);
-    });
+    prisma.auditLog
+      .create({
+        data: {
+          userId: input.userId ?? undefined,
+          action: input.action,
+          module: input.module,
+          recordId: input.recordId ?? undefined,
+          description: input.description,
+          oldData: input.oldData ?? undefined,
+          newData: input.newData ?? undefined,
+          ipAddress: input.ipAddress ?? undefined,
+          userAgent: input.userAgent ?? undefined,
+        },
+      })
+      .then(() => {
+        logger.debug(
+          `Audit: ${input.action} ${input.module} ${input.recordId ?? ""}`,
+        );
+      })
+      .catch((error) => {
+        logger.error(`Audit log failed: ${error.message}`);
+      });
+  } catch (error: any) {
+    logger.error(`Audit log check failed: ${error.message}`);
+  }
 }
 
 /**

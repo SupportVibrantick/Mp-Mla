@@ -34,7 +34,7 @@ router.get(
       totalGrievances,
       totalProjects,
       totalInstitutions,
-      totalSchemes,
+      // totalSchemes,
       totalDepartments,
 
       // Grievance breakdown
@@ -54,8 +54,8 @@ router.get(
       funds,
 
       // Scheme aggregates
-      schemeBeneficiaries,
-      activeSchemes,
+      // schemeBeneficiaries,
+      // activeSchemes,
 
       // Recent Grievances
       recentGrievances,
@@ -73,7 +73,7 @@ router.get(
       prisma.institution.count({
         where: { status: "ACTIVE" },
       }),
-      prisma.scheme.count({ where: { status: "ACTIVE" } }),
+      // prisma.scheme.count({ where: { status: "ACTIVE" } }),
       prisma.department.count({ where: { isActive: true } }),
 
       // ─── Grievances
@@ -131,14 +131,14 @@ router.get(
       }),
 
       // ─── Schemes
-      prisma.schemeBeneficiary.aggregate({
-        _sum: {
-          beneficiaryCount: true,
-          targetCount: true,
-          amountDisbursed: true,
-        },
-      }),
-      prisma.scheme.count({ where: { status: "ACTIVE" } }),
+      // prisma.schemeBeneficiary.aggregate({
+      //   _sum: {
+      //     beneficiaryCount: true,
+      //     targetCount: true,
+      //     amountDisbursed: true,
+      //   },
+      // }),
+      // prisma.scheme.count({ where: { status: "ACTIVE" } }),
 
       // ─── Recent Grievances
       prisma.grievance.findMany({
@@ -243,14 +243,14 @@ router.get(
     const fundTotalReleased = funds.reduce((s, f) => s + f.totalReleased, 0);
     const fundTotalUtilized = funds.reduce((s, f) => s + f.totalUtilized, 0);
 
-    const schemeCoverage =
-      (schemeBeneficiaries._sum.targetCount || 0) > 0
-        ? Math.round(
-            ((schemeBeneficiaries._sum.beneficiaryCount || 0) /
-              (schemeBeneficiaries._sum.targetCount || 1)) *
-              100,
-          )
-        : 0;
+    // const schemeCoverage =
+    //   (schemeBeneficiaries._sum.targetCount || 0) > 0
+    //     ? Math.round(
+    //         ((schemeBeneficiaries._sum.beneficiaryCount || 0) /
+    //           (schemeBeneficiaries._sum.targetCount || 1)) *
+    //           100,
+    //       )
+    //     : 0;
 
     // Resolve department names for recent projects
     const deptIds = [
@@ -280,9 +280,9 @@ router.get(
           budgetUsed: projectBudget._sum.budgetUsed || 0,
           totalInstitutions,
           totalDepartments,
-          activeSchemes,
-          totalBeneficiaries: schemeBeneficiaries._sum.beneficiaryCount || 0,
-          schemeCoverage,
+          // activeSchemes,
+          // totalBeneficiaries: schemeBeneficiaries._sum.beneficiaryCount || 0,
+          // schemeCoverage,
           fundTotalAllocated,
           fundTotalReleased,
           fundTotalUtilized,

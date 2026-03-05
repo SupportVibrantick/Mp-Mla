@@ -1,12 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
-
-export const updateEntrySchema = z.object({
-  updateText: z.string().min(1, "Update text required"),
-  photoUrl: z.string().optional(),
-});
 
 export async function addUpdate(
   req: Request,

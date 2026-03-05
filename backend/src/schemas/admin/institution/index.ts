@@ -1,30 +1,86 @@
 import { z } from "zod";
 
-export const createInstitutionSchema = z.object({
-    name: z.string().min(1, "Institution name is required"),
-    category: z.enum([
-        "TEMPLE", "HOSPITAL", "SCHOOL", "COLLEGE", "POLICE_STATION",
-        "GOVT_OFFICE", "NGO", "GYM", "CLUB", "MARKET", "SLUM", "RWA",
-        "SPORTS_TEAM", "OTHER",
-    ]),
-    address: z.string().min(1, "Address is required"),
-    wardId: z.number().int().positive("Ward is required"),
-    contactNo: z.string().optional(),
-    status: z.enum(["ACTIVE", "INACTIVE", "UNDER_MAINTENANCE", "CLOSED", "PROPOSED"]).default("ACTIVE"),
+const CATEGORIES = [
+  "TEMPLE",
+  "MOSQUE",
+  "GURUDWARA",
+  "CHURCH",
+  "HOSPITAL",
+  "CLINIC",
+  "SCHOOL",
+  "COLLEGE",
+  "UNIVERSITY",
+  "COACHING_CENTER",
+  "POLICE_STATION",
+  "GOVT_OFFICE",
+  "NGO",
+  "GYM",
+  "SPORTS_FACILITY",
+  "COMMUNITY_HALL",
+  "LIBRARY",
+  "MARKET",
+  "RWA",
+  "OLD_AGE_HOME",
+  "OTHER",
+] as const;
+
+const STATUSES = [
+  "ACTIVE",
+  "INACTIVE",
+  "UNDER_MAINTENANCE",
+  "CLOSED",
+  "PROPOSED",
+] as const;
+
+const inchargeInlineSchema = z.object({
+  name: z.string().min(1, "Incharge name required"),
+  designation: z.string().min(1, "Designation required"),
+  contactNo: z.string().min(1, "Contact number required"),
+  email: z.string().email().optional().or(z.literal("")),
+  dateOfBirth: z.string().datetime().optional(),
+  appointedDate: z.string().datetime().optional(),
+  photoUrl: z.string().optional(),
+  isActive: z.boolean().default(true),
 });
 
-export const updateInstitutionSchema = z.object({
-    name: z.string().min(1).optional(),
-    category: z.enum([
-        "TEMPLE", "HOSPITAL", "SCHOOL", "COLLEGE", "POLICE_STATION",
-        "GOVT_OFFICE", "NGO", "GYM", "CLUB", "MARKET", "SLUM", "RWA",
-        "SPORTS_TEAM", "OTHER",
-    ]).optional(),
-    address: z.string().min(1).optional(),
-    wardId: z.number().int().positive().optional(),
-    contactNo: z.string().optional(),
-    status: z.enum(["ACTIVE", "INACTIVE", "UNDER_MAINTENANCE", "CLOSED", "PROPOSED"]).optional(),
+export const createInstitutionSchema = z.object({
+  name: z.string().min(1, "Name is required").max(300),
+  category: z.enum(CATEGORIES),
+  subcategory: z.string().optional(),
+  address: z.string().min(1, "Address is required"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  wardId: z.string().min(1, "Ward is required"),
+  contactNo: z.string().optional(),
+  email: z.string().email().optional().or(z.literal("")),
+  website: z.string().optional(),
+  status: z.enum(STATUSES).default("ACTIVE"),
+  description: z.string().optional(),
+  photoUrl: z.string().optional(),
+  capacity: z.number().int().min(0).optional(),
+  establishedDate: z.string().datetime().optional(),
+  // Inline incharges
+  incharges: z.array(inchargeInlineSchema).optional(),
 });
+export const updateInstitutionSchema = createInstitutionSchema
+  .omit({ incharges: true })
+  .partial();
+
+export const createInchargeSchema = z.object({
+  name: z.string().min(1, "Name required"),
+  designation: z.string().min(1, "Designation required"),
+  contactNo: z.string().min(1, "Contact number required"),
+  email: z.string().email().optional().or(z.literal("")),
+  dateOfBirth: z.string().datetime().optional(),
+  photoUrl: z.string().optional(),
+  appointedDate: z.string().datetime().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const updateInchargeSchema = createInchargeSchema.partial();
 
 export type CreateInstitutionInput = z.infer<typeof createInstitutionSchema>;
 export type UpdateInstitutionInput = z.infer<typeof updateInstitutionSchema>;
+export type inchargeInlineInput = z.infer<typeof inchargeInlineSchema>;
+export type createInchargeInput = z.infer<typeof createInchargeSchema>;
+export type updateInchargeInput = z.infer<typeof updateInchargeSchema>;

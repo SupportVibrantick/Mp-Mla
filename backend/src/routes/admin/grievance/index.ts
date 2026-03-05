@@ -7,17 +7,17 @@ import {
   getGrievanceStats,
   getGrievanceAnalytics,
 } from "./read.js";
-import { createGrievance, createGrievanceSchema } from "./create.js";
-import {
-  updateGrievance,
-  updateGrievanceSchema,
-  changeStatus,
-  changeStatusSchema,
-  assignGrievance,
-  assignSchema,
-} from "./update.js";
+import { createGrievance } from "./create.js";
+import { updateGrievance, changeStatus, assignGrievance } from "./update.js";
 import { deleteGrievance } from "./delete.js";
-import { addTimelineEntry, timelineSchema } from "./timeline.js";
+import { addTimelineEntry } from "./timeline.js";
+import {
+  createGrievanceSchema,
+  updateGrievanceSchema,
+  timelineSchema,
+  changeStatusSchema,
+  assignSchema,
+} from "@/schemas/admin/grievance/index.js";
 
 const router = Router();
 

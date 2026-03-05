@@ -743,7 +743,7 @@ export default function WardFormPage() {
                       partyName: e.target.value,
                     }))
                   }
-                  placeholder="e.g. BJP"
+                  placeholder="e.g. ..........."
                 />
               </div>
               <div className="space-y-2">

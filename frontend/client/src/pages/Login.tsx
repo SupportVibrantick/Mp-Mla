@@ -16,6 +16,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { useSystemSettings } from "@/contexts/SettingsContext";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,6 +27,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const { login } = useAuth();
+  const { settings } = useSystemSettings();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,11 +80,21 @@ export default function Login() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
-            <div className="bg-primary p-2.5 rounded-xl">
-              <Shield className="h-8 w-8 text-primary-foreground" />
-            </div>
+            {settings.brand_logo_url ? (
+              <div className="h-12 w-12 flex items-center justify-center bg-white/10 rounded-xl p-1">
+                {settings.brand_logo_url.startsWith("http") || settings.brand_logo_url.startsWith("data:") ? (
+                  <img src={settings.brand_logo_url} alt="Logo" className="h-full w-auto object-contain" />
+                ) : (
+                  <span className="text-3xl">{settings.brand_logo_url}</span>
+                )}
+              </div>
+            ) : (
+              <div className="bg-primary p-2.5 rounded-xl">
+                <Shield className="h-8 w-8 text-primary-foreground" />
+              </div>
+            )}
             <h1 className="text-2xl font-bold tracking-tight">
-              Constituency Portal
+              {settings.org_name || "Constituency Portal"}
             </h1>
           </div>
 
@@ -116,7 +128,7 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 text-sm text-sidebar-foreground/50">
-          © {new Date().getFullYear()} Vibrantick Infotech Solutions. All rights
+          © {new Date().getFullYear()} {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All rights
           reserved.
         </div>
       </div>
@@ -125,8 +137,20 @@ export default function Login() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12">
         <Card className="w-full max-w-md border-none shadow-none bg-transparent">
           <CardHeader className="space-y-2 text-center pb-2">
-            <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2 lg:hidden">
-              <Shield className="h-8 w-8 text-primary" />
+            <div className="mx-auto p-3 rounded-full w-fit mb-2 lg:hidden">
+              {settings.brand_logo_url ? (
+                <div className="h-12 w-12 flex items-center justify-center mb-2">
+                  {settings.brand_logo_url.startsWith("http") || settings.brand_logo_url.startsWith("data:") ? (
+                    <img src={settings.brand_logo_url} alt="Logo" className="h-full w-auto object-contain" />
+                  ) : (
+                    <span className="text-3xl">{settings.brand_logo_url}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-primary/10 p-3 rounded-full">
+                  <Shield className="h-8 w-8 text-primary" />
+                </div>
+              )}
             </div>
             <h2 className="text-3xl font-bold">Welcome Back</h2>
             <p className="text-muted-foreground">Sign in to your dashboard</p>

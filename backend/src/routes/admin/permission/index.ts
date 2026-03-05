@@ -5,6 +5,7 @@ import { getPermissionsGroupedByModule } from "../../../lib/permissions.js";
 import catchAsync from "@/utils/catchAsync.js";
 
 import ApiResponse from "../../../utils/ApiResponse.js";
+import { ApiError } from "@/utils/ApiError.js";
 
 const router = Router();
 
@@ -96,6 +97,59 @@ router.get(
         "Role default permissions fetched successfully",
       ),
     );
+  }),
+);
+
+/**
+ * PUT /api/admin/permissions/role-defaults
+ * Bulk update role default permissions.
+ *
+ * Body: { role: "MLA_MP", permissions: [{ permissionId: "xxx", granted: true }, ...] }
+ */
+router.put(
+  "/role-defaults",
+  requirePermission("users", "update"),
+  catchAsync(async (req, res) => {
+    const { role, permissions } = req.body;
+
+    if (!role || !Array.isArray(permissions)) {
+      throw ApiError.badRequest("Role and permissions array are required");
+    }
+
+    // Verify all permissionIds exist
+    const permIds = permissions.map((p: any) => p.permissionId);
+    const existingPerms = await prisma.permission.findMany({
+      where: { id: { in: permIds } },
+      select: { id: true },
+    });
+
+    const existingIds = new Set(existingPerms.map((p) => p.id));
+    const invalid = permIds.filter((id: string) => !existingIds.has(id));
+
+    if (invalid.length > 0) {
+      throw ApiError.badRequest(`Invalid permission IDs: ${invalid.join(", ")}`);
+    }
+
+    // Update in transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete existing for this role
+      await tx.roleDefaultPermission.deleteMany({
+        where: { role: role as any },
+      });
+
+      // Create new defaults
+      if (permissions.length > 0) {
+        await tx.roleDefaultPermission.createMany({
+          data: permissions.map((p: any) => ({
+            role: role as any,
+            permissionId: p.permissionId,
+            granted: p.granted,
+          })),
+        });
+      }
+    });
+
+    res.json(ApiResponse.success(null, `Role defaults for ${role} updated`));
   }),
 );
 

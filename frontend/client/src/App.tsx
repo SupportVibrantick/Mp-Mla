@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { GuestRoute } from "./components/auth/GuestRoute";
 
@@ -126,7 +128,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/users">
-        <ProtectedRoute module="projects" action="view">
+        <ProtectedRoute module="users" action="read">
           <UserManagement />
         </ProtectedRoute>
       </Route>
@@ -155,32 +157,32 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/wards">
-        <ProtectedRoute module="projects" action="view">
+        <ProtectedRoute module="wards" action="read">
           <WardsPage />
         </ProtectedRoute>
       </Route>
       <Route path="/wards/new">
-        <ProtectedRoute module="projects" action="view">
+        <ProtectedRoute module="wards" action="create">
           <WardFormPage />
         </ProtectedRoute>
       </Route>
       <Route path="/wards/:id/edit">
-        <ProtectedRoute module="projects" action="view">
+        <ProtectedRoute module="wards" action="update">
           <WardFormPage />
         </ProtectedRoute>
       </Route>
       <Route path="/wards/:id">
-        <ProtectedRoute module="projects" action="view">
+        <ProtectedRoute module="wards" action="read">
           <WardDetailPage />
         </ProtectedRoute>
       </Route>
       <Route path="/permissions">
-        <ProtectedRoute module="projects" action="view">
+        <ProtectedRoute module="users" action="read">
           <Permissions />
         </ProtectedRoute>
       </Route>
       <Route path="/users/:id/permissions">
-        <ProtectedRoute module="projects" action="view">
+        <ProtectedRoute module="users" action="update">
           <UserPermissions />
         </ProtectedRoute>
       </Route>
@@ -247,7 +249,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/demographics">
-        <ProtectedRoute module="demographics" action="view">
+        <ProtectedRoute module="demographics" action="read">
           <DemographicsPage />
         </ProtectedRoute>
       </Route>
@@ -321,10 +323,14 @@ function App() {
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
+          <SettingsProvider>
+            <LanguageProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Router />
+              </TooltipProvider>
+            </LanguageProvider>
+          </SettingsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

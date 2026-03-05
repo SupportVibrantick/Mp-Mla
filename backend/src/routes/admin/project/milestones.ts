@@ -1,13 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
-
-export const milestoneSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional(),
-  targetDate: z.string().datetime().optional(),
-});
 
 export async function addMilestone(
   req: Request,

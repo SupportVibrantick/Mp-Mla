@@ -50,11 +50,11 @@ const ALL_PERMISSIONS = [
   { module: "projects", action: "delete", description: "Delete project" },
   { module: "projects", action: "export", description: "Export projects" },
 
-  { module: "schemes", action: "create", description: "Add scheme" },
-  { module: "schemes", action: "read", description: "View schemes" },
-  { module: "schemes", action: "update", description: "Edit scheme" },
-  { module: "schemes", action: "delete", description: "Delete scheme" },
-  { module: "schemes", action: "export", description: "Export schemes" },
+  // { module: "schemes", action: "create", description: "Add scheme" },
+  // { module: "schemes", action: "read", description: "View schemes" },
+  // { module: "schemes", action: "update", description: "Edit scheme" },
+  // { module: "schemes", action: "delete", description: "Delete scheme" },
+  // { module: "schemes", action: "export", description: "Export schemes" },
 
   {
     module: "community_groups",
@@ -184,8 +184,8 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "grievances", action: "export" },
     { module: "projects", action: "read" },
     { module: "projects", action: "export" },
-    { module: "schemes", action: "read" },
-    { module: "schemes", action: "export" },
+    // { module: "schemes", action: "read" },
+    // { module: "schemes", action: "export" },
     { module: "community_groups", action: "read" },
     { module: "demographics", action: "read" },
     { module: "demographics", action: "export" },
@@ -225,9 +225,9 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "projects", action: "read" },
     { module: "projects", action: "update" },
     { module: "projects", action: "export" },
-    { module: "schemes", action: "create" },
-    { module: "schemes", action: "read" },
-    { module: "schemes", action: "update" },
+    // { module: "schemes", action: "create" },
+    // { module: "schemes", action: "read" },
+    // { module: "schemes", action: "update" },
     { module: "community_groups", action: "create" },
     { module: "community_groups", action: "read" },
     { module: "community_groups", action: "update" },
@@ -993,56 +993,56 @@ async function main() {
 
   console.log(`✅ ${projects.length} projects created`);
 
-  // ─── 12. Schemes ─────────────────────────────────────
-  const schemes = [
-    {
-      name: "PM Awas Yojana",
-      department: "Housing",
-      level: "Central",
-      description: "Housing for all under poverty line",
-      budget: 50000000,
-      status: "ACTIVE" as const,
-    },
-    {
-      name: "Swachh Bharat Mission",
-      department: "Sanitation",
-      level: "Central",
-      description: "Clean India initiative",
-      budget: 15000000,
-      status: "ACTIVE" as const,
-    },
-    {
-      name: "Ayushman Bharat",
-      department: "Health",
-      level: "Central",
-      description: "Free health insurance",
-      budget: 30000000,
-      status: "ACTIVE" as const,
-    },
-    {
-      name: "PM Kisan Samman",
-      department: "Agriculture",
-      level: "Central",
-      description: "Income support for farmers",
-      budget: 10000000,
-      status: "ACTIVE" as const,
-    },
-  ];
+  // // ─── 12. Schemes ─────────────────────────────────────
+  // const schemes = [
+  //   {
+  //     name: "PM Awas Yojana",
+  //     department: "Housing",
+  //     level: "Central",
+  //     description: "Housing for all under poverty line",
+  //     budget: 50000000,
+  //     status: "ACTIVE" as const,
+  //   },
+  //   {
+  //     name: "Swachh Bharat Mission",
+  //     department: "Sanitation",
+  //     level: "Central",
+  //     description: "Clean India initiative",
+  //     budget: 15000000,
+  //     status: "ACTIVE" as const,
+  //   },
+  //   {
+  //     name: "Ayushman Bharat",
+  //     department: "Health",
+  //     level: "Central",
+  //     description: "Free health insurance",
+  //     budget: 30000000,
+  //     status: "ACTIVE" as const,
+  //   },
+  //   {
+  //     name: "PM Kisan Samman",
+  //     department: "Agriculture",
+  //     level: "Central",
+  //     description: "Income support for farmers",
+  //     budget: 10000000,
+  //     status: "ACTIVE" as const,
+  //   },
+  // ];
 
-  for (const s of schemes) {
-    const scheme = await prisma.scheme.create({ data: s });
-    for (const w of wards.slice(0, 3)) {
-      await prisma.schemeBeneficiary.create({
-        data: {
-          schemeId: scheme.id,
-          wardId: w.id,
-          beneficiaryCount: Math.floor(Math.random() * 500) + 50,
-          targetCount: Math.floor(Math.random() * 1000) + 200,
-        },
-      });
-    }
-  }
-  console.log(`✅ ${schemes.length} schemes created`);
+  // for (const s of schemes) {
+  //   const scheme = await prisma.scheme.create({ data: s });
+  //   for (const w of wards.slice(0, 3)) {
+  //     await prisma.schemeBeneficiary.create({
+  //       data: {
+  //         schemeId: scheme.id,
+  //         wardId: w.id,
+  //         beneficiaryCount: Math.floor(Math.random() * 500) + 50,
+  //         targetCount: Math.floor(Math.random() * 1000) + 200,
+  //       },
+  //     });
+  //   }
+  // }
+  // console.log(`✅ ${schemes.length} schemes created`);
 
   // ─── 13. Demographics ────────────────────────────────
   for (const ward of wards) {

@@ -5,30 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
 import { generateTicketNumber, calculateExpectedDate } from "./helpers.js";
-
-export const createGrievanceSchema = z.object({
-  subject: z.string().min(1, "Subject required").max(500),
-  category: z.string().min(1, "Category required"),
-  subcategory: z.string().optional(),
-  description: z.string().min(1, "Description required"),
-  wardId: z.string().min(1, "Ward required"),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).default("MEDIUM"),
-  source: z
-    .enum(["OFFICE", "PHONE", "EMAIL", "ONLINE", "FIELD_VISIT", "SOCIAL_MEDIA"])
-    .default("OFFICE"),
-  complainantName: z.string().min(1, "Complainant name required"),
-  complainantPhone: z.string().min(1, "Complainant phone required"),
-  complainantEmail: z.string().email().optional().or(z.literal("")),
-  complainantAddress: z.string().optional(),
-  locationAddress: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  assignedDept: z.string().optional(),
-  assignedToId: z.string().optional(),
-  expectedResolutionDate: z.string().datetime().optional(),
-});
 
 export async function createGrievance(
   req: Request,

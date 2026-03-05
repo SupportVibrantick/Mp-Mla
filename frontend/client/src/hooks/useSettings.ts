@@ -2,7 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+import { useSystemSettings } from "@/contexts/SettingsContext";
+
 export const SETTING_GROUPS = [
+  // ... (rest of SETTING_GROUPS)
   {
     id: "general",
     label: "General",
@@ -46,11 +49,14 @@ export function useSettings() {
 export function useUpdateSettings() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { refreshSettings } = useSystemSettings();
+
   return useMutation({
     mutationFn: (settings: { key: string; value: string }[]) =>
       api.put("/admin/settings", { settings }).then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["settings"] });
+      refreshSettings();
       toast({ title: "Settings Saved", description: res.message });
     },
     onError: (err: any) => {
@@ -66,11 +72,14 @@ export function useUpdateSettings() {
 export function useResetSettings() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { refreshSettings } = useSystemSettings();
+
   return useMutation({
     mutationFn: (group: string) =>
       api.post(`/admin/settings/reset/${group}`).then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["settings"] });
+      refreshSettings();
       toast({ title: "Reset", description: res.message });
     },
     onError: (err: any) => {

@@ -39,6 +39,8 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
+  Briefcase,
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -77,6 +79,14 @@ export default function WardsPage() {
     if (!stats?.byZone) return [];
     return stats.byZone.map((z: any) => z.zone);
   }, [stats]);
+
+  const reset = () => {
+    setSearch("");
+    setAreaType("all");
+    setZone("all");
+    setStatus("all");
+    setPage(1);
+  };
 
   return (
     <MainLayout title="Wards">
@@ -124,8 +134,8 @@ export default function WardsPage() {
               </Card>
               <Card>
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-accent/15 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-accent" />
+                  <div className="w-10 h-10 rounded-lg bg-gray-500/15 flex items-center justify-center">
+                    <MapPin className="h-5 w-5 text-gray200" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">
@@ -240,6 +250,20 @@ export default function WardsPage() {
                     <SelectItem value="PROPOSED">Proposed</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {(search ||
+                  zone !== "all" ||
+                  areaType !== "all" ||
+                  status !== "all") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={reset}
+                      className="text-xs"
+                    >
+                      Clear
+                    </Button>
+                  )}
               </div>
             </div>
           </CardContent>
@@ -352,14 +376,25 @@ export default function WardsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-2 text-xs">
-                              <span title="Grievances">
-                                {ward._count?.grievances || 0} G
-                              </span>
-                              <span className="text-muted-foreground">|</span>
-                              <span title="Projects">
-                                {ward._count?.projects || 0} P
-                              </span>
+                            <div className="flex items-center justify-center gap-3">
+                              <div
+                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 group cursor-help"
+                                title="Active Grievances"
+                              >
+                                <MessageSquare className="h-3 w-3" />
+                                <span className="text-xs font-mono font-bold">
+                                  {ward._count?.grievances || 0}
+                                </span>
+                              </div>
+                              <div
+                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 group cursor-help"
+                                title="Ongoing Projects"
+                              >
+                                <Briefcase className="h-3 w-3" />
+                                <span className="text-xs font-mono font-bold">
+                                  {ward._count?.projects || 0}
+                                </span>
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">

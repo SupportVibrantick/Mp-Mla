@@ -5,16 +5,6 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
-import { createSchema } from "./create.js";
-
-export const updateSchema = createSchema.omit({ milestones: true }).partial();
-
-export const statusSchema = z.object({
-  status: z.enum(["PENDING", "RUNNING", "COMPLETED", "ON_HOLD", "CANCELLED"]),
-  completionPercent: z.number().int().min(0).max(100).optional(),
-  actualEndDate: z.string().datetime().optional(),
-});
 
 export async function updateProject(
   req: Request,

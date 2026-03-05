@@ -6,19 +6,23 @@ import {
   getInstitution,
   getInstitutionStats,
 } from "./read.js";
-import { createInstitution, createInstitutionSchema } from "./create.js";
-import { updateInstitution, updateInstitutionSchema } from "./update.js";
+import { createInstitution } from "./create.js";
+import { updateInstitution } from "./update.js";
 import { deleteInstitution } from "./delete.js";
 import {
   listIncharges,
   getIncharge,
   createIncharge,
-  createInchargeSchema,
   updateIncharge,
-  updateInchargeSchema,
   deleteIncharge,
   toggleInchargeActive,
 } from "./incharges.js";
+import {
+  createInstitutionSchema,
+  updateInstitutionSchema,
+  createInchargeSchema,
+  updateInchargeSchema,
+} from "@/schemas/admin/institution/index.js";
 
 const router = Router();
 

@@ -7,19 +7,6 @@ import {
 import { ApiError } from "../../../utils/ApiError.js";
 import { z } from "zod";
 
-export const createInchargeSchema = z.object({
-  name: z.string().min(1, "Name required"),
-  designation: z.string().min(1, "Designation required"),
-  contactNo: z.string().min(1, "Contact number required"),
-  email: z.string().email().optional().or(z.literal("")),
-  dateOfBirth: z.string().datetime().optional(),
-  photoUrl: z.string().optional(),
-  appointedDate: z.string().datetime().optional(),
-  isActive: z.boolean().default(true),
-});
-
-export const updateInchargeSchema = createInchargeSchema.partial();
-
 async function getInstitutionOrThrow(id: string) {
   const inst = await prisma.institution.findUnique({
     where: { id },

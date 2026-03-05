@@ -164,7 +164,7 @@ export default function LeaderListPage() {
 
         {/* ─── Stats Row ───────────────────────────────── */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
               {
                 label: "Total Leaders",
@@ -185,12 +185,12 @@ export default function LeaderListPage() {
                 color: "#ec4899",
                 highlight: stats.todayBirthdays > 0,
               },
-              {
-                label: "Upcoming 7 Days",
-                value: stats.upcoming7,
-                Icon: Cake,
-                color: "#f59e0b",
-              },
+              // {
+              //   label: "Upcoming 7 Days",
+              //   value: stats.upcoming7,
+              //   Icon: Cake,
+              //   color: "#f59e0b",
+              // },
               {
                 label: "High Influence",
                 value:

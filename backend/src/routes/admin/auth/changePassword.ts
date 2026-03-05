@@ -7,6 +7,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { env } from "../../../lib/env.js";
+import { validatePasswordComplexity } from "../../../lib/authUtils.js";
 
 export async function changePassword(
   req: Request,
@@ -22,6 +23,9 @@ export async function changePassword(
     // Verify current password
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) throw ApiError.badRequest("Current password is incorrect.");
+
+    // Validate complexity
+    await validatePasswordComplexity(newPassword);
 
     // Prevent reusing same password
     const isSame = await bcrypt.compare(newPassword, user.password);

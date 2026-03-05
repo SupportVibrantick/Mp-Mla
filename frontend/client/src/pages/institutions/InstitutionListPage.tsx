@@ -71,7 +71,7 @@ export default function InstitutionListPage() {
   const institutions = instRes?.data || [];
   const pagination = instRes?.pagination;
   const stats = statsRes?.data;
-  const wards = wardsRes?.data?.data || [];
+  const wards = wardsRes?.data?.wards || [];
 
   // Group categories for filter dropdown
   const categoryGroups = useMemo(() => {
@@ -83,6 +83,14 @@ export default function InstitutionListPage() {
     });
     return groups;
   }, []);
+
+  const reset = () => {
+    setSearch("");
+    setWardFilter("all");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+    setPage(1);
+  };
 
   return (
     <MainLayout title="Institutions">
@@ -300,6 +308,19 @@ export default function InstitutionListPage() {
                     <SelectItem value="PROPOSED">Proposed</SelectItem>
                   </SelectContent>
                 </Select>
+                {(search ||
+                  wardFilter !== "all" ||
+                  statusFilter !== "all" ||
+                  categoryFilter !== "all") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="text-xs"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { useAuth } from "@/hooks/useAuth";
+import { useSystemSettings } from "@/contexts/SettingsContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -13,6 +14,7 @@ interface MainLayoutProps {
 export function MainLayout({ children, title = "Dashboard" }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
+  const { settings } = useSystemSettings();
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
@@ -20,8 +22,6 @@ export function MainLayout({ children, title = "Dashboard" }: MainLayoutProps) {
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
       />
-
-
 
       <div
         className={cn(
@@ -39,6 +39,10 @@ export function MainLayout({ children, title = "Dashboard" }: MainLayoutProps) {
             {children}
           </motion.div>
         </main>
+
+        <footer className="py-4 px-6 border-t border-border/40 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All rights reserved.
+        </footer>
       </div>
     </div>
   );

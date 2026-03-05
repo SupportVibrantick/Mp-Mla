@@ -13,7 +13,7 @@ import {
   useGrievanceReport,
   useProjectReport,
   useWardReport,
-  useSchemeReport,
+  // useSchemeReport,
   useInstitutionReport,
   useDemographicReport,
   useMonthlyReport,
@@ -92,7 +92,7 @@ type ReportType =
   | "grievance"
   | "project"
   | "ward"
-  | "scheme"
+  // | "scheme"
   | "institution"
   | "demographic"
   | "monthly";
@@ -124,12 +124,12 @@ const REPORTS = [
     icon: Map,
     desc: "Ward-wise consolidated view",
   },
-  {
-    id: "scheme" as const,
-    label: "Schemes",
-    icon: Users,
-    desc: "Beneficiary coverage analysis",
-  },
+  // {
+  //   id: "scheme" as const,
+  //   label: "Schemes",
+  //   icon: Users,
+  //   desc: "Beneficiary coverage analysis",
+  // },
   {
     id: "institution" as const,
     label: "Institutions",
@@ -241,11 +241,11 @@ export default function ReportsPage() {
       : undefined,
   );
   const wReport = useWardReport();
-  const sReport = useSchemeReport(
-    active === "scheme"
-      ? { wardId: wardFilter !== "all" ? wardFilter : undefined }
-      : undefined,
-  );
+  // const sReport = useSchemeReport(
+  //   active === "scheme"
+  //     ? { wardId: wardFilter !== "all" ? wardFilter : undefined }
+  //     : undefined,
+  // );
   const iReport = useInstitutionReport(
     active === "institution"
       ? { wardId: wardFilter !== "all" ? wardFilter : undefined }
@@ -258,7 +258,7 @@ export default function ReportsPage() {
     (active === "grievance" && gReport.isLoading) ||
     (active === "project" && pReport.isLoading) ||
     (active === "ward" && wReport.isLoading) ||
-    (active === "scheme" && sReport.isLoading) ||
+    // (active === "scheme" && sReport.isLoading) ||
     (active === "institution" && iReport.isLoading) ||
     (active === "demographic" && dReport.isLoading) ||
     (active === "monthly" && mReport.isLoading);
@@ -293,7 +293,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Report Selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {REPORTS.map((r) => {
             const Icon = r.icon;
             const isAct = active === r.id;
@@ -923,7 +923,7 @@ export default function ReportsPage() {
           })()}
 
         {/* ═══ SCHEME ═════════════════════════════════════ */}
-        {active === "scheme" &&
+        {/* {active === "scheme" &&
           sReport.data?.data &&
           (() => {
             const d = sReport.data.data;
@@ -1060,7 +1060,7 @@ export default function ReportsPage() {
                 </Card>
               </>
             );
-          })()}
+          })()} */}
 
         {/* ═══ INSTITUTION ════════════════════════════════ */}
         {active === "institution" &&
@@ -1281,7 +1281,7 @@ export default function ReportsPage() {
             const s = d.summary;
             return (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                   {[
                     {
                       label: "Grievances (Month)",
@@ -1291,7 +1291,7 @@ export default function ReportsPage() {
                     { label: "Running Projects", value: s.runningProjects },
                     { label: "Completed Projects", value: s.completedProjects },
                     { label: "Institutions", value: s.activeInstitutions },
-                    { label: "Active Schemes", value: s.activeSchemes },
+                    // { label: "Active Schemes", value: s.activeSchemes },
                   ].map((c) => (
                     <Card key={c.label}>
                       <CardContent className="p-4 text-center">

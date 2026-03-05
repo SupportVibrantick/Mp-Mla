@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -109,6 +109,7 @@ export default function InstitutionFormPage() {
     setValue,
     watch,
     reset,
+    control,
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -288,28 +289,37 @@ export default function InstitutionFormPage() {
                 <Label>
                   Category <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("category")}
-                  onValueChange={(v) => setValue("category", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(categoryGroups).map(([group, cats]) => (
-                      <div key={group}>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {group}
-                        </div>
-                        {cats.map((c) => (
-                          <SelectItem key={c.value} value={c.value}>
-                            {c.icon} {c.label}
-                          </SelectItem>
+                <Controller
+                  name="category"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {Object.entries(categoryGroups).map(([group, cats]) => (
+                          <div key={group}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                              {group}
+                            </div>
+                            {cats.map((c) => (
+                              <SelectItem key={c.value} value={c.value}>
+                                {c.icon} {c.label}
+                              </SelectItem>
+                            ))}
+                          </div>
                         ))}
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+
                 {errors.category && (
                   <p className="text-xs text-destructive">
                     {errors.category.message}
@@ -323,21 +333,30 @@ export default function InstitutionFormPage() {
                 <Label>
                   Ward <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("wardId")}
-                  onValueChange={(v) => setValue("wardId", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ward" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wards.map((w: any) => (
-                      <SelectItem key={w.id} value={w.id}>
-                        #{w.wardNumber} {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                <Controller
+                  name="wardId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ward" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {wards.map((w: any) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            #{w.wardNumber} {w.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.wardId && (
                   <p className="text-xs text-destructive">
                     {errors.wardId.message}

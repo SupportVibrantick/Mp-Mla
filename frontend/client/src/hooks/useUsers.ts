@@ -128,3 +128,25 @@ export function useRoleDefaults() {
     queryFn: () => permissionsApi.roleDefaults().then((r) => r.data),
   });
 }
+
+export function useUpdateRoleDefaults() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (data: { role: string; permissions: any[] }) =>
+      permissionsApi.updateRoleDefaults(data).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["permissions-role-defaults"] });
+      toast({ title: "Role Defaults Updated", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description:
+          err?.response?.data?.message || "Failed to update role defaults",
+        variant: "destructive",
+      });
+    },
+  });
+}

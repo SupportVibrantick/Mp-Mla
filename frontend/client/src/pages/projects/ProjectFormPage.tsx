@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -66,6 +66,7 @@ export default function ProjectFormPage() {
     setValue,
     watch,
     reset,
+    control,
   } = useForm<FV>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -173,21 +174,28 @@ export default function ProjectFormPage() {
                 <Label>
                   Category <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("category")}
-                  onValueChange={(v) => setValue("category", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROJECT_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.icon} {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="category"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROJECT_CATEGORIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.icon} {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.category && (
                   <p className="text-xs text-destructive">
                     {errors.category.message}
@@ -200,21 +208,28 @@ export default function ProjectFormPage() {
                 <Label>
                   Ward <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("wardId")}
-                  onValueChange={(v) => setValue("wardId", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ward" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wards.map((w: any) => (
-                      <SelectItem key={w.id} value={w.id}>
-                        #{w.wardNumber} {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="wardId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ward" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {wards.map((w: any) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            #{w.wardNumber} {w.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.wardId && (
                   <p className="text-xs text-destructive">
                     {errors.wardId.message}
@@ -225,21 +240,28 @@ export default function ProjectFormPage() {
                 <Label>
                   Department <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("department")}
-                  onValueChange={(v) => setValue("department", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select dept" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d: any) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="department"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select dept" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d: any) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.department && (
                   <p className="text-xs text-destructive">
                     {errors.department.message}
@@ -248,21 +270,29 @@ export default function ProjectFormPage() {
               </div>
               <div className="space-y-2">
                 <Label>Fund Type</Label>
-                <Select
-                  value={watch("fundType")}
-                  onValueChange={(v) => setValue("fundType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FUND_TYPES.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>
-                        {f.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                <Controller
+                  name="fundType"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FUND_TYPES.map((f) => (
+                          <SelectItem key={f.value} value={f.value}>
+                            {f.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">

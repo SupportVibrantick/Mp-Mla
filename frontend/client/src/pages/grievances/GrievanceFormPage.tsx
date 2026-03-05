@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -45,8 +45,8 @@ const formSchema = z.object({
   wardId: z.string().min(1, "Ward required"),
   priority: z.string().default("MEDIUM"),
   source: z.string().default("OFFICE"),
-  complainantName: z.string().min(1, "Name required"),
-  complainantPhone: z.string().min(1, "Phone required"),
+  complainantName: z.string().optional(),
+  complainantPhone: z.string().optional(),
   complainantEmail: z.string().optional(),
   complainantAddress: z.string().optional(),
   locationAddress: z.string().optional(),
@@ -80,6 +80,7 @@ export default function GrievanceFormPage() {
     setValue,
     watch,
     reset,
+    control,
   } = useForm<FV>({
     resolver: zodResolver(formSchema),
     defaultValues: { priority: "MEDIUM", source: "OFFICE" },
@@ -172,11 +173,11 @@ export default function GrievanceFormPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>
-                  Name <span className="text-destructive">*</span>
+                  Name
                 </Label>
                 <Input
                   {...register("complainantName")}
-                  placeholder="Full name"
+                  placeholder="Full name (optional)"
                 />
                 {errors.complainantName && (
                   <p className="text-xs text-destructive">
@@ -186,11 +187,11 @@ export default function GrievanceFormPage() {
               </div>
               <div className="space-y-2">
                 <Label>
-                  Phone <span className="text-destructive">*</span>
+                  Phone
                 </Label>
                 <Input
                   {...register("complainantPhone")}
-                  placeholder="9876543210"
+                  placeholder="9876543210 (optional)"
                 />
                 {errors.complainantPhone && (
                   <p className="text-xs text-destructive">
@@ -255,21 +256,29 @@ export default function GrievanceFormPage() {
                 <Label>
                   Category <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("category")}
-                  onValueChange={(v) => setValue("category", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.icon} {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.icon} {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.category && (
                   <p className="text-xs text-destructive">
                     {errors.category.message}
@@ -278,39 +287,55 @@ export default function GrievanceFormPage() {
               </div>
               <div className="space-y-2">
                 <Label>Priority</Label>
-                <Select
-                  value={watch("priority")}
-                  onValueChange={(v) => setValue("priority", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORITIES.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
-                        {p.icon} {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                <Controller
+                  control={control}
+                  name="priority"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRIORITIES.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>
+                            {p.icon} {p.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Source</Label>
-                <Select
-                  value={watch("source")}
-                  onValueChange={(v) => setValue("source", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SOURCES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                <Controller
+                  control={control}
+                  name="source"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SOURCES.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -337,21 +362,29 @@ export default function GrievanceFormPage() {
                 <Label>
                   Ward <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={watch("wardId")}
-                  onValueChange={(v) => setValue("wardId", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ward" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wards.map((w: any) => (
-                      <SelectItem key={w.id} value={w.id}>
-                        #{w.wardNumber} {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+                <Controller
+                  control={control}
+                  name="wardId"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ward" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {wards.map((w: any) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            #{w.wardNumber} {w.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.wardId && (
                   <p className="text-xs text-destructive">
                     {errors.wardId.message}
@@ -369,49 +402,61 @@ export default function GrievanceFormPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Department</Label>
-                <Select
-                  value={watch("assignedDept") || "none"}
-                  onValueChange={(v) =>
-                    setValue("assignedDept", v === "none" ? undefined : v)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Optional" />
-                  </SelectTrigger>
 
-                  <SelectContent>
-                    <SelectItem value="none">— None —</SelectItem>
+                <Controller
+                  control={control}
+                  name="assignedDept"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Optional" />
+                      </SelectTrigger>
 
-                    {departments.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      <SelectContent>
+                        <SelectItem value="none">— None —</SelectItem>
+
+                        {departments.map((d: any) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Assign To</Label>
-                <Select
-                  value={watch("assignedToId") || "none"}
-                  onValueChange={(v) =>
-                    setValue("assignedToId", v === "none" ? undefined : v)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Optional" />
-                  </SelectTrigger>
 
-                  <SelectContent>
-                    <SelectItem value="none">— Unassigned —</SelectItem>
+                <Controller
+                  control={control}
+                  name="assignedToId"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Optional" />
+                      </SelectTrigger>
 
-                    {users.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name || u.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      <SelectContent>
+                        <SelectItem value="none">— Unassigned —</SelectItem>
+
+                        {users.map((u: any) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name || u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
           </CardContent>

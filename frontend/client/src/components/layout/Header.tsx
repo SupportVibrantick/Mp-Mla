@@ -21,7 +21,9 @@ export function Header({ title }: { title: string }) {
   return (
     <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-30 px-6 flex items-center justify-between transition-all duration-300">
       <div className="flex flex-col">
-        <h2 className="text-xl font-heading font-semibold text-foreground tracking-tight">{title}</h2>
+        <h2 className="text-xl font-heading font-semibold text-foreground tracking-tight">
+          {title}
+        </h2>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Home</span>
           <span>/</span>
@@ -38,14 +40,22 @@ export function Header({ title }: { title: string }) {
           />
         </div>
 
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative text-muted-foreground hover:text-foreground"
+        >
           <Bell className="h-5 w-5" />
           <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border border-background"></span>
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
@@ -88,7 +98,7 @@ export function Header({ title }: { title: string }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <Link href="/profile">
+            <Link href="/settings">
               <DropdownMenuItem className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>

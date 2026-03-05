@@ -82,6 +82,14 @@ export default function ProjectListPage() {
   const wards = wardsRes?.data?.wards || [];
   const departments = deptsRes?.data || [];
 
+  const reset = () => {
+    setSearch("");
+    setWardFilter("all");
+    setStatusFilter("all");
+    setDeptFilter("all");
+    setCategoryFilter("all");
+    setPage(1);
+  };
   return (
     <MainLayout title="Projects">
       <div className="space-y-6">
@@ -293,6 +301,20 @@ export default function ProjectListPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {(search ||
+                  wardFilter !== "all" ||
+                  statusFilter !== "all" ||
+                  deptFilter !== "all" ||
+                  categoryFilter !== "all") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="text-xs"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

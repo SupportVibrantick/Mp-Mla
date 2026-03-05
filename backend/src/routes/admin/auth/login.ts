@@ -7,6 +7,8 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { getSetting, getSettingNumber } from "../../../lib/settings.js";
+import { isPasswordExpired } from "../../../lib/authUtils.js";
 
 export async function login(
   req: Request,
@@ -16,6 +18,21 @@ export async function login(
   try {
     const { email, password } = req.body;
     const meta = getRequestMeta(req);
+
+    // 0. Check IP Restrictions
+    const allowedIps = await getSetting("allowed_ip_ranges");
+    if (allowedIps && allowedIps.trim() !== "") {
+      const ipList = allowedIps.split(",").map((ip) => ip.trim());
+      if (meta.ipAddress && !ipList.includes(meta.ipAddress)) {
+        await createAuditLog({
+          action: "LOGIN_FAILED",
+          module: "auth",
+          description: `Login blocked by IP restriction: ${meta.ipAddress}`,
+          ...meta,
+        });
+        throw ApiError.forbidden("Access denied from this IP address.");
+      }
+    }
 
     // 1. Find user
     const user = await prisma.user.findUnique({ where: { email } });
@@ -49,10 +66,13 @@ export async function login(
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
+      const maxAttempts = (await getSettingNumber("max_failed_login_attempts")) || 5;
+      const lockoutMins = (await getSettingNumber("lockout_duration_minutes")) || 30;
+
       const newCount = user.failedLoginCount + 1;
-      const shouldLock = newCount >= 5;
+      const shouldLock = newCount >= maxAttempts;
       const lockUntil = shouldLock
-        ? new Date(Date.now() + 30 * 60 * 1000)
+        ? new Date(Date.now() + lockoutMins * 60 * 1000)
         : null;
 
       await prisma.user.update({
@@ -73,7 +93,7 @@ export async function login(
           userId: user.id,
           action: "ACCOUNT_LOCKED",
           module: "auth",
-          description: `Account locked after ${newCount} failed attempts`,
+          description: `Account locked for ${lockoutMins} mins after ${newCount} failed attempts`,
           ...meta,
         });
       }
@@ -82,6 +102,8 @@ export async function login(
     }
 
     // 5. Success — reset failed count
+    const hasExpired = await isPasswordExpired(user.id, user.passwordChangedAt);
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -89,16 +111,24 @@ export async function login(
         lockedUntil: null,
         lastLoginAt: new Date(),
         lastLoginIp: meta.ipAddress || undefined,
+        forcePasswordChange: user.forcePasswordChange || hasExpired,
       },
     });
 
     // 6. Generate access token
-    const accessToken = generateAccessToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-    });
+    const sessionTimeout = await getSettingNumber("session_timeout");
+    // 0 = unlimited, otherwise minutes. JWT expect string like '1h' or seconds.
+    const expiresIn = sessionTimeout === 0 ? "365d" : `${sessionTimeout}m`;
+
+    const accessToken = generateAccessToken(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+      expiresIn,
+    );
 
     // 7. Create refresh token record in DB, then generate JWT
     const refreshRecord = await prisma.refreshToken.create({
@@ -142,7 +172,7 @@ export async function login(
           role: user.role,
           phone: user.phone,
           avatarUrl: user.avatarUrl,
-          forcePasswordChange: user.forcePasswordChange,
+          forcePasswordChange: user.forcePasswordChange || hasExpired,
           lastLoginAt: user.lastLoginAt,
         },
         accessToken,

@@ -16,9 +16,12 @@ export interface RefreshTokenPayload {
 /**
  * Generate Access Token (short-lived)
  */
-export function generateAccessToken(payload: AccessTokenPayload): string {
+export function generateAccessToken(
+  payload: AccessTokenPayload,
+  expiresIn?: string | number,
+): string {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN as SignOptions["expiresIn"],
+    expiresIn: (expiresIn || env.JWT_EXPIRES_IN) as SignOptions["expiresIn"],
   });
 }
 

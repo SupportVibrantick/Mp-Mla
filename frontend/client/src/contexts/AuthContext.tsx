@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useEffect, useState, useContext, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { TokenStorage } from "@/lib/auth";
 import { authApi } from "@/lib/api";
@@ -13,8 +13,11 @@ export interface User {
   role: "SYSTEM_ADMIN" | "MLA_MP" | "OFFICE_STAFF";
   phone: string | null;
   avatarUrl: string | null;
+  designation: string | null;
+  department: string | null;
+  bio: string | null;
   forcePasswordChange: boolean;
-  lastLoginAt: string | null; 
+  lastLoginAt: string | null;
 }
 
 export interface Permission {
@@ -48,9 +51,9 @@ export const AuthContext = createContext<AuthContextType>({
   permissionsByModule: {},
   isAuthenticated: false,
   isLoading: true,
-  login: async () => {},
-  logout: async () => {},
-  refreshUser: async () => {},
+  login: async () => { },
+  logout: async () => { },
+  refreshUser: async () => { },
   can: () => false,
   canAny: () => false,
   hasRole: () => false,
@@ -169,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const refreshToken = TokenStorage.getRefreshToken();
       if (refreshToken) {
-        await authApi.logout(refreshToken).catch(() => {});
+        await authApi.logout(refreshToken).catch(() => { });
       }
     } finally {
       TokenStorage.clearAll();
@@ -244,3 +247,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
