@@ -10,8 +10,10 @@ import { validate } from "../../../middleware/validate.js";
 import { z } from "zod";
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── Update ─────────────────────────────────────────────
-
+/**
+ * PUT /api/admin/department/:id
+ * Updates a department.
+ */
 export const updateDepartment = catchAsync(async (req, res) => {
   const departmentId = req.params.id as string;
   const old = await prisma.department.findUnique({
@@ -48,8 +50,10 @@ export const updateDepartment = catchAsync(async (req, res) => {
   res.json({ success: true, message: `"${dept.name}" updated`, data: dept });
 });
 
-// ─── Toggle Active ──────────────────────────────────────
-
+/**
+ * PATCH /api/admin/department/:id/toggle
+ * Toggles the active status of a department.
+ */
 export const toggleDepartment = catchAsync(async (req, res) => {
   const departmentId = req.params.id as string;
   const dept = await prisma.department.findUnique({

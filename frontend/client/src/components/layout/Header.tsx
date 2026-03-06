@@ -39,7 +39,7 @@ export function Header({ title }: { title: string }) {
             className="pl-9 h-9 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:bg-background transition-all"
           />
         </div>
-
+{/* 
         <Button
           variant="ghost"
           size="icon"
@@ -47,7 +47,7 @@ export function Header({ title }: { title: string }) {
         >
           <Bell className="h-5 w-5" />
           <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border border-background"></span>
-        </Button>
+        </Button> */}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

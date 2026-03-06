@@ -6,6 +6,12 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
+
+
+/**
+ * PUT /api/admin/project/:id
+ * Updates an existing project.
+ */
 export async function updateProject(
   req: Request,
   res: Response,
@@ -54,6 +60,12 @@ export async function updateProject(
   }
 }
 
+
+
+/**
+ * PUT /api/admin/project/:id/status
+ * Updates the status of a project.
+ */
 export async function updateStatus(
   req: Request,
   res: Response,

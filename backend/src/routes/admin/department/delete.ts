@@ -8,8 +8,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── Delete ─────────────────────────────────────────────
-
+/**
+ * DELETE /api/admin/department/:id
+ * Deletes a department.
+ */
 export const deleteDepartment = catchAsync(async (req, res) => {
   const departmentId = req.params.id as string;
   const dept = await prisma.department.findUnique({

@@ -21,7 +21,7 @@ async function getSettingsMap(): Promise<Record<string, string>> {
     // Initialize with defaults
     for (const def of DEFAULT_SETTING_DEFS) {
         map[def.key] = def.value;
-    }
+    }   
 
     // Override with DB values
     for (const s of dbSettings) {

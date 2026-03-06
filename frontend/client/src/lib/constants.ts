@@ -42,12 +42,12 @@ export const NAV_ITEMS = [
     icon: Users,
     roles: ["super_admin", "mla", "staff"],
   },
-  {
-    title: "Schemes",
-    url: "/schemes",
-    icon: FileText,
-    roles: ["super_admin", "mla", "staff"],
-  },
+  // {
+  //   title: "Schemes",
+  //   url: "/schemes",
+  //   icon: FileText,
+  //   roles: ["super_admin", "mla", "staff"],
+  // },
   {
     title: "Wards",
     url: "/wards",

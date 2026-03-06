@@ -10,8 +10,8 @@ export const createGrievanceSchema = z.object({
   source: z
     .enum(["OFFICE", "PHONE", "EMAIL", "ONLINE", "FIELD_VISIT", "SOCIAL_MEDIA"])
     .default("OFFICE"),
-  complainantName: z.string().min(1, "Complainant name required"),
-  complainantPhone: z.string().min(1, "Complainant phone required"),
+  complainantName: z.string().optional().or(z.literal("")),
+  complainantPhone: z.string().optional().or(z.literal("")),
   complainantEmail: z.string().email().optional().or(z.literal("")),
   complainantAddress: z.string().optional(),
   locationAddress: z.string().optional(),

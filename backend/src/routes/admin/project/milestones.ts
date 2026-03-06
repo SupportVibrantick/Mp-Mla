@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
+
+
+/**
+ * POST /api/admin/project/:id/milestones
+ * Adds a new milestone to a project.
+ */
 export async function addMilestone(
   req: Request,
   res: Response,
@@ -32,6 +38,12 @@ export async function addMilestone(
   }
 }
 
+
+
+/**
+ * PUT /api/admin/project/:id/milestones/:msId
+ * Updates an existing milestone.
+ */
 export async function updateMilestone(
   req: Request,
   res: Response,
@@ -56,6 +68,12 @@ export async function updateMilestone(
   }
 }
 
+
+
+/**
+ * DELETE /api/admin/project/:id/milestones/:msId
+ * Deletes a milestone from a project.
+ */
 export async function deleteMilestone(
   req: Request,
   res: Response,
@@ -71,6 +89,12 @@ export async function deleteMilestone(
   }
 }
 
+
+
+/**
+ * PUT /api/admin/project/:id/milestones/:msId/toggle
+ * Toggles the completion status of a milestone.
+ */
 export async function toggleMilestone(
   req: Request,
   res: Response,

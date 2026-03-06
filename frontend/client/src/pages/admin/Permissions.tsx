@@ -102,10 +102,9 @@ export default function PermissionsOverview() {
   useEffect(() => {
     if (roleDefaultsData?.data?.byRole) {
       const initial: Record<string, Set<string>> = {};
-      for (const [role, perms] of Object.entries(roleDefaultsData.data.byRole) as [
-        string,
-        any[],
-      ][]) {
+      for (const [role, perms] of Object.entries(
+        roleDefaultsData.data.byRole,
+      ) as [string, any[]][]) {
         initial[role] = new Set(
           perms.filter((p) => p.granted).map((p) => p.permissionId),
         );
@@ -414,9 +413,9 @@ export default function PermissionsOverview() {
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Changes made here affect <strong>all users</strong> with the
-                selected role, unless they have specific permission overrides. Use
-                this matrix to define the baseline access for MLA/MPs and Office
-                Staff. System Admins should always maintain full access.
+                selected role, unless they have specific permission overrides.
+                Use this matrix to define the baseline access for MLA/MPs and
+                Office Staff. System Admins should always maintain full access.
               </p>
             </div>
           </div>

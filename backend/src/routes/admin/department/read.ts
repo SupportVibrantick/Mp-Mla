@@ -4,8 +4,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── List ───────────────────────────────────────────────
-
+/**
+ * GET /api/admin/department
+ * Lists all departments with optional filtering.
+ */
 export const getDepartments = catchAsync(async (req, res) => {
   const { search, isActive } = req.query as Record<string, string>;
 
@@ -63,8 +65,10 @@ export const getDepartments = catchAsync(async (req, res) => {
   res.json({ success: true, data: enriched });
 });
 
-// ─── Stats ──────────────────────────────────────────────
-
+/**
+ * GET /api/admin/department/stats
+ * Gets dashboard statistics for departments.
+ */
 export const getDepartmentStats = catchAsync(async (_req, res) => {
   const [total, active, inactive] = await Promise.all([
     prisma.department.count(),
@@ -98,8 +102,10 @@ export const getDepartmentStats = catchAsync(async (_req, res) => {
   });
 });
 
-// ─── Get One ────────────────────────────────────────────
-
+/**
+ * GET /api/admin/department/:id
+ * Gets a single department with its recent activities.
+ */
 export const getSingleDepartment = catchAsync(async (req, res) => {
   const dept = await prisma.department.findUnique({
     where: { id: req.params.id as string },

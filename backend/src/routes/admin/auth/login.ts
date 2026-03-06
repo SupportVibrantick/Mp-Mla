@@ -66,8 +66,9 @@ export async function login(
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
-      const maxAttempts = (await getSettingNumber("max_failed_login_attempts")) || 5;
-      const lockoutMins = (await getSettingNumber("lockout_duration_minutes")) || 30;
+      const maxAttempts = (await getSettingNumber("max_failed_logins")) || 5;
+      const lockoutMins =
+        (await getSettingNumber("lockout_duration_minutes")) || 30;
 
       const newCount = user.failedLoginCount + 1;
       const shouldLock = newCount >= maxAttempts;
@@ -116,7 +117,7 @@ export async function login(
     });
 
     // 6. Generate access token
-    const sessionTimeout = await getSettingNumber("session_timeout");
+    const sessionTimeout = await getSettingNumber("session_timeout_minutes");
     // 0 = unlimited, otherwise minutes. JWT expect string like '1h' or seconds.
     const expiresIn = sessionTimeout === 0 ? "365d" : `${sessionTimeout}m`;
 

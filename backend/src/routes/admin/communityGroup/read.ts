@@ -5,8 +5,11 @@ import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── List ───────────────────────────────────────────────
-
+/**
+ * GET /api/admin/community-groups
+ * Returns all Community Group in the system, grouped by module.
+ * Used by admin UI to render the Communty Group editor grid.
+ */
 export const getCommunityGroup = catchAsync(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const { wardId, wardAreaId, type, search, isActive } = req.query as Record<
@@ -53,8 +56,10 @@ export const getCommunityGroup = catchAsync(async (req, res) => {
   });
 });
 
-// ─── Stats ──────────────────────────────────────────────
-
+/**
+ * GET /api/admin/community-group/stats
+ * Gets dashboard statistics for community groups.
+ */
 export const getCommunityGroupStats = catchAsync(async (req, res) => {
   const wardId = req.query.wardId as string;
   const baseWhere: any = { isActive: true };
@@ -127,8 +132,10 @@ export const getCommunityGroupStats = catchAsync(async (req, res) => {
   });
 });
 
-// ─── Get One ────────────────────────────────────────────
-
+/**
+ * GET /api/admin/community-group/:id
+ * Gets a single community group with its ward and ward area details.
+ */
 export const getOneCommunityGroup = catchAsync(async (req, res) => {
   const group = await prisma.communityGroup.findUnique({
     where: { id: req.params.id as string },

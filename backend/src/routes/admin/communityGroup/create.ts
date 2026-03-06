@@ -8,7 +8,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── Create ─────────────────────────────────────────────
+/**
+ * POST /api/admin/community-groups
+ * Create Community Groups for use.
+ */
 
 export const createCommunityGroup = catchAsync(async (req, res) => {
   const data: any = { ...req.body };

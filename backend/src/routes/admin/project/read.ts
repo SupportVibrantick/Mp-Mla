@@ -3,6 +3,12 @@ import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 
+
+
+/**
+ * GET /api/admin/project
+ * Lists all projects with optional filtering and pagination.
+ */
 export async function listProjects(
   req: Request,
   res: Response,
@@ -70,6 +76,12 @@ export async function listProjects(
   }
 }
 
+
+
+/**
+ * GET /api/admin/project/:id
+ * Gets a single project by ID with detailed information.
+ */
 export async function getProject(
   req: Request,
   res: Response,
@@ -126,6 +138,12 @@ export async function getProject(
   }
 }
 
+
+
+/**
+ * GET /api/admin/project/stats
+ * Gets aggregated statistics for all projects.
+ */
 export async function getProjectStats(
   req: Request,
   res: Response,

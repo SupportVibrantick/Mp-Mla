@@ -4,70 +4,14 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
-import { z } from "zod";
-import { buildDemographicsData, demographicsZodSchema } from "./helpers.js";
+import { buildDemographicsData } from "./helpers.js";
 
-// ─── Schema ─────────────────────────────────────────────
 
-export const createWardSchema = z.object({
-  wardNumber: z.number().int().positive("Ward number must be positive"),
-  name: z.string().min(1, "Name is required").max(200),
-  zone: z.string().max(10).optional(),
-  status: z
-    .enum(["ACTIVE", "INACTIVE", "PROPOSED", "MERGED", "DELIMITATION_PENDING"])
-    .optional(),
-  areaType: z.string().default("Urban"),
-  pincode: z.string().max(10).optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  description: z.string().optional(),
-  establishedDate: z.string().datetime().optional(),
 
-  areas: z
-    .array(
-      z.object({
-        name: z.string().min(1),
-        areaType: z
-          .enum([
-            "RESIDENTIAL",
-            "COMMERCIAL",
-            "INDUSTRIAL",
-            "MIXED_USE",
-            "AGRICULTURAL",
-            "INSTITUTIONAL",
-            "SLUM",
-            "CANTONMENT",
-            "OTHER",
-          ])
-          .default("RESIDENTIAL"),
-        population: z.number().int().min(0).default(0),
-        households: z.number().int().min(0).default(0),
-        maleCount: z.number().int().min(0).default(0),
-        femaleCount: z.number().int().min(0).default(0),
-        pincode: z.string().optional(),
-        landmark: z.string().optional(),
-        description: z.string().optional(),
-        demographics: demographicsZodSchema,
-      }),
-    )
-    .optional(),
-
-  councillor: z
-    .object({
-      name: z.string().min(1),
-      phone: z.string().optional(),
-      email: z.string().email().optional(),
-      partyName: z.string().optional(),
-      designation: z.string().optional(),
-      sinceDate: z.string().datetime().optional(),
-    })
-    .optional(),
-
-  demographics: demographicsZodSchema,
-});
-
-// ─── Handler ────────────────────────────────────────────
-
+/**
+ * POST /api/admin/ward
+ * Creates a new ward with areas and councillor.
+ */
 export async function createWard(
   req: Request,
   res: Response,
@@ -118,16 +62,16 @@ export async function createWard(
           : {}),
         ...(councillor
           ? {
-              councillors: {
-                create: {
-                  ...councillor,
-                  sinceDate: councillor.sinceDate
-                    ? new Date(councillor.sinceDate)
-                    : undefined,
-                  isCurrent: true,
-                },
+            councillors: {
+              create: {
+                ...councillor,
+                sinceDate: councillor.sinceDate
+                  ? new Date(councillor.sinceDate)
+                  : undefined,
+                isCurrent: true,
               },
-            }
+            },
+          }
           : {}),
       },
       include: {

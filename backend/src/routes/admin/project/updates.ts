@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
+
+
+/**
+ * POST /api/admin/project/:id/updates
+ * Adds a new update to a project.
+ */
 export async function addUpdate(
   req: Request,
   res: Response,

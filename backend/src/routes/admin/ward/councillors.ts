@@ -5,24 +5,14 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
 
-export const createCouncillorSchema = z.object({
-  name: z.string().min(1),
-  phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  partyName: z.string().optional(),
-  photoUrl: z.string().optional(),
-  address: z.string().optional(),
-  designation: z.string().default("Ward Councillor"),
-  sinceDate: z.string().datetime().optional(),
-});
 
-export const updateCouncillorSchema = createCouncillorSchema.partial().extend({
-  isCurrent: z.boolean().optional(),
-  untilDate: z.string().datetime().optional().nullable(),
-});
 
+
+/**
+ * GET /api/admin/ward/:wardId/councillors
+ * Lists all councillors for a ward.
+ */
 export async function listCouncillors(
   req: Request,
   res: Response,
@@ -41,6 +31,10 @@ export async function listCouncillors(
   }
 }
 
+/**
+ * POST /api/admin/ward/:wardId/councillors
+ * Creates a new councillor for a ward.
+ */
 export async function createCouncillor(
   req: Request,
   res: Response,
@@ -82,6 +76,10 @@ export async function createCouncillor(
   }
 }
 
+/**
+ * PUT /api/admin/ward/:wardId/councillors/:councillorId
+ * Updates a councillor for a ward.
+ */
 export async function updateCouncillor(
   req: Request,
   res: Response,

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams, useLocation, Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -57,8 +57,9 @@ const formSchema = z.object({
 type FV = z.infer<typeof formSchema>;
 
 export default function GrievanceFormPage() {
-  const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
+  // Get ID from state instead of params
+  const id = (window.history.state as any)?.id;
   const isEdit = !!id;
 
   const { data: gRes, isLoading } = useGrievance(id);
@@ -115,10 +116,10 @@ export default function GrievanceFormPage() {
 
       if (isEdit && id) {
         await updateMut.mutateAsync({ id, data: payload });
-        navigate(`/grievances/${id}`);
+        navigate("/grievances/detail", { state: { id } });
       } else {
         const res = await createMut.mutateAsync(payload);
-        navigate(`/grievances/${res.data.id}`);
+        navigate("/grievances/detail", { state: { id: res.data.id } });
       }
     } catch {
       /* handled */

@@ -7,8 +7,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── Delete ─────────────────────────────────────────────
-
+/**
+ * DELETE /api/admin/community-group/:id
+ * Deletes a community group.
+ */
 export const deleteCommunity = catchAsync(async (req, res) => {
   const group = await prisma.communityGroup.findUnique({
     where: { id: req.params.id as string },

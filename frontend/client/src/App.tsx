@@ -18,7 +18,7 @@ import ChangePassword from "@/pages/ChangePassword";
 import UserManagement from "@/pages/admin/User";
 import Permissions from "@/pages/admin/Permissions";
 import UserPermissions from "./pages/admin/UserPermissions";
-import Reports from "./pages/Reports";
+// import Reports from "./pages/Reports";
 import WardsPage from "./pages/wards/AllWards";
 import WardFormPage from "./pages/wards/WardFormPage";
 import WardDetailPage from "./pages/wards/WardDetailPage";
@@ -36,9 +36,9 @@ import ProjectListPage from "./pages/projects/ProjectListPage";
 import ProjectFormPage from "./pages/projects/ProjectFormPage";
 import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
 import FundsPage from "./pages/funds/FundsPage";
-import SchemeListPage from "./pages/schemes/SchemeListPage";
-import SchemeFormPage from "./pages/schemes/SchemeFormPage";
-import SchemeDetailPage from "./pages/schemes/SchemeDetailPage";
+// import SchemeListPage from "./pages/schemes/SchemeListPage";
+// import SchemeFormPage from "./pages/schemes/SchemeFormPage";
+// import SchemeDetailPage from "./pages/schemes/SchemeDetailPage";
 import FundsOverviewPage from "./pages/funds/FundsOverviewPage";
 import FundDetailPage from "./pages/funds/FundDetailPage";
 import ReportsPage from "./pages/reports/ReportsPage";
@@ -71,12 +71,6 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      {/* <Route path="/grievances">
-        <ProtectedRoute module="grievances" action="view">
-          <Grievances />
-        </ProtectedRoute>
-      </Route> */}
-
       <Route path="/grievances">
         <ProtectedRoute module="grievances" action="read">
           <GrievanceListPage />
@@ -87,12 +81,12 @@ function Router() {
           <GrievanceFormPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/grievances/:id/edit">
+      <Route path="/grievances/edit">
         <ProtectedRoute module="grievances" action="update">
           <GrievanceFormPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/grievances/:id">
+      <Route path="/grievances/detail">
         <ProtectedRoute module="grievances" action="read">
           <GrievanceDetailPage />
         </ProtectedRoute>
@@ -275,11 +269,11 @@ function Router() {
           <FundDetailPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/schemes">
+      {/* <Route path="/schemes">
         <ProtectedRoute module="schemes" action="read">
           <SchemeListPage />
         </ProtectedRoute>
-      </Route>
+      </Route> */}
       <Route path="/settings">
         <ProtectedRoute module="settings" action="read">
           <SettingsPage />
@@ -290,7 +284,7 @@ function Router() {
           <AuditLogsPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/schemes/new">
+      {/* <Route path="/schemes/new">
         <ProtectedRoute module="schemes" action="create">
           <SchemeFormPage />
         </ProtectedRoute>
@@ -304,7 +298,7 @@ function Router() {
         <ProtectedRoute module="schemes" action="read">
           <SchemeDetailPage />
         </ProtectedRoute>
-      </Route>
+      </Route> */}
       {/* <Route path="/wards">
         <ProtectedRoute module="wards" action="view">
           <Wards />

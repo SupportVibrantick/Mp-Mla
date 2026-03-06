@@ -9,6 +9,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { recalculateFundTotals } from "./helper.js";
 
+/**
+ * DELETE /api/admin/fund/:id
+ * Deletes a fund and all its transactions.
+ */
 export const deleteFunds = catchAsync(async (req, res) => {
   const fundId = req.params.id as string;
   const fund = await prisma.fund.findUnique({
@@ -34,10 +38,11 @@ export const deleteFunds = catchAsync(async (req, res) => {
   });
 });
 
-// ════════════════════════════════════════════════════════
-// DELETE TRANSACTION (WITH REVERSAL)
-// ════════════════════════════════════════════════════════
 
+/**
+ * DELETE /api/admin/fund/:id/transaction/:txnId
+ * Deletes a transaction and reverses its effect.
+ */
 export const deleteFundTransaction = catchAsync(async (req, res) => {
   const txn = await prisma.fundTransaction.findUnique({
     where: { id: req.params.txnId as string },

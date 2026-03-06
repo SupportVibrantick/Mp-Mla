@@ -7,6 +7,11 @@ import {
 import { ApiError } from "../../../utils/ApiError.js";
 import { generateProjectCode } from "./helpers.js";
 
+
+/**
+ * POST /api/admin/project
+ * Creates a new project.
+ */
 export async function createProject(
   req: Request,
   res: Response,

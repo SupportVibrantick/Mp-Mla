@@ -129,19 +129,19 @@ export interface Ward {
   description?: string;
 }
 
-export interface Scheme {
-  scheme_id: string;
-  name: string;
-  department: string;
-  target_beneficiaries: number;
-  current_beneficiaries: number;
-  budget: number;
-  status: string;
-  ward_id: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-}
+// export interface Scheme {
+//   scheme_id: string;
+//   name: string;
+//   department: string;
+//   target_beneficiaries: number;
+//   current_beneficiaries: number;
+//   budget: number;
+//   status: string;
+//   ward_id: string;
+//   description: string;
+//   start_date: string;
+//   end_date: string;
+// }
 
 export interface Notification {
   id: string;

@@ -2,30 +2,26 @@ import { Router } from "express";
 import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
 import { listWards, getWard, getWardStats } from "./read.js";
-import { createWard, createWardSchema } from "./create.js";
-import { updateWard, updateWardSchema } from "./update.js";
+import { createWard } from "./create.js";
+import { updateWard } from "./update.js";
 import { deleteWard } from "./delete.js";
 import {
   listAreas,
   getArea,
   createArea,
-  createAreaSchema,
   updateArea,
-  updateAreaSchema,
   deleteArea,
 } from "./areas.js";
 import {
   listCouncillors,
   createCouncillor,
-  createCouncillorSchema,
   updateCouncillor,
-  updateCouncillorSchema,
 } from "./councillors.js";
 import {
   getWardDemographics,
   upsertWardDemographics,
-  wardDemographicsSchema,
 } from "./demographics.js";
+import { createAreaSchema, updateAreaSchema, createCouncillorSchema, updateCouncillorSchema, createWardSchema, updateWardSchema, wardDemographicsSchema } from "@/schemas/admin/ward/index.js";
 
 const router = Router();
 

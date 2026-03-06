@@ -7,10 +7,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
-// ════════════════════════════════════════════════════════
-// UPDATE FUND (Direct edit of totals)
-// ════════════════════════════════════════════════════════
-
+/**
+ * PUT /api/admin/fund/:id
+ * Updates a fund's totals.
+ */
 export const updateFunds = catchAsync(async (req, res) => {
   const fundId = req.params.id as string;
   const old = await prisma.fund.findUnique({

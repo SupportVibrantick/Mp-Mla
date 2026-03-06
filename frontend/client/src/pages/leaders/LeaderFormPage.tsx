@@ -270,7 +270,7 @@ export default function LeaderFormPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">— None —</SelectItem>
-                        {wards.map((w) => (
+                        {wards.map((w: any) => (
                           <SelectItem key={w.id} value={w.id}>
                             #{w.wardNumber} {w.name}
                           </SelectItem>
@@ -293,7 +293,7 @@ export default function LeaderFormPage() {
                 <Label>Organization</Label>
                 <Input
                   {...register("organization")}
-                  placeholder="BJP, Congress..."
+                  placeholder="organization"
                 />
               </div>
               <div className="space-y-2">

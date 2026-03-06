@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import api, { grievancesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Constants ──────────────────────────────────────────
@@ -111,9 +111,9 @@ export const TIMELINE_ACTIONS = [
 // Valid next statuses from current
 export const STATUS_TRANSITIONS: Record<string, string[]> = {
   OPEN: ["IN_PROGRESS", "ESCALATED", "REJECTED", "CLOSED"],
-  IN_PROGRESS: ["ESCALATED", "RESOLVED", "OPEN"],
-  ESCALATED: ["IN_PROGRESS", "RESOLVED"],
-  RESOLVED: ["CLOSED", "IN_PROGRESS"],
+  IN_PROGRESS: ["ESCALATED", "RESOLVED", "OPEN", "REJECTED"],
+  ESCALATED: ["IN_PROGRESS", "RESOLVED", "OPEN", "REJECTED"],
+  RESOLVED: ["CLOSED", "IN_PROGRESS", "OPEN"],
   REJECTED: ["OPEN"],
   CLOSED: ["OPEN"],
 };
@@ -139,14 +139,14 @@ export function getCategoryInfo(c: string) {
 export function useGrievances(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["grievances", params],
-    queryFn: () => api.get("/admin/grievances", { params }).then((r) => r.data),
+    queryFn: () => grievancesApi.list(params).then((r) => r.data),
   });
 }
 
 export function useGrievance(id: string | undefined) {
   return useQuery({
     queryKey: ["grievances", id],
-    queryFn: () => api.get(`/admin/grievances/${id}`).then((r) => r.data),
+    queryFn: () => grievancesApi.get(id!).then((r) => r.data),
     enabled: !!id,
   });
 }
@@ -154,24 +154,14 @@ export function useGrievance(id: string | undefined) {
 export function useGrievanceStats(wardId?: string) {
   return useQuery({
     queryKey: ["grievances", "stats", wardId],
-    queryFn: () =>
-      api
-        .get("/admin/grievances/stats", {
-          params: wardId ? { wardId } : {},
-        })
-        .then((r) => r.data),
+    queryFn: () => grievancesApi.stats(wardId).then((r) => r.data),
   });
 }
 
 export function useGrievanceAnalytics(months?: number) {
   return useQuery({
     queryKey: ["grievances", "analytics", months],
-    queryFn: () =>
-      api
-        .get("/admin/grievances/analytics", {
-          params: { months: months || 6 },
-        })
-        .then((r) => r.data),
+    queryFn: () => grievancesApi.analytics(months).then((r) => r.data),
   });
 }
 
@@ -197,7 +187,7 @@ function useGrievanceMut(fn: (d: any) => Promise<any>, title: string) {
 
 export function useCreateGrievance() {
   return useGrievanceMut(
-    (data) => api.post("/admin/grievances", data).then((r) => r.data),
+    (data) => grievancesApi.create(data).then((r) => r.data),
     "Created",
   );
 }
@@ -205,7 +195,7 @@ export function useCreateGrievance() {
 export function useUpdateGrievance() {
   return useGrievanceMut(
     ({ id, data }: { id: string; data: any }) =>
-      api.put(`/admin/grievances/${id}`, data).then((r) => r.data),
+      grievancesApi.update(id, data).then((r) => r.data),
     "Updated",
   );
 }
@@ -213,7 +203,7 @@ export function useUpdateGrievance() {
 export function useChangeGrievanceStatus() {
   return useGrievanceMut(
     ({ id, data }: { id: string; data: any }) =>
-      api.patch(`/admin/grievances/${id}/status`, data).then((r) => r.data),
+      grievancesApi.changeStatus(id, data).then((r) => r.data),
     "Status Changed",
   );
 }
@@ -221,7 +211,7 @@ export function useChangeGrievanceStatus() {
 export function useAssignGrievance() {
   return useGrievanceMut(
     ({ id, data }: { id: string; data: any }) =>
-      api.patch(`/admin/grievances/${id}/assign`, data).then((r) => r.data),
+      grievancesApi.assign(id, data).then((r) => r.data),
     "Assigned",
   );
 }
@@ -229,14 +219,14 @@ export function useAssignGrievance() {
 export function useAddGrievanceTimeline() {
   return useGrievanceMut(
     ({ id, data }: { id: string; data: any }) =>
-      api.post(`/admin/grievances/${id}/timeline`, data).then((r) => r.data),
+      grievancesApi.addTimeline(id, data).then((r) => r.data),
     "Comment Added",
   );
 }
 
 export function useDeleteGrievance() {
   return useGrievanceMut(
-    (id: string) => api.delete(`/admin/grievances/${id}`).then((r) => r.data),
+    (id: string) => grievancesApi.delete(id).then((r) => r.data),
     "Deleted",
   );
 }

@@ -82,8 +82,13 @@ export default function Login() {
           <div className="flex items-center gap-3 mb-10">
             {settings.brand_logo_url ? (
               <div className="h-12 w-12 flex items-center justify-center bg-white/10 rounded-xl p-1">
-                {settings.brand_logo_url.startsWith("http") || settings.brand_logo_url.startsWith("data:") ? (
-                  <img src={settings.brand_logo_url} alt="Logo" className="h-full w-auto object-contain" />
+                {settings.brand_logo_url.startsWith("http") ||
+                settings.brand_logo_url.startsWith("data:") ? (
+                  <img
+                    src={settings.brand_logo_url}
+                    alt="Logo"
+                    className="h-full w-auto object-contain"
+                  />
                 ) : (
                   <span className="text-3xl">{settings.brand_logo_url}</span>
                 )}
@@ -112,7 +117,7 @@ export default function Login() {
             {[
               { label: "Wards", value: "25+" },
               { label: "Institutions", value: "300+" },
-              { label: "Schemes", value: "50+" },
+              // { label: "Schemes", value: "50+" },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -128,8 +133,9 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 text-sm text-sidebar-foreground/50">
-          © {new Date().getFullYear()} {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All rights
-          reserved.
+          © {new Date().getFullYear()}{" "}
+          {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All
+          rights reserved.
         </div>
       </div>
 
@@ -140,8 +146,13 @@ export default function Login() {
             <div className="mx-auto p-3 rounded-full w-fit mb-2 lg:hidden">
               {settings.brand_logo_url ? (
                 <div className="h-12 w-12 flex items-center justify-center mb-2">
-                  {settings.brand_logo_url.startsWith("http") || settings.brand_logo_url.startsWith("data:") ? (
-                    <img src={settings.brand_logo_url} alt="Logo" className="h-full w-auto object-contain" />
+                  {settings.brand_logo_url.startsWith("http") ||
+                  settings.brand_logo_url.startsWith("data:") ? (
+                    <img
+                      src={settings.brand_logo_url}
+                      alt="Logo"
+                      className="h-full w-auto object-contain"
+                    />
                   ) : (
                     <span className="text-3xl">{settings.brand_logo_url}</span>
                   )}

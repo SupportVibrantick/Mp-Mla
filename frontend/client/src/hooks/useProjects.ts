@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { projectsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 export const PROJECT_STATUSES = [
@@ -95,80 +95,71 @@ function useProjMut(fn: (d: any) => Promise<any>, title: string) {
 export function useProjects(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["projects", params],
-    queryFn: () => api.get("/admin/projects", { params }).then((r) => r.data),
+    queryFn: () => projectsApi.list(params).then((r) => r.data),
   });
 }
 export function useProject(id?: string) {
   return useQuery({
     queryKey: ["projects", id],
-    queryFn: () => api.get(`/admin/projects/${id}`).then((r) => r.data),
+    queryFn: () => projectsApi.get(id!).then((r) => r.data),
     enabled: !!id,
   });
 }
 export function useProjectStats(wardId?: string) {
   return useQuery({
     queryKey: ["projects", "stats", wardId],
-    queryFn: () =>
-      api
-        .get("/admin/projects/stats", { params: wardId ? { wardId } : {} })
-        .then((r) => r.data),
+    queryFn: () => projectsApi.stats(wardId).then((r) => r.data),
   });
 }
 export function useCreateProject() {
   return useProjMut(
-    (data) => api.post("/admin/projects", data).then((r) => r.data),
+    (data) => projectsApi.create(data).then((r) => r.data),
     "Created",
   );
 }
 export function useUpdateProject() {
   return useProjMut(
-    ({ id, data }: any) =>
-      api.put(`/admin/projects/${id}`, data).then((r) => r.data),
+    ({ id, data }: any) => projectsApi.update(id, data).then((r) => r.data),
     "Updated",
   );
 }
 export function useDeleteProject() {
   return useProjMut(
-    (id: string) => api.delete(`/admin/projects/${id}`).then((r) => r.data),
+    (id: string) => projectsApi.delete(id).then((r) => r.data),
     "Deleted",
   );
 }
 export function useChangeProjectStatus() {
   return useProjMut(
     ({ id, data }: any) =>
-      api.patch(`/admin/projects/${id}/status`, data).then((r) => r.data),
+      projectsApi.changeStatus(id, data).then((r) => r.data),
     "Status Changed",
   );
 }
 export function useAddMilestone() {
   return useProjMut(
     ({ id, data }: any) =>
-      api.post(`/admin/projects/${id}/milestones`, data).then((r) => r.data),
+      projectsApi.addMilestone(id, data).then((r) => r.data),
     "Milestone Added",
   );
 }
 export function useToggleMilestone() {
   return useProjMut(
     ({ id, msId }: any) =>
-      api
-        .patch(`/admin/projects/${id}/milestones/${msId}/toggle`)
-        .then((r) => r.data),
+      projectsApi.toggleMilestone(id, msId).then((r) => r.data),
     "Milestone Updated",
   );
 }
 export function useDeleteMilestone() {
   return useProjMut(
     ({ id, msId }: any) =>
-      api
-        .delete(`/admin/projects/${id}/milestones/${msId}`)
-        .then((r) => r.data),
+      projectsApi.deleteMilestone(id, msId).then((r) => r.data),
     "Milestone Removed",
   );
 }
 export function useAddProjectUpdate() {
   return useProjMut(
-    ({ id, data }: any) =>
-      api.post(`/admin/projects/${id}/updates`, data).then((r) => r.data),
+    ({ id, data }: any) => projectsApi.addUpdate(id, data).then((r) => r.data),
     "Update Added",
   );
 }

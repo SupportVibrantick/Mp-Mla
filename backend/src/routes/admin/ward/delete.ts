@@ -6,6 +6,12 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
+
+/**
+ * DELETE /api/admin/ward/:id
+ * Deletes a ward.
+ */
+
 export async function deleteWard(
   req: Request,
   res: Response,

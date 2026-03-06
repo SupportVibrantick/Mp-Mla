@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link, useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   useGrievance,
   useChangeGrievanceStatus,
@@ -91,8 +91,9 @@ const TL_COLORS: Record<string, string> = {
 };
 
 export default function GrievanceDetailPage() {
-  const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
+  // Get ID from state instead of params
+  const id = (window.history.state as any)?.id;
   const { data: res, isLoading } = useGrievance(id);
   const statusMut = useChangeGrievanceStatus();
   const assignMut = useAssignGrievance();
@@ -110,7 +111,7 @@ export default function GrievanceDetailPage() {
     resolutionNotes: "",
     rejectionReason: "",
     escalationReason: "",
-    satisfactionRating: 0,
+    satisfactionRating: undefined as number | undefined,
   });
   const [assignDlg, setAssignDlg] = useState(false);
   const [af, setAf] = useState({
@@ -162,14 +163,27 @@ export default function GrievanceDetailPage() {
       resolutionNotes: "",
       rejectionReason: "",
       escalationReason: "",
-      satisfactionRating: 0,
+      satisfactionRating: undefined,
     });
     setStatusDlg(true);
   };
   const submitStatus = async () => {
     if (!id) return;
-    await statusMut.mutateAsync({ id, data: sf });
-    setStatusDlg(false);
+    try {
+      await statusMut.mutateAsync({ id, data: sf });
+      setStatusDlg(false);
+      // Reset form after success
+      setSf({
+        status: "",
+        comment: "",
+        resolutionNotes: "",
+        rejectionReason: "",
+        escalationReason: "",
+        satisfactionRating: undefined,
+      });
+    } catch (error) {
+      // Error handled by hook's toast
+    }
   };
   const submitAssign = async () => {
     if (!id) return;
@@ -212,11 +226,11 @@ export default function GrievanceDetailPage() {
                   {pI.icon} {pI.label}
                 </Badge>
                 <Badge className={`text-[10px] ${sI.color}`}>{sI.label}</Badge>
-                {g.isOverdue && (
+                {/* {g.isOverdue && (
                   <Badge variant="destructive" className="text-[10px]">
                     ⚠️ OVERDUE
                   </Badge>
-                )}
+                )} */}
               </div>
               <h2 className="text-lg font-semibold mt-1">{g.subject}</h2>
               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
@@ -265,7 +279,7 @@ export default function GrievanceDetailPage() {
                 <UserPlus className="h-3.5 w-3.5" />
                 Assign
               </Button>
-              <Link to={`/grievances/${g.id}/edit`}>
+              <Link to="/grievances/edit" state={{ id: g.id }}>
                 <Button variant="outline" size="sm" className="gap-1">
                   <Edit className="h-3.5 w-3.5" />
                   Edit
@@ -521,7 +535,9 @@ export default function GrievanceDetailPage() {
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Department</span>
-                  <span className="font-medium">{g.departmentName || "—"}</span>
+                  <span className="font-medium">
+                    {g.departmentName || g.assignedDept || "—"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Assigned To</span>
@@ -549,7 +565,7 @@ export default function GrievanceDetailPage() {
                   <span className="text-muted-foreground">Created</span>
                   <span>{format(new Date(g.createdAt), "dd MMM yyyy")}</span>
                 </div>
-                {g.expectedResolutionDate && (
+                {/* {g.expectedResolutionDate && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Expected By</span>
                     <span
@@ -563,7 +579,7 @@ export default function GrievanceDetailPage() {
                       )}
                     </span>
                   </div>
-                )}
+                )} */}
                 {g.resolvedAt && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Resolved</span>
@@ -690,13 +706,13 @@ export default function GrievanceDetailPage() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className={`h-9 w-9 ${sf.satisfactionRating >= r ? "bg-yellow-100 border-yellow-400" : ""}`}
+                      className={`h-9 w-9 ${(sf.satisfactionRating ?? 0) >= r ? "bg-yellow-100 border-yellow-400" : ""}`}
                       onClick={() =>
                         setSf((p) => ({ ...p, satisfactionRating: r }))
                       }
                     >
                       <Star
-                        className={`h-4 w-4 ${sf.satisfactionRating >= r ? "fill-yellow-400 text-yellow-400" : ""}`}
+                        className={`h-4 w-4 ${(sf.satisfactionRating ?? 0) >= r ? "fill-yellow-400 text-yellow-400" : ""}`}
                       />
                     </Button>
                   ))}

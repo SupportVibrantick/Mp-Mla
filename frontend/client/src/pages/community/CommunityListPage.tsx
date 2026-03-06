@@ -42,6 +42,7 @@ import {
   UserCheck,
   UserX,
   MapPin,
+  TrendingUp,
 } from "lucide-react";
 
 export default function CommunityListPage() {
@@ -69,7 +70,15 @@ export default function CommunityListPage() {
   const groups = groupsRes?.data || [];
   const pagination = groupsRes?.pagination;
   const stats = statsRes?.data;
-  const wards = wardsRes?.data?.data || [];
+  const wards = wardsRes?.data?.wards || [];
+
+  const reset = () => {
+    setSearch("");
+    setWardFilter("all");
+    setTypeFilter("all");
+    setActiveFilter("all");
+    setPage(1);
+  };
 
   return (
     <MainLayout title="Community Groups">
@@ -177,33 +186,161 @@ export default function CommunityListPage() {
 
         {/* Type-wise Distribution */}
         {stats?.byType && stats.byType.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Distribution by Type</CardTitle>
+          <Card className="overflow-hidden border-none bg-transparent shadow-none">
+            <CardHeader className="px-0 pb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-md">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-bold">
+                    Community Distribution
+                  </CardTitle>
+                  <p className="text-[11px] text-muted-foreground">
+                    Statistical breakdown by organization category
+                  </p>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            <CardContent className="px-0">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
                 {stats.byType.map((t: any) => {
                   const info = getTypeInfo(t.type);
                   const Icon = info.icon;
 
+                  // Dynamic color mapping
+                  const colors: Record<
+                    string,
+                    { bg: string; text: string; light: string }
+                  > = {
+                    MARKET: {
+                      bg: "bg-blue-500",
+                      text: "text-blue-600",
+                      light: "bg-blue-50",
+                    },
+                    SLUM: {
+                      bg: "bg-amber-500",
+                      text: "text-amber-600",
+                      light: "bg-amber-50",
+                    },
+                    SPORTS_TEAM: {
+                      bg: "bg-orange-500",
+                      text: "text-orange-600",
+                      light: "bg-orange-50",
+                    },
+                    CLUB: {
+                      bg: "bg-indigo-500",
+                      text: "text-indigo-600",
+                      light: "bg-indigo-50",
+                    },
+                    RWA: {
+                      bg: "bg-violet-500",
+                      text: "text-violet-600",
+                      light: "bg-violet-50",
+                    },
+                    SENIOR_CITIZEN: {
+                      bg: "bg-emerald-500",
+                      text: "text-emerald-600",
+                      light: "bg-emerald-50",
+                    },
+                    BUDDHIJEEVI: {
+                      bg: "bg-sky-500",
+                      text: "text-sky-600",
+                      light: "bg-sky-50",
+                    },
+                    WOMEN_GROUP: {
+                      bg: "bg-pink-500",
+                      text: "text-pink-600",
+                      light: "bg-pink-50",
+                    },
+                    YOUTH_GROUP: {
+                      bg: "bg-cyan-500",
+                      text: "text-cyan-600",
+                      light: "bg-cyan-50",
+                    },
+                    CULTURAL_ORG: {
+                      bg: "bg-rose-500",
+                      text: "text-rose-600",
+                      light: "bg-rose-50",
+                    },
+                    NGO: {
+                      bg: "bg-teal-500",
+                      text: "text-teal-600",
+                      light: "bg-teal-50",
+                    },
+                    FESTIVAL_COMMITTEE: {
+                      bg: "bg-yellow-500",
+                      text: "text-yellow-600",
+                      light: "bg-yellow-50",
+                    },
+                    TRADE_UNION: {
+                      bg: "bg-slate-500",
+                      text: "text-slate-600",
+                      light: "bg-slate-50",
+                    },
+                    OTHER: {
+                      bg: "bg-gray-400",
+                      text: "text-gray-500",
+                      light: "bg-gray-50",
+                    },
+                  };
+
+                  const theme = colors[t.type] || colors.OTHER;
+
                   return (
                     <div
                       key={t.type}
-                      className="text-center p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="group relative flex flex-col p-4 rounded-xl border bg-card hover:shadow-md hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden"
                       onClick={() => {
                         setTypeFilter(t.type);
                         setPage(1);
+                        window.scrollTo({ top: 400, behavior: "smooth" });
                       }}
                     >
-                      <Icon className="h-6 w-6 mx-auto" />{" "}
-                      <p className="text-lg font-bold mt-1">{t.count}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">
-                        {info.label}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {t.members.toLocaleString()} members
-                      </p>
+                      {/* Decorative Background Blob */}
+                      <div
+                        className={`absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-5 group-hover:opacity-10 transition-opacity ${theme.bg}`}
+                      />
+
+                      <div className="flex items-start justify-between mb-3">
+                        <div
+                          className={`p-2.5 rounded-lg ${theme.light} ${theme.text} group-hover:scale-110 transition-transform`}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-black tracking-tight">
+                            {t.count}
+                          </p>
+                          <p className="text-[9px] font-medium uppercase text-muted-foreground">
+                            Groups
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-auto">
+                        <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">
+                          {info.label}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="flex -space-x-1">
+                            <div className="w-3.5 h-3.5 rounded-full border border-background bg-muted flex items-center justify-center">
+                              <Users className="w-2 h-2 text-muted-foreground" />
+                            </div>
+                          </div>
+                          <p className="text-[10px] font-semibold text-muted-foreground">
+                            {t.members.toLocaleString()}{" "}
+                            <span className="font-normal opacity-70">
+                              people
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Active Indicator Bar (only visible on hover or if filtered) */}
+                      <div
+                        className={`absolute bottom-0 left-0 h-0.5 transition-all duration-300 ${typeFilter === t.type ? "w-full " + theme.bg : "w-0 group-hover:w-full " + theme.bg}`}
+                      />
                     </div>
                   );
                 })}
@@ -292,6 +429,19 @@ export default function CommunityListPage() {
                     <SelectItem value="false">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
+                {(search ||
+                  wardFilter !== "all" ||
+                  typeFilter !== "all" ||
+                  activeFilter !== "all") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="text-xs"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

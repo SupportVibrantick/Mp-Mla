@@ -8,8 +8,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── Create ─────────────────────────────────────────────
-
+/**
+ * POST /api/admin/department
+ * Creates a new department.
+ */
 export const createDepartment = catchAsync(async (req, res) => {
   const data = { ...req.body };
   if (data.headEmail === "") delete data.headEmail;

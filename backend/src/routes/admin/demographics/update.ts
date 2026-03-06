@@ -9,6 +9,10 @@ import {
 
 import catchAsync from "@/utils/catchAsync.js";
 
+/**
+ * PUT /api/admin/demographics/ward/:wardId
+ * Updates demographics for a ward or ward area.
+ */
 export const updateDemographics = catchAsync(async (req, res) => {
   const wardId = req.params.wardId as string;
   const { wardAreaId, ...demoData } = req.body;

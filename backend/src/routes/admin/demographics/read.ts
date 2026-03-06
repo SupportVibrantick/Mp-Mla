@@ -4,8 +4,10 @@ import { requirePermission } from "../../../middleware/permission.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── Constituency-wide Summary ──────────────────────────
-
+/**
+ * GET /api/admin/demographics/summary
+ * Gets constituency-wide demographic summary.
+ */
 export const summaryDemographics = catchAsync(async (req, res) => {
   // Get all ward-level demographics (wardAreaId = null)
   const wardDemos = await prisma.demographics.findMany({
@@ -98,12 +100,12 @@ export const summaryDemographics = catchAsync(async (req, res) => {
     { label: "Female", value: totals.femaleCount, color: "#ec4899" },
     ...(totals.transgenderCount > 0
       ? [
-          {
-            label: "Transgender",
-            value: totals.transgenderCount,
-            color: "#a855f7",
-          },
-        ]
+        {
+          label: "Transgender",
+          value: totals.transgenderCount,
+          color: "#a855f7",
+        },
+      ]
       : []),
   ];
 
@@ -231,8 +233,10 @@ export const summaryDemographics = catchAsync(async (req, res) => {
   });
 });
 
-// ─── Single Ward Demographics (already in ward routes, expose here too)
-
+/**
+ * GET /api/admin/demographics/ward/:wardId
+ * Gets demographics for a single ward.
+ */
 export const getWardDemographics = catchAsync(async (req, res) => {
   const wardId = req.params.wardId as string;
 

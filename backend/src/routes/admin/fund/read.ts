@@ -4,9 +4,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { getCurrentFY } from "./helper.js";
 
-// ════════════════════════════════════════════════════════
-// LIST ALL FUNDS
-// ════════════════════════════════════════════════════════
+/**
+ * GET /api/admin/fund
+ * Lists all funds with optional filtering.
+ */
 export const getFunds = catchAsync(async (req, res) => {
   const { fundType, financialYear } = req.query as Record<string, string>;
 
@@ -40,10 +41,10 @@ export const getFunds = catchAsync(async (req, res) => {
   res.json({ success: true, data: enriched });
 });
 
-// ════════════════════════════════════════════════════════
-// OVERVIEW (DASHBOARD)
-// ════════════════════════════════════════════════════════
-
+/**
+ * GET /api/admin/fund/overview
+ * Gets dashboard overview for a financial year.
+ */
 export const overviewDashboard = catchAsync(async (req, res) => {
   const fy = (req.query.financialYear as string) || getCurrentFY();
 
@@ -107,13 +108,13 @@ export const overviewDashboard = catchAsync(async (req, res) => {
   const projects =
     projIds.length > 0
       ? await prisma.project.findMany({
-          where: { id: { in: projIds } },
-          select: {
-            id: true,
-            name: true,
-            projectCode: true,
-          },
-        })
+        where: { id: { in: projIds } },
+        select: {
+          id: true,
+          name: true,
+          projectCode: true,
+        },
+      })
       : [];
   const projMap = Object.fromEntries(projects.map((p) => [p.id, p]));
 
@@ -167,10 +168,10 @@ export const overviewDashboard = catchAsync(async (req, res) => {
   });
 });
 
-// ════════════════════════════════════════════════════════
-// GET SINGLE FUND (DETAIL)
-// ════════════════════════════════════════════════════════
-
+/**
+ * GET /api/admin/fund/:id
+ * Gets a single fund with its transactions.
+ */
 export const getSingleFunds = catchAsync(async (req, res) => {
   const fundId = req.params.id as string;
   const fund = await prisma.fund.findUnique({
@@ -191,16 +192,16 @@ export const getSingleFunds = catchAsync(async (req, res) => {
   const projects =
     projIds.length > 0
       ? await prisma.project.findMany({
-          where: { id: { in: projIds } },
-          select: {
-            id: true,
-            name: true,
-            projectCode: true,
-            ward: {
-              select: { name: true, wardNumber: true },
-            },
+        where: { id: { in: projIds } },
+        select: {
+          id: true,
+          name: true,
+          projectCode: true,
+          ward: {
+            select: { name: true, wardNumber: true },
           },
-        })
+        },
+      })
       : [];
   const projMap = Object.fromEntries(projects.map((p) => [p.id, p]));
 

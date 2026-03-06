@@ -787,9 +787,9 @@ export default function LeaderDetailPage() {
                 }
                 rows={5}
               />
-              <p className="text-[10px] text-muted-foreground">
+              {/* <p className="text-[10px] text-muted-foreground">
                 Placeholders: {"{name}"}, {"{age}"}, {"{designation}"}
-              </p>
+              </p> */}
             </div>
           </div>
           <DialogFooter>

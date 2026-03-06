@@ -322,7 +322,7 @@ router.get(
 
     const wardIds = wards.map((w) => w.id);
 
-    const [gCounts, pCounts, iCounts, sCounts] = await Promise.all([
+    const [gCounts, pCounts, iCounts] = await Promise.all([
       prisma.grievance.groupBy({
         by: ["wardId"],
         where: { wardId: { in: wardIds } },
@@ -339,11 +339,11 @@ router.get(
         where: { wardId: { in: wardIds } },
         _count: true,
       }),
-      prisma.schemeBeneficiary.groupBy({
-        by: ["wardId"],
-        where: { wardId: { in: wardIds } },
-        _sum: { beneficiaryCount: true, targetCount: true },
-      }),
+      // prisma.schemeBeneficiary.groupBy({
+      //   by: ["wardId"],
+      //   where: { wardId: { in: wardIds } },
+      //   _sum: { beneficiaryCount: true, targetCount: true },
+      // }),
     ]);
 
     const gMap = Object.fromEntries(gCounts.map((g) => [g.wardId, g._count]));
@@ -354,15 +354,15 @@ router.get(
       ]),
     );
     const iMap = Object.fromEntries(iCounts.map((i) => [i.wardId, i._count]));
-    const sMap = Object.fromEntries(
-      sCounts.map((s) => [
-        s.wardId,
-        {
-          beneficiaries: s._sum.beneficiaryCount || 0,
-          target: s._sum.targetCount || 0,
-        },
-      ]),
-    );
+    // const sMap = Object.fromEntries(
+    //   sCounts.map((s) => [
+    //     s.wardId,
+    //     {
+    //       beneficiaries: s._sum.beneficiaryCount || 0,
+    //       target: s._sum.targetCount || 0,
+    //     },
+    //   ]),
+    // );
 
     const wardData = wards.map((w) => ({
       ...w,
@@ -370,8 +370,8 @@ router.get(
       projects: pMap[w.id]?.count || 0,
       projectBudget: pMap[w.id]?.budget || 0,
       institutions: iMap[w.id] || 0,
-      beneficiaries: sMap[w.id]?.beneficiaries || 0,
-      schemeTarget: sMap[w.id]?.target || 0,
+      // beneficiaries: sMap[w.id]?.beneficiaries || 0,
+      // schemeTarget: sMap[w.id]?.target || 0,
     }));
 
     const totals = {
@@ -391,101 +391,97 @@ router.get(
 // SCHEME COVERAGE REPORT
 // ════════════════════════════════════════════════════════
 
-router.get(
-  "/scheme",
-  requirePermission("reports", "read"),
-  catchAsync(async (req, res) => {
-    const { wardId } = req.query as Record<string, string>;
+// router.get(
+//   "/scheme",
+//   requirePermission("reports", "read"),
+//   catchAsync(async (req, res) => {
+//     const { wardId } = req.query as Record<string, string>;
 
-    const schemeWhere: any = {};
+//     const schemeWhere: any = {};
 
-    // Filter schemes that HAVE beneficiaries in that ward
-    if (wardId && wardId !== "all") {
-      schemeWhere.beneficiaries = {
-        some: { wardId },
-      };
-    }
+//     // Filter schemes that HAVE beneficiaries in that ward
+//     if (wardId && wardId !== "all") {
+//       schemeWhere.beneficiaries = {
+//         some: { wardId },
+//       };
+//     }
 
-    const schemes = await prisma.scheme.findMany({
-      where: schemeWhere,
-      include: {
-        beneficiaries: {
-          ...(wardId && wardId !== "all"
-            ? { where: { wardId } }
-            : {}),
-          include: {
-            ward: { select: { name: true, wardNumber: true } },
-          },
-        },
-      },
-      orderBy: { name: "asc" },
-    });
+//     const schemes = await prisma.scheme.findMany({
+//       where: schemeWhere,
+//       include: {
+//         beneficiaries: {
+//           ...(wardId && wardId !== "all" ? { where: { wardId } } : {}),
+//           include: {
+//             ward: { select: { name: true, wardNumber: true } },
+//           },
+//         },
+//       },
+//       orderBy: { name: "asc" },
+//     });
 
-    const deptIds = [...new Set(schemes.map((s) => s.department))];
+//     const deptIds = [...new Set(schemes.map((s) => s.department))];
 
-    const depts = await prisma.department.findMany({
-      where: { id: { in: deptIds } },
-      select: { id: true, name: true },
-    });
+//     const depts = await prisma.department.findMany({
+//       where: { id: { in: deptIds } },
+//       select: { id: true, name: true },
+//     });
 
-    const deptMap = Object.fromEntries(
-      depts.map((d) => [d.id, d.name]),
-    );
+//     const deptMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
 
-    const rows = schemes.map((s) => {
-      const totalBeneficiaries = s.beneficiaries.reduce(
-        (sum, b) => sum + b.beneficiaryCount,
-        0,
-      );
+//     const rows = schemes.map((s) => {
+//       const totalBeneficiaries = s.beneficiaries.reduce(
+//         (sum, b) => sum + b.beneficiaryCount,
+//         0,
+//       );
 
-      const totalTarget = s.beneficiaries.reduce(
-        (sum, b) => sum + b.targetCount,
-        0,
-      );
+//       const totalTarget = s.beneficiaries.reduce(
+//         (sum, b) => sum + b.targetCount,
+//         0,
+//       );
 
-      const totalDisbursed = s.beneficiaries.reduce(
-        (sum, b) => sum + b.amountDisbursed,
-        0,
-      );
+//       const totalDisbursed = s.beneficiaries.reduce(
+//         (sum, b) => sum + b.amountDisbursed,
+//         0,
+//       );
 
-      const coverage =
-        totalTarget > 0
-          ? Math.round((totalBeneficiaries / totalTarget) * 100)
-          : 0;
+//       const coverage =
+//         totalTarget > 0
+//           ? Math.round((totalBeneficiaries / totalTarget) * 100)
+//           : 0;
 
-      return {
-        id: s.id,
-        name: s.name,
-        department: deptMap[s.department] || s.department,
-        level: s.level,
-        status: s.status,
-        budget: s.budget,
-        totalBeneficiaries,
-        totalTarget,
-        totalDisbursed,
-        coverage,
-        wardCount: s.beneficiaries.length,
-        beneficiaries: s.beneficiaries,
-      };
-    });
+//       return {
+//         id: s.id,
+//         name: s.name,
+//         department: deptMap[s.department] || s.department,
+//         level: s.level,
+//         status: s.status,
+//         budget: s.budget,
+//         totalBeneficiaries,
+//         totalTarget,
+//         totalDisbursed,
+//         coverage,
+//         wardCount: s.beneficiaries.length,
+//         beneficiaries: s.beneficiaries,
+//       };
+//     });
 
-    const totals = {
-      schemes: rows.length,
-      active: rows.filter((r) => r.status === "ACTIVE").length,
-      budget: rows.reduce((s, r) => s + r.budget, 0),
-      beneficiaries: rows.reduce((s, r) => s + r.totalBeneficiaries, 0),
-      target: rows.reduce((s, r) => s + r.totalTarget, 0),
-      disbursed: rows.reduce((s, r) => s + r.totalDisbursed, 0),
-      overallCoverage: (() => {
-        const t = rows.reduce((s, r) => s + r.totalTarget, 0);
-        const b = rows.reduce((s, r) => s + r.totalBeneficiaries, 0);
-        return t > 0 ? Math.round((b / t) * 100) : 0;
-      })(),
-    };
+//     const totals = {
+//       schemes: rows.length,
+//       active: rows.filter((r) => r.status === "ACTIVE").length,
+//       budget: rows.reduce((s, r) => s + r.budget, 0),
+//       beneficiaries: rows.reduce((s, r) => s + r.totalBeneficiaries, 0),
+//       target: rows.reduce((s, r) => s + r.totalTarget, 0),
+//       disbursed: rows.reduce((s, r) => s + r.totalDisbursed, 0),
+//       overallCoverage: (() => {
+//         const t = rows.reduce((s, r) => s + r.totalTarget, 0);
+//         const b = rows.reduce((s, r) => s + r.totalBeneficiaries, 0);
+//         return t > 0 ? Math.round((b / t) * 100) : 0;
+//       })(),
+//     };
 
-    res.json({ success: true, data: { rows, totals } });
-  }),
-);
+//     res.json({ success: true, data: { rows, totals } });
+//   }),
+// );
 
 // ════════════════════════════════════════════════════════
 // INSTITUTION REPORT
@@ -637,7 +633,7 @@ router.get(
       pCompleted,
       pTotal,
       iTotal,
-      schemeActive,
+      // schemeActive,
       fundData,
       deptPerformance,
     ] = await Promise.all([
@@ -651,7 +647,7 @@ router.get(
       prisma.project.count({ where: { status: "COMPLETED" } }),
       prisma.project.count(),
       prisma.institution.count({ where: { status: "ACTIVE" } }),
-      prisma.scheme.count({ where: { status: "ACTIVE" } }),
+      // prisma.scheme.count({ where: { status: "ACTIVE" } }),
       prisma.fund.findMany({ where: { financialYear: fy } }),
       // Department performance: grievances assigned per dept, resolved count
       prisma.grievance.groupBy({
@@ -742,7 +738,7 @@ router.get(
           completedProjects: pCompleted,
           totalProjects: pTotal,
           activeInstitutions: iTotal,
-          activeSchemes: schemeActive,
+          // activeSchemes: schemeActive,
           ...fundTotal,
           financialYear: fy,
         },
@@ -816,26 +812,26 @@ router.get(
         });
         break;
       }
-      case "scheme": {
-        const schemes = await prisma.scheme.findMany({
-          include: {
-            beneficiaries: {
-              include: { ward: { select: { name: true, wardNumber: true } } },
-            },
-          },
-        });
-        csv =
-          "Scheme,Department,Level,Status,Budget,Total Beneficiaries,Total Target,Coverage%\n";
-        schemes.forEach((s) => {
-          const tb = s.beneficiaries.reduce(
-            (sum, b) => sum + b.beneficiaryCount,
-            0,
-          );
-          const tt = s.beneficiaries.reduce((sum, b) => sum + b.targetCount, 0);
-          csv += `"${s.name.replace(/"/g, '""')}","${s.department}","${s.level}","${s.status}",${s.budget},${tb},${tt},${tt > 0 ? Math.round((tb / tt) * 100) : 0}\n`;
-        });
-        break;
-      }
+      // case "scheme": {
+      //   const schemes = await prisma.scheme.findMany({
+      //     include: {
+      //       beneficiaries: {
+      //         include: { ward: { select: { name: true, wardNumber: true } } },
+      //       },
+      //     },
+      //   });
+      //   csv =
+      //     "Scheme,Department,Level,Status,Budget,Total Beneficiaries,Total Target,Coverage%\n";
+      //   schemes.forEach((s) => {
+      //     const tb = s.beneficiaries.reduce(
+      //       (sum, b) => sum + b.beneficiaryCount,
+      //       0,
+      //     );
+      //     const tt = s.beneficiaries.reduce((sum, b) => sum + b.targetCount, 0);
+      //     csv += `"${s.name.replace(/"/g, '""')}","${s.department}","${s.level}","${s.status}",${s.budget},${tb},${tt},${tt > 0 ? Math.round((tb / tt) * 100) : 0}\n`;
+      //   });
+      //   break;
+      // }
       default:
         res
           .status(400)

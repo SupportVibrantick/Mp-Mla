@@ -6,6 +6,12 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
+
+
+/**
+ * DELETE /api/admin/project/:id
+ * Deletes a project.
+ */
 export async function deleteProject(
   req: Request,
   res: Response,

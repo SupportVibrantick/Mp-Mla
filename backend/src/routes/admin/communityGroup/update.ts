@@ -8,8 +8,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
-// ─── Update ─────────────────────────────────────────────
-
+/**
+ * PUT   /api/admin/community-group/:id
+ * Updates a community group.
+ */
 export const updateCommunityGroup = catchAsync(async (req, res) => {
   const old = await prisma.communityGroup.findUnique({
     where: { id: req.params.id as string },
@@ -62,8 +64,10 @@ export const updateCommunityGroup = catchAsync(async (req, res) => {
   });
 });
 
-// ─── Toggle Active ──────────────────────────────────────
-
+/**
+ * PATCH /api/admin/community-group/:id/toggle
+ * Toggles the active status of a community group.
+ */
 export const toggleCommmunity = catchAsync(async (req, res) => {
   const group = await prisma.communityGroup.findUnique({
     where: { id: req.params.id as string },

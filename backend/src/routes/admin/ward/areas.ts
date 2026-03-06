@@ -10,43 +10,14 @@ import {
   recomputeWardAggregates,
   recomputeWardDemographics,
   buildDemographicsData,
-  demographicsZodSchema,
 } from "./helpers.js";
 
-// ─── Schemas ────────────────────────────────────────────
 
-export const createAreaSchema = z.object({
-  name: z.string().min(1),
-  areaType: z
-    .enum([
-      "RESIDENTIAL",
-      "COMMERCIAL",
-      "INDUSTRIAL",
-      "MIXED_USE",
-      "AGRICULTURAL",
-      "INSTITUTIONAL",
-      "SLUM",
-      "CANTONMENT",
-      "OTHER",
-    ])
-    .default("RESIDENTIAL"),
-  population: z.number().int().min(0).default(0),
-  households: z.number().int().min(0).default(0),
-  maleCount: z.number().int().min(0).default(0),
-  femaleCount: z.number().int().min(0).default(0),
-  pincode: z.string().optional(),
-  landmark: z.string().optional(),
-  description: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  // Optional detailed demographics for this area
-  demographics: demographicsZodSchema,
-});
 
-export const updateAreaSchema = createAreaSchema.partial();
-
-// ─── List Areas ─────────────────────────────────────────
-
+/**
+ * GET /api/admin/ward/:wardId/areas
+ * Lists all areas within a ward.
+ */
 export async function listAreas(
   req: Request,
   res: Response,
@@ -75,8 +46,10 @@ export async function listAreas(
   }
 }
 
-// ─── Get Single Area ────────────────────────────────────
-
+/**
+ * GET /api/admin/ward/:wardId/areas/:areaId
+ * Gets a single area within a ward.
+ */
 export async function getArea(
   req: Request,
   res: Response,
@@ -101,8 +74,10 @@ export async function getArea(
   }
 }
 
-// ─── Create Area ────────────────────────────────────────
-
+/**
+ * POST /api/admin/ward/:wardId/areas
+ * Creates a new area within a ward.
+ */
 export async function createArea(
   req: Request,
   res: Response,
@@ -165,8 +140,10 @@ export async function createArea(
   }
 }
 
-// ─── Update Area ────────────────────────────────────────
-
+/**
+ * PUT /api/admin/ward/:wardId/areas/:areaId
+ * Updates an area within a ward.
+ */
 export async function updateArea(
   req: Request,
   res: Response,
@@ -267,8 +244,10 @@ export async function updateArea(
   }
 }
 
-// ─── Delete Area ────────────────────────────────────────
-
+/**
+ * DELETE /api/admin/ward/:wardId/areas/:areaId
+ * Deletes an area within a ward.
+ */
 export async function deleteArea(
   req: Request,
   res: Response,

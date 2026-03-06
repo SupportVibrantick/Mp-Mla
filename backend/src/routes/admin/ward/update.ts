@@ -5,22 +5,13 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
 
-export const updateWardSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  zone: z.string().max(10).optional().nullable(),
-  status: z
-    .enum(["ACTIVE", "INACTIVE", "PROPOSED", "MERGED", "DELIMITATION_PENDING"])
-    .optional(),
-  areaType: z.string().optional(),
-  pincode: z.string().max(10).optional().nullable(),
-  latitude: z.number().optional().nullable(),
-  longitude: z.number().optional().nullable(),
-  description: z.string().optional().nullable(),
-  establishedDate: z.string().datetime().optional().nullable(),
-});
 
+
+/**
+ * PUT /api/admin/ward/:id
+ * Updates an existing ward.
+ */
 export async function updateWard(
   req: Request,
   res: Response,

@@ -5,6 +5,12 @@ import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import catchAsync from "../../../utils/catchAsync.js";
 
+
+
+/**
+ * GET /api/admin/ward
+ * Lists all wards with optional filtering and pagination.
+ */
 export const listWards = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip } = parsePagination(req.query);
   const { search, zone, status, areaType } = req.query as Record<
@@ -80,6 +86,13 @@ export const listWards = catchAsync(async (req: Request, res: Response) => {
   );
 });
 
+
+
+
+/**
+ * GET /api/admin/ward/:id
+ * Gets a single ward by ID with detailed information.
+ */
 export const getWard = catchAsync(async (req: Request, res: Response) => {
   const wardId = Array.isArray(req.params.id)
     ? req.params.id[0]
@@ -98,7 +111,7 @@ export const getWard = catchAsync(async (req: Request, res: Response) => {
           projects: true,
           communityGroups: true,
           demographics: true,
-          schemeBeneficiaries: true,
+          // schemeBeneficiaries: true,
         },
       },
     },
@@ -157,6 +170,12 @@ export const getWard = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+
+/**
+ * GET /api/admin/ward/stats
+ * Gets aggregated statistics for all wards.
+ */
 export async function getWardStats(
   req: Request,
   res: Response,

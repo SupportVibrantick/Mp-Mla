@@ -7,10 +7,10 @@ import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { recalculateFundTotals } from "./helper.js";
 
-// ════════════════════════════════════════════════════════
-// CREATE FUND
-// ════════════════════════════════════════════════════════
-
+/**
+ * POST /api/admin/fund
+ * Creates a new fund.
+ */
 export const createFund = catchAsync(async (req, res) => {
   const { fundType, financialYear, totalAllocated } = req.body;
 
@@ -61,10 +61,11 @@ export const createFund = catchAsync(async (req, res) => {
   });
 });
 
-// ════════════════════════════════════════════════════════
-// ADD TRANSACTION
-// ════════════════════════════════════════════════════════
 
+/**
+ * POST /api/admin/fund/:id/transaction
+ * Adds a transaction (release or utilization) to a fund.
+ */
 export const createTransactionFund = catchAsync(async (req, res) => {
   const fund = await prisma.fund.findUnique({
     where: { id: req.params.id as string },

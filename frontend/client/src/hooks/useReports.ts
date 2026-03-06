@@ -24,14 +24,14 @@ export function useWardReport() {
     queryFn: () => api.get("/admin/reports/ward").then((r) => r.data),
   });
 }
-export function useSchemeReport(params?: Record<string, any>) {
-  return useQuery({
-    queryKey: ["reports", "scheme", params],
-    queryFn: () =>
-      api.get("/admin/reports/scheme", { params }).then((r) => r.data),
-    enabled: !!params,
-  });
-}
+// export function useSchemeReport(params?: Record<string, any>) {
+//   return useQuery({
+//     queryKey: ["reports", "scheme", params],
+//     queryFn: () =>
+//       api.get("/admin/reports/scheme", { params }).then((r) => r.data),
+//     enabled: !!params,
+//   });
+// }
 export function useInstitutionReport(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["reports", "institution", params],

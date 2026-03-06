@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import api, { wardsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Types ──────────────────────────────────────────────
@@ -70,7 +70,7 @@ export interface Ward {
 export function useWards(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["wards", params],
-    queryFn: () => api.get("/admin/wards", { params }).then((r) => r.data),
+    queryFn: () => wardsApi.list(params).then((r) => r.data),
   });
 }
 
@@ -79,7 +79,7 @@ export function useWards(params?: Record<string, any>) {
 export function useWardStats() {
   return useQuery({
     queryKey: ["wards", "stats"],
-    queryFn: () => api.get("/admin/wards/stats").then((r) => r.data),
+    queryFn: () => wardsApi.stats().then((r) => r.data),
   });
 }
 
@@ -88,7 +88,7 @@ export function useWardStats() {
 export function useWard(id: string | undefined) {
   return useQuery({
     queryKey: ["wards", id],
-    queryFn: () => api.get(`/admin/wards/${id}`).then((r) => r.data),
+    queryFn: () => wardsApi.get(id!).then((r) => r.data),
     enabled: !!id,
   });
 }

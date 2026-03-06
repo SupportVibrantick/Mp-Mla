@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   useGrievances,
   useGrievanceStats,
@@ -64,6 +64,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 export default function GrievanceListPage() {
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [wardFilter, setWardFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -436,11 +437,12 @@ export default function GrievanceListPage() {
                           className={`hover:bg-muted/50 ${g.isOverdue ? "bg-red-50/50 dark:bg-red-950/20" : ""}`}
                         >
                           <TableCell>
-                            <Link to={`/grievances/${g.id}`}>
-                              <span className="font-mono text-xs text-primary hover:underline cursor-pointer font-semibold">
-                                {g.ticketNumber}
-                              </span>
-                            </Link>
+                            <span
+                              onClick={() => navigate("/grievances/detail", { state: { id: g.id } })}
+                              className="font-mono text-xs text-primary hover:underline cursor-pointer font-semibold"
+                            >
+                              {g.ticketNumber}
+                            </span>
                             {g.isOverdue && (
                               <Badge
                                 variant="destructive"
@@ -451,11 +453,12 @@ export default function GrievanceListPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Link to={`/grievances/${g.id}`}>
-                              <p className="font-medium text-sm hover:underline cursor-pointer max-w-[180px] truncate">
-                                {g.subject}
-                              </p>
-                            </Link>
+                            <p
+                              onClick={() => navigate("/grievances/detail", { state: { id: g.id } })}
+                              className="font-medium text-sm hover:underline cursor-pointer max-w-[180px] truncate"
+                            >
+                              {g.subject}
+                            </p>
                           </TableCell>
                           <TableCell>
                             <p className="text-sm">
@@ -498,15 +501,14 @@ export default function GrievanceListPage() {
                             })}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link to={`/grievances/${g.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => navigate("/grievances/detail", { state: { id: g.id } })}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );

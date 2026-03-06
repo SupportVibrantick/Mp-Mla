@@ -392,9 +392,9 @@ export default function BirthdaysPage() {
                 }
                 rows={4}
               />
-              <p className="text-[10px] text-muted-foreground">
+              {/* <p className="text-[10px] text-muted-foreground">
                 Use {"{name}"}, {"{age}"}, {"{designation}"} as placeholders
-              </p>
+              </p> */}
             </div>
           </div>
           <DialogFooter>

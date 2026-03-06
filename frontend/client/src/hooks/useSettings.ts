@@ -24,12 +24,12 @@ export const SETTING_GROUPS = [
     icon: "🔒",
     desc: "Passwords, sessions & 2FA",
   },
-  {
-    id: "grievance",
-    label: "Grievance",
-    icon: "📋",
-    desc: "SLA, categories & rules",
-  },
+  // {
+  //   id: "grievance",
+  //   label: "Grievance",
+  //   icon: "📋",
+  //   desc: "SLA, categories & rules",
+  // },
   {
     id: "notifications",
     label: "Notifications",
