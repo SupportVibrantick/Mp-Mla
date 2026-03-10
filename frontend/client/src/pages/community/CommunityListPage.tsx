@@ -44,7 +44,7 @@ import {
   MapPin,
   TrendingUp,
 } from "lucide-react";
-
+                                       
 export default function CommunityListPage() {
   const [search, setSearch] = useState("");
   const [wardFilter, setWardFilter] = useState("all");

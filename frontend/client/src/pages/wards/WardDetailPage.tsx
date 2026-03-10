@@ -1,6 +1,9 @@
-import { useMemo } from "react";
-import { useParams, Link } from "wouter";
-import { useWard, useWardDemographics } from "@/hooks/useWards";
+import { useState, useMemo } from "react";
+import { useParams, Link, useLocation } from "wouter";
+import * as xlsx from "xlsx";
+import { toast } from "sonner";
+import api from "@/lib/api";
+import { useDeleteWard, useWard, useWardDemographics } from "@/hooks/useWards";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,8 +34,21 @@ import {
   Building2,
   ClipboardList,
   BarChart3,
+  Download,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const AREA_TYPE_COLORS: Record<string, string> = {
   RESIDENTIAL: "bg-blue-100 text-blue-700",
@@ -47,11 +63,48 @@ const AREA_TYPE_COLORS: Record<string, string> = {
 
 export default function WardDetailPage() {
   const { id } = useParams<{ id: string }>();
+  // Use replace to simulate navigation without adding to history stack
+  const [, setLocation] = useLocation();
   const { data: wardRes, isLoading } = useWard(id);
   const { data: demoRes } = useWardDemographics(id);
+  const { mutateAsync: deleteWard, isPending: isDeleting } = useDeleteWard();
+  const [isExporting, setIsExporting] = useState(false);
 
   const ward = wardRes?.data;
   const demographics = demoRes?.data;
+
+  const handleExport = async () => {
+    if (!id || !ward) return;
+    setIsExporting(true);
+    try {
+      const response = await api.get(`/admin/wards/export?id=${id}`);
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Ward Data");
+        xlsx.writeFile(wb, `ward_${ward.wardNumber}_export.xlsx`);
+        toast.success("Ward exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export ward data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteWard(id);
+      setLocation("/wards");
+    } catch (error) {
+      // toast is handled in the hook
+    }
+  };
 
   if (isLoading) {
     return (
@@ -127,13 +180,57 @@ export default function WardDetailPage() {
               </p>
             </div>
           </div>
-          <PermissionGate module="wards" action="update">
-            <Link to={`/wards/${ward.id}/edit`}>
-              <Button variant="outline" className="gap-2">
-                <Edit className="h-4 w-4" /> Edit Ward
+          <div className="flex gap-2">
+            <PermissionGate module="wards" action="read">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" /> Export
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+            <PermissionGate module="wards" action="update">
+              <Link to={`/wards/${ward.id}/edit`}>
+                <Button variant="outline" className="gap-2">
+                  <Edit className="h-4 w-4" /> Edit Ward
+                </Button>
+              </Link>
+            </PermissionGate>
+            <PermissionGate module="wards" action="delete">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="gap-2"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Ward</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to completely delete {ward.name}?
+                      This will permanently delete all its dependent
+                      Demographics, Areas, and Councillors.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </PermissionGate>
+          </div>
         </div>
 
         {/* Summary Cards */}

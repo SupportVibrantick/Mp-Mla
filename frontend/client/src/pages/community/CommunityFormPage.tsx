@@ -62,7 +62,6 @@ export default function CommunityFormPage() {
   const createMut = useCreateCommunityGroup();
   const updateMut = useUpdateCommunityGroup();
   const { data: wardsRes } = useWards({ limit: 100 });
-
   const group = groupRes?.data;
   const wards = wardsRes?.data?.wards || [];
 

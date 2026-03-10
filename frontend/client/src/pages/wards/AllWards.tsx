@@ -1,8 +1,12 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { useWards, useWardStats } from "@/hooks/useWards";
+import * as xlsx from "xlsx";
+import { toast } from "sonner";
+import api from "@/lib/api";
+import { useWards, useWardStats, useBulkCreateWards, useDeleteWard } from "@/hooks/useWards";
 import { useAuth } from "@/hooks/useAuth";
 import { PermissionGate } from "@/components/auth/PermissionGate";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,7 +45,20 @@ import {
   ChevronRight,
   MessageSquare,
   Briefcase,
+  FileUp,
+  Download,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const STATUS_COLORS: Record<string, string> = {
   ACTIVE:
@@ -58,6 +75,36 @@ export default function WardsPage() {
   const [areaType, setAreaType] = useState("all");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Delete Context
+  const [wardToDelete, setWardToDelete] = useState<{ id: string, name: string } | null>(null);
+
+  const { mutateAsync: bulkCreateWards } = useBulkCreateWards();
+  const { mutateAsync: deleteWard, isPending: isDeleting } = useDeleteWard();
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await api.get("/admin/wards/export");
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Wards");
+        xlsx.writeFile(wb, "wards_export.xlsx");
+        toast.success("Wards exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export wards data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const queryParams = useMemo(() => {
     const p: Record<string, any> = { page, limit: 20 };
@@ -102,14 +149,63 @@ export default function WardsPage() {
               Manage wards, areas, and constituency geography
             </p>
           </div>
-          <PermissionGate module="wards" action="create">
-            <Link to="/wards/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Add New Ward
+          <div className="flex gap-2">
+            <PermissionGate module="wards" action="read">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" /> Export All
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+            <PermissionGate module="wards" action="create">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setIsBulkImportOpen(true)}
+                >
+                  <FileUp className="h-4 w-4" /> Bulk Upload
+                </Button>
+                <Link to="/wards/new">
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" /> Add New Ward
+                  </Button>
+                </Link>
+              </div>
+            </PermissionGate>
+          </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <AlertDialog open={!!wardToDelete} onOpenChange={(open) => !open && setWardToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Ward</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to completely delete {wardToDelete?.name}? This will permanently delete all its dependent Demographics, Areas, and Councillors.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={isDeleting}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (wardToDelete) {
+                    await deleteWard(wardToDelete.id);
+                    setWardToDelete(null);
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -419,6 +515,16 @@ export default function WardsPage() {
                                   </Button>
                                 </Link>
                               </PermissionGate>
+                              <PermissionGate module="wards" action="delete">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => setWardToDelete({ id: ward.id, name: ward.name })}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </PermissionGate>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -500,6 +606,18 @@ export default function WardsPage() {
           </div>
         )}
       </div>
+
+      <BulkUploadModal
+        open={isBulkImportOpen}
+        onOpenChange={setIsBulkImportOpen}
+        onUpload={bulkCreateWards}
+        title="Import Wards"
+        description="Upload an Excel or CSV file to import multiple wards. The file uses a flat schema where areas are grouped by wardNumber."
+        sampleFileUrl={`data:text/csv;charset=utf-8,${encodeURIComponent(
+          "wardNumber,wardName,wardZone,wardStatus,wardAreaType,wardPincode,wardDescription,establishedDate,councillorName,councillorPhone,councillorEmail,councillorParty,councillorDesignation,councillorSinceDate,areaName,areaType,areaPopulation,areaHouseholds,areaMaleCount,areaFemaleCount,areaPincode,areaLandmark,areaDescription,wd_totalPopulation,wd_maleCount,wd_femaleCount,wd_transgenderCount,wd_age0to6,wd_age7to18,wd_age19to35,wd_age36to60,wd_age60plus,wd_totalHouseholds,wd_bplHouseholds,wd_aplHouseholds,wd_generalCount,wd_obcCount,wd_scCount,wd_stCount,wd_minorityCount,wd_otherCount,wd_hinduCount,wd_muslimCount,wd_sikhCount,wd_christianCount,wd_buddhistCount,wd_jainCount,wd_otherReligionCount,wd_literacyRate,wd_maleLiteracyRate,wd_femaleLiteracyRate,wd_totalVoters,wd_maleVoters,wd_femaleVoters,ad_totalPopulation,ad_maleCount,ad_femaleCount,ad_transgenderCount,ad_age0to6,ad_age7to18,ad_age19to35,ad_age36to60,ad_age60plus,ad_totalHouseholds,ad_bplHouseholds,ad_aplHouseholds,ad_generalCount,ad_obcCount,ad_scCount,ad_stCount,ad_minorityCount,ad_otherCount,ad_hinduCount,ad_muslimCount,ad_sikhCount,ad_christianCount,ad_buddhistCount,ad_jainCount,ad_otherReligionCount,ad_literacyRate,ad_maleLiteracyRate,ad_femaleLiteracyRate,ad_totalVoters,ad_maleVoters,ad_femaleVoters\n101,Sample Ward Alpha,North,ACTIVE,Urban,110001,Main urban ward,2020-01-01T00:00:00.000Z,John Doe,9876543210,john@example.com,Party A,Ward Councillor,2021-01-01T00:00:00.000Z,Area 1,RESIDENTIAL,5000,1000,2500,2500,110001,Near Park,Main residential block,15000,7500,7500,0,1200,2700,4500,4200,2400,3000,450,2550,4650,6150,2550,1350,300,0,12000,2100,300,300,150,60,90,85.5,90.2,80.8,8250,4125,4125,5000,2500,2500,0,400,900,1500,1400,800,1000,150,850,1550,2050,850,450,100,0,4000,700,100,100,50,20,30,86,91,81,2750,1375,1375\n101,,,,,,,,,,,,,,Area 2,COMMERCIAL,10000,2000,5000,5000,110001,Market road,Main market area,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10000,5000,5000,0,800,1800,3000,2800,1600,2000,300,1700,3100,4100,1700,900,200,0,8000,1400,200,200,100,40,60,85,89.5,80.5,5500,2750,2750\n102,Sample Ward Beta,South,PROPOSED,Semi-Urban,110002,,,,,,Party B,,,Area 3,RESIDENTIAL,8000,1500,4000,4000,110002,Old Fort,,8000,4000,4000,0,640,1440,2400,2240,1280,1500,225,1275,2480,3280,1360,720,160,0,6400,1120,160,160,80,32,48,84,88.5,80,4400,2200,2200,8000,4000,4000,0,640,1440,2400,2240,1280,1500,225,1275,2480,3280,1360,720,160,0,6400,1120,160,160,80,32,48,84,88.5,80,4400,2200,2200"
+        )}`}
+        sampleFileName="wards_template.csv"
+      />
     </MainLayout>
   );
 }

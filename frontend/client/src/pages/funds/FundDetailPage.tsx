@@ -295,7 +295,10 @@ export default function FundDetailPage() {
                   <p className="text-xs text-muted-foreground mb-1">
                     {b.label}
                   </p>
-                  <p className="text-3xl font-bold" style={{ color: b.color }}>
+                  <p
+                    className="text-3xl font-bold max-w-full break-all leading-tight"
+                    style={{ color: b.color }}
+                  >
                     {formatCurrency(b.value)}
                   </p>
                   <Progress value={b.pct} className="h-2 mt-2" />

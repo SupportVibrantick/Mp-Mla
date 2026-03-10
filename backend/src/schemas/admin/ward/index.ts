@@ -164,6 +164,8 @@ export const wardDemographicsSchema = z.object({
 
 
 export type CreateWardInput = z.infer<typeof createWardSchema>;
+export const bulkCreateWardsSchema = z.array(createWardSchema);
+
 export type UpdateWardInput = z.infer<typeof updateWardSchema>;
 export type CreateAreaInput = z.infer<typeof createAreaSchema>;
 export type UpdateAreaInput = z.infer<typeof updateAreaSchema>;

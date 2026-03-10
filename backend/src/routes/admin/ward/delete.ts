@@ -39,7 +39,12 @@ export async function deleteWard(
       );
     }
 
-    await prisma.ward.delete({ where: { id: wardId } });
+    await prisma.$transaction([
+      prisma.demographics.deleteMany({ where: { wardId } }),
+      prisma.wardArea.deleteMany({ where: { wardId } }),
+      prisma.wardCouncillor.deleteMany({ where: { wardId } }),
+      prisma.ward.delete({ where: { id: wardId } }),
+    ]);
 
     await createAuditLog({
       userId: req.user!.id,

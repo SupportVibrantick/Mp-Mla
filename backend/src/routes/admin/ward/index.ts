@@ -21,19 +21,27 @@ import {
   getWardDemographics,
   upsertWardDemographics,
 } from "./demographics.js";
-import { createAreaSchema, updateAreaSchema, createCouncillorSchema, updateCouncillorSchema, createWardSchema, updateWardSchema, wardDemographicsSchema } from "@/schemas/admin/ward/index.js";
+import { bulkCreateWards } from "./bulk.js";
+import { exportWards } from "./export.js";
+import { createAreaSchema, updateAreaSchema, createCouncillorSchema, updateCouncillorSchema, createWardSchema, updateWardSchema, wardDemographicsSchema, bulkCreateWardsSchema } from "@/schemas/admin/ward/index.js";
 
 const router = Router();
 
 // ─── Ward CRUD ──────────────────────────────────────────
 router.get("/", requirePermission("wards", "read"), listWards);
 router.get("/stats", requirePermission("wards", "read"), getWardStats);
+router.get("/export", requirePermission("wards", "read"), exportWards);
 router.get("/:id", requirePermission("wards", "read"), getWard);
 router.post(
   "/",
   requirePermission("wards", "create"),
   validate(createWardSchema),
   createWard,
+);
+router.post(
+  "/bulk",
+  requirePermission("wards", "create"),
+  bulkCreateWards,
 );
 router.put(
   "/:id",

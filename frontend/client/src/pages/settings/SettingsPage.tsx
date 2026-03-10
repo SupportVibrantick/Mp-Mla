@@ -77,7 +77,6 @@ const LANGUAGES = [
   { code: "kn", label: "ಕನ್ನಡ (Kannada)" },
   { code: "ml", label: "മലയാളം (Malayalam)" },
   { code: "pa", label: "ਪੰਜਾਬੀ (Punjabi)" },
-  { code: "ur", label: "اردو (Urdu)" },
   { code: "es", label: "Español (Spanish)" },
   { code: "fr", label: "Français (French)" },
   { code: "de", label: "Deutsch (German)" },

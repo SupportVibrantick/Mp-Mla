@@ -115,6 +115,22 @@ export function useCreateWard() {
   });
 }
 
+export function useBulkCreateWards() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: any[]) =>
+      api.post("/admin/wards/bulk", data).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["wards"] });
+      // We don't need a toast here because the BulkUploadModal handles it based on success/error.
+    },
+    onError: (err: any) => {
+      throw new Error(err?.response?.data?.message || "Failed to bulk import wards");
+    },
+  });
+}
+
 // ─── Update Ward ────────────────────────────────────────
 
 export function useUpdateWard() {
