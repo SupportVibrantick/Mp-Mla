@@ -528,6 +528,7 @@ export default function LeaderListPage() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {topCategories.map((c: any) => {
                   const info = getCategoryInfo(c.category);
+                  const CategoryIcon = info.icon;
                   const pct = Math.round((c.count / maxCatCount) * 100);
                   return (
                     <button
@@ -544,7 +545,7 @@ export default function LeaderListPage() {
                           : "hover:bg-muted/50"
                       }`}
                     >
-                      <span className="text-lg flex-shrink-0">{info.icon}</span>
+                      <CategoryIcon className="h-5 w-5 text-primary flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-medium truncate">
@@ -598,11 +599,16 @@ export default function LeaderListPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {LEADER_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.icon} {c.label}
-                      </SelectItem>
-                    ))}
+                    {LEADER_CATEGORIES.map((c) => {
+                      const CIcon = c.icon;
+                      return (
+                        <SelectItem key={c.value} value={c.value}>
+                          <span className="flex items-center gap-2">
+                            <CIcon className="h-3.5 w-3.5" /> {c.label}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <Select
@@ -732,6 +738,8 @@ export default function LeaderListPage() {
                   ) : (
                     leaders.map((l: any) => {
                       const cInfo = getCategoryInfo(l.category);
+                      const CategoryIcon = cInfo.icon;
+
                       const infDots = INFLUENCE_DOTS[l.influence] || null;
                       const relColor =
                         RELATION_COLORS[l.relation] || RELATION_COLORS.Other;
@@ -763,8 +771,8 @@ export default function LeaderListPage() {
                                   </div>
                                 )}
                                 {l.isBirthdayToday && (
-                                  <span className="absolute -top-1 -right-1 text-sm">
-                                    🎂
+                                  <span className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-pink-200 dark:border-pink-700">
+                                    <Cake className="h-3 w-3 text-pink-500" />
                                   </span>
                                 )}
                               </div>
@@ -794,7 +802,7 @@ export default function LeaderListPage() {
                               variant="secondary"
                               className="text-[10px] gap-1"
                             >
-                              <span>{cInfo.icon}</span>
+                              <CategoryIcon className="h-3 w-3" />
                               {cInfo.label}
                             </Badge>
                           </TableCell>
@@ -855,8 +863,8 @@ export default function LeaderListPage() {
                                 Age {l.age}
                               </p>
                               {l.isBirthdayToday ? (
-                                <Badge className="text-[9px] bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 mt-0.5">
-                                  🎂 Today!
+                                <Badge className="text-[9px] bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 mt-0.5 gap-0.5">
+                                  <Cake className="h-2.5 w-2.5" /> Today!
                                 </Badge>
                               ) : l.daysUntilBirthday <= 7 ? (
                                 <Badge

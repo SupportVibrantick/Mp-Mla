@@ -2,6 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+} from "@/components/ui/select";
 import { z } from "zod";
 import {
   useInstitution,
@@ -302,7 +306,9 @@ export default function InstitutionFormPage() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
 
-                      <SelectContent>
+                      <SelectContent className="max-h-72">
+                        <SelectScrollUpButton />
+
                         {Object.entries(categoryGroups).map(([group, cats]) => (
                           <div key={group}>
                             <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
@@ -310,11 +316,19 @@ export default function InstitutionFormPage() {
                             </div>
                             {cats.map((c) => (
                               <SelectItem key={c.value} value={c.value}>
-                                {c.icon} {c.label}
+                                <span className="flex items-center gap-2">
+                                  <img
+                                    src={c.icon}
+                                    alt={c.label}
+                                    className="h-4 w-4 object-contain"
+                                  />
+                                  {c.label}
+                                </span>
                               </SelectItem>
                             ))}
                           </div>
                         ))}
+                        <SelectScrollDownButton />
                       </SelectContent>
                     </Select>
                   )}

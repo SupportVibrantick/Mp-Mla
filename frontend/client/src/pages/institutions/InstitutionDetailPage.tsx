@@ -201,14 +201,25 @@ export default function InstitutionDetailPage() {
             </Link>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-3xl">{catInfo.icon}</span>
+                <div className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center p-2">
+                  <img
+                    src={catInfo.icon}
+                    alt={catInfo.label}
+                    className="h-7 w-7 object-contain"
+                  />
+                </div>{" "}
                 <h1 className="text-2xl font-bold">{inst.name}</h1>
                 <Badge className={`text-[10px] ${statusInfo.color}`}>
                   {statusInfo.label}
                 </Badge>
               </div>
               <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs gap-1.5">
+                  <img
+                    src={catInfo.icon}
+                    alt={catInfo.label}
+                    className="h-3.5 w-3.5 object-contain"
+                  />
                   {catInfo.label}
                 </Badge>
                 {inst.subcategory && (
@@ -335,8 +346,13 @@ export default function InstitutionDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Category</span>
-                <span>
-                  {catInfo.icon} {catInfo.label}
+                <span className="flex items-center gap-1.5">
+                  <img
+                    src={catInfo.icon}
+                    alt={catInfo.label}
+                    className="h-4 w-4 object-contain"
+                  />
+                  {catInfo.label}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -527,9 +543,13 @@ export default function InstitutionDetailPage() {
                     <Link key={ri.id} to={`/institutions/${ri.id}`}>
                       <Badge
                         variant="outline"
-                        className="cursor-pointer hover:bg-muted gap-1 py-1.5"
+                        className="cursor-pointer hover:bg-muted gap-1.5 py-1.5"
                       >
-                        <span>{riInfo.icon}</span>
+                        <img
+                          src={riInfo.icon}
+                          alt={riInfo.label}
+                          className="h-4 w-4 object-contain"
+                        />
                         {ri.name}
                       </Badge>
                     </Link>

@@ -72,6 +72,9 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  Bell,
+  Smartphone,
+  Check,
 } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 
@@ -108,13 +111,14 @@ const GREETING_STATUS_STYLES: Record<
   FAILED: { color: "text-red-600", Icon: XCircle, label: "Failed" },
 };
 
-const CHANNEL_ICONS: Record<string, { icon: string; label: string }> = {
-  WHATSAPP: { icon: "💬", label: "WhatsApp" },
-  SMS: { icon: "📱", label: "SMS" },
-  EMAIL: { icon: "📧", label: "Email" },
-  IN_APP: { icon: "🔔", label: "In-App" },
-};
+import type { LucideIcon } from "lucide-react";
 
+const CHANNEL_ICONS: Record<string, { icon: LucideIcon; label: string }> = {
+  WHATSAPP: { icon: MessageCircle, label: "WhatsApp" },
+  SMS: { icon: Smartphone, label: "SMS" },
+  EMAIL: { icon: Mail, label: "Email" },
+  IN_APP: { icon: Bell, label: "In-App" },
+};
 const INFLUENCE_DISPLAY: Record<
   string,
   { dots: string; color: string; bg: string }
@@ -232,12 +236,21 @@ export default function LeaderDetailPage() {
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                   {l.name}
-                  {l.isBirthdayToday && <span className="text-xl">🎂</span>}
+                  {l.isBirthdayToday && (
+                    <span className="inline-flex items-center justify-center bg-pink-100 dark:bg-pink-900/40 rounded-full p-1">
+                      <Cake className="h-4 w-4 text-pink-500" />
+                    </span>
+                  )}
                 </h1>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    <span>{cInfo.icon}</span> {cInfo.label}
-                  </Badge>
+                  {(() => {
+                    const CatIcon = cInfo.icon;
+                    return (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <CatIcon className="h-3.5 w-3.5" /> {cInfo.label}
+                      </Badge>
+                    );
+                  })()}
                   {l.relation && (
                     <Badge
                       className={`text-[10px] ${RELATION_STYLES[l.relation] || ""}`}
@@ -333,7 +346,11 @@ export default function LeaderDetailPage() {
                       : "bg-muted"
                   }`}
                 >
-                  {l.isBirthdayToday ? "🎉" : "🎂"}
+                  {l.isBirthdayToday ? (
+                    <PartyPopper className="h-7 w-7 text-pink-500" />
+                  ) : (
+                    <Cake className="h-7 w-7 text-muted-foreground" />
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
@@ -353,11 +370,11 @@ export default function LeaderDetailPage() {
                   <>
                     <Badge className="bg-pink-600 text-white text-sm px-3 py-1 gap-1.5">
                       <PartyPopper className="h-4 w-4" />
-                      🎂 Birthday TODAY!
+                      <Cake className="h-4 w-4" /> Birthday TODAY!
                     </Badge>
                     {l.birthdayGreetedThisYear ? (
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
-                        ✓ Already greeted this year
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs gap-1">
+                        <Check className="h-3 w-3" /> Already greeted this year
                       </Badge>
                     ) : (
                       <div className="flex gap-2">
@@ -496,9 +513,14 @@ export default function LeaderDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[10px] text-muted-foreground">Category</p>
-                  <Badge variant="secondary" className="mt-1 gap-1">
-                    <span>{cInfo.icon}</span> {cInfo.label}
-                  </Badge>
+                  {(() => {
+                    const CatIcon = cInfo.icon;
+                    return (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <CatIcon className="h-3.5 w-3.5" /> {cInfo.label}
+                      </Badge>
+                    );
+                  })()}
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Gender</p>
@@ -673,8 +695,13 @@ export default function LeaderDetailPage() {
                           </p>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[10px]">
-                            {g.type === "BIRTHDAY" && "🎂 "}
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] gap-0.5"
+                          >
+                            {g.type === "BIRTHDAY" && (
+                              <Cake className="h-2.5 w-2.5 text-pink-500" />
+                            )}
                             {g.type}
                           </Badge>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -682,9 +709,18 @@ export default function LeaderDetailPage() {
                           </p>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="text-[10px]">
-                            {channelInfo.icon} {channelInfo.label}
-                          </Badge>
+                          {(() => {
+                            const ChIcon = channelInfo.icon;
+                            return (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] gap-0.5"
+                              >
+                                <ChIcon className="h-2.5 w-2.5" />{" "}
+                                {channelInfo.label}
+                              </Badge>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="max-w-[250px]">
                           <p className="text-sm truncate">{g.message}</p>
@@ -771,10 +807,26 @@ export default function LeaderDetailPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="WHATSAPP">💬 WhatsApp</SelectItem>
-                  <SelectItem value="SMS">📱 SMS</SelectItem>
-                  <SelectItem value="EMAIL">📧 Email</SelectItem>
-                  <SelectItem value="IN_APP">🔔 In-App</SelectItem>
+                  <SelectItem value="WHATSAPP">
+                    <span className="flex items-center gap-2">
+                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="SMS">
+                    <span className="flex items-center gap-2">
+                      <Smartphone className="h-3.5 w-3.5" /> SMS
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="EMAIL">
+                    <span className="flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5" /> Email
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="IN_APP">
+                    <span className="flex items-center gap-2">
+                      <Bell className="h-3.5 w-3.5" /> In-App
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

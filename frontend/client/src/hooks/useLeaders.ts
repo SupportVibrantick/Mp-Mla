@@ -1,25 +1,50 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import type { LucideIcon } from "lucide-react";
+import {
+  Landmark,
+  Swords,
+  ClipboardList,
+  Handshake,
+  Church,
+  Briefcase,
+  Tv,
+  Sparkles,
+  UserRound,
+  Crown,
+  GraduationCap,
+  Scale,
+  Stethoscope,
+  Globe,
+  Wrench,
+  User,
+} from "lucide-react";
 
-export const LEADER_CATEGORIES = [
-  { value: "PARTY_LEADER", label: "Party Leader", icon: "🏛️" },
-  { value: "OPPOSITION_LEADER", label: "Opposition", icon: "⚔️" },
-  { value: "BUREAUCRAT", label: "Bureaucrat", icon: "📋" },
-  { value: "COMMUNITY_LEADER", label: "Community Leader", icon: "🤝" },
-  { value: "RELIGIOUS_LEADER", label: "Religious Leader", icon: "🙏" },
-  { value: "BUSINESS_LEADER", label: "Business Leader", icon: "💼" },
-  { value: "MEDIA_PERSON", label: "Media", icon: "📺" },
-  { value: "YOUTH_LEADER", label: "Youth Leader", icon: "🧑" },
-  { value: "WOMEN_LEADER", label: "Women Leader", icon: "👩" },
-  { value: "SENIOR_CITIZEN", label: "Senior Citizen", icon: "👴" },
-  { value: "ACADEMIC", label: "Academic", icon: "🎓" },
-  { value: "LEGAL", label: "Legal", icon: "⚖️" },
-  { value: "MEDICAL", label: "Medical", icon: "🏥" },
-  { value: "NGO_HEAD", label: "NGO Head", icon: "🌍" },
-  { value: "TRADE_UNION", label: "Trade Union", icon: "🔧" },
-  { value: "OTHER", label: "Other", icon: "👤" },
-] as const;
+export type LeaderCategory = {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+export const LEADER_CATEGORIES: LeaderCategory[] = [
+  { value: "PARTY_LEADER", label: "Party Leader", icon: Landmark },
+  { value: "OPPOSITION_LEADER", label: "Opposition", icon: Swords },
+  { value: "BUREAUCRAT", label: "Bureaucrat", icon: ClipboardList },
+  { value: "COMMUNITY_LEADER", label: "Community Leader", icon: Handshake },
+  { value: "RELIGIOUS_LEADER", label: "Religious Leader", icon: Church },
+  { value: "BUSINESS_LEADER", label: "Business Leader", icon: Briefcase },
+  { value: "MEDIA_PERSON", label: "Media", icon: Tv },
+  { value: "YOUTH_LEADER", label: "Youth Leader", icon: Sparkles },
+  { value: "WOMEN_LEADER", label: "Women Leader", icon: UserRound },
+  { value: "SENIOR_CITIZEN", label: "Senior Citizen", icon: Crown },
+  { value: "ACADEMIC", label: "Academic", icon: GraduationCap },
+  { value: "LEGAL", label: "Legal", icon: Scale },
+  { value: "MEDICAL", label: "Medical", icon: Stethoscope },
+  { value: "NGO_HEAD", label: "NGO Head", icon: Globe },
+  { value: "TRADE_UNION", label: "Trade Union", icon: Wrench },
+  { value: "OTHER", label: "Other", icon: User },
+];
 
 export const RELATIONS = [
   "Supporter",
@@ -153,4 +178,3 @@ export function useBulkCreateLeaders() {
     },
   });
 }
-

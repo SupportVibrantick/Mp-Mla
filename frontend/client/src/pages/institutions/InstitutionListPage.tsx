@@ -556,7 +556,11 @@ export default function InstitutionListPage() {
                         setPage(1);
                       }}
                     >
-                      <span className="text-2xl">{info.icon}</span>
+                      <img
+                        src={info.icon}
+                        alt={info.label}
+                        className="h-8 w-8 object-contain"
+                      />
                       <p className="text-lg font-bold mt-1">{c.count}</p>
                       <p className="text-[10px] text-muted-foreground leading-tight truncate">
                         {info.label}
@@ -626,7 +630,14 @@ export default function InstitutionListPage() {
                         </div>
                         {cats.map((c) => (
                           <SelectItem key={c.value} value={c.value}>
-                            {c.icon} {c.label}
+                            <span className="flex items-center gap-2">
+                              <img
+                                src={c.icon}
+                                alt={c.label}
+                                className="h-4 w-4 object-contain"
+                              />
+                              {c.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </div>
@@ -735,9 +746,13 @@ export default function InstitutionListPage() {
                           <TableCell>
                             <Badge
                               variant="secondary"
-                              className="text-xs gap-1"
+                              className="text-xs gap-1.5"
                             >
-                              <span>{catInfo.icon}</span>
+                              <img
+                                src={catInfo.icon}
+                                alt={catInfo.label}
+                                className="h-3.5 w-3.5 object-contain"
+                              />
                               {catInfo.label}
                             </Badge>
                             {inst.subcategory && (

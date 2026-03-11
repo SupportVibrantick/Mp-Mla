@@ -133,6 +133,8 @@ export default function BirthdaysPage() {
 
   const renderLeaderCard = (l: any, showGreet = true) => {
     const cInfo = getCategoryInfo(l.category);
+    const Icon = cInfo.icon;
+
     return (
       <div
         key={l.id}
@@ -167,8 +169,9 @@ export default function BirthdaysPage() {
               {l.name}
             </p>
           </Link>
-          <p className="text-[10px] text-muted-foreground">
-            {cInfo.icon} {cInfo.label}
+          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Icon className="h-3 w-3" />
+            {cInfo.label}
             {l.designation ? ` • ${l.designation}` : ""}
             {l.organization ? ` • ${l.organization}` : ""}
           </p>

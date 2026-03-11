@@ -201,11 +201,16 @@ export default function LeaderFormPage() {
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
-                        {LEADER_CATEGORIES.map((c) => (
-                          <SelectItem key={c.value} value={c.value}>
-                            {c.icon} {c.label}
-                          </SelectItem>
-                        ))}
+                        {LEADER_CATEGORIES.map((c) => {
+                          const CIcon = c.icon;
+                          return (
+                            <SelectItem key={c.value} value={c.value}>
+                              <span className="flex items-center gap-2">
+                                <CIcon className="h-3.5 w-3.5" /> {c.label}
+                              </span>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   )}

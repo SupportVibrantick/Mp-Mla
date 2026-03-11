@@ -28,7 +28,7 @@ app.use(
 );
 
 // Apply global rate limiting to all requests
-app.use(globalLimiter);
+// app.use(globalLimiter);
 
 // Use morgan with winston stream for industry-level logging
 app.use(
@@ -58,7 +58,7 @@ app.get("/api/health", (_req, res) => {
 
 // ─── API Routes ──────────────────────────────────────────
 // Apply stricter rate limiting to auth routes
-app.use("/api/admin/auth", authLimiter);
+// app.use("/api/admin/auth", authLimiter);
 app.use("/api", routes);
 
 app.use((_req, res) => {

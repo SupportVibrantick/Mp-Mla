@@ -2,57 +2,124 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+export type InstitutionCategory = {
+  value: string;
+  label: string;
+  icon: string;
+  group: string;
+};
+
+const IC = "/icons/institutions";
 // ─── Category Metadata ──────────────────────────────────
 
-export const INSTITUTION_CATEGORIES = [
-  { value: "TEMPLE", label: "Temple", icon: "🛕", group: "Religious" },
-  { value: "MOSQUE", label: "Mosque", icon: "🕌", group: "Religious" },
-  { value: "GURUDWARA", label: "Gurudwara", icon: "🙏", group: "Religious" },
-  { value: "CHURCH", label: "Church", icon: "⛪", group: "Religious" },
-  { value: "HOSPITAL", label: "Hospital", icon: "🏥", group: "Health" },
-  { value: "CLINIC", label: "Clinic", icon: "🩺", group: "Health" },
-  { value: "SCHOOL", label: "School", icon: "🏫", group: "Education" },
-  { value: "COLLEGE", label: "College", icon: "🎓", group: "Education" },
-  { value: "UNIVERSITY", label: "University", icon: "🏛️", group: "Education" },
+export const INSTITUTION_CATEGORIES: InstitutionCategory[] = [
+  {
+    value: "TEMPLE",
+    label: "Temple",
+    icon: `${IC}/temple.png`,
+    group: "Religious",
+  },
+  {
+    value: "MOSQUE",
+    label: "Mosque",
+    icon: `${IC}/mosque.png`,
+    group: "Religious",
+  },
+  {
+    value: "GURUDWARA",
+    label: "Gurudwara",
+    icon: `${IC}/gurudwara.png`,
+    group: "Religious",
+  },
+  {
+    value: "CHURCH",
+    label: "Church",
+    icon: `${IC}/church.png`,
+    group: "Religious",
+  },
+  {
+    value: "HOSPITAL",
+    label: "Hospital",
+    icon: `${IC}/hospital.png`,
+    group: "Health",
+  },
+  {
+    value: "CLINIC",
+    label: "Clinic",
+    icon: `${IC}/clinic.png`,
+    group: "Health",
+  },
+  {
+    value: "SCHOOL",
+    label: "School",
+    icon: `${IC}/school.png`,
+    group: "Education",
+  },
+  {
+    value: "COLLEGE",
+    label: "College",
+    icon: `${IC}/college.png`,
+    group: "Education",
+  },
+  {
+    value: "UNIVERSITY",
+    label: "University",
+    icon: `${IC}/university.png`,
+    group: "Education",
+  },
   {
     value: "COACHING_CENTER",
     label: "Coaching Center",
-    icon: "📖",
+    icon: `${IC}/coaching.png`,
     group: "Education",
   },
   {
     value: "POLICE_STATION",
     label: "Police Station",
-    icon: "🚔",
+    icon: `${IC}/police.png`,
     group: "Government",
   },
   {
     value: "GOVT_OFFICE",
     label: "Govt Office",
-    icon: "🏢",
+    icon: `${IC}/govt-office.png`,
     group: "Government",
   },
-  { value: "NGO", label: "NGO", icon: "🤝", group: "Social" },
-  { value: "GYM", label: "Gym", icon: "💪", group: "Sports" },
+  { value: "NGO", label: "NGO", icon: `${IC}/ngo.png`, group: "Social" },
+  { value: "GYM", label: "Gym", icon: `${IC}/gym.png`, group: "Sports" },
   {
     value: "SPORTS_FACILITY",
     label: "Sports Facility",
-    icon: "🏟️",
+    icon: `${IC}/sports.png`,
     group: "Sports",
   },
   {
     value: "COMMUNITY_HALL",
     label: "Community Hall",
-    icon: "🏘️",
+    icon: `${IC}/community-hall.png`,
     group: "Public",
   },
-  { value: "LIBRARY", label: "Library", icon: "📚", group: "Public" },
-  { value: "MARKET", label: "Market", icon: "🏪", group: "Commercial" },
-  { value: "RWA", label: "RWA Office", icon: "🏠", group: "Public" },
-  { value: "OLD_AGE_HOME", label: "Old Age Home", icon: "🏡", group: "Social" },
-  { value: "OTHER", label: "Other", icon: "🏗️", group: "Other" },
-] as const;
-
+  {
+    value: "LIBRARY",
+    label: "Library",
+    icon: `${IC}/library.png`,
+    group: "Public",
+  },
+  {
+    value: "MARKET",
+    label: "Market",
+    icon: `${IC}/market.png`,
+    group: "Commercial",
+  },
+  { value: "RWA", label: "RWA Office", icon: `${IC}/rwa.png`, group: "Public" },
+  {
+    value: "OLD_AGE_HOME",
+    label: "Old Age Home",
+    icon: `${IC}/old-age-home.png`,
+    group: "Social",
+  },
+  { value: "OTHER", label: "Other", icon: `${IC}/other.png`, group: "Other" },
+];
 export const INSTITUTION_STATUSES = [
   {
     value: "ACTIVE",
@@ -82,13 +149,12 @@ export const INSTITUTION_STATUSES = [
     color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
 ] as const;
-
 export function getCategoryInfo(category: string) {
   return (
     INSTITUTION_CATEGORIES.find((c) => c.value === category) || {
       value: category,
       label: category.replace(/_/g, " "),
-      icon: "🏗️",
+      icon: `${IC}/other.png`,
       group: "Other",
     }
   );
