@@ -1,9 +1,15 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { useWards, useWardStats, useBulkCreateWards, useDeleteWard } from "@/hooks/useWards";
+import {
+  useWards,
+  useWardStats,
+  useBulkCreateWards,
+  useDeleteWard,
+} from "@/hooks/useWards";
 import { useAuth } from "@/hooks/useAuth";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
@@ -79,7 +85,10 @@ export default function WardsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   // Delete Context
-  const [wardToDelete, setWardToDelete] = useState<{ id: string, name: string } | null>(null);
+  const [wardToDelete, setWardToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const { mutateAsync: bulkCreateWards } = useBulkCreateWards();
   const { mutateAsync: deleteWard, isPending: isDeleting } = useDeleteWard();
@@ -104,6 +113,100 @@ export default function WardsPage() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const downloadSampleTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Wards");
+
+    const columns = [
+      { header: "wardNumber", key: "wardNumber", width: 15 },
+      { header: "wardName", key: "wardName", width: 20 },
+      { header: "wardZone", key: "wardZone", width: 15 },
+      { header: "wardStatus", key: "wardStatus", width: 15 },
+      { header: "wardAreaType", key: "wardAreaType", width: 15 },
+      { header: "wardPincode", key: "wardPincode", width: 15 },
+      { header: "wardDescription", key: "wardDescription", width: 30 },
+      { header: "establishedDate", key: "establishedDate", width: 20 },
+      { header: "councillorName", key: "councillorName", width: 20 },
+      { header: "councillorPhone", key: "councillorPhone", width: 15 },
+      { header: "councillorEmail", key: "councillorEmail", width: 25 },
+      { header: "councillorParty", key: "councillorParty", width: 15 },
+      {
+        header: "councillorDesignation",
+        key: "councillorDesignation",
+        width: 20,
+      },
+      { header: "councillorSinceDate", key: "councillorSinceDate", width: 20 },
+      { header: "areaName", key: "areaName", width: 20 },
+      { header: "areaType", key: "areaType", width: 15 },
+      { header: "areaPopulation", key: "areaPopulation", width: 15 },
+    ];
+
+    worksheet.columns = columns;
+
+    worksheet.addRow({
+      wardNumber: 101,
+      wardName: "Sample Ward Alpha",
+      wardZone: "North",
+      wardStatus: "ACTIVE",
+      wardAreaType: "URBAN",
+      wardPincode: "110001",
+      wardDescription: "Main urban ward",
+      establishedDate: "2020-01-01",
+      councillorName: "John Doe",
+      areaName: "Area 1",
+      areaType: "RESIDENTIAL",
+      areaPopulation: 5000,
+    });
+
+    const wardStatuses = ["ACTIVE", "INACTIVE", "PROPOSED", "DEPRECATED"];
+    const wardAreaTypes = ["URBAN", "SEMI_URBAN", "RURAL"];
+    const areaTypes = [
+      "RESIDENTIAL",
+      "COMMERCIAL",
+      "MIXED",
+      "INDUSTRIAL",
+      "PARK",
+      "INSTITUTIONAL",
+      "OTHER",
+    ];
+
+    for (let i = 2; i <= 51; i++) {
+      worksheet.getCell(`D${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${wardStatuses.join(",")}"`],
+      };
+      worksheet.getCell(`E${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${wardAreaTypes.join(",")}"`],
+      };
+      worksheet.getCell(`P${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${areaTypes.join(",")}"`],
+      };
+    }
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "wards_bulk_template.xlsx";
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const queryParams = useMemo(() => {
@@ -139,57 +242,57 @@ export default function WardsPage() {
     <MainLayout title="Wards">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Map className="h-7 w-7 text-primary" />
-              Ward Management
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage wards, areas, and constituency geography
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <PermissionGate module="wards" action="read">
-              <Button
-                variant="outline"
-                className="gap-2"
-                onClick={handleExport}
-                disabled={isExporting}
-              >
-                <Download className="h-4 w-4" /> Export All
-              </Button>
-            </PermissionGate>
-            <PermissionGate module="wards" action="create">
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => setIsBulkImportOpen(true)}
-                >
-                  <FileUp className="h-4 w-4" /> Bulk Upload
-                </Button>
-                <Link to="/wards/new">
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" /> Add New Ward
-                  </Button>
-                </Link>
-              </div>
-            </PermissionGate>
-          </div>
-        </div>
+        <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+          <PermissionGate module="wards" action="read">
+            <Button
+              variant="outline"
+              className="gap-2 w-full sm:w-auto justify-center"
+              onClick={handleExport}
+              disabled={isExporting}
+            >
+              <Download className="h-4 w-4" />
+              Export All
+            </Button>
+          </PermissionGate>
 
+          <PermissionGate module="wards" action="create">
+            <Button
+              variant="outline"
+              className="gap-2 w-full sm:w-auto justify-center"
+              onClick={() => setIsBulkImportOpen(true)}
+            >
+              <FileUp className="h-4 w-4" />
+              Bulk Upload
+            </Button>
+          </PermissionGate>
+
+          <PermissionGate module="wards" action="create">
+            <Link to="/wards/new" className="w-full sm:w-auto">
+              <Button className="gap-2 w-full sm:w-auto justify-center">
+                <Plus className="h-4 w-4" />
+                Add New Ward
+              </Button>
+            </Link>
+          </PermissionGate>
+        </div>
         {/* Delete Confirmation Modal */}
-        <AlertDialog open={!!wardToDelete} onOpenChange={(open) => !open && setWardToDelete(null)}>
+        <AlertDialog
+          open={!!wardToDelete}
+          onOpenChange={(open) => !open && setWardToDelete(null)}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Ward</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to completely delete {wardToDelete?.name}? This will permanently delete all its dependent Demographics, Areas, and Councillors.
+                Are you sure you want to completely delete {wardToDelete?.name}?
+                This will permanently delete all its dependent Demographics,
+                Areas, and Councillors.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 disabled={isDeleting}
                 onClick={async (e) => {
@@ -208,7 +311,7 @@ export default function WardsPage() {
         </AlertDialog>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-20" />
@@ -351,15 +454,15 @@ export default function WardsPage() {
                   zone !== "all" ||
                   areaType !== "all" ||
                   status !== "all") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={reset}
-                      className="text-xs"
-                    >
-                      Clear
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="text-xs"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -520,7 +623,12 @@ export default function WardsPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => setWardToDelete({ id: ward.id, name: ward.name })}
+                                  onClick={() =>
+                                    setWardToDelete({
+                                      id: ward.id,
+                                      name: ward.name,
+                                    })
+                                  }
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -612,11 +720,28 @@ export default function WardsPage() {
         onOpenChange={setIsBulkImportOpen}
         onUpload={bulkCreateWards}
         title="Import Wards"
-        description="Upload an Excel or CSV file to import multiple wards. The file uses a flat schema where areas are grouped by wardNumber."
-        sampleFileUrl={`data:text/csv;charset=utf-8,${encodeURIComponent(
-          "wardNumber,wardName,wardZone,wardStatus,wardAreaType,wardPincode,wardDescription,establishedDate,councillorName,councillorPhone,councillorEmail,councillorParty,councillorDesignation,councillorSinceDate,areaName,areaType,areaPopulation,areaHouseholds,areaMaleCount,areaFemaleCount,areaPincode,areaLandmark,areaDescription,wd_totalPopulation,wd_maleCount,wd_femaleCount,wd_transgenderCount,wd_age0to6,wd_age7to18,wd_age19to35,wd_age36to60,wd_age60plus,wd_totalHouseholds,wd_bplHouseholds,wd_aplHouseholds,wd_generalCount,wd_obcCount,wd_scCount,wd_stCount,wd_minorityCount,wd_otherCount,wd_hinduCount,wd_muslimCount,wd_sikhCount,wd_christianCount,wd_buddhistCount,wd_jainCount,wd_otherReligionCount,wd_literacyRate,wd_maleLiteracyRate,wd_femaleLiteracyRate,wd_totalVoters,wd_maleVoters,wd_femaleVoters,ad_totalPopulation,ad_maleCount,ad_femaleCount,ad_transgenderCount,ad_age0to6,ad_age7to18,ad_age19to35,ad_age36to60,ad_age60plus,ad_totalHouseholds,ad_bplHouseholds,ad_aplHouseholds,ad_generalCount,ad_obcCount,ad_scCount,ad_stCount,ad_minorityCount,ad_otherCount,ad_hinduCount,ad_muslimCount,ad_sikhCount,ad_christianCount,ad_buddhistCount,ad_jainCount,ad_otherReligionCount,ad_literacyRate,ad_maleLiteracyRate,ad_femaleLiteracyRate,ad_totalVoters,ad_maleVoters,ad_femaleVoters\n101,Sample Ward Alpha,North,ACTIVE,Urban,110001,Main urban ward,2020-01-01T00:00:00.000Z,John Doe,9876543210,john@example.com,Party A,Ward Councillor,2021-01-01T00:00:00.000Z,Area 1,RESIDENTIAL,5000,1000,2500,2500,110001,Near Park,Main residential block,15000,7500,7500,0,1200,2700,4500,4200,2400,3000,450,2550,4650,6150,2550,1350,300,0,12000,2100,300,300,150,60,90,85.5,90.2,80.8,8250,4125,4125,5000,2500,2500,0,400,900,1500,1400,800,1000,150,850,1550,2050,850,450,100,0,4000,700,100,100,50,20,30,86,91,81,2750,1375,1375\n101,,,,,,,,,,,,,,Area 2,COMMERCIAL,10000,2000,5000,5000,110001,Market road,Main market area,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10000,5000,5000,0,800,1800,3000,2800,1600,2000,300,1700,3100,4100,1700,900,200,0,8000,1400,200,200,100,40,60,85,89.5,80.5,5500,2750,2750\n102,Sample Ward Beta,South,PROPOSED,Semi-Urban,110002,,,,,,Party B,,,Area 3,RESIDENTIAL,8000,1500,4000,4000,110002,Old Fort,,8000,4000,4000,0,640,1440,2400,2240,1280,1500,225,1275,2480,3280,1360,720,160,0,6400,1120,160,160,80,32,48,84,88.5,80,4400,2200,2200,8000,4000,4000,0,640,1440,2400,2240,1280,1500,225,1275,2480,3280,1360,720,160,0,6400,1120,160,160,80,32,48,84,88.5,80,4400,2200,2200"
-        )}`}
-        sampleFileName="wards_template.csv"
+        description={
+          <div>
+            <p>
+              Upload an Excel or CSV file to import multiple wards. The file
+              uses a flat schema where areas are grouped by wardNumber.
+            </p>
+            <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
+              <p>
+                <strong>Ward Status:</strong> ACTIVE, INACTIVE, PROPOSED,
+                DEPRECATED
+              </p>
+              <p>
+                <strong>Ward Area Type:</strong> URBAN, SEMI_URBAN, RURAL
+              </p>
+              <p>
+                <strong>Area Type:</strong> RESIDENTIAL, COMMERCIAL, MIXED,
+                INDUSTRIAL, PARK, INSTITUTIONAL, OTHER
+              </p>
+            </div>
+          </div>
+        }
+        onDownloadSample={downloadSampleTemplate}
       />
     </MainLayout>
   );

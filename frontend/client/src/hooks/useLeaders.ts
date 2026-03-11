@@ -133,3 +133,24 @@ export function useSendBulkGreeting() {
     "Greetings Sent",
   );
 }
+
+export function useBulkCreateLeaders() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: any[]) =>
+      api.post("/admin/leaders/bulk", data).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["leaders"] });
+      toast({ title: "Bulk Import", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to bulk import",
+        variant: "destructive",
+      });
+    },
+  });
+}
+

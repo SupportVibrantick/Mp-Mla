@@ -4,12 +4,18 @@ import {
   useLeaders,
   useLeaderStats,
   useDeleteLeader,
+  useBulkCreateLeaders,
   getCategoryInfo,
   LEADER_CATEGORIES,
   RELATIONS,
   INFLUENCES,
 } from "@/hooks/useLeaders";
 import { useWards } from "@/hooks/useWards";
+import { toast } from "sonner";
+import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
+import api from "@/lib/api";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +23,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -67,8 +72,11 @@ import {
   Star,
   Shield,
   UserCheck,
+  FileUp,
+  Download,
+  Loader2,
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
 const RELATION_COLORS: Record<string, string> = {
   Supporter:
@@ -93,6 +101,8 @@ export default function LeaderListPage() {
   const [relationFilter, setRelationFilter] = useState("all");
   const [influenceFilter, setInfluenceFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const params = useMemo(() => {
     const p: Record<string, any> = { page, limit: 25 };
@@ -115,18 +125,236 @@ export default function LeaderListPage() {
   const { data: statsRes } = useLeaderStats();
   const { data: wardsRes } = useWards({ limit: 100 });
   const deleteMut = useDeleteLeader();
+  const { mutateAsync: bulkCreateLeaders } = useBulkCreateLeaders();
 
   const leaders = res?.data || [];
   const pagination = res?.pagination;
   const stats = statsRes?.data;
   const wards = wardsRes?.data?.wards || [];
 
-  // Top categories for mini bar chart
   const topCategories = (stats?.byCategory || []).slice(0, 6);
   const maxCatCount =
     topCategories.length > 0
       ? Math.max(...topCategories.map((c: any) => c.count))
       : 1;
+
+  // ── Export ──
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const exportParams: Record<string, any> = {};
+      if (categoryFilter !== "all") exportParams.category = categoryFilter;
+      if (wardFilter !== "all") exportParams.wardId = wardFilter;
+
+      const response = await api.get("/admin/leaders/export", {
+        params: exportParams,
+      });
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Leaders");
+        xlsx.writeFile(wb, "leaders_export.xlsx");
+        toast.success(`Exported ${data.length} leaders successfully.`);
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export leaders.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // ── Download Sample Template ──
+  const downloadSampleTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Leaders");
+
+    worksheet.columns = [
+      { header: "name", key: "name", width: 25 },
+      { header: "category", key: "category", width: 20 },
+      { header: "designation", key: "designation", width: 20 },
+      { header: "organization", key: "organization", width: 20 },
+      { header: "partyName", key: "partyName", width: 18 },
+      { header: "dateOfBirth", key: "dateOfBirth", width: 15 },
+      { header: "gender", key: "gender", width: 10 },
+      { header: "address", key: "address", width: 30 },
+      { header: "wardNumber", key: "wardNumber", width: 12 },
+      { header: "phone", key: "phone", width: 15 },
+      { header: "altPhone", key: "altPhone", width: 15 },
+      { header: "email", key: "email", width: 25 },
+      { header: "whatsapp", key: "whatsapp", width: 15 },
+      { header: "facebookUrl", key: "facebookUrl", width: 25 },
+      { header: "twitterUrl", key: "twitterUrl", width: 25 },
+      { header: "instagramUrl", key: "instagramUrl", width: 25 },
+      { header: "relation", key: "relation", width: 15 },
+      { header: "influence", key: "influence", width: 12 },
+      { header: "notes", key: "notes", width: 30 },
+      { header: "tags", key: "tags", width: 25 },
+      { header: "isActive", key: "isActive", width: 10 },
+    ];
+
+    // Sample rows
+    worksheet.addRow({
+      name: "Rajesh Kumar",
+      category: "PARTY_LEADER",
+      designation: "Block President",
+      organization: "BJP",
+      partyName: "BJP",
+      dateOfBirth: "1975-06-15",
+      gender: "Male",
+      address: "123 Main Road, Ward 5",
+      wardNumber: 5,
+      phone: "9876543210",
+      altPhone: "9876543211",
+      email: "rajesh@example.com",
+      whatsapp: "9876543210",
+      facebookUrl: "",
+      twitterUrl: "",
+      instagramUrl: "",
+      relation: "Supporter",
+      influence: "High",
+      notes: "Key party worker since 2010",
+      tags: "party, senior",
+      isActive: "TRUE",
+    });
+
+    worksheet.addRow({
+      name: "Meena Devi",
+      category: "WOMEN_LEADER",
+      designation: "President",
+      organization: "Mahila Mandal",
+      partyName: "",
+      dateOfBirth: "1982-03-22",
+      gender: "Female",
+      address: "45 Gandhi Nagar",
+      wardNumber: 3,
+      phone: "9123456789",
+      altPhone: "",
+      email: "meena@example.com",
+      whatsapp: "9123456789",
+      facebookUrl: "",
+      twitterUrl: "",
+      instagramUrl: "",
+      relation: "Alliance",
+      influence: "Medium",
+      notes: "",
+      tags: "women, community",
+      isActive: "TRUE",
+    });
+
+    // Data validations
+    const categoryValues = LEADER_CATEGORIES.map((c) => c.value).join(",");
+    const maxRows = 500;
+
+    for (let i = 2; i <= maxRows; i++) {
+      // Category dropdown
+      worksheet.getCell(`B${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${categoryValues}"`],
+      };
+      // Gender dropdown
+      worksheet.getCell(`G${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"Male,Female,Other"'],
+      };
+      // Relation dropdown
+      worksheet.getCell(`Q${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"Supporter,Neutral,Alliance,Opposition,Other"'],
+      };
+      // Influence dropdown
+      worksheet.getCell(`R${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"High,Medium,Low"'],
+      };
+      // isActive dropdown
+      worksheet.getCell(`U${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"TRUE,FALSE"'],
+      };
+    }
+
+    // Header styling
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+
+    // Color required columns
+    ["A1", "B1", "F1"].forEach((cell) => {
+      worksheet.getCell(cell).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFF3CD" },
+      };
+      worksheet.getCell(cell).note = "Required field";
+    });
+
+    // Instructions sheet
+    const instrSheet = workbook.addWorksheet("Instructions");
+    instrSheet.columns = [
+      { header: "Field", key: "field", width: 20 },
+      { header: "Required", key: "required", width: 10 },
+      { header: "Description", key: "description", width: 60 },
+    ];
+    instrSheet.addRows([
+      {
+        field: "name",
+        required: "YES",
+        description: "Full name of the leader",
+      },
+      {
+        field: "category",
+        required: "YES",
+        description: `One of: ${categoryValues}`,
+      },
+      {
+        field: "dateOfBirth",
+        required: "YES",
+        description: "Date in YYYY-MM-DD format",
+      },
+      {
+        field: "wardNumber",
+        required: "No",
+        description: "Ward number (must exist in system)",
+      },
+      {
+        field: "relation",
+        required: "No",
+        description: "Supporter, Neutral, Alliance, Opposition, Other",
+      },
+      { field: "influence", required: "No", description: "High, Medium, Low" },
+      { field: "gender", required: "No", description: "Male, Female, Other" },
+      { field: "tags", required: "No", description: "Comma-separated tags" },
+      {
+        field: "isActive",
+        required: "No",
+        description: "TRUE or FALSE (defaults to TRUE)",
+      },
+    ]);
+    instrSheet.getRow(1).font = { bold: true };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "leaders_template.xlsx";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   return (
     <MainLayout title="Leaders">
@@ -141,7 +369,22 @@ export default function LeaderListPage() {
               Constituency leaders, VIPs & key persons with birthday tracking
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <PermissionGate module="leaders" action="read">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Export
+              </Button>
+            </PermissionGate>
             <Link to="/leaders/birthdays">
               <Button variant="outline" className="gap-2">
                 <Cake className="h-4 w-4 text-pink-500" /> Birthdays
@@ -153,6 +396,13 @@ export default function LeaderListPage() {
               </Button>
             </Link>
             <PermissionGate module="leaders" action="create">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" /> Bulk Upload
+              </Button>
               <Link to="/leaders/new">
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" /> Add Leader
@@ -162,9 +412,48 @@ export default function LeaderListPage() {
           </div>
         </div>
 
+        {/* ─── Bulk Upload Modal ───────────────────────── */}
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={bulkCreateLeaders}
+          title="Import Leaders"
+          description={
+            <div>
+              <p>
+                Upload an Excel or CSV file to import multiple leaders. Records
+                are upserted by Name+Phone or Email.
+              </p>
+              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
+                <p>
+                  <strong>Required:</strong> name, category, dateOfBirth
+                </p>
+                <p>
+                  <strong>Category:</strong>{" "}
+                  {LEADER_CATEGORIES.map((c) => c.value).join(", ")}
+                </p>
+                <p>
+                  <strong>Date format:</strong> YYYY-MM-DD
+                </p>
+                <p>
+                  <strong>Relation:</strong> Supporter, Neutral, Alliance,
+                  Opposition, Other
+                </p>
+                <p>
+                  <strong>Influence:</strong> High, Medium, Low
+                </p>
+                <p>
+                  <strong>isActive:</strong> TRUE, FALSE
+                </p>
+              </div>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         {/* ─── Stats Row ───────────────────────────────── */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className=" md:grid-cols-3  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {[
               {
                 label: "Total Leaders",
@@ -185,12 +474,6 @@ export default function LeaderListPage() {
                 color: "#ec4899",
                 highlight: stats.todayBirthdays > 0,
               },
-              // {
-              //   label: "Upcoming 7 Days",
-              //   value: stats.upcoming7,
-              //   Icon: Cake,
-              //   color: "#f59e0b",
-              // },
               {
                 label: "High Influence",
                 value:
@@ -461,7 +744,6 @@ export default function LeaderListPage() {
                               : ""
                           } ${!l.isActive ? "opacity-50" : ""}`}
                         >
-                          {/* Leader Info */}
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <div className="relative flex-shrink-0">
@@ -507,7 +789,6 @@ export default function LeaderListPage() {
                             </div>
                           </TableCell>
 
-                          {/* Category */}
                           <TableCell>
                             <Badge
                               variant="secondary"
@@ -518,7 +799,6 @@ export default function LeaderListPage() {
                             </Badge>
                           </TableCell>
 
-                          {/* Ward */}
                           <TableCell className="text-sm">
                             {l.ward ? (
                               <span>
@@ -531,7 +811,6 @@ export default function LeaderListPage() {
                             )}
                           </TableCell>
 
-                          {/* Relation */}
                           <TableCell>
                             {l.relation ? (
                               <Badge className={`text-[10px] ${relColor}`}>
@@ -544,7 +823,6 @@ export default function LeaderListPage() {
                             )}
                           </TableCell>
 
-                          {/* Influence */}
                           <TableCell className="text-center">
                             {infDots ? (
                               <TooltipProvider>
@@ -568,7 +846,6 @@ export default function LeaderListPage() {
                             )}
                           </TableCell>
 
-                          {/* Birthday */}
                           <TableCell>
                             <div>
                               <p className="text-xs">
@@ -594,7 +871,6 @@ export default function LeaderListPage() {
                             </div>
                           </TableCell>
 
-                          {/* Actions */}
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               {l.whatsapp && (

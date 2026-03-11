@@ -25,9 +25,10 @@ interface BulkUploadModalProps {
     onOpenChange: (open: boolean) => void;
     onUpload: (data: any[]) => Promise<void>;
     title?: string;
-    description?: string;
+    description?: React.ReactNode;
     sampleFileUrl?: string;
     sampleFileName?: string;
+    onDownloadSample?: () => void;
 }
 
 export function BulkUploadModal({
@@ -38,6 +39,7 @@ export function BulkUploadModal({
     description = "Upload an Excel or CSV file to import multiple records at once.",
     sampleFileUrl,
     sampleFileName = "template.csv",
+    onDownloadSample,
 }: BulkUploadModalProps) {
     const [file, setFile] = useState<File | null>(null);
     const [dataPreview, setDataPreview] = useState<any[]>([]);
@@ -132,11 +134,29 @@ export function BulkUploadModal({
                                 onChange={handleFileChange}
                             />
 
-                            {sampleFileUrl && (
+                            {(sampleFileUrl || onDownloadSample) && (
                                 <div className="mt-6">
-                                    <a href={sampleFileUrl} download={sampleFileName} className="text-sm text-primary hover:underline flex items-center gap-1">
-                                        <FileUp className="h-4 w-4" /> Download Sample Template
-                                    </a>
+                                    {onDownloadSample ? (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDownloadSample();
+                                            }}
+                                            className="text-sm text-primary hover:underline flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                                        >
+                                            <FileUp className="h-4 w-4" /> Download Sample Template
+                                        </button>
+                                    ) : (
+                                        <a
+                                            href={sampleFileUrl}
+                                            download={sampleFileName}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-sm text-primary hover:underline flex items-center gap-1"
+                                        >
+                                            <FileUp className="h-4 w-4" /> Download Sample Template
+                                        </a>
+                                    )}
                                 </div>
                             )}
                         </div>

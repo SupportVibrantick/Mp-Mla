@@ -6,7 +6,13 @@ import {
   useUpdateDepartment,
   useDeleteDepartment,
   useToggleDepartment,
+  useBulkCreateDepartments,
 } from "@/hooks/useDepartments";
+import { toast } from "sonner";
+import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
+import api from "@/lib/api";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,6 +62,8 @@ import {
   Loader2,
   MessageSquare,
   FolderKanban,
+  FileUp,
+  Download,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -83,6 +91,84 @@ export default function DepartmentListPage() {
   const [dlg, setDlg] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const { mutateAsync: bulkCreateDepartments } = useBulkCreateDepartments();
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await api.get("/admin/departments/export");
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Departments");
+        xlsx.writeFile(wb, "departments_export.xlsx");
+        toast.success("Departments exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export departments.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const downloadSampleTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Departments");
+
+    const columns = [
+      { header: "name", key: "name", width: 30 },
+      { header: "code", key: "code", width: 15 },
+      { header: "description", key: "description", width: 40 },
+      { header: "headName", key: "headName", width: 20 },
+      { header: "headPhone", key: "headPhone", width: 15 },
+      { header: "headEmail", key: "headEmail", width: 25 },
+      { header: "isActive", key: "isActive", width: 15 },
+    ];
+
+    worksheet.columns = columns;
+
+    worksheet.addRow({
+      name: "Public Works Department",
+      code: "PWD",
+      description: "Main infrastructure maintenance",
+      headName: "John Smith",
+      headPhone: "9876543210",
+      headEmail: "head@pwd.gov.in",
+      isActive: "TRUE",
+    });
+
+    for (let i = 2; i <= 51; i++) {
+      worksheet.getCell(`G${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"TRUE,FALSE"'],
+      };
+    }
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "departments_template.xlsx";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   const departments = res?.data || [];
   const stats = statsRes?.data;
@@ -129,15 +215,65 @@ export default function DepartmentListPage() {
               Manage government departments for grievances & projects
             </p>
           </div>
-          <PermissionGate module="departments" action="create">
-            <Button className="gap-2" onClick={openAdd}>
-              <Plus className="h-4 w-4" /> Add Department
-            </Button>
-          </PermissionGate>
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+            <PermissionGate module="departments" action="read">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto justify-center"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" />
+                Export All
+              </Button>
+            </PermissionGate>
+
+            <PermissionGate module="departments" action="create">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto justify-center"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" />
+                Bulk Upload
+              </Button>
+            </PermissionGate>
+
+            <PermissionGate module="departments" action="create">
+              <Button
+                className="gap-2 w-full sm:w-auto justify-center"
+                onClick={openAdd}
+              >
+                <Plus className="h-4 w-4" />
+                Add Department
+              </Button>
+            </PermissionGate>
+          </div>
         </div>
 
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={bulkCreateDepartments}
+          title="Import Departments"
+          description={
+            <div>
+              <p>
+                Upload an Excel or CSV file to import multiple departments.
+                Records are upserted by Department Code.
+              </p>
+              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
+                <p>
+                  <strong>Is Active:</strong> TRUE, FALSE
+                </p>
+              </div>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {[
             {
               label: "Total",

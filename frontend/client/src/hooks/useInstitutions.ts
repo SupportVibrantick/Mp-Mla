@@ -116,9 +116,7 @@ export function useInstitutionStats(wardId?: string) {
     queryKey: ["institutions", "stats", wardId],
     queryFn: () =>
       api
-        .get("/admin/institutions/stats", {
-          params: wardId ? { wardId } : {},
-        })
+        .get("/admin/institutions/stats", { params: wardId ? { wardId } : {} })
         .then((r) => r.data),
   });
 }
@@ -187,6 +185,24 @@ export function useDeleteInstitution() {
         description: err?.response?.data?.message || "Failed",
         variant: "destructive",
       });
+    },
+  });
+}
+
+// ─── Bulk Import Hook ───────────────────────────────────
+
+export function useBulkCreateInstitutions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any[]) =>
+      api.post("/admin/institutions/bulk", data).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["institutions"] });
+    },
+    onError: (err: any) => {
+      throw new Error(
+        err?.response?.data?.message || "Failed to bulk import institutions",
+      );
     },
   });
 }

@@ -224,7 +224,7 @@ export default function BirthdaysPage() {
   return (
     <MainLayout title="Birthdays">
       <div className="space-y-6 max-w-4xl mx-auto">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Cake className="h-7 w-7 text-pink-500" />
@@ -251,7 +251,7 @@ export default function BirthdaysPage() {
         </div>
 
         <Tabs defaultValue="today">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="flex w-full overflow-x-auto gap-1 sm:grid sm:grid-cols-3">
             <TabsTrigger value="today" className="gap-1.5">
               <PartyPopper className="h-3.5 w-3.5" />
               Today ({todayList.length})

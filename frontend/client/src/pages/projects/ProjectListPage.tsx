@@ -9,9 +9,16 @@ import {
   PROJECT_STATUSES,
   PROJECT_CATEGORIES,
   FUND_TYPES,
+  useChangeProjectStatus,
+  useBulkCreateProjects,
 } from "@/hooks/useProjects";
 import { useWards } from "@/hooks/useWards";
 import { useDepartments } from "@/hooks/useDepartments";
+import { toast } from "sonner";
+import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
+import api from "@/lib/api";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -49,6 +56,8 @@ import {
   Clock,
   CheckCircle2,
   PauseCircle,
+  FileUp,
+  Download,
 } from "lucide-react";
 
 export default function ProjectListPage() {
@@ -58,6 +67,130 @@ export default function ProjectListPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const { mutateAsync: bulkCreateProjects } = useBulkCreateProjects();
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await api.get("/admin/projects/export");
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Projects");
+        xlsx.writeFile(wb, "projects_export.xlsx");
+        toast.success("Projects exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export projects.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const downloadSampleTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Projects");
+
+    // Define Columns
+    const columns = [
+      { header: "projectCode", key: "projectCode" },
+      { header: "name", key: "name" },
+      { header: "category", key: "category" },
+      { header: "department", key: "department" },
+      { header: "contractor", key: "contractor" },
+      { header: "contractorPhone", key: "contractorPhone" },
+      { header: "wardNumber", key: "wardNumber" },
+      { header: "startDate", key: "startDate" },
+      { header: "expectedEndDate", key: "expectedEndDate" },
+      { header: "actualEndDate", key: "actualEndDate" },
+      { header: "budgetSanctioned", key: "budgetSanctioned" },
+      { header: "budgetReleased", key: "budgetReleased" },
+      { header: "budgetUsed", key: "budgetUsed" },
+      { header: "fundType", key: "fundType" },
+      { header: "status", key: "status" },
+      { header: "completionPercent", key: "completionPercent" },
+      { header: "description", key: "description" },
+      { header: "address", key: "address" },
+    ];
+
+    worksheet.columns = columns;
+
+    // Add Example Rows
+    worksheet.addRow({
+      projectCode: "PROJ-001",
+      name: "School Build",
+      category: "EDUCATION",
+      department: "EDU",
+      contractor: "ABC Infra",
+      contractorPhone: "9876543210",
+      wardNumber: 101,
+      startDate: "2024-01-01",
+      expectedEndDate: "2024-12-31",
+      budgetSanctioned: 5000000,
+      budgetReleased: 2000000,
+      budgetUsed: 500000,
+      fundType: "STATE_FUND",
+      status: "RUNNING",
+      completionPercent: 10,
+    });
+
+    // Add Data Validation (Dropdowns) for 100 rows
+    const categories = PROJECT_CATEGORIES.map((c) => c.value);
+    const statuses = PROJECT_STATUSES.map((s) => s.value);
+    const fundTypes = FUND_TYPES.map((f) => f.value);
+
+    for (let i = 2; i <= 101; i++) {
+      // Category Dropdown (Column C)
+      worksheet.getCell(`C${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${categories.join(",")}"`],
+        showErrorMessage: true,
+      };
+
+      // FundType Dropdown (Column N)
+      worksheet.getCell(`N${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${fundTypes.join(",")}"`],
+        showErrorMessage: true,
+      };
+
+      // Status Dropdown (Column O)
+      worksheet.getCell(`O${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${statuses.join(",")}"`],
+        showErrorMessage: true,
+      };
+    }
+
+    // Styling
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+
+    // Download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "projects_bulk_template.xlsx";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   const params = useMemo(() => {
     const p: Record<string, any> = { page, limit: 20 };
@@ -103,15 +236,71 @@ export default function ProjectListPage() {
               Development works & budget tracking
             </p>
           </div>
-          <PermissionGate module="projects" action="create">
-            <Link to="/projects/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Project
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end">
+            <PermissionGate module="projects" action="read">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" />
+                Export All
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+
+            <PermissionGate module="projects" action="create">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" />
+                Bulk Upload
+              </Button>
+            </PermissionGate>
+
+            <PermissionGate module="projects" action="create">
+              <Link to="/projects/new" className="w-full sm:w-auto">
+                <Button className="gap-2 w-full sm:w-auto">
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
         </div>
+
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={bulkCreateProjects}
+          title="Import Projects"
+          description={
+            <div>
+              <p>
+                Upload an Excel or CSV file to import multiple projects. Records
+                are upserted by Project Code or Name.
+              </p>
+              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
+                <p>
+                  <strong>Valid Status:</strong> PENDING, RUNNING, COMPLETED,
+                  ON_HOLD, CANCELLED
+                </p>
+                <p>
+                  <strong>Valid Fund Types:</strong> MPLAD, MLALAD, STATE_FUND,
+                  CENTRAL_FUND, CSR, OTHER
+                </p>
+                <p>
+                  <strong>Valid Categories:</strong> ROAD, WATER, DRAINAGE,
+                  ELECTRICITY, BUILDING, PARK, EDUCATION, HEALTH, SPORTS,
+                  SANITATION, HOUSING, IT, OTHER
+                </p>
+              </div>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
 
         {/* Stats */}
         {stats && (

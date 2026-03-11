@@ -199,3 +199,24 @@ export function useToggleCommunityGroup() {
     },
   });
 }
+
+export function useBulkCreateCommunityGroups() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: any[]) =>
+      api.post("/admin/community-groups/bulk", data).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["community-groups"] });
+      toast({ title: "Bulk Import Successful", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Bulk Import Failed",
+        description: err?.response?.data?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
+}
+

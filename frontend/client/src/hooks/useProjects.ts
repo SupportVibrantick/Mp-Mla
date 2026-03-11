@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { projectsApi } from "@/lib/api";
+import api, { projectsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 export const PROJECT_STATUSES = [
@@ -163,6 +163,26 @@ export function useAddProjectUpdate() {
     "Update Added",
   );
 }
+
+export function useBulkCreateProjects() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: any[]) =>
+      api.post("/admin/projects/bulk", data).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Bulk import failed",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 
 export function formatBudget(amount: number): string {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;

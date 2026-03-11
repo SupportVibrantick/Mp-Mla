@@ -3,18 +3,24 @@ import { Link } from "wouter";
 import {
   useInstitutions,
   useInstitutionStats,
+  useBulkCreateInstitutions,
   getCategoryInfo,
   getStatusInfo,
   INSTITUTION_CATEGORIES,
+  INSTITUTION_STATUSES,
 } from "@/hooks/useInstitutions";
 import { useWards } from "@/hooks/useWards";
+import { toast } from "sonner";
+import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
+import api from "@/lib/api";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -40,10 +46,13 @@ import {
   MapPin,
   Phone,
   User,
+  Users,
   ChevronLeft,
   ChevronRight,
   Filter,
-  Users,
+  FileUp,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 export default function InstitutionListPage() {
@@ -52,6 +61,8 @@ export default function InstitutionListPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const queryParams = useMemo(() => {
     const p: Record<string, any> = { page, limit: 20 };
@@ -67,13 +78,13 @@ export default function InstitutionListPage() {
     wardFilter !== "all" ? wardFilter : undefined,
   );
   const { data: wardsRes } = useWards({ limit: 100 });
+  const { mutateAsync: bulkCreateInstitutions } = useBulkCreateInstitutions();
 
   const institutions = instRes?.data || [];
   const pagination = instRes?.pagination;
   const stats = statsRes?.data;
   const wards = wardsRes?.data?.wards || [];
 
-  // Group categories for filter dropdown
   const categoryGroups = useMemo(() => {
     const groups: Record<string, (typeof INSTITUTION_CATEGORIES)[number][]> =
       {};
@@ -92,6 +103,275 @@ export default function InstitutionListPage() {
     setPage(1);
   };
 
+  // ── Export ──
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const exportParams: Record<string, any> = {};
+      if (wardFilter !== "all") exportParams.wardId = wardFilter;
+      if (categoryFilter !== "all") exportParams.category = categoryFilter;
+      if (statusFilter !== "all") exportParams.status = statusFilter;
+
+      const response = await api.get("/admin/institutions/export", {
+        params: exportParams,
+      });
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        // Remove wardName from export (it's informational, not importable)
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Institutions");
+        xlsx.writeFile(wb, "institutions_export.xlsx");
+        toast.success(`Exported ${data.length} rows successfully.`);
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export institutions.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // ── Download Sample Template ──
+  const downloadSampleTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Institutions");
+
+    worksheet.columns = [
+      { header: "name", key: "name", width: 30 },
+      { header: "category", key: "category", width: 20 },
+      { header: "subcategory", key: "subcategory", width: 18 },
+      { header: "address", key: "address", width: 35 },
+      { header: "wardNumber", key: "wardNumber", width: 12 },
+      { header: "contactNo", key: "contactNo", width: 15 },
+      { header: "email", key: "email", width: 25 },
+      { header: "website", key: "website", width: 25 },
+      { header: "status", key: "status", width: 18 },
+      { header: "description", key: "description", width: 30 },
+      { header: "capacity", key: "capacity", width: 10 },
+      { header: "establishedDate", key: "establishedDate", width: 15 },
+      { header: "inchargeName", key: "inchargeName", width: 20 },
+      { header: "inchargeDesignation", key: "inchargeDesignation", width: 20 },
+      { header: "inchargeContactNo", key: "inchargeContactNo", width: 15 },
+      { header: "inchargeEmail", key: "inchargeEmail", width: 25 },
+      { header: "inchargeDateOfBirth", key: "inchargeDateOfBirth", width: 15 },
+      {
+        header: "inchargeAppointedDate",
+        key: "inchargeAppointedDate",
+        width: 18,
+      },
+      { header: "inchargeIsActive", key: "inchargeIsActive", width: 15 },
+    ];
+
+    // Sample: institution with one incharge
+    worksheet.addRow({
+      name: "Govt Senior Secondary School",
+      category: "SCHOOL",
+      subcategory: "Senior Secondary",
+      address: "Main Road, Sector 5",
+      wardNumber: 3,
+      contactNo: "0172-2740001",
+      email: "school5@edu.gov.in",
+      website: "",
+      status: "ACTIVE",
+      description: "Government school serving ward 3",
+      capacity: 1200,
+      establishedDate: "1985-06-15",
+      inchargeName: "Dr. Ramesh Kumar",
+      inchargeDesignation: "Principal",
+      inchargeContactNo: "9876543210",
+      inchargeEmail: "principal@school5.edu",
+      inchargeDateOfBirth: "1970-03-15",
+      inchargeAppointedDate: "2020-07-01",
+      inchargeIsActive: "TRUE",
+    });
+
+    // Sample: same institution, second incharge (only name + wardNumber + incharge fields)
+    worksheet.addRow({
+      name: "Govt Senior Secondary School",
+      category: "",
+      subcategory: "",
+      address: "",
+      wardNumber: 3,
+      contactNo: "",
+      email: "",
+      website: "",
+      status: "",
+      description: "",
+      capacity: "",
+      establishedDate: "",
+      inchargeName: "Mrs. Sunita Devi",
+      inchargeDesignation: "Vice Principal",
+      inchargeContactNo: "9876543211",
+      inchargeEmail: "",
+      inchargeDateOfBirth: "1975-08-22",
+      inchargeAppointedDate: "2021-01-15",
+      inchargeIsActive: "TRUE",
+    });
+
+    // Sample: different institution
+    worksheet.addRow({
+      name: "Shiv Mandir",
+      category: "TEMPLE",
+      subcategory: "",
+      address: "Temple Road, Old City",
+      wardNumber: 1,
+      contactNo: "",
+      email: "",
+      website: "",
+      status: "ACTIVE",
+      description: "Historic temple",
+      capacity: 500,
+      establishedDate: "1950-01-01",
+      inchargeName: "Pt. Shyam Lal",
+      inchargeDesignation: "Head Priest",
+      inchargeContactNo: "9123456789",
+      inchargeEmail: "",
+      inchargeDateOfBirth: "1965-12-10",
+      inchargeAppointedDate: "2000-01-01",
+      inchargeIsActive: "TRUE",
+    });
+
+    // Data validations
+    const categoryValues = INSTITUTION_CATEGORIES.map((c) => c.value).join(",");
+    const statusValues = INSTITUTION_STATUSES.map((s) => s.value).join(",");
+    const maxRows = 500;
+
+    for (let i = 2; i <= maxRows; i++) {
+      worksheet.getCell(`B${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${categoryValues}"`],
+      };
+      worksheet.getCell(`I${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${statusValues}"`],
+      };
+      worksheet.getCell(`S${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"TRUE,FALSE"'],
+      };
+    }
+
+    // Header styling
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+
+    // Highlight required columns
+    ["A1", "B1", "D1", "E1"].forEach((cell) => {
+      worksheet.getCell(cell).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFF3CD" },
+      };
+      worksheet.getCell(cell).note = "Required field";
+    });
+
+    // Instructions sheet
+    const instrSheet = workbook.addWorksheet("Instructions");
+    instrSheet.columns = [
+      { header: "Field", key: "field", width: 25 },
+      { header: "Required", key: "required", width: 10 },
+      { header: "Description", key: "description", width: 70 },
+    ];
+    instrSheet.addRows([
+      {
+        field: "name",
+        required: "YES",
+        description: "Institution name. Used with wardNumber as upsert key.",
+      },
+      {
+        field: "category",
+        required: "YES (row 1)",
+        description: `One of: ${categoryValues}`,
+      },
+      {
+        field: "address",
+        required: "YES (row 1)",
+        description: "Full address of the institution",
+      },
+      {
+        field: "wardNumber",
+        required: "YES",
+        description: "Ward number (must exist in system). Used for grouping.",
+      },
+      {
+        field: "status",
+        required: "No",
+        description: `One of: ${statusValues}. Defaults to ACTIVE.`,
+      },
+      {
+        field: "capacity",
+        required: "No",
+        description: "Numeric. Seating or capacity.",
+      },
+      {
+        field: "establishedDate",
+        required: "No",
+        description: "Date in YYYY-MM-DD format",
+      },
+      { field: "---", required: "---", description: "--- INCHARGE FIELDS ---" },
+      {
+        field: "inchargeName",
+        required: "No",
+        description:
+          "Name of the incharge. If provided, designation & contactNo are also required.",
+      },
+      {
+        field: "inchargeDesignation",
+        required: "If incharge",
+        description: "E.g. Principal, Head Priest, Manager",
+      },
+      {
+        field: "inchargeContactNo",
+        required: "If incharge",
+        description: "Phone number of the incharge",
+      },
+      {
+        field: "inchargeDateOfBirth",
+        required: "No",
+        description: "YYYY-MM-DD format",
+      },
+      {
+        field: "inchargeAppointedDate",
+        required: "No",
+        description: "YYYY-MM-DD format",
+      },
+      {
+        field: "inchargeIsActive",
+        required: "No",
+        description: "TRUE or FALSE. Defaults to TRUE.",
+      },
+      { field: "---", required: "---", description: "--- MULTI-INCHARGE ---" },
+      {
+        field: "(note)",
+        required: "",
+        description:
+          "To add multiple incharges to one institution, repeat the institution name + wardNumber on a new row with only incharge fields filled. See sample rows 2-3.",
+      },
+    ]);
+    instrSheet.getRow(1).font = { bold: true };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "institutions_template.xlsx";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <MainLayout title="Institutions">
       <div className="space-y-6">
@@ -106,17 +386,78 @@ export default function InstitutionListPage() {
               Schools, hospitals, temples, govt offices & more
             </p>
           </div>
-          <PermissionGate module="institutions" action="create">
-            <Link to="/institutions/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Add Institution
+          <div className="flex gap-2 flex-wrap">
+            <PermissionGate module="institutions" action="read">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Export
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+            <PermissionGate module="institutions" action="create">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" /> Bulk Upload
+              </Button>
+              <Link to="/institutions/new">
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" /> Add Institution
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
         </div>
 
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={bulkCreateInstitutions}
+          title="Import Institutions"
+          description={
+            <div>
+              <p>
+                Upload an Excel or CSV file to import institutions with
+                incharges. Records are upserted by Name + Ward Number.
+              </p>
+              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
+                <p>
+                  <strong>Required:</strong> name, category, address, wardNumber
+                </p>
+                <p>
+                  <strong>Category:</strong>{" "}
+                  {INSTITUTION_CATEGORIES.map((c) => c.value).join(", ")}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {INSTITUTION_STATUSES.map((s) => s.value).join(", ")}
+                </p>
+                <p>
+                  <strong>Multi-incharge:</strong> Repeat name + wardNumber on
+                  new row with only incharge fields
+                </p>
+                <p>
+                  <strong>Date format:</strong> YYYY-MM-DD
+                </p>
+              </div>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-20" />
@@ -203,9 +544,15 @@ export default function InstitutionListPage() {
                   return (
                     <div
                       key={c.category}
-                      className="text-center p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                      className={`text-center p-3 rounded-lg border transition-colors cursor-pointer ${
+                        categoryFilter === c.category
+                          ? "border-primary bg-primary/5"
+                          : "hover:bg-muted/50"
+                      }`}
                       onClick={() => {
-                        setCategoryFilter(c.category);
+                        setCategoryFilter(
+                          categoryFilter === c.category ? "all" : c.category,
+                        );
                         setPage(1);
                       }}
                     >
@@ -299,15 +646,14 @@ export default function InstitutionListPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
-                    <SelectItem value="UNDER_MAINTENANCE">
-                      Maintenance
-                    </SelectItem>
-                    <SelectItem value="CLOSED">Closed</SelectItem>
-                    <SelectItem value="PROPOSED">Proposed</SelectItem>
+                    {INSTITUTION_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+
                 {(search ||
                   wardFilter !== "all" ||
                   statusFilter !== "all" ||
@@ -401,9 +747,9 @@ export default function InstitutionListPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Link to={`/wards/${inst.ward.id}`}>
+                            <Link to={`/wards/${inst.ward?.id}`}>
                               <span className="text-sm text-primary hover:underline cursor-pointer">
-                                #{inst.ward.wardNumber} {inst.ward.name}
+                                #{inst.ward?.wardNumber} {inst.ward?.name}
                               </span>
                             </Link>
                           </TableCell>

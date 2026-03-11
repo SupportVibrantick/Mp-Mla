@@ -4,6 +4,7 @@ import {
     createAuditLog,
     getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { normalizeWardStatus, normalizeAreaType } from "../../../utils/enumParser.js";
 
 /**
  * POST /api/admin/wards/bulk
@@ -49,8 +50,15 @@ export async function bulkCreateWards(
         for (const [wardNumberStr, rows] of Object.entries(groupedWards)) {
             const wardNumber = parseInt(wardNumberStr, 10);
             try {
-                const existingWard = await prisma.ward.findUnique({
-                    where: { wardNumber },
+                // Find if ward exists by wardNumber OR Name
+                const wardNameMatch = rows.find(r => r.wardName)?.wardName;
+                const existingWard = await prisma.ward.findFirst({
+                    where: {
+                        OR: [
+                            { wardNumber },
+                            { name: wardNameMatch ? String(wardNameMatch) : undefined }
+                        ].filter(Boolean) as any
+                    },
                     include: {
                         areas: true,
                         councillors: { where: { isCurrent: true } },
@@ -61,7 +69,9 @@ export async function bulkCreateWards(
                 const wardUpdateData: any = {};
                 setIfPresent(wardUpdateData, 'name', 'wardName', rows);
                 setIfPresent(wardUpdateData, 'zone', 'wardZone', rows);
-                setIfPresent(wardUpdateData, 'status', 'wardStatus', rows);
+                const wardStatus = normalizeWardStatus(rows[0]?.wardStatus);
+                if (wardStatus) wardUpdateData.status = wardStatus;
+                const wardAreaType = rows[0]?.wardAreaType; // this is a string in Ward model, not enum
                 setIfPresent(wardUpdateData, 'areaType', 'wardAreaType', rows);
                 setIfPresent(wardUpdateData, 'pincode', 'wardPincode', rows);
                 setIfPresent(wardUpdateData, 'description', 'wardDescription', rows);
@@ -147,7 +157,8 @@ export async function bulkCreateWards(
 
                         const existingArea = existingWard?.areas.find(a => a.name === String(aName));
                         const aUpdate: any = {};
-                        if (r.areaType) aUpdate.areaType = String(r.areaType);
+                        const aStatus = normalizeAreaType(r.areaType);
+                        if (aStatus) aUpdate.areaType = aStatus;
                         if (r.areaPopulation !== undefined) aUpdate.population = Number(r.areaPopulation);
                         if (r.areaHouseholds !== undefined) aUpdate.households = Number(r.areaHouseholds);
                         if (r.areaMaleCount !== undefined) aUpdate.maleCount = Number(r.areaMaleCount);

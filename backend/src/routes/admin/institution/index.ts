@@ -9,6 +9,8 @@ import {
 import { createInstitution } from "./create.js";
 import { updateInstitution } from "./update.js";
 import { deleteInstitution } from "./delete.js";
+import { bulkCreateInstitutions } from "./bulk.js";
+import { exportInstitutions } from "./exports.js";
 import {
   listIncharges,
   getIncharge,
@@ -33,12 +35,22 @@ router.get(
   requirePermission("institutions", "read"),
   getInstitutionStats,
 );
+router.get(
+  "/export",
+  requirePermission("institutions", "read"),
+  exportInstitutions,
+);
 router.get("/:id", requirePermission("institutions", "read"), getInstitution);
 router.post(
   "/",
   requirePermission("institutions", "create"),
   validate(createInstitutionSchema),
   createInstitution,
+);
+router.post(
+  "/bulk",
+  requirePermission("institutions", "create"),
+  bulkCreateInstitutions,
 );
 router.put(
   "/:id",

@@ -19,12 +19,15 @@ import {
   getGreetingHistory,
 } from "./greetings.js";
 import { createSchema, updateSchema } from "@/schemas/admin/leader/index.js";
+import { bulkCreateLeaders } from "./bulk.js";
+import { exportLeaders } from "./export.js";
 
 const router = Router();
 
 // CRUD
 router.get("/", requirePermission("leaders", "read"), listLeaders);
 router.get("/stats", requirePermission("leaders", "read"), getLeaderStats);
+router.get("/export/all", requirePermission("leaders", "read"), exportLeaders);
 router.get("/:id", requirePermission("leaders", "read"), getLeader);
 router.post(
   "/",
@@ -32,6 +35,7 @@ router.post(
   validate(createSchema),
   createLeader,
 );
+router.post("/bulk", requirePermission("leaders", "create"), bulkCreateLeaders);
 router.put(
   "/:id",
   requirePermission("leaders", "update"),

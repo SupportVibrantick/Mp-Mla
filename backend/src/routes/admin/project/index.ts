@@ -12,6 +12,8 @@ import {
   toggleMilestone,
 } from "./milestones.js";
 import { addUpdate } from "./updates.js";
+import { bulkCreateProjects } from "./bulk.js";
+import { exportProjects } from "./export.js";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -23,8 +25,14 @@ import {
 const router = Router();
 
 router.get("/", requirePermission("projects", "read"), listProjects);
+router.get("/export", requirePermission("projects", "read"), exportProjects);
 router.get("/stats", requirePermission("projects", "read"), getProjectStats);
 router.get("/:id", requirePermission("projects", "read"), getProject);
+router.post(
+  "/bulk",
+  requirePermission("projects", "create"),
+  bulkCreateProjects,
+);
 router.post(
   "/",
   requirePermission("projects", "create"),

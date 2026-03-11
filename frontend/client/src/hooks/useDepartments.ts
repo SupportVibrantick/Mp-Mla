@@ -69,3 +69,21 @@ export function useToggleDepartment() {
     "Status Changed",
   );
 }
+
+export function useBulkCreateDepartments() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: any[]) =>
+      api.post("/admin/departments/bulk", data).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["departments"] });
+      toast({ title: "Bulk Import Successful", description: res.message });
+    },
+    onError: (err: any) => {
+      throw new Error(
+        err?.response?.data?.message || "Failed to bulk import departments",
+      );
+    },
+  });
+}

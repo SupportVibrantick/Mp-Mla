@@ -75,17 +75,23 @@ function StatCard({
 }) {
   return (
     <Card>
-      <CardContent className="p-4 flex items-center gap-3">
+      <CardContent className="p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3">
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center"
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: `${color}20` }}
         >
-          <Icon className="h-5 w-5" style={{ color }} />
+          <Icon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color }} />
         </div>
-        <div>
-          <p className="text-xl font-bold">{value}</p>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
+        <div className="min-w-0">
+          <p className="text-base sm:text-xl font-bold truncate">{value}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+            {label}
+          </p>
+          {sub && (
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
+              {sub}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -103,10 +109,10 @@ function ChartCard({
 }) {
   return (
     <Card className={className}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">{title}</CardTitle>
+      <CardHeader className="pb-2 px-3 sm:px-6">
+        <CardTitle className="text-xs sm:text-sm">{title}</CardTitle>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="px-2 sm:px-6">{children}</CardContent>
     </Card>
   );
 }
@@ -119,19 +125,19 @@ function DistributionBars({
   total: number;
 }) {
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2 sm:space-y-2.5">
       {data.map((item) => (
         <div key={item.label}>
-          <div className="flex justify-between text-sm mb-1">
+          <div className="flex justify-between text-xs sm:text-sm mb-1">
             <span className="font-medium">{item.label}</span>
             <span className="font-mono text-muted-foreground">
               {item.value.toLocaleString()}{" "}
-              <span className="text-[10px]">
+              <span className="text-[9px] sm:text-[10px]">
                 ({((item.value / (total || 1)) * 100).toFixed(1)}%)
               </span>
             </span>
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
@@ -176,16 +182,16 @@ export default function DemographicsPage() {
   if (isLoading) {
     return (
       <MainLayout title="Demographics">
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <Skeleton className="h-10 w-64" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-20" />
+              <Skeleton key={i} className="h-16 sm:h-20" />
             ))}
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <Skeleton className="h-80" />
-            <Skeleton className="h-80" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            <Skeleton className="h-60 sm:h-80" />
+            <Skeleton className="h-60 sm:h-80" />
           </div>
         </div>
       </MainLayout>
@@ -195,9 +201,9 @@ export default function DemographicsPage() {
   if (!totals) {
     return (
       <MainLayout title="Demographics">
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="flex flex-col items-center justify-center h-64 gap-4 px-4">
           <BarChart3 className="h-12 w-12 text-muted-foreground" />
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-center text-sm">
             No demographic data available. Add wards with demographics first.
           </p>
           <Link to="/wards/new">
@@ -214,21 +220,21 @@ export default function DemographicsPage() {
 
   return (
     <MainLayout title="Demographics">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="h-7 w-7 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
             Demographics Report
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Constituency-wide population analysis across{" "}
             {report?.totalWards || 0} wards
           </p>
         </div>
 
-        {/* ═══ Summary Cards ═════════════════════════════ */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* ═══ Summary Cards Row 1 ═══════════════════════ */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
             icon={Users}
             label="Total Population"
@@ -264,7 +270,8 @@ export default function DemographicsPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* ═══ Summary Cards Row 2 ═══════════════════════ */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
             icon={Users}
             label="Male"
@@ -296,17 +303,17 @@ export default function DemographicsPage() {
         </div>
 
         {/* ═══ Charts Row 1: Gender + Age ════════════════ */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <ChartCard title="Gender Distribution">
-            <div className="h-64">
+            <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={charts.gender}
                     cx="50%"
                     cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
+                    innerRadius={40}
+                    outerRadius={65}
                     paddingAngle={4}
                     dataKey="value"
                     nameKey="label"
@@ -321,25 +328,34 @@ export default function DemographicsPage() {
                       borderRadius: "8px",
                       border: "none",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      fontSize: "11px",
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: "11px" }} iconSize={10} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </ChartCard>
 
           <ChartCard title="Age Distribution">
-            <div className="h-64">
+            <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={charts.age}>
+                <BarChart
+                  data={charts.age}
+                  margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                  <XAxis dataKey="label" fontSize={12} />
+                  <XAxis dataKey="label" fontSize={10} tickLine={false} />
                   <YAxis
-                    fontSize={12}
+                    fontSize={10}
+                    tickLine={false}
+                    width={35}
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
                   />
-                  <Tooltip formatter={(val: number) => val.toLocaleString()} />
+                  <Tooltip
+                    formatter={(val: number) => val.toLocaleString()}
+                    contentStyle={{ fontSize: "11px", borderRadius: "8px" }}
+                  />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Population">
                     {charts.age.map((entry: any, i: number) => (
                       <Cell key={i} fill={entry.color} />
@@ -352,24 +368,27 @@ export default function DemographicsPage() {
         </div>
 
         {/* ═══ Charts Row 2: Religion + Caste ════════════ */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <ChartCard title="Religion Distribution">
             {charts.religion.length > 0 ? (
-              <div className="h-72">
+              <div className="h-56 sm:h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={charts.religion}
                       cx="50%"
                       cy="45%"
-                      outerRadius={80}
+                      outerRadius={60}
                       paddingAngle={2}
                       dataKey="value"
                       nameKey="label"
                       label={({ label, percent }) =>
-                        `${label} ${(percent * 100).toFixed(1)}%`
+                        percent > 0.03
+                          ? `${label} ${(percent * 100).toFixed(0)}%`
+                          : ""
                       }
                       labelLine={false}
+                      fontSize={10}
                     >
                       {charts.religion.map((entry: any, i: number) => (
                         <Cell key={i} fill={entry.color} />
@@ -377,8 +396,9 @@ export default function DemographicsPage() {
                     </Pie>
                     <Tooltip
                       formatter={(val: number) => val.toLocaleString()}
+                      contentStyle={{ fontSize: "11px", borderRadius: "8px" }}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: "10px" }} iconSize={8} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -394,35 +414,35 @@ export default function DemographicsPage() {
           </ChartCard>
         </div>
 
-        {/* ═══ Charts Row 3: Economic + Voters ═══════════ */}
-        <div className="grid md:grid-cols-3 gap-4">
+        {/* ═══ Charts Row 3: Economic + Voters + Literacy ═ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <ChartCard title="Economic Status (Households)">
             <DistributionBars
               data={charts.economic}
               total={totals.totalHouseholds}
             />
-            <div className="mt-4 flex gap-2">
-              <div className="flex-1 text-center p-2 rounded bg-red-50 dark:bg-red-900/20">
-                <p className="text-lg font-bold text-red-600">
+            <div className="mt-3 sm:mt-4 flex gap-2">
+              <div className="flex-1 text-center p-1.5 sm:p-2 rounded bg-red-50 dark:bg-red-900/20">
+                <p className="text-sm sm:text-lg font-bold text-red-600">
                   {(
                     (totals.bplHouseholds / (totals.totalHouseholds || 1)) *
                     100
                   ).toFixed(1)}
                   %
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground">
                   Below Poverty
                 </p>
               </div>
-              <div className="flex-1 text-center p-2 rounded bg-green-50 dark:bg-green-900/20">
-                <p className="text-lg font-bold text-green-600">
+              <div className="flex-1 text-center p-1.5 sm:p-2 rounded bg-green-50 dark:bg-green-900/20">
+                <p className="text-sm sm:text-lg font-bold text-green-600">
                   {(
                     (totals.aplHouseholds / (totals.totalHouseholds || 1)) *
                     100
                   ).toFixed(1)}
                   %
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground">
                   Above Poverty
                 </p>
               </div>
@@ -431,19 +451,22 @@ export default function DemographicsPage() {
 
           <ChartCard title="Voter Statistics">
             <DistributionBars data={charts.voter} total={totals.totalVoters} />
-            <div className="mt-4 p-3 rounded bg-muted/50 text-center">
-              <p className="text-2xl font-bold">
+            <div className="mt-3 sm:mt-4 p-2 sm:p-3 rounded bg-muted/50 text-center">
+              <p className="text-lg sm:text-2xl font-bold">
                 {totals.totalVoters.toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
                 {((totals.totalVoters / pop) * 100).toFixed(1)}% of total
                 population
               </p>
             </div>
           </ChartCard>
 
-          <ChartCard title="Literacy Rate">
-            <div className="space-y-4">
+          <ChartCard
+            title="Literacy Rate"
+            className="sm:col-span-2 lg:col-span-1"
+          >
+            <div className="space-y-3 sm:space-y-4">
               {[
                 {
                   label: "Overall",
@@ -462,14 +485,14 @@ export default function DemographicsPage() {
                 },
               ].map((l) => (
                 <div key={l.label}>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-xs sm:text-sm mb-1">
                     <span>{l.label}</span>
                     <span className="font-mono">
                       {l.value ? `${l.value.toFixed(1)}%` : "N/A"}
                     </span>
                   </div>
                   {l.value && (
-                    <div className="h-3 bg-muted rounded-full overflow-hidden">
+                    <div className="h-2.5 sm:h-3 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -484,8 +507,8 @@ export default function DemographicsPage() {
               {totals.literacyRate &&
                 totals.maleLiteracyRate &&
                 totals.femaleLiteracyRate && (
-                  <div className="text-center p-2 rounded bg-muted/50">
-                    <p className="text-xs text-muted-foreground">
+                  <div className="text-center p-1.5 sm:p-2 rounded bg-muted/50">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
                       Gender Gap:{" "}
                       <span className="font-mono font-medium">
                         {(
@@ -503,20 +526,30 @@ export default function DemographicsPage() {
         {/* ═══ Zone Summary ══════════════════════════════ */}
         {byZone.length > 1 && (
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Zone-wise Summary</CardTitle>
+            <CardHeader className="pb-3 px-3 sm:px-6">
+              <CardTitle className="text-xs sm:text-sm">
+                Zone-wise Summary
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardContent className="px-3 sm:px-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {byZone.map((z: any) => (
-                  <div key={z.zone} className="p-3 rounded-lg border space-y-2">
+                  <div
+                    key={z.zone}
+                    className="p-2.5 sm:p-3 rounded-lg border space-y-2"
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-sm">{z.zone}</span>
-                      <Badge variant="outline" className="text-[10px]">
+                      <span className="font-semibold text-xs sm:text-sm">
+                        {z.zone}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] sm:text-[10px]"
+                      >
                         {z.wardCount} wards
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
                       <div>
                         <p className="text-muted-foreground">Population</p>
                         <p className="font-mono font-medium">
@@ -544,9 +577,9 @@ export default function DemographicsPage() {
                     </div>
                     <Progress
                       value={(z.totalPopulation / pop) * 100}
-                      className="h-1.5"
+                      className="h-1 sm:h-1.5"
                     />
-                    <p className="text-[10px] text-muted-foreground text-right">
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground text-right">
                       {((z.totalPopulation / pop) * 100).toFixed(1)}% of
                       constituency
                     </p>
@@ -559,24 +592,24 @@ export default function DemographicsPage() {
 
         {/* ═══ Ward Comparison Table ═════════════════════ */}
         <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-base flex items-center gap-2">
+          <CardHeader className="pb-3 px-3 sm:px-6">
+            <div className="flex flex-col gap-3">
+              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" />
                 Ward-wise Comparison
               </CardTitle>
-              <div className="flex gap-2">
-                <div className="relative">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1 sm:flex-none">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Search ward..."
                     value={wardSearch}
                     onChange={(e) => setWardSearch(e.target.value)}
-                    className="pl-8 h-8 w-40 text-xs"
+                    className="pl-8 h-8 w-full sm:w-40 text-xs"
                   />
                 </div>
                 <Select value={zoneFilter} onValueChange={setZoneFilter}>
-                  <SelectTrigger className="h-8 w-28 text-xs">
+                  <SelectTrigger className="h-8 w-full sm:w-28 text-xs">
                     <SelectValue placeholder="Zone" />
                   </SelectTrigger>
                   <SelectContent>
@@ -593,21 +626,36 @@ export default function DemographicsPage() {
           </CardHeader>
           <CardContent className="p-0">
             <Tabs value={tableTab} onValueChange={setTableTab}>
-              <div className="px-4">
-                <TabsList className="grid w-full grid-cols-5 h-8">
-                  <TabsTrigger value="population" className="text-xs">
+              <div className="px-3 sm:px-4 overflow-x-auto">
+                <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-5 h-8">
+                  <TabsTrigger
+                    value="population"
+                    className="text-[10px] sm:text-xs px-2 sm:px-3 whitespace-nowrap"
+                  >
                     Population
                   </TabsTrigger>
-                  <TabsTrigger value="age" className="text-xs">
+                  <TabsTrigger
+                    value="age"
+                    className="text-[10px] sm:text-xs px-2 sm:px-3 whitespace-nowrap"
+                  >
                     Age
                   </TabsTrigger>
-                  <TabsTrigger value="religion" className="text-xs">
+                  <TabsTrigger
+                    value="religion"
+                    className="text-[10px] sm:text-xs px-2 sm:px-3 whitespace-nowrap"
+                  >
                     Religion
                   </TabsTrigger>
-                  <TabsTrigger value="caste" className="text-xs">
+                  <TabsTrigger
+                    value="caste"
+                    className="text-[10px] sm:text-xs px-2 sm:px-3 whitespace-nowrap"
+                  >
                     Caste
                   </TabsTrigger>
-                  <TabsTrigger value="economic" className="text-xs">
+                  <TabsTrigger
+                    value="economic"
+                    className="text-[10px] sm:text-xs px-2 sm:px-3 whitespace-nowrap"
+                  >
                     Economic
                   </TabsTrigger>
                 </TabsList>
@@ -616,68 +664,91 @@ export default function DemographicsPage() {
               {/* Population Tab */}
               <TabsContent value="population" className="mt-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-10">#</TableHead>
-                        <TableHead>Ward</TableHead>
-                        <TableHead>Zone</TableHead>
-                        <TableHead className="text-right">Population</TableHead>
-                        <TableHead className="text-right">Male</TableHead>
-                        <TableHead className="text-right">Female</TableHead>
-                        <TableHead className="text-right">Households</TableHead>
-                        <TableHead className="text-right">Voters</TableHead>
-                        <TableHead className="text-right">Literacy</TableHead>
-                        <TableHead className="text-right">% of Total</TableHead>
+                        <TableHead className="w-10 text-[10px] sm:text-xs">
+                          #
+                        </TableHead>
+                        <TableHead className="text-[10px] sm:text-xs">
+                          Ward
+                        </TableHead>
+                        <TableHead className="text-[10px] sm:text-xs">
+                          Zone
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Population
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Male
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Female
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Households
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Voters
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Literacy
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          % of Total
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredWards.map((w: any) => (
                         <TableRow key={w.wardId} className="hover:bg-muted/50">
-                          <TableCell className="font-mono text-muted-foreground text-xs">
+                          <TableCell className="font-mono text-muted-foreground text-[10px] sm:text-xs">
                             {w.wardNumber}
                           </TableCell>
                           <TableCell>
                             <Link to={`/wards/${w.wardId}`}>
-                              <span className="font-medium text-primary hover:underline cursor-pointer text-sm">
+                              <span className="font-medium text-primary hover:underline cursor-pointer text-xs sm:text-sm">
                                 {w.wardName}
                               </span>
                             </Link>
                           </TableCell>
                           <TableCell>
                             {w.zone && (
-                              <Badge variant="outline" className="text-[10px]">
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] sm:text-[10px]"
+                              >
                                 {w.zone}
                               </Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {w.totalPopulation.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm text-blue-600">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm text-blue-600">
                             {w.maleCount.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm text-pink-600">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm text-pink-600">
                             {w.femaleCount.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {w.totalHouseholds.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {w.totalVoters.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {w.literacyRate
                               ? `${w.literacyRate.toFixed(1)}%`
                               : "—"}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-1.5 sm:gap-2">
                               <Progress
                                 value={(w.totalPopulation / pop) * 100}
-                                className="h-1.5 w-16"
+                                className="h-1 sm:h-1.5 w-10 sm:w-16"
                               />
-                              <span className="font-mono text-xs w-10 text-right">
+                              <span className="font-mono text-[10px] sm:text-xs w-8 sm:w-10 text-right">
                                 {((w.totalPopulation / pop) * 100).toFixed(1)}%
                               </span>
                             </div>
@@ -688,7 +759,7 @@ export default function DemographicsPage() {
                         <TableRow>
                           <TableCell
                             colSpan={10}
-                            className="text-center py-8 text-muted-foreground"
+                            className="text-center py-8 text-muted-foreground text-sm"
                           >
                             No wards found.
                           </TableCell>
@@ -697,29 +768,31 @@ export default function DemographicsPage() {
                       {filteredWards.length > 0 && (
                         <TableRow className="font-semibold bg-muted/50">
                           <TableCell />
-                          <TableCell>Total</TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            Total
+                          </TableCell>
                           <TableCell />
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {totals.totalPopulation.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-blue-600">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm text-blue-600">
                             {totals.maleCount.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-pink-600">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm text-pink-600">
                             {totals.femaleCount.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {totals.totalHouseholds.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {totals.totalVoters.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="text-right font-mono text-xs sm:text-sm">
                             {totals.literacyRate
                               ? `${totals.literacyRate.toFixed(1)}%`
                               : "—"}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs">
+                          <TableCell className="text-right font-mono text-[10px] sm:text-xs">
                             100%
                           </TableCell>
                         </TableRow>
@@ -732,18 +805,36 @@ export default function DemographicsPage() {
               {/* Age Tab */}
               <TabsContent value="age" className="mt-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[650px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-10">#</TableHead>
-                        <TableHead>Ward</TableHead>
-                        <TableHead className="text-right">0-6</TableHead>
-                        <TableHead className="text-right">7-18</TableHead>
-                        <TableHead className="text-right">19-35</TableHead>
-                        <TableHead className="text-right">36-60</TableHead>
-                        <TableHead className="text-right">60+</TableHead>
-                        <TableHead className="text-right">Youth %</TableHead>
-                        <TableHead className="text-right">Senior %</TableHead>
+                        <TableHead className="w-10 text-[10px] sm:text-xs">
+                          #
+                        </TableHead>
+                        <TableHead className="text-[10px] sm:text-xs">
+                          Ward
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          0-6
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          7-18
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          19-35
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          36-60
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          60+
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Youth %
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Senior %
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -751,31 +842,31 @@ export default function DemographicsPage() {
                         const wPop = w.totalPopulation || 1;
                         return (
                           <TableRow key={w.wardId}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">
+                            <TableCell className="font-mono text-[10px] sm:text-xs text-muted-foreground">
                               {w.wardNumber}
                             </TableCell>
-                            <TableCell className="font-medium text-sm">
+                            <TableCell className="font-medium text-xs sm:text-sm">
                               {w.wardName}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.age0to6.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.age7to18.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.age19to35.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.age36to60.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.age60plus.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm text-green-600">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm text-green-600">
                               {((w.age19to35 / wPop) * 100).toFixed(1)}%
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm text-purple-600">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm text-purple-600">
                               {((w.age60plus / wPop) * 100).toFixed(1)}%
                             </TableCell>
                           </TableRow>
@@ -789,19 +880,39 @@ export default function DemographicsPage() {
               {/* Religion Tab */}
               <TabsContent value="religion" className="mt-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[750px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-10">#</TableHead>
-                        <TableHead>Ward</TableHead>
-                        <TableHead className="text-right">Hindu</TableHead>
-                        <TableHead className="text-right">Muslim</TableHead>
-                        <TableHead className="text-right">Sikh</TableHead>
-                        <TableHead className="text-right">Christian</TableHead>
-                        <TableHead className="text-right">Buddhist</TableHead>
-                        <TableHead className="text-right">Jain</TableHead>
-                        <TableHead className="text-right">Other</TableHead>
-                        <TableHead className="text-right">Majority</TableHead>
+                        <TableHead className="w-10 text-[10px] sm:text-xs">
+                          #
+                        </TableHead>
+                        <TableHead className="text-[10px] sm:text-xs">
+                          Ward
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Hindu
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Muslim
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Sikh
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Christian
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Buddhist
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Jain
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Other
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Majority
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -820,37 +931,37 @@ export default function DemographicsPage() {
                         const wPop = w.totalPopulation || 1;
                         return (
                           <TableRow key={w.wardId}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">
+                            <TableCell className="font-mono text-[10px] sm:text-xs text-muted-foreground">
                               {w.wardNumber}
                             </TableCell>
-                            <TableCell className="font-medium text-sm">
+                            <TableCell className="font-medium text-xs sm:text-sm">
                               {w.wardName}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.hinduCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.muslimCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.sikhCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.christianCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.buddhistCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.jainCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.otherReligionCount.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-right">
                               <Badge
                                 variant="secondary"
-                                className="text-[10px]"
+                                className="text-[9px] sm:text-[10px]"
                               >
                                 {majority.name}{" "}
                                 {((majority.val / wPop) * 100).toFixed(0)}%
@@ -867,17 +978,33 @@ export default function DemographicsPage() {
               {/* Caste Tab */}
               <TabsContent value="caste" className="mt-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-10">#</TableHead>
-                        <TableHead>Ward</TableHead>
-                        <TableHead className="text-right">General</TableHead>
-                        <TableHead className="text-right">OBC</TableHead>
-                        <TableHead className="text-right">SC</TableHead>
-                        <TableHead className="text-right">ST</TableHead>
-                        <TableHead className="text-right">Minority</TableHead>
-                        <TableHead className="text-right">SC/ST %</TableHead>
+                        <TableHead className="w-10 text-[10px] sm:text-xs">
+                          #
+                        </TableHead>
+                        <TableHead className="text-[10px] sm:text-xs">
+                          Ward
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          General
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          OBC
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          SC
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          ST
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Minority
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          SC/ST %
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -885,25 +1012,25 @@ export default function DemographicsPage() {
                         const wPop = w.totalPopulation || 1;
                         return (
                           <TableRow key={w.wardId}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">
+                            <TableCell className="font-mono text-[10px] sm:text-xs text-muted-foreground">
                               {w.wardNumber}
                             </TableCell>
-                            <TableCell className="font-medium text-sm">
+                            <TableCell className="font-medium text-xs sm:text-sm">
                               {w.wardName}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.generalCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.obcCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.scCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.stCount.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.minorityCount.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-right">
@@ -913,7 +1040,7 @@ export default function DemographicsPage() {
                                     ? "default"
                                     : "secondary"
                                 }
-                                className="text-[10px]"
+                                className="text-[9px] sm:text-[10px]"
                               >
                                 {(
                                   ((w.scCount + w.stCount) / wPop) *
@@ -933,19 +1060,39 @@ export default function DemographicsPage() {
               {/* Economic Tab */}
               <TabsContent value="economic" className="mt-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-10">#</TableHead>
-                        <TableHead>Ward</TableHead>
-                        <TableHead className="text-right">Households</TableHead>
-                        <TableHead className="text-right">BPL</TableHead>
-                        <TableHead className="text-right">APL</TableHead>
-                        <TableHead className="text-right">BPL %</TableHead>
-                        <TableHead className="text-right">Literacy</TableHead>
-                        <TableHead className="text-right">M Voters</TableHead>
-                        <TableHead className="text-right">F Voters</TableHead>
-                        <TableHead className="text-right">Voter %</TableHead>
+                        <TableHead className="w-10 text-[10px] sm:text-xs">
+                          #
+                        </TableHead>
+                        <TableHead className="text-[10px] sm:text-xs">
+                          Ward
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Households
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          BPL
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          APL
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          BPL %
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Literacy
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          M Voters
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          F Voters
+                        </TableHead>
+                        <TableHead className="text-right text-[10px] sm:text-xs">
+                          Voter %
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -955,46 +1102,46 @@ export default function DemographicsPage() {
                         const bplPct = (w.bplHouseholds / hh) * 100;
                         return (
                           <TableRow key={w.wardId}>
-                            <TableCell className="font-mono text-xs text-muted-foreground">
+                            <TableCell className="font-mono text-[10px] sm:text-xs text-muted-foreground">
                               {w.wardNumber}
                             </TableCell>
-                            <TableCell className="font-medium text-sm">
+                            <TableCell className="font-medium text-xs sm:text-sm">
                               {w.wardName}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.totalHouseholds.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm text-red-600">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm text-red-600">
                               {w.bplHouseholds.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm text-green-600">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm text-green-600">
                               {w.aplHouseholds.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <Progress
                                   value={bplPct}
-                                  className="h-1.5 w-12 [&>div]:bg-red-500"
+                                  className="h-1 sm:h-1.5 w-8 sm:w-12 [&>div]:bg-red-500"
                                 />
                                 <span
-                                  className={`font-mono text-xs ${bplPct > 20 ? "text-red-600 font-bold" : ""}`}
+                                  className={`font-mono text-[10px] sm:text-xs ${bplPct > 20 ? "text-red-600 font-bold" : ""}`}
                                 >
                                   {bplPct.toFixed(1)}%
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {w.literacyRate
                                 ? `${w.literacyRate.toFixed(1)}%`
                                 : "—"}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm text-blue-600">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm text-blue-600">
                               {w.maleVoters.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm text-pink-600">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm text-pink-600">
                               {w.femaleVoters.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="text-right font-mono text-xs sm:text-sm">
                               {((w.totalVoters / wPop) * 100).toFixed(1)}%
                             </TableCell>
                           </TableRow>

@@ -13,6 +13,8 @@ import {
 import { createDepartment } from "./create.js";
 import { updateDepartment, toggleDepartment } from "./update.js";
 import { deleteDepartment } from "./delete.js";
+import { bulkCreateDepartments } from "./bulk.js";
+import { exportDepartments } from "./export.js";
 
 const router = Router();
 
@@ -22,6 +24,16 @@ router.get(
   "/stats",
   requirePermission("departments", "read"),
   getDepartmentStats,
+);
+router.get(
+  "/export",
+  requirePermission("departments", "read"),
+  exportDepartments,
+);
+router.post(
+  "/bulk",
+  requirePermission("departments", "create"),
+  bulkCreateDepartments,
 );
 
 router.get(

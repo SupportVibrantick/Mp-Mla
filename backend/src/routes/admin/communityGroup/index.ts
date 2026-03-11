@@ -13,6 +13,8 @@ import {
 } from "@/schemas/admin/communityGroup/index.js";
 import { createCommunityGroup } from "./create.js";
 import { toggleCommmunity, updateCommunityGroup } from "./update.js";
+import { bulkCreateCommunityGroups } from "./bulk.js";
+import { exportCommunityGroups } from "./export.js";
 
 const router = Router();
 
@@ -31,6 +33,11 @@ router.get(
   requirePermission("community_groups", "read"),
   getOneCommunityGroup,
 );
+router.get(
+  "/export/all",
+  requirePermission("community_groups", "read"),
+  exportCommunityGroups,
+);
 
 // create Community Group
 router.post(
@@ -38,6 +45,11 @@ router.post(
   requirePermission("community_groups", "create"),
   validate(createSchema),
   createCommunityGroup,
+);
+router.post(
+  "/bulk",
+  requirePermission("community_groups", "create"),
+  bulkCreateCommunityGroups,
 );
 
 // update Community Group

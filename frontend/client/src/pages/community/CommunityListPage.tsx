@@ -5,6 +5,7 @@ import {
   useCommunityGroupStats,
   getTypeInfo,
   COMMUNITY_TYPES,
+  useBulkCreateCommunityGroups,
 } from "@/hooks/useCommunityGroups";
 import { useWards } from "@/hooks/useWards";
 import { PermissionGate } from "@/components/auth/PermissionGate";
@@ -14,6 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import ExcelJS from "exceljs";
+import api from "@/lib/api";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
+import { toast } from "sonner";
+import * as xlsx from "xlsx";
 import {
   Select,
   SelectContent,
@@ -43,14 +49,20 @@ import {
   UserX,
   MapPin,
   TrendingUp,
+  FileDown,
+  FileUp,
 } from "lucide-react";
-                                       
+
 export default function CommunityListPage() {
   const [search, setSearch] = useState("");
   const [wardFilter, setWardFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [activeFilter, setActiveFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const { mutateAsync: bulkCreateGroups } = useBulkCreateCommunityGroups();
 
   const queryParams = useMemo(() => {
     const p: Record<string, any> = { page, limit: 20 };
@@ -80,6 +92,102 @@ export default function CommunityListPage() {
     setPage(1);
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await api.get("/admin/community-groups/export/all");
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Community Groups");
+        xlsx.writeFile(wb, "community_groups_export.xlsx");
+        toast.success("Community groups exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export community groups data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const downloadSampleTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Community Groups");
+
+    const columns = [
+      { header: "name", key: "name", width: 30 },
+      { header: "type", key: "type", width: 20 },
+      { header: "wardNumber", key: "wardNumber", width: 15 },
+      { header: "address", key: "address", width: 30 },
+      { header: "description", key: "description", width: 40 },
+      { header: "memberCount", key: "memberCount", width: 15 },
+      { header: "maleMembers", key: "maleMembers", width: 15 },
+      { header: "femaleMembers", key: "femaleMembers", width: 15 },
+      { header: "headName", key: "headName", width: 25 },
+      { header: "headPhone", key: "headPhone", width: 20 },
+      { header: "headEmail", key: "headEmail", width: 30 },
+      { header: "headDesignation", key: "headDesignation", width: 20 },
+      { header: "registrationNo", key: "registrationNo", width: 20 },
+      { header: "isActive", key: "isActive", width: 15 },
+    ];
+
+    worksheet.columns = columns;
+
+    worksheet.addRow({
+      name: "Sample Market Association",
+      type: "MARKET",
+      wardNumber: 1,
+      address: "Main Market Area",
+      description: "Association of local traders",
+      memberCount: 150,
+      maleMembers: 100,
+      femaleMembers: 50,
+      headName: "John Trader",
+      headPhone: "9876543210",
+      headEmail: "head@market.org",
+      headDesignation: "President",
+      registrationNo: "MK/2023/001",
+      isActive: "TRUE",
+    });
+
+    const types = COMMUNITY_TYPES.map((t) => t.value);
+
+    for (let i = 2; i <= 51; i++) {
+      worksheet.getCell(`B${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`"${types.join(",")}"`],
+      };
+      worksheet.getCell(`N${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"TRUE,FALSE"'],
+      };
+    }
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "community_groups_template.xlsx";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <MainLayout title="Community Groups">
       <div className="space-y-6">
@@ -94,17 +202,68 @@ export default function CommunityListPage() {
               Manage RWAs, clubs, associations, and community organizations
             </p>
           </div>
-          <PermissionGate module="community_groups" action="create">
-            <Link to="/community/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Add Group
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+            <PermissionGate module="community_groups" action="read">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto justify-center"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <FileDown className="h-4 w-4" />
+                {isExporting ? "Exporting..." : "Export"}
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+
+            <PermissionGate module="community_groups" action="create">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto justify-center"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" />
+                Bulk Upload
+              </Button>
+            </PermissionGate>
+
+            <PermissionGate module="community_groups" action="create">
+              <Link to="/community/new" className="w-full sm:w-auto">
+                <Button className="gap-2 w-full sm:w-auto justify-center">
+                  <Plus className="h-4 w-4" />
+                  Add Group
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
         </div>
 
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={bulkCreateGroups}
+          title="Import Community Groups"
+          description={
+            <div>
+              <p>
+                Upload an Excel or CSV file to import multiple community groups.
+                Records are upserted by Name and Ward.
+              </p>
+              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
+                <p>
+                  <strong>Valid Types:</strong>{" "}
+                  {COMMUNITY_TYPES.map((t) => t.value).join(", ")}
+                </p>
+                <p>
+                  <strong>Is Active:</strong> TRUE, FALSE
+                </p>
+              </div>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-20" />
