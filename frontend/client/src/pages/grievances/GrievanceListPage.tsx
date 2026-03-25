@@ -125,12 +125,12 @@ export default function GrievanceListPage() {
       if (res.success && res.data) {
         const worksheet = xlsx.utils.json_to_sheet(res.data);
         const workbook = xlsx.utils.book_new();
-        xlsx.utils.book_append_sheet(workbook, worksheet, "Grievances");
+        xlsx.utils.book_append_sheet(workbook, worksheet, "Public Requests");
         xlsx.writeFile(
           workbook,
-          `Grievances_${new Date().toISOString().split("T")[0]}.xlsx`,
+          `PublicRequests_${new Date().toISOString().split("T")[0]}.xlsx`,
         );
-        toast.success("Grievances exported successfully");
+        toast.success("Public requests exported successfully");
       }
     } catch (error) {
       console.error("Export error:", error);
@@ -162,7 +162,7 @@ export default function GrievanceListPage() {
     const worksheet = xlsx.utils.json_to_sheet(template);
     const workbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(workbook, worksheet, "Template");
-    xlsx.writeFile(workbook, "Grievances_Import_Template.xlsx");
+    xlsx.writeFile(workbook, "PublicRequests_Import_Template.xlsx");
   };
 
   const deptMap = useMemo(() => {
@@ -184,16 +184,16 @@ export default function GrievanceListPage() {
   };
 
   return (
-    <MainLayout title="Grievances">
+    <MainLayout title="Public Requests">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <MessageSquare className="h-7 w-7 text-primary" /> Grievances
+              <MessageSquare className="h-7 w-7 text-primary" /> Public Requests
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Track and resolve citizen complaints
+              Track and resolve citizen requests
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -222,9 +222,9 @@ export default function GrievanceListPage() {
             </Button>
 
             <PermissionGate module="grievances" action="create">
-              <Link to="/grievances/new">
+              <Link to="/public-requests/new">
                 <Button className="gap-2">
-                  <Plus className="h-4 w-4" /> New Grievance
+                  <Plus className="h-4 w-4" /> New Request
                 </Button>
               </Link>
             </PermissionGate>
@@ -518,7 +518,7 @@ export default function GrievanceListPage() {
                         className="text-center py-12 text-muted-foreground"
                       >
                         <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p>No grievances found.</p>
+                        <p>No requests found.</p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -534,7 +534,7 @@ export default function GrievanceListPage() {
                           <TableCell>
                             <span
                               onClick={() =>
-                                navigate("/grievances/detail", {
+                                navigate("/public-requests/detail", {
                                   state: { id: g.id },
                                 })
                               }
@@ -546,7 +546,7 @@ export default function GrievanceListPage() {
                           <TableCell>
                             <p
                               onClick={() =>
-                                navigate("/grievances/detail", {
+                                navigate("/public-requests/detail", {
                                   state: { id: g.id },
                                 })
                               }
@@ -601,7 +601,7 @@ export default function GrievanceListPage() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() =>
-                                navigate("/grievances/detail", {
+                                navigate("/public-requests/detail", {
                                   state: { id: g.id },
                                 })
                               }
@@ -654,10 +654,10 @@ export default function GrievanceListPage() {
           onUpload={async (data) => {
             await bulkImport(data);
           }}
-          title="Bulk Import Grievances"
-          description="Download the template to see the required format. All grievances will be imported with either a new ticket number or an updated one if ticketNumber is provided."
+          title="Bulk Import Public Requests"
+          description="Download the template to see the required format. All requests will be imported with either a new ticket number or an updated one if ticketNumber is provided."
           onDownloadSample={handleDownloadSample}
-          sampleFileName="Grievances_Import_Template.xlsx"
+          sampleFileName="PublicRequests_Import_Template.xlsx"
         />
       </div>
     </MainLayout>

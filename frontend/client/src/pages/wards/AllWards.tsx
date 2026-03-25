@@ -684,7 +684,7 @@ export default function WardsPage() {
                             <div className="flex items-center justify-center gap-3">
                               <div
                                 className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 group cursor-help"
-                                title="Active Grievances"
+                                title="Active Public Requests"
                               >
                                 <MessageSquare className="h-3 w-3" />
                                 <span className="text-xs font-mono font-bold">

@@ -258,7 +258,7 @@ export default function Dashboard() {
             </Card>
           </Link>
 
-          <Link to="/grievances?status=OPEN">
+          <Link to="/public-requests?status=OPEN">
             <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -273,10 +273,10 @@ export default function Dashboard() {
                   {s.openGrievances}
                 </p>
                 <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                  Open Grievances
+                  Open Requests
                 </p>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">
-                  of {s.totalGrievances} total
+                  of {s.totalGrievances} total requests
                 </p>
               </CardContent>
             </Card>
@@ -385,13 +385,13 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm sm:text-base">
-                    Grievance Trend
+                    Public Request Trend
                   </CardTitle>
                   <CardDescription className="text-[11px] sm:text-sm">
                     Created vs Resolved (6 months)
                   </CardDescription>
                 </div>
-                <Link to="/grievances">
+                <Link to="/public-requests">
                   <Button variant="ghost" size="sm" className="text-xs">
                     View All →
                   </Button>
@@ -607,19 +607,19 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* ═══ Row 4: Recent Grievances + Projects ════ */}
+        {/* ═══ Row 4: Recent Public Requests + Projects ════ */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           <Card className="xl:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between pb-3 px-3 sm:px-6">
               <div>
                 <CardTitle className="text-sm sm:text-base">
-                  Recent Grievances
+                  Recent Public Requests
                 </CardTitle>
                 <CardDescription className="text-[11px] sm:text-sm">
-                  Latest citizen complaints
+                  Latest citizen requests
                 </CardDescription>
               </div>
-              <Link to="/grievances">
+              <Link to="/public-requests">
                 <Button variant="outline" size="sm" className="text-xs">
                   View All
                 </Button>
@@ -633,7 +633,7 @@ export default function Dashboard() {
                       <th className="px-3 sm:px-4 py-2 text-left">Ticket</th>
                       <th className="px-3 sm:px-4 py-2 text-left">Subject</th>
                       <th className="px-3 sm:px-4 py-2 text-left hidden sm:table-cell">
-                        Complainant
+                        Requestor
                       </th>
                       <th className="px-3 sm:px-4 py-2 text-left">Priority</th>
                       <th className="px-3 sm:px-4 py-2 text-left">Status</th>
@@ -655,7 +655,7 @@ export default function Dashboard() {
                           <td className="px-3 sm:px-4 py-2">
                             <span
                               onClick={() =>
-                                navigate("/grievances/detail", {
+                                navigate("/public-requests/detail", {
                                   state: { id: g.id },
                                 })
                               }
@@ -699,7 +699,7 @@ export default function Dashboard() {
                               size="icon"
                               className="h-7 w-7"
                               onClick={() =>
-                                navigate("/grievances/detail", {
+                                navigate("/public-requests/detail", {
                                   state: { id: g.id },
                                 })
                               }
@@ -716,7 +716,7 @@ export default function Dashboard() {
                           colSpan={7}
                           className="px-4 py-8 text-center text-muted-foreground"
                         >
-                          No grievances yet
+                          No requests yet
                         </td>
                       </tr>
                     )}
@@ -797,7 +797,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Card className="md:col-span-2 lg:col-span-2">
             <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-sm">Grievance Priority</CardTitle>
+              <CardTitle className="text-sm">Public Request Priority</CardTitle>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
               <div className="grid grid-cols-4 gap-2 sm:gap-3">
@@ -811,7 +811,7 @@ export default function Dashboard() {
                   return (
                     <Link
                       key={p.priority}
-                      to={`/grievances?priority=${p.priority}`}
+                      to={`/public-requests?priority=${p.priority}`}
                     >
                       <div className="text-center p-2 sm:p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
                         <div

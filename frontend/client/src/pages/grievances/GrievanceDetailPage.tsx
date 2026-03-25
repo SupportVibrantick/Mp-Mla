@@ -144,7 +144,7 @@ export default function GrievanceDetailPage() {
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <MessageSquare className="h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Not found</p>
-          <Link to="/grievances">
+          <Link to="/public-requests">
             <Button variant="outline">Back</Button>
           </Link>
         </div>
@@ -212,7 +212,7 @@ export default function GrievanceDetailPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <Link to="/grievances">
+            <Link to="/public-requests">
               <Button variant="ghost" size="icon" className="h-9 w-9 mt-1">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -274,7 +274,7 @@ export default function GrievanceDetailPage() {
                 <UserPlus className="h-3.5 w-3.5" />
                 Assign
               </Button>
-              <Link to="/grievances/edit" state={{ id: g.id }}>
+              <Link to="/public-requests/edit" state={{ id: g.id }}>
                 <Button variant="outline" size="sm" className="gap-1">
                   <Edit className="h-3.5 w-3.5" />
                   Edit
@@ -298,7 +298,7 @@ export default function GrievanceDetailPage() {
                       Delete {g.ticketNumber}?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This permanently removes this grievance.
+                      This permanently removes this request.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -307,7 +307,7 @@ export default function GrievanceDetailPage() {
                       className="bg-destructive"
                       onClick={async () => {
                         await deleteMut.mutateAsync(g.id);
-                        navigate("/grievances");
+                        navigate("/public-requests");
                       }}
                     >
                       Delete
@@ -489,7 +489,7 @@ export default function GrievanceDetailPage() {
           <div className="space-y-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Complainant</CardTitle>
+                <CardTitle className="text-sm">Requestor</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
@@ -733,7 +733,7 @@ export default function GrievanceDetailPage() {
       <Dialog open={assignDlg} onOpenChange={setAssignDlg}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Grievance</DialogTitle>
+            <DialogTitle>Assign Request</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">

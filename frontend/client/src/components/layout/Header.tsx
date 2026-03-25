@@ -35,7 +35,7 @@ export function Header({ title }: { title: string }) {
         {/* <div className="relative w-64 hidden md:block">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search grievances, projects..."
+            placeholder="Search public requests, projects..."
             className="pl-9 h-9 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:bg-background transition-all"
           />
         </div> */}

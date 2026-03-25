@@ -356,7 +356,14 @@ export default function WardFormPage() {
       totalBirths: d.totalBirths || 0,
       totalDeaths: d.totalDeaths || 0,
       newVotersCount: d.newVotersCount || 0,
-
+      // Religion
+      hinduCount: d.hinduCount || 0,
+      muslimCount: d.muslimCount || 0,
+      sikhCount: d.sikhCount || 0,
+      christianCount: d.christianCount || 0,
+      buddhistCount: d.buddhistCount || 0,
+      jainCount: d.jainCount || 0,
+      otherReligionCount: d.otherReligionCount || 0,
       // Source
       source: d.source || "",
       surveyDate: d.surveyDate ? d.surveyDate.split("T")[0] : "",

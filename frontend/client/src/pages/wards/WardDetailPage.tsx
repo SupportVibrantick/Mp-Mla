@@ -265,7 +265,7 @@ export default function WardDetailPage() {
               <p className="text-xl font-bold">
                 {ward._count?.grievances || 0}
               </p>
-              <p className="text-xs text-muted-foreground">Grievances</p>
+              <p className="text-xs text-muted-foreground">Public Requests</p>
             </CardContent>
           </Card>
           <Card>

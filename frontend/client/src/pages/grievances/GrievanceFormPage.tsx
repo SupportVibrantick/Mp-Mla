@@ -116,10 +116,10 @@ export default function GrievanceFormPage() {
 
       if (isEdit && id) {
         await updateMut.mutateAsync({ id, data: payload });
-        navigate("/grievances/detail", { state: { id } });
+        navigate("/public-requests/detail", { state: { id } });
       } else {
         const res = await createMut.mutateAsync(payload);
-        navigate("/grievances/detail", { state: { id: res.data.id } });
+        navigate("/public-requests/detail", { state: { id: res.data.id } });
       }
     } catch {
       /* handled */
@@ -129,7 +129,7 @@ export default function GrievanceFormPage() {
   const saving = createMut.isPending || updateMut.isPending;
   if (isEdit && isLoading)
     return (
-      <MainLayout title="Edit Grievance">
+      <MainLayout title="Edit Public Request">
         <div className="max-w-3xl mx-auto space-y-6">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-80" />
@@ -138,13 +138,13 @@ export default function GrievanceFormPage() {
     );
 
   return (
-    <MainLayout title={isEdit ? "Edit Grievance" : "New Grievance"}>
+    <MainLayout title={isEdit ? "Edit Public Request" : "New Public Request"}>
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-6 max-w-3xl mx-auto"
       >
         <div className="flex items-center gap-3">
-          <Link to="/grievances">
+          <Link to="/public-requests">
             <Button
               type="button"
               variant="ghost"
@@ -157,17 +157,17 @@ export default function GrievanceFormPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <MessageSquare className="h-7 w-7 text-primary" />
-              {isEdit ? `Edit ${g?.ticketNumber}` : "New Grievance"}
+              {isEdit ? `Edit ${g?.ticketNumber}` : "New Public Request"}
             </h1>
           </div>
         </div>
 
-        {/* Complainant */}
+        {/* Requestor */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
-              Complainant
+              Requestor
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -223,7 +223,7 @@ export default function GrievanceFormPage() {
         {/* Details */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Grievance Details</CardTitle>
+            <CardTitle className="text-base">Request Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -464,7 +464,7 @@ export default function GrievanceFormPage() {
         </Card>
 
         <div className="flex items-center justify-end gap-3 pb-6">
-          <Link to="/grievances">
+          <Link to="/public-requests">
             <Button type="button" variant="outline">
               Cancel
             </Button>
@@ -482,7 +482,7 @@ export default function GrievanceFormPage() {
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                {isEdit ? "Update" : "Submit"} Grievance
+                {isEdit ? "Update" : "Submit"} Request
               </>
             )}
           </Button>

@@ -82,22 +82,22 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/grievances">
+      <Route path="/public-requests">
         <ProtectedRoute module="grievances" action="read">
           <GrievanceListPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/grievances/new">
+      <Route path="/public-requests/new">
         <ProtectedRoute module="grievances" action="create">
           <GrievanceFormPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/grievances/edit">
+      <Route path="/public-requests/edit">
         <ProtectedRoute module="grievances" action="update">
           <GrievanceFormPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/grievances/detail">
+      <Route path="/public-requests/detail">
         <ProtectedRoute module="grievances" action="read">
           <GrievanceDetailPage />
         </ProtectedRoute>

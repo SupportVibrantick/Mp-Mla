@@ -92,9 +92,9 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       module: "leaders",
     },
     {
-      label: "Grievances",
+      label: "Public Requests",
       icon: MessageSquareWarning,
-      href: "/grievances",
+      href: "/public-requests",
       module: "grievances",
     },
     {

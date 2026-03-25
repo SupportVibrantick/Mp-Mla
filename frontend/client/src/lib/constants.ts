@@ -19,8 +19,8 @@ export const NAV_ITEMS = [
     roles: ["super_admin", "mla", "staff"],
   },
   {
-    title: "Grievances",
-    url: "/grievances",
+    title: "Public Requests",
+    url: "/public-requests",
     icon: MessageSquareWarning,
     roles: ["super_admin", "mla", "staff"],
   },

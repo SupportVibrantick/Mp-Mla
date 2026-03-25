@@ -112,7 +112,7 @@ type DateRange =
 const REPORTS = [
   {
     id: "grievance" as const,
-    label: "Grievance",
+    label: "Public Requests",
     icon: MessageSquare,
     desc: "Status, category, priority breakdown",
   },
@@ -662,7 +662,7 @@ export default function ReportsPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">
-                      Grievance Details ({d.rows.length})
+                      Public Request Details ({d.rows.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -901,7 +901,7 @@ export default function ReportsPage() {
                           <Bar
                             dataKey="grievances"
                             fill="#ef4444"
-                            name="Grievances"
+                            name="Public Requests"
                           />
                           <Bar
                             dataKey="projects"
@@ -929,7 +929,7 @@ export default function ReportsPage() {
                           </TableHead>
                           <TableHead>Type</TableHead>
                           <TableHead className="text-center">
-                            Grievances
+                            Public Requests
                           </TableHead>
                           <TableHead className="text-center">
                             Projects
@@ -1362,7 +1362,7 @@ export default function ReportsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                   {[
                     {
-                      label: "Grievances (Month)",
+                      label: "Public Requests (Month)",
                       value: s.grievancesThisMonth,
                     },
                     { label: "Resolved (Month)", value: s.resolvedThisMonth },
@@ -1387,7 +1387,7 @@ export default function ReportsPage() {
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm">
-                        Grievance Trend (6 Months)
+                        Public Request Trend (6 Months)
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
