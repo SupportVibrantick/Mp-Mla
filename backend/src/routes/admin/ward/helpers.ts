@@ -96,6 +96,9 @@ export async function recomputeWardDemographics(wardId: string) {
     totalVoters: sum("totalVoters"),
     maleVoters: sum("maleVoters"),
     femaleVoters: sum("femaleVoters"),
+    newVotersCount: sum("newVotersCount"),
+    totalBirths: sum("totalBirths"),
+    totalDeaths: sum("totalDeaths"),
   };
 
   // Weighted literacy
@@ -186,6 +189,9 @@ export function buildDemographicsData(
       totalVoters: userInput.totalVoters ?? 0,
       maleVoters: userInput.maleVoters ?? 0,
       femaleVoters: userInput.femaleVoters ?? 0,
+      newVotersCount: userInput.newVotersCount ?? 0,
+      totalBirths: userInput.totalBirths ?? 0,
+      totalDeaths: userInput.totalDeaths ?? 0,
       // Meta
       source: userInput.source ?? null,
       notes: userInput.notes ?? null,
@@ -230,6 +236,9 @@ export function buildDemographicsData(
     totalVoters: Math.round(totalPop * 0.55),
     maleVoters: Math.round(totalMale * 0.55),
     femaleVoters: Math.round(totalFemale * 0.55),
+    newVotersCount: Math.round(totalPop * 0.02),
+    totalBirths: Math.round(totalPop * 0.018),
+    totalDeaths: Math.round(totalPop * 0.007),
     source: "Auto-estimated",
     surveyDate: new Date(),
   };
@@ -275,6 +284,9 @@ export const demographicsZodSchema = z
     totalVoters: z.number().int().min(0).default(0),
     maleVoters: z.number().int().min(0).default(0),
     femaleVoters: z.number().int().min(0).default(0),
+    newVotersCount: z.number().int().min(0).default(0),
+    totalBirths: z.number().int().min(0).default(0),
+    totalDeaths: z.number().int().min(0).default(0),
     // Meta
     source: z.string().optional(),
     notes: z.string().optional(),

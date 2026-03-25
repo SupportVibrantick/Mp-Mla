@@ -223,17 +223,21 @@ export default function Dashboard() {
       color: PROJECT_STATUS[p.status]?.color || "#6b7280",
     }));
 
-  const fundUtilPct =
-    s.fundTotalAllocated > 0
-      ? Math.round((s.fundTotalUtilized / s.fundTotalAllocated) * 100)
-      : 0;
-  const fundRelPct =
-    s.fundTotalAllocated > 0
-      ? Math.round((s.fundTotalReleased / s.fundTotalAllocated) * 100)
-      : 0;
+  const institutionPieData = (d.institutions?.byCategory || []).map(
+    (c: any, i: number) => ({
+      name: c.category.replace("_", " "),
+      value: c.count,
+      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+    }),
+  );
+
+  const communityTypeData = (d.communityGroups?.byType || []).map((t: any) => ({
+    name: t.type.replace("_", " "),
+    count: t.count,
+  }));
 
   return (
-    <MainLayout title="Dashboard">
+    <MainLayout title="Dashboard ">
       <div className="space-y-4 sm:space-y-6">
         {/* ═══ Row 1: Key Stat Cards ══════════════════ */}
         <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -297,19 +301,22 @@ export default function Dashboard() {
             </Card>
           </Link>
 
-          <Link to="/funds">
-            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+          <Link to="/wards">
+            <Card className="h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <IndianRupee className="h-4 w-4 text-green-500" />
+                  <Users className="h-3 w-4 text-green-500" />
                 </div>
                 <p className="text-xl sm:text-2xl font-bold">
-                  {fmt(s.fundTotalUtilized)}
+                  {s.totalVoters.toLocaleString()}
                 </p>
                 <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                  Fund Utilized ({s.financialYear})
+                  Total Registered Voters
                 </p>
-                <Progress value={fundUtilPct} className="h-1 mt-2.5" />
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground flex gap-2 mt-1">
+                  <span>M: {s.maleVoters.toLocaleString()}</span>
+                  <span>F: {s.femaleVoters.toLocaleString()}</span>
+                </p>
               </CardContent>
             </Card>
           </Link>
@@ -317,82 +324,59 @@ export default function Dashboard() {
 
         <BirthdayWidget />
 
-        {/* ═══ Row 2: Fund Flow + Grievance Trend ═════ */}
+        {/* ═══ Row 2: Institutions Breakdown + Grievance Trend ═════ */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
           <Card className="lg:col-span-2">
             <CardHeader className="pb-2 px-3 sm:px-6">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm sm:text-base">
-                    Fund Flow
+                    Institutions
                   </CardTitle>
-                  <CardDescription>FY {s.financialYear}</CardDescription>
+                  <CardDescription>By Category</CardDescription>
                 </div>
-                <Link to="/funds">
+                <Link to="/institutions">
                   <Button variant="ghost" size="sm" className="text-xs">
-                    Details →
+                    View All →
                   </Button>
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 px-3 sm:px-6">
-              {[
-                {
-                  label: "Allocated",
-                  value: s.fundTotalAllocated,
-                  color: "#3b82f6",
-                  pct: 100,
-                },
-                {
-                  label: "Released",
-                  value: s.fundTotalReleased,
-                  color: "#f59e0b",
-                  pct: fundRelPct,
-                },
-                {
-                  label: "Utilized",
-                  value: s.fundTotalUtilized,
-                  color: "#22c55e",
-                  pct: fundUtilPct,
-                },
-              ].map((b) => (
-                <div key={b.label}>
-                  <div className="flex justify-between text-xs sm:text-sm mb-1">
-                    <span className="text-muted-foreground">{b.label}</span>
-                    <span className="font-mono font-semibold">
-                      {fmt(b.value)}
-                    </span>
-                  </div>
-                  <div className="h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${b.pct}%`, backgroundColor: b.color }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground text-right mt-0.5">
-                    {b.pct}%
-                  </p>
-                </div>
-              ))}
-
-              {d.funds.byType?.length > 0 && (
-                <div className="pt-2 border-t">
-                  <p className="text-[10px] text-muted-foreground mb-2">
-                    By Fund Type
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {d.funds.byType.map((f: any) => (
-                      <Badge
-                        key={f.fundType}
-                        variant="secondary"
-                        className="text-[10px]"
+            <CardContent className="px-3 sm:px-6">
+              <div className="h-[250px] flex items-center justify-center">
+                {institutionPieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={institutionPieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
                       >
-                        {f.fundType}: {fmt(f.allocated)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+                        {institutionPieData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "none",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                          fontSize: "11px",
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: "10px" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No institution data
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -505,18 +489,27 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
             <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-sm sm:text-base">
-                Grievances by Category
-              </CardTitle>
-              <CardDescription className="text-[11px] sm:text-sm">
-                Top complaint categories
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm sm:text-base">
+                    Community Groups
+                  </CardTitle>
+                  <CardDescription className="text-[11px] sm:text-sm">
+                    Active groups by type
+                  </CardDescription>
+                </div>
+                <Link to="/community">
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    View All →
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent className="px-1 sm:px-6">
               <div className="h-[220px] sm:h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={grievanceCategoryData}
+                    data={communityTypeData}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
@@ -545,9 +538,12 @@ export default function Dashboard() {
                       }}
                       cursor={{ fill: "transparent" }}
                     />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                      {grievanceCategoryData.map((entry: any, i: number) => (
-                        <Cell key={i} fill={entry.fill} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {communityTypeData.map((entry: any, i: number) => (
+                        <Cell
+                          key={i}
+                          fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]}
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -558,12 +554,22 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-sm sm:text-base">
-                Project Status
-              </CardTitle>
-              <CardDescription className="text-[11px] sm:text-sm">
-                {s.totalProjects} total projects • {fmt(s.totalBudget)} budget
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm sm:text-base">
+                    Project Status
+                  </CardTitle>
+                  <CardDescription className="text-[11px] sm:text-sm">
+                    {s.totalProjects} total projects • {fmt(s.totalBudget)}{" "}
+                    budget
+                  </CardDescription>
+                </div>
+                <Link to="/projects">
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    View All →
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent className="px-1 sm:px-6">
               <div className="h-[220px] sm:h-[260px] flex items-center justify-center">
@@ -803,23 +809,25 @@ export default function Dashboard() {
                     LOW: "#22c55e",
                   };
                   return (
-                    <div
+                    <Link
                       key={p.priority}
-                      className="text-center p-2 sm:p-3 rounded-lg border"
+                      to={`/grievances?priority=${p.priority}`}
                     >
-                      <div
-                        className="w-3 h-3 rounded-full mx-auto mb-1"
-                        style={{
-                          backgroundColor: colors[p.priority] || "#6b7280",
-                        }}
-                      />
-                      <p className="text-base sm:text-lg font-bold">
-                        {p.count}
-                      </p>
-                      <p className="text-[9px] sm:text-[10px] text-muted-foreground">
-                        {p.priority}
-                      </p>
-                    </div>
+                      <div className="text-center p-2 sm:p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
+                        <div
+                          className="w-3 h-3 rounded-full mx-auto mb-1"
+                          style={{
+                            backgroundColor: colors[p.priority] || "#6b7280",
+                          }}
+                        />
+                        <p className="text-base sm:text-lg font-bold">
+                          {p.count}
+                        </p>
+                        <p className="text-[9px] sm:text-[10px] text-muted-foreground">
+                          {p.priority}
+                        </p>
+                      </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -840,10 +848,10 @@ export default function Dashboard() {
                   color: "#6366f1",
                 },
                 {
-                  label: "Departments",
-                  count: s.totalDepartments,
-                  href: "/departments",
-                  Icon: Landmark,
+                  label: "Community",
+                  count: s.totalCommunityGroups,
+                  href: "/community",
+                  Icon: Users,
                   color: "#8b5cf6",
                 },
                 {

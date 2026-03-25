@@ -234,7 +234,7 @@ export default function BirthdaysPage() {
               Birthday Reminders
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Never miss a leader's birthday
+              Never miss a local representative's birthday
             </p>
           </div>
           <div className="flex gap-2">
@@ -248,7 +248,7 @@ export default function BirthdaysPage() {
               </Button>
             )}
             <Link to="/leaders">
-              <Button variant="outline">All Leaders</Button>
+              <Button variant="outline">All Local Representatives</Button>
             </Link>
           </div>
         </div>
@@ -425,7 +425,7 @@ export default function BirthdaysPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Bulk Birthday Greeting ({selectedIds.length} leaders)
+              Bulk Birthday Greeting ({selectedIds.length} local representatives)
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">

@@ -11,7 +11,7 @@ import { getCurrentFY } from "./helper.js";
 export const getFunds = catchAsync(async (req, res) => {
   const { fundType, financialYear } = req.query as Record<string, string>;
 
-  const where: any = {};
+  const where: any = { isDeleted: false };
   if (fundType && fundType !== "all") where.fundType = fundType;
   if (financialYear && financialYear !== "all")
     where.financialYear = financialYear;
@@ -19,7 +19,7 @@ export const getFunds = catchAsync(async (req, res) => {
   const funds = await prisma.fund.findMany({
     where,
     include: {
-      _count: { select: { transactions: true } },
+      _count: { select: { transactions: { where: { isDeleted: false } } } },
     },
     orderBy: [{ financialYear: "desc" }, { fundType: "asc" }],
   });
@@ -50,9 +50,9 @@ export const overviewDashboard = catchAsync(async (req, res) => {
 
   // All funds for this FY
   const funds = await prisma.fund.findMany({
-    where: { financialYear: fy },
+    where: { financialYear: fy, isDeleted: false },
     include: {
-      _count: { select: { transactions: true } },
+      _count: { select: { transactions: { where: { isDeleted: false } } } },
     },
     orderBy: { fundType: "asc" },
   });
@@ -87,7 +87,7 @@ export const overviewDashboard = catchAsync(async (req, res) => {
 
   // Recent transactions with project info
   const recentTxns = await prisma.fundTransaction.findMany({
-    where: { fund: { financialYear: fy } },
+    where: { fund: { financialYear: fy }, isDeleted: false },
     include: {
       fund: {
         select: {
@@ -128,6 +128,7 @@ export const overviewDashboard = catchAsync(async (req, res) => {
     where: {
       fund: { financialYear: fy },
       type: "UTILIZATION",
+      isDeleted: false,
     },
     select: { amount: true, date: true },
   });
@@ -175,9 +176,10 @@ export const overviewDashboard = catchAsync(async (req, res) => {
 export const getSingleFunds = catchAsync(async (req, res) => {
   const fundId = req.params.id as string;
   const fund = await prisma.fund.findUnique({
-    where: { id: fundId },
+    where: { id: fundId, isDeleted: false },
     include: {
       transactions: {
+        where: { isDeleted: false },
         orderBy: { date: "desc" },
       },
     },

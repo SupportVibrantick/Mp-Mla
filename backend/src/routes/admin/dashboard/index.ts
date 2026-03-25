@@ -34,8 +34,7 @@ router.get(
       totalGrievances,
       totalProjects,
       totalInstitutions,
-      // totalSchemes,
-      totalDepartments,
+      totalCommunityGroups,
 
       // Grievance breakdown
       grievancesByStatus,
@@ -43,19 +42,20 @@ router.get(
       grievancesByCategory,
       grievancesThisMonth,
       grievancesLastMonth,
-      overdueGrievances,
 
       // Project breakdown
       projectsByStatus,
       projectBudget,
       projectsThisMonth,
 
-      // Fund aggregates (current FY)
-      funds,
+      // Institutions by Category
+      institutionsByCategory,
 
-      // Scheme aggregates
-      // schemeBeneficiaries,
-      // activeSchemes,
+      // Community Groups by Type
+      communityGroupsByType,
+
+      // Demographics Summary (Voters, Population)
+      demographicsSummary,
 
       // Recent Grievances
       recentGrievances,
@@ -73,8 +73,7 @@ router.get(
       prisma.institution.count({
         where: { status: "ACTIVE" },
       }),
-      // prisma.scheme.count({ where: { status: "ACTIVE" } }),
-      prisma.department.count({ where: { isActive: true } }),
+      prisma.communityGroup.count({ where: { isActive: true } }),
 
       // ─── Grievances
       prisma.grievance.groupBy({
@@ -99,14 +98,6 @@ router.get(
           createdAt: { gte: lastMonthStart, lt: monthStart },
         },
       }),
-      prisma.grievance.count({
-        where: {
-          expectedResolutionDate: { lt: now },
-          status: {
-            in: ["OPEN", "IN_PROGRESS", "ESCALATED"],
-          },
-        },
-      }),
 
       // ─── Projects
       prisma.project.groupBy({
@@ -125,20 +116,28 @@ router.get(
         where: { createdAt: { gte: monthStart } },
       }),
 
-      // ─── Funds
-      prisma.fund.findMany({
-        where: { financialYear: fy },
+      // ─── Institutions
+      prisma.institution.groupBy({
+        by: ["category"],
+        _count: true,
+        where: { status: "ACTIVE" },
       }),
 
-      // ─── Schemes
-      // prisma.schemeBeneficiary.aggregate({
-      //   _sum: {
-      //     beneficiaryCount: true,
-      //     targetCount: true,
-      //     amountDisbursed: true,
-      //   },
-      // }),
-      // prisma.scheme.count({ where: { status: "ACTIVE" } }),
+      // ─── Community Groups
+      prisma.communityGroup.groupBy({
+        by: ["type"],
+        _count: true,
+        where: { isActive: true },
+      }),
+
+      // ─── Demographics (Aggregate Voters)
+      prisma.demographics.aggregate({
+        _sum: {
+          totalVoters: true,
+          maleVoters: true,
+          femaleVoters: true,
+        },
+      }),
 
       // ─── Recent Grievances
       prisma.grievance.findMany({
@@ -239,24 +238,6 @@ router.get(
         : 0;
     const grievanceMonthlyChange = grievancesThisMonth - grievancesLastMonth;
 
-    const fundTotalAllocated = funds.reduce((s, f) => s + f.totalAllocated, 0);
-    const fundTotalReleased = funds.reduce((s, f) => s + f.totalReleased, 0);
-    const fundTotalUtilized = funds.reduce((s, f) => s + f.totalUtilized, 0);
-
-    // const schemeCoverage =
-    //   (schemeBeneficiaries._sum.targetCount || 0) > 0
-    //     ? Math.round(
-    //         ((schemeBeneficiaries._sum.beneficiaryCount || 0) /
-    //           (schemeBeneficiaries._sum.targetCount || 1)) *
-    //           100,
-    //       )
-    //     : 0;
-
-    // Resolve department names for recent projects
-    const deptIds = [
-      ...new Set(recentProjects.map((p: any) => p.department).filter(Boolean)),
-    ];
-
     res.json({
       success: true,
       data: {
@@ -269,7 +250,6 @@ router.get(
           openGrievances,
           resolvedGrievances,
           resolutionRate,
-          overdueGrievances,
           grievancesThisMonth,
           grievanceMonthlyChange,
           totalProjects,
@@ -279,13 +259,10 @@ router.get(
           totalBudget: projectBudget._sum.budgetSanctioned || 0,
           budgetUsed: projectBudget._sum.budgetUsed || 0,
           totalInstitutions,
-          totalDepartments,
-          // activeSchemes,
-          // totalBeneficiaries: schemeBeneficiaries._sum.beneficiaryCount || 0,
-          // schemeCoverage,
-          fundTotalAllocated,
-          fundTotalReleased,
-          fundTotalUtilized,
+          totalCommunityGroups,
+          totalVoters: demographicsSummary._sum.totalVoters || 0,
+          maleVoters: demographicsSummary._sum.maleVoters || 0,
+          femaleVoters: demographicsSummary._sum.femaleVoters || 0,
           financialYear: fy,
         },
 
@@ -317,17 +294,19 @@ router.get(
           recent: recentProjects,
         },
 
-        // ─── Fund Data
-        funds: {
-          financialYear: fy,
-          totalAllocated: fundTotalAllocated,
-          totalReleased: fundTotalReleased,
-          totalUtilized: fundTotalUtilized,
-          byType: funds.map((f) => ({
-            fundType: f.fundType,
-            allocated: f.totalAllocated,
-            released: f.totalReleased,
-            utilized: f.totalUtilized,
+        // ─── Institution Data
+        institutions: {
+          byCategory: institutionsByCategory.map((c) => ({
+            category: c.category,
+            count: c._count,
+          })),
+        },
+
+        // ─── Community Group Data
+        communityGroups: {
+          byType: communityGroupsByType.map((t) => ({
+            type: t.type,
+            count: t._count,
           })),
         },
       },

@@ -8,11 +8,11 @@ import {
 } from "@/components/ui/select";
 import { z } from "zod";
 import {
-  useInstitution,
-  useCreateInstitution,
-  useUpdateInstitution,
-  INSTITUTION_CATEGORIES,
-} from "@/hooks/useInstitutions";
+  usePublicFacility,
+  useCreatePublicFacility,
+  useUpdatePublicFacility,
+  PUBLIC_FACILITY_CATEGORIES,
+} from "@/hooks/usePublicFacilities";
 import { useWards } from "@/hooks/useWards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,14 +93,14 @@ const emptyIncharge: InchargeLocal = {
   appointedDate: "",
 };
 
-export default function InstitutionFormPage() {
+export default function PublicFacilityFormPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const isEdit = !!id;
 
-  const { data: instRes, isLoading } = useInstitution(id);
-  const createMut = useCreateInstitution();
-  const updateMut = useUpdateInstitution();
+  const { data: instRes, isLoading } = usePublicFacility(id);
+  const createMut = useCreatePublicFacility();
+  const updateMut = useUpdatePublicFacility();
   const { data: wardsRes } = useWards({ limit: 100 });
 
   const inst = instRes?.data;
@@ -133,9 +133,9 @@ export default function InstitutionFormPage() {
 
   // Category groups
   const categoryGroups = useMemo(() => {
-    const groups: Record<string, (typeof INSTITUTION_CATEGORIES)[number][]> =
+    const groups: Record<string, (typeof PUBLIC_FACILITY_CATEGORIES)[number][]> =
       {};
-    INSTITUTION_CATEGORIES.forEach((c) => {
+    PUBLIC_FACILITY_CATEGORIES.forEach((c) => {
       if (!groups[c.group]) groups[c.group] = [];
       groups[c.group].push(c);
     });
@@ -206,7 +206,7 @@ export default function InstitutionFormPage() {
 
       if (isEdit && id) {
         await updateMut.mutateAsync({ id, data: payload });
-        navigate(`/institutions/${id}`);
+        navigate(`/public-facilities/${id}`);
       } else {
         // Include inline incharges on create
         payload.incharges = localIncharges.map((ic) => ({
@@ -222,7 +222,7 @@ export default function InstitutionFormPage() {
             : undefined,
         }));
         const res = await createMut.mutateAsync(payload);
-        navigate(`/institutions/${res.data.id}`);
+        navigate(`/public-facilities/${res.data.id}`);
       }
     } catch {
       /* handled */
@@ -233,7 +233,7 @@ export default function InstitutionFormPage() {
 
   if (isEdit && isLoading) {
     return (
-      <MainLayout title="Edit Institution">
+      <MainLayout title="Edit Public Facility">
         <div className="space-y-6 max-w-3xl mx-auto">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-80" />
@@ -243,14 +243,14 @@ export default function InstitutionFormPage() {
   }
 
   return (
-    <MainLayout title={isEdit ? "Edit Institution" : "Add Institution"}>
+    <MainLayout title={isEdit ? "Edit Public Facility" : "Add Public Facility"}>
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-6 max-w-3xl mx-auto"
       >
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Link to="/institutions">
+          <Link to="/public-facilities">
             <Button
               type="button"
               variant="ghost"
@@ -263,10 +263,10 @@ export default function InstitutionFormPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Building2 className="h-7 w-7 text-primary" />
-              {isEdit ? "Edit Institution" : "Add Institution"}
+              {isEdit ? "Edit Public Facility" : "Add Public Facility"}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {isEdit ? `Editing ${inst?.name}` : "Register a new institution"}
+              {isEdit ? `Editing ${inst?.name}` : "Register a new public facility"}
             </p>
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function InstitutionFormPage() {
         {/* Basic Info */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Institution Details</CardTitle>
+            <CardTitle className="text-base">Public Facility Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
@@ -536,9 +536,9 @@ export default function InstitutionFormPage() {
             <CardContent className="p-4 text-center text-muted-foreground text-sm">
               <Users className="h-5 w-5 mx-auto mb-1 opacity-50" />
               Manage incharges from the{" "}
-              <Link to={`/institutions/${id}`}>
+              <Link to={`/public-facilities/${id}`}>
                 <span className="text-primary hover:underline cursor-pointer">
-                  institution detail page
+                  public facility detail page
                 </span>
               </Link>
             </CardContent>
@@ -547,7 +547,7 @@ export default function InstitutionFormPage() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pb-6">
-          <Link to="/institutions">
+          <Link to="/public-facilities">
             <Button type="button" variant="outline">
               Cancel
             </Button>
@@ -564,7 +564,7 @@ export default function InstitutionFormPage() {
             ) : (
               <>
                 <Save className="h-4 w-4" /> {isEdit ? "Update" : "Create"}{" "}
-                Institution
+                Facility
               </>
             )}
           </Button>

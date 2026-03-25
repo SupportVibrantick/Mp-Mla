@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import app from "../src/app.js";
 import http from "http";
+import { startMeetingScheduler } from "../src/utils/meetingScheduler.js";
 
 /**
  * Get port from environment and store in Express.
@@ -19,6 +20,10 @@ const server = http.createServer(app);
 server.listen(port);
 server.on("error", onError);
 server.on("listening", onListening);
+
+// Start background schedulers
+startMeetingScheduler();
+
 
 /**
  * Normalize a port into a number, string, or false.

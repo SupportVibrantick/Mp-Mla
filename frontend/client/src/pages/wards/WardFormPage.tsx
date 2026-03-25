@@ -162,6 +162,10 @@ interface DemoFormData {
   totalVoters: number;
   maleVoters: number;
   femaleVoters: number;
+  newVotersCount: number;
+  // Vital Stats
+  totalBirths: number;
+  totalDeaths: number;
   // Meta
   source: string;
   surveyDate: string;
@@ -193,6 +197,9 @@ const emptyDemoForm: DemoFormData = {
   totalVoters: 0,
   maleVoters: 0,
   femaleVoters: 0,
+  newVotersCount: 0,
+  totalBirths: 0,
+  totalDeaths: 0,
   source: "",
   surveyDate: "",
 };
@@ -345,17 +352,14 @@ export default function WardFormPage() {
       totalVoters: d.totalVoters || 0,
       maleVoters: d.maleVoters || 0,
       femaleVoters: d.femaleVoters || 0,
+      // Vital Stats & New Voters
+      totalBirths: d.totalBirths || 0,
+      totalDeaths: d.totalDeaths || 0,
+      newVotersCount: d.newVotersCount || 0,
+
+      // Source
       source: d.source || "",
       surveyDate: d.surveyDate ? d.surveyDate.split("T")[0] : "",
-
-      // Religion
-      hinduCount: d.hinduCount || 0,
-      muslimCount: d.muslimCount || 0,
-      sikhCount: d.sikhCount || 0,
-      christianCount: d.christianCount || 0,
-      buddhistCount: d.buddhistCount || 0,
-      jainCount: d.jainCount || 0,
-      otherReligionCount: d.otherReligionCount || 0,
     });
   }, [demoRes, isEdit]);
 
@@ -1075,11 +1079,11 @@ export default function WardFormPage() {
 
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Voters
+                  Voters & Vital Stats
                 </Label>
                 <div className="grid grid-cols-3 gap-3 mt-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Total</Label>
+                    <Label className="text-xs">Total Voters</Label>
                     <Input
                       type="number"
                       value={demoForm.totalVoters || ""}
@@ -1092,7 +1096,48 @@ export default function WardFormPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Male</Label>
+                    <Label className="text-xs">New Voters</Label>
+                    <Input
+                      type="number"
+                      value={demoForm.newVotersCount || ""}
+                      onChange={(e) =>
+                        setDemoForm((p) => ({
+                          ...p,
+                          newVotersCount: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Total Births</Label>
+                    <Input
+                      type="number"
+                      className="border-green-200 focus:border-green-500"
+                      value={demoForm.totalBirths || ""}
+                      onChange={(e) =>
+                        setDemoForm((p) => ({
+                          ...p,
+                          totalBirths: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Total Deaths</Label>
+                    <Input
+                      type="number"
+                      className="border-red-200 focus:border-red-500"
+                      value={demoForm.totalDeaths || ""}
+                      onChange={(e) =>
+                        setDemoForm((p) => ({
+                          ...p,
+                          totalDeaths: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Male Voters</Label>
                     <Input
                       type="number"
                       value={demoForm.maleVoters || ""}
@@ -1105,7 +1150,7 @@ export default function WardFormPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Female</Label>
+                    <Label className="text-xs">Female Voters</Label>
                     <Input
                       type="number"
                       value={demoForm.femaleVoters || ""}

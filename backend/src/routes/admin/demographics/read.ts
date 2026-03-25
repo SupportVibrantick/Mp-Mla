@@ -67,6 +67,10 @@ export const summaryDemographics = catchAsync(async (req, res) => {
     totalVoters: sum("totalVoters"),
     maleVoters: sum("maleVoters"),
     femaleVoters: sum("femaleVoters"),
+    newVotersCount: sum("newVotersCount"),
+    // Vital Stats
+    totalBirths: sum("totalBirths"),
+    totalDeaths: sum("totalDeaths"),
   };
 
   // Weighted literacy
@@ -187,6 +191,9 @@ export const summaryDemographics = catchAsync(async (req, res) => {
     totalVoters: d.totalVoters,
     maleVoters: d.maleVoters,
     femaleVoters: d.femaleVoters,
+    newVotersCount: d.newVotersCount,
+    totalBirths: d.totalBirths,
+    totalDeaths: d.totalDeaths,
     source: d.source,
     surveyDate: d.surveyDate,
   }));

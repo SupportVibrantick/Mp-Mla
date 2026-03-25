@@ -19,6 +19,8 @@ import {
   Landmark,
   IndianRupeeIcon,
   Cake,
+  Trash2,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,12 +42,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    {
-      label: "Grievances",
-      icon: MessageSquareWarning,
-      href: "/grievances",
-      module: "grievances",
-    },
+
     {
       label: "Projects",
       icon: ClipboardList,
@@ -53,19 +50,14 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       module: "projects",
     },
     {
-      label: "Institutions",
+      label: "Public Facilities",
       icon: Building2,
-      href: "/institutions",
+      href: "/public-facilities",
       module: "institutions",
     },
-    // {
-    //   label: "Community",
-    //   icon: Users,
-    //   href: "/community",
-    //   module: "demographics",
-    // },
+
     {
-      label: "Community",
+      label: " Community Groups",
       icon: Users,
       href: "/community",
       module: "community_groups",
@@ -79,7 +71,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       href: "/demographics",
       module: "demographics",
     },
-    { label: "Reports", icon: BarChart3, href: "/reports", module: "reports" },
     {
       label: "Departments",
       icon: Landmark,
@@ -93,13 +84,26 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       module: "funds",
     },
     // { type: "divider", label: "People" },
-    { label: "Leaders", icon: Users, href: "/leaders", module: "leaders" },
+    { label: "Local Representatives", icon: Users, href: "/leaders", module: "leaders" },
     {
       label: "Birthdays",
       icon: Cake,
       href: "/leaders/birthdays",
       module: "leaders",
     },
+    {
+      label: "Grievances",
+      icon: MessageSquareWarning,
+      href: "/grievances",
+      module: "grievances",
+    },
+    {
+      label: "Meetings & Events",
+      icon: CalendarDays,
+      href: "/meetings",
+      module: "meeting",
+    },
+    { label: "Reports", icon: BarChart3, href: "/reports", module: "reports" },
   ];
 
   const filteredNavItems = navItems.filter(
@@ -132,6 +136,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       icon: Shield,
       href: "/audit-logs",
       module: "audit_logs",
+    },
+    {
+      label: "Recycle Bin",
+      icon: Trash2,
+      href: "/recycle-bin",
+      module: "recycle_bin",
     },
   ].filter(
     (item) =>

@@ -22,7 +22,7 @@ export const SETTING_GROUPS = [
     id: "security",
     label: "Security",
     icon: "🔒",
-    desc: "Passwords, sessions & 2FA",
+    desc: "Passwords, sessions",
   },
   // {
   //   id: "grievance",
@@ -30,11 +30,24 @@ export const SETTING_GROUPS = [
   //   icon: "📋",
   //   desc: "SLA, categories & rules",
   // },
+
+  {
+    id: "email_smtp",
+    label: "Email & SMTP",
+    icon: "📧",
+    desc: "SMTP server & email sender",
+  },
+  {
+    id: "meetings",
+    label: "Meetings",
+    icon: "📅",
+    desc: "Meeting reminders & scheduling",
+  },
   {
     id: "notifications",
     label: "Notifications",
     icon: "🔔",
-    desc: "SMS, WhatsApp & email",
+    desc: "SMS & WhatsApp alerts",
   },
   { id: "backup", label: "Backup", icon: "💾", desc: "Scheduled backups" },
 ] as const;
@@ -86,6 +99,26 @@ export function useResetSettings() {
       toast({
         title: "Error",
         description: err?.response?.data?.message || "Reset failed",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useTestEmail() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (to: string) =>
+      api.post("/admin/settings/test-email", { to }).then((r) => r.data),
+    onSuccess: (res) => {
+      toast({ title: "Success", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "SMTP Test Failed",
+        description:
+          err?.response?.data?.message || "Failed to send test email.",
         variant: "destructive",
       });
     },

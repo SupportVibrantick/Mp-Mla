@@ -51,16 +51,3 @@ export function getTransitionLabel(from: string, to: string): string {
   return labels[`${from}→${to}`] || `${from} → ${to}`;
 }
 
-export const PRIORITY_SLA_DAYS: Record<string, number> = {
-  URGENT: 1,
-  HIGH: 3,
-  MEDIUM: 7,
-  LOW: 15,
-};
-
-export function calculateExpectedDate(priority: string): Date {
-  const days = PRIORITY_SLA_DAYS[priority] || 7;
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d;
-}

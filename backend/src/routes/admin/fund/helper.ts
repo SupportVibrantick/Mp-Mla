@@ -12,7 +12,7 @@ export function getCurrentFY(): string {
 
 export async function recalculateFundTotals(fundId: string) {
   const txns = await prisma.fundTransaction.findMany({
-    where: { fundId },
+    where: { fundId, isDeleted: false },
   });
 
   let totalAllocated = 0;

@@ -233,4 +233,30 @@ router.post(
   }),
 );
 
+import { testSmtpConnection } from "../../../lib/email.js";
+
+router.post(
+  "/test-email",
+  authenticate,
+  requireActiveUser,
+  requirePermission("settings", "read"), // any admin with settings read can test
+  catchAsync(async (req, res) => {
+    const { to } = req.body;
+    if (!to) {
+      throw ApiError.badRequest("Recipient email 'to' is required");
+    }
+
+    const result = await testSmtpConnection(to);
+    
+    if (result.success) {
+      res.json({ success: true, message: "Test email sent successfully!" });
+    } else {
+      res.status(400).json({ 
+        success: false, 
+        message: result.error || "Failed to send test email" 
+      });
+    }
+  })
+);
+
 export default router;

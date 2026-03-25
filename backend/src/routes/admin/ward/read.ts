@@ -18,7 +18,7 @@ export const listWards = catchAsync(async (req: Request, res: Response) => {
     string
   >;
 
-  const where: any = {};
+  const where: any = { isDeleted: false };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: "insensitive" } },
@@ -34,6 +34,7 @@ export const listWards = catchAsync(async (req: Request, res: Response) => {
       where,
       include: {
         areas: {
+          where: { isDeleted: false },
           select: {
             id: true,
             name: true,
@@ -99,10 +100,10 @@ export const getWard = catchAsync(async (req: Request, res: Response) => {
     : req.params.id;
   if (!wardId) throw ApiError.badRequest("Ward ID is required");
 
-  const ward = await prisma.ward.findUnique({
-    where: { id: wardId },
+  const ward = await prisma.ward.findFirst({
+    where: { id: wardId, isDeleted: false },
     include: {
-      areas: { orderBy: { name: "asc" } },
+      areas: { where: { isDeleted: false }, orderBy: { name: "asc" } },
       councillors: { orderBy: { isCurrent: "desc" } },
       _count: {
         select: {
@@ -122,21 +123,21 @@ export const getWard = catchAsync(async (req: Request, res: Response) => {
   // Fetch aggregated grievance stats for this ward
   const grievanceStats = await prisma.grievance.groupBy({
     by: ["status"],
-    where: { wardId: ward.id },
+    where: { wardId: ward.id, isDeleted: false },
     _count: true,
   });
 
   // Fetch project stats
   const projectStats = await prisma.project.groupBy({
     by: ["status"],
-    where: { wardId: ward.id },
+    where: { wardId: ward.id, isDeleted: false },
     _count: true,
   });
 
   // Fetch community groups summary
   const communityGroupStats = await prisma.communityGroup.groupBy({
     by: ["type"],
-    where: { wardId: ward.id },
+    where: { wardId: ward.id, isDeleted: false },
     _count: true,
     _sum: { memberCount: true },
   });
@@ -182,16 +183,20 @@ export async function getWardStats(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const wardWhere = { isDeleted: false };
+
     const [totalWards, wardsByZone, wardsByStatus, populationAgg] =
       await Promise.all([
-        prisma.ward.count(),
+        prisma.ward.count({ where: wardWhere }),
         prisma.ward.groupBy({
           by: ["zone"],
+          where: wardWhere,
           _count: true,
           _sum: { totalPopulation: true },
         }),
-        prisma.ward.groupBy({ by: ["status"], _count: true }),
+        prisma.ward.groupBy({ by: ["status"], where: wardWhere, _count: true }),
         prisma.ward.aggregate({
+          where: wardWhere,
           _sum: {
             totalPopulation: true,
             totalHouseholds: true,
@@ -202,9 +207,10 @@ export async function getWardStats(
         }),
       ]);
 
-    const totalAreas = await prisma.wardArea.count();
+    const totalAreas = await prisma.wardArea.count({ where: { isDeleted: false } });
     const areasByType = await prisma.wardArea.groupBy({
       by: ["areaType"],
+      where: { isDeleted: false },
       _count: true,
       _sum: { population: true, households: true },
     });

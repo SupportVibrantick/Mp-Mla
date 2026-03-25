@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { normalizeCommunityType, normalizeBoolean } from "../../../utils/enumParser.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 
 /**
  * POST /api/admin/community-groups/bulk
@@ -105,4 +106,28 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
             errors,
         },
     });
+
+    // Log data activity (fire-and-forget)
+    prisma.dataActivity.create({
+        data: {
+            userId: req.user!.id,
+            userName: req.user!.name || "Unknown",
+            action: "IMPORT",
+            module: "community-groups",
+            recordCount: upsertedCount,
+            details: `Bulk imported ${upsertedCount} community groups (${failedCount} failed)`,
+        },
+    }).catch(() => {});
+
+    // Send admin notification (fire-and-forget)
+    sendAdminNotification(
+        `Data Import: community groups by ${req.user!.name || "Unknown"}`,
+        buildActivityEmailHtml({
+            action: "IMPORT",
+            module: "community-groups",
+            userName: req.user!.name || "Unknown",
+            recordCount: upsertedCount,
+            timestamp: new Date(),
+        }),
+    );
 });

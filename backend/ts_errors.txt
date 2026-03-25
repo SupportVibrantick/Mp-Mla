@@ -1,0 +1,3 @@
+src/controllers/admin/meeting.controller.ts(2,20): error TS2307: Cannot find module '../../../prisma/client.js' or its corresponding type declarations.
+src/controllers/admin/meeting.controller.ts(5,32): error TS2307: Cannot find module '../../../utils/auditLogger.js' or its corresponding type declarations.
+src/controllers/admin/meeting.controller.ts(6,33): error TS2307: Cannot find module '../../../utils/dataActivityLogger.js' or its corresponding type declarations.

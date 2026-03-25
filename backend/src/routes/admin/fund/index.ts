@@ -10,10 +10,13 @@ import {
 import { updateFunds } from "./update.js";
 import { deleteFunds, deleteFundTransaction } from "./delete.js";
 import { getFunds, overviewDashboard, getSingleFunds } from "./read.js";
+import { exportFunds } from "./export.js";
 
 const router = Router();
 
+router.get("/export", requirePermission("funds", "read"), exportFunds);
 router.get("/", requirePermission("funds", "read"), getFunds);
+
 router.get(
   "/overview",
   requirePermission("funds", "read"),

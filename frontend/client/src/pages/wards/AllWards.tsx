@@ -120,31 +120,105 @@ export default function WardsPage() {
     const worksheet = workbook.addWorksheet("Wards");
 
     const columns = [
-      { header: "wardNumber", key: "wardNumber", width: 15 },
+      // Basic Info
+      { header: "wardNumber", key: "wardNumber", width: 12 },
       { header: "wardName", key: "wardName", width: 20 },
       { header: "wardZone", key: "wardZone", width: 15 },
-      { header: "wardStatus", key: "wardStatus", width: 15 },
+      { header: "wardStatus", key: "wardStatus", width: 12 },
       { header: "wardAreaType", key: "wardAreaType", width: 15 },
-      { header: "wardPincode", key: "wardPincode", width: 15 },
+      { header: "wardPincode", key: "wardPincode", width: 12 },
       { header: "wardDescription", key: "wardDescription", width: 30 },
-      { header: "establishedDate", key: "establishedDate", width: 20 },
+      { header: "establishedDate", key: "establishedDate", width: 15 },
+
+      // Councillor
       { header: "councillorName", key: "councillorName", width: 20 },
       { header: "councillorPhone", key: "councillorPhone", width: 15 },
       { header: "councillorEmail", key: "councillorEmail", width: 25 },
       { header: "councillorParty", key: "councillorParty", width: 15 },
-      {
-        header: "councillorDesignation",
-        key: "councillorDesignation",
-        width: 20,
-      },
-      { header: "councillorSinceDate", key: "councillorSinceDate", width: 20 },
+      { header: "councillorDesignation", key: "councillorDesignation", width: 20 },
+      { header: "councillorSinceDate", key: "councillorSinceDate", width: 15 },
+
+      // Area Info
       { header: "areaName", key: "areaName", width: 20 },
       { header: "areaType", key: "areaType", width: 15 },
-      { header: "areaPopulation", key: "areaPopulation", width: 15 },
+      { header: "areaPopulation", key: "areaPopulation", width: 12 },
+      { header: "areaHouseholds", key: "areaHouseholds", width: 12 },
+      { header: "areaMaleCount", key: "areaMaleCount", width: 12 },
+      { header: "areaFemaleCount", key: "areaFemaleCount", width: 12 },
+      { header: "areaPincode", key: "areaPincode", width: 12 },
+      { header: "areaLandmark", key: "areaLandmark", width: 20 },
+      { header: "areaDescription", key: "areaDescription", width: 30 },
+
+      // Ward Demographics (wd_)
+      { header: "wd_totalPopulation", key: "wd_totalPopulation", width: 15 },
+      { header: "wd_maleCount", key: "wd_maleCount", width: 12 },
+      { header: "wd_femaleCount", key: "wd_femaleCount", width: 12 },
+      { header: "wd_transgenderCount", key: "wd_transgenderCount", width: 15 },
+      { header: "wd_age0to6", key: "wd_age0to6", width: 12 },
+      { header: "wd_age7to18", key: "wd_age7to18", width: 12 },
+      { header: "wd_age19to35", key: "wd_age19to35", width: 12 },
+      { header: "wd_age36to60", key: "wd_age36to60", width: 12 },
+      { header: "wd_age60plus", key: "wd_age60plus", width: 12 },
+      { header: "wd_totalHouseholds", key: "wd_totalHouseholds", width: 15 },
+      { header: "wd_bplHouseholds", key: "wd_bplHouseholds", width: 15 },
+      { header: "wd_aplHouseholds", key: "wd_aplHouseholds", width: 15 },
+      { header: "wd_generalCount", key: "wd_generalCount", width: 12 },
+      { header: "wd_obcCount", key: "wd_obcCount", width: 12 },
+      { header: "wd_scCount", key: "wd_scCount", width: 12 },
+      { header: "wd_stCount", key: "wd_stCount", width: 12 },
+      { header: "wd_minorityCount", key: "wd_minorityCount", width: 12 },
+      { header: "wd_otherCount", key: "wd_otherCount", width: 12 },
+      { header: "wd_hinduCount", key: "wd_hinduCount", width: 12 },
+      { header: "wd_muslimCount", key: "wd_muslimCount", width: 12 },
+      { header: "wd_sikhCount", key: "wd_sikhCount", width: 12 },
+      { header: "wd_christianCount", key: "wd_christianCount", width: 12 },
+      { header: "wd_buddhistCount", key: "wd_buddhistCount", width: 12 },
+      { header: "wd_jainCount", key: "wd_jainCount", width: 12 },
+      { header: "wd_otherReligionCount", key: "wd_otherReligionCount", width: 15 },
+      { header: "wd_literacyRate", key: "wd_literacyRate", width: 12 },
+      { header: "wd_maleLiteracyRate", key: "wd_maleLiteracyRate", width: 15 },
+      { header: "wd_femaleLiteracyRate", key: "wd_femaleLiteracyRate", width: 15 },
+      { header: "wd_totalVoters", key: "wd_totalVoters", width: 12 },
+      { header: "wd_maleVoters", key: "wd_maleVoters", width: 12 },
+      { header: "wd_femaleVoters", key: "wd_femaleVoters", width: 12 },
+
+      // Area Demographics (ad_)
+      { header: "ad_totalPopulation", key: "ad_totalPopulation", width: 15 },
+      { header: "ad_maleCount", key: "ad_maleCount", width: 12 },
+      { header: "ad_femaleCount", key: "ad_femaleCount", width: 12 },
+      { header: "ad_transgenderCount", key: "ad_transgenderCount", width: 15 },
+      { header: "ad_age0to6", key: "ad_age0to6", width: 12 },
+      { header: "ad_age7to18", key: "ad_age7to18", width: 12 },
+      { header: "ad_age19to35", key: "ad_age19to35", width: 12 },
+      { header: "ad_age36to60", key: "ad_age36to60", width: 12 },
+      { header: "ad_age60plus", key: "ad_age60plus", width: 12 },
+      { header: "ad_totalHouseholds", key: "ad_totalHouseholds", width: 15 },
+      { header: "ad_bplHouseholds", key: "ad_bplHouseholds", width: 15 },
+      { header: "ad_aplHouseholds", key: "ad_aplHouseholds", width: 15 },
+      { header: "ad_generalCount", key: "ad_generalCount", width: 12 },
+      { header: "ad_obcCount", key: "ad_obcCount", width: 12 },
+      { header: "ad_scCount", key: "ad_scCount", width: 12 },
+      { header: "ad_stCount", key: "ad_stCount", width: 12 },
+      { header: "ad_minorityCount", key: "ad_minorityCount", width: 12 },
+      { header: "ad_otherCount", key: "ad_otherCount", width: 12 },
+      { header: "ad_hinduCount", key: "ad_hinduCount", width: 12 },
+      { header: "ad_muslimCount", key: "ad_muslimCount", width: 12 },
+      { header: "ad_sikhCount", key: "ad_sikhCount", width: 12 },
+      { header: "ad_christianCount", key: "ad_christianCount", width: 12 },
+      { header: "ad_buddhistCount", key: "ad_buddhistCount", width: 12 },
+      { header: "ad_jainCount", key: "ad_jainCount", width: 12 },
+      { header: "ad_otherReligionCount", key: "ad_otherReligionCount", width: 15 },
+      { header: "ad_literacyRate", key: "ad_literacyRate", width: 12 },
+      { header: "ad_maleLiteracyRate", key: "ad_maleLiteracyRate", width: 15 },
+      { header: "ad_femaleLiteracyRate", key: "ad_femaleLiteracyRate", width: 15 },
+      { header: "ad_totalVoters", key: "ad_totalVoters", width: 12 },
+      { header: "ad_maleVoters", key: "ad_maleVoters", width: 12 },
+      { header: "ad_femaleVoters", key: "ad_femaleVoters", width: 12 },
     ];
 
     worksheet.columns = columns;
 
+    // Add Example Row
     worksheet.addRow({
       wardNumber: 101,
       wardName: "Sample Ward Alpha",
@@ -155,11 +229,36 @@ export default function WardsPage() {
       wardDescription: "Main urban ward",
       establishedDate: "2020-01-01",
       councillorName: "John Doe",
+      councillorPhone: "9876543210",
+      councillorEmail: "john@example.com",
+      councillorParty: "Party A",
+      councillorDesignation: "Ward Councillor",
+      councillorSinceDate: "2021-01-01",
       areaName: "Area 1",
       areaType: "RESIDENTIAL",
       areaPopulation: 5000,
+      areaHouseholds: 1000,
+      areaMaleCount: 2500,
+      areaFemaleCount: 2500,
+      areaPincode: "110001",
+      areaLandmark: "Near Park",
+      areaDescription: "Main residential block",
+      wd_totalPopulation: 15000,
+      wd_maleCount: 7500,
+      wd_femaleCount: 7500,
+      wd_transgenderCount: 0,
+      wd_literacyRate: 85.5,
+      wd_totalVoters: 8250,
+      ad_totalPopulation: 5000,
+      ad_maleCount: 2500,
+      ad_femaleCount: 2500,
+      ad_transgenderCount: 0,
+      ad_literacyRate: 86,
+      ad_totalVoters: 2750,
     });
 
+    // Data Validation Sheet (Hidden)
+    const dataSheet = workbook.addWorksheet("DataLists", { state: "hidden" });
     const wardStatuses = ["ACTIVE", "INACTIVE", "PROPOSED", "DEPRECATED"];
     const wardAreaTypes = ["URBAN", "SEMI_URBAN", "RURAL"];
     const areaTypes = [
@@ -172,21 +271,28 @@ export default function WardsPage() {
       "OTHER",
     ];
 
-    for (let i = 2; i <= 51; i++) {
+    wardStatuses.forEach((v, i) => (dataSheet.getCell(`A${i + 1}`).value = v));
+    wardAreaTypes.forEach((v, i) => (dataSheet.getCell(`B${i + 1}`).value = v));
+    areaTypes.forEach((v, i) => (dataSheet.getCell(`C${i + 1}`).value = v));
+
+    for (let i = 2; i <= 201; i++) {
+      // wardStatus (D)
       worksheet.getCell(`D${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`"${wardStatuses.join(",")}"`],
+        formulae: [`DataLists!$A$1:$A$${wardStatuses.length}`],
       };
+      // wardAreaType (E)
       worksheet.getCell(`E${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`"${wardAreaTypes.join(",")}"`],
+        formulae: [`DataLists!$B$1:$B$${wardAreaTypes.length}`],
       };
+      // areaType (P)
       worksheet.getCell(`P${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`"${areaTypes.join(",")}"`],
+        formulae: [`DataLists!$C$1:$C$${areaTypes.length}`],
       };
     }
 
@@ -726,19 +832,6 @@ export default function WardsPage() {
               Upload an Excel or CSV file to import multiple wards. The file
               uses a flat schema where areas are grouped by wardNumber.
             </p>
-            <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
-              <p>
-                <strong>Ward Status:</strong> ACTIVE, INACTIVE, PROPOSED,
-                DEPRECATED
-              </p>
-              <p>
-                <strong>Ward Area Type:</strong> URBAN, SEMI_URBAN, RURAL
-              </p>
-              <p>
-                <strong>Area Type:</strong> RESIDENTIAL, COMMERCIAL, MIXED,
-                INDUSTRIAL, PARK, INSTITUTIONAL, OTHER
-              </p>
-            </div>
           </div>
         }
         onDownloadSample={downloadSampleTemplate}

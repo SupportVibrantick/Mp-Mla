@@ -5,9 +5,10 @@ import logger from "../utils/logger.js";
  * Check if a user has a specific permission.
  *
  * Priority:
- *   1. user_permissions (per-user override) → if found, return its granted value
- *   2. role_default_permissions → if found, return its granted value
- *   3. Not found → DENY
+ *   1. SYSTEM_ADMIN users are always allowed.
+ *   2. user_permissions (per-user override) → if found, return its granted value
+ *   3. role_default_permissions → if found, return its granted value
+ *   4. Not found → DENY
  */
 export async function checkPermission(
   userId: string,
@@ -15,6 +16,17 @@ export async function checkPermission(
   action: string,
 ): Promise<boolean> {
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    if (!user) return false;
+
+    if (user.role === "SYSTEM_ADMIN") {
+      return true;
+    }
+
     // Find the permission definition
     const permission = await prisma.permission.findUnique({
       where: { module_action: { module, action } },
@@ -40,13 +52,6 @@ export async function checkPermission(
     }
 
     // 2. Fall back to role default
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    if (!user) return false;
-
     const roleDefault = await prisma.roleDefaultPermission.findUnique({
       where: {
         role_permissionId: {

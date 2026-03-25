@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -55,6 +55,7 @@ export function useMonthlyReport() {
 
 export function useExportReport() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   return async (type: string, params?: Record<string, any>) => {
     try {
       const response = await api.get(`/admin/reports/export/${type}`, {
@@ -73,6 +74,8 @@ export function useExportReport() {
       link.remove();
       window.URL.revokeObjectURL(url);
       toast({ title: "Exported", description: `${type} report downloaded` });
+      // Refresh data activity stats so the count updates
+      queryClient.invalidateQueries({ queryKey: ["data-activity"] });
     } catch {
       toast({
         title: "Error",

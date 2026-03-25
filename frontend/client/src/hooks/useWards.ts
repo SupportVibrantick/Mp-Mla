@@ -71,6 +71,7 @@ export function useWards(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["wards", params],
     queryFn: () => wardsApi.list(params).then((r) => r.data),
+    staleTime: 0,
   });
 }
 
@@ -90,6 +91,7 @@ export function useWard(id: string | undefined) {
     queryKey: ["wards", id],
     queryFn: () => wardsApi.get(id!).then((r) => r.data),
     enabled: !!id,
+    staleTime: 0,
   });
 }
 
@@ -125,7 +127,9 @@ export function useBulkCreateWards() {
       qc.invalidateQueries({ queryKey: ["wards"] });
     },
     onError: (err: any) => {
-      throw new Error(err?.response?.data?.message || "Failed to bulk import wards");
+      throw new Error(
+        err?.response?.data?.message || "Failed to bulk import wards",
+      );
     },
   });
 }
@@ -323,5 +327,6 @@ export function useWardDemographics(wardId: string | undefined) {
     queryFn: () =>
       api.get(`/admin/wards/${wardId}/demographics`).then((r) => r.data),
     enabled: !!wardId,
+    staleTime: 0,
   });
 }

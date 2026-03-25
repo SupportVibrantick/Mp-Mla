@@ -23,8 +23,7 @@ export async function listGrievances(
       dateTo,
       overdue,
     } = req.query as Record<string, string>;
-
-    const where: any = {};
+    const where: any = { isDeleted: false };
     if (wardId) where.wardId = wardId;
     if (status && status !== "all") where.status = status;
     if (priority && priority !== "all") where.priority = priority;
@@ -46,12 +45,6 @@ export async function listGrievances(
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
       if (dateTo) where.createdAt.lte = new Date(dateTo + "T23:59:59Z");
-    }
-    if (overdue === "true") {
-      where.expectedResolutionDate = { lt: new Date() };
-      where.status = {
-        in: ["OPEN", "IN_PROGRESS", "ESCALATED"],
-      };
     }
 
     const [data, total] = await Promise.all([
@@ -85,10 +78,6 @@ export async function listGrievances(
     const now = new Date();
     const enriched = data.map((g) => ({
       ...g,
-      isOverdue:
-        !!g.expectedResolutionDate &&
-        g.expectedResolutionDate < now &&
-        ["OPEN", "IN_PROGRESS", "ESCALATED"].includes(g.status),
       daysSinceCreated: Math.floor(
         (now.getTime() - g.createdAt.getTime()) / (1000 * 60 * 60 * 24),
       ),
@@ -110,8 +99,10 @@ export async function getGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const grievanceId = req.params.id as string;
+
     const grievance = await prisma.grievance.findUnique({
-      where: { id: req.params.id as string },
+      where: { id: grievanceId },
       include: {
         ward: {
           select: {
@@ -137,13 +128,11 @@ export async function getGrievance(
       },
     });
 
-    if (!grievance) throw ApiError.notFound("Grievance not found");
+    if (!grievance || grievance.isDeleted) {
+      throw ApiError.notFound("Grievance not found");
+    }
 
     const now = new Date();
-    const isOverdue =
-      !!grievance.expectedResolutionDate &&
-      grievance.expectedResolutionDate < now &&
-      ["OPEN", "IN_PROGRESS", "ESCALATED"].includes(grievance.status);
 
     const daysSinceCreated = Math.floor(
       (now.getTime() - grievance.createdAt.getTime()) / (1000 * 60 * 60 * 24),
@@ -153,10 +142,9 @@ export async function getGrievance(
     if (grievance.resolvedAt) {
       resolutionDays = Math.floor(
         (grievance.resolvedAt.getTime() - grievance.createdAt.getTime()) /
-        (1000 * 60 * 60 * 24),
+          (1000 * 60 * 60 * 24),
       );
     }
-
     // Fetch department name if assigned
     let departmentName: string | null = null;
     if (grievance.assignedDept) {
@@ -166,13 +154,14 @@ export async function getGrievance(
       });
       departmentName = dept?.name || grievance.assignedDept;
     }
+    // Use assignedDept directly as department name (stores string in this app)
+    // let departmentName: string | null = grievance.assignedDept || null;
 
     res.json({
       success: true,
       data: {
         ...grievance,
         departmentName,
-        isOverdue,
         daysSinceCreated,
         resolutionDays,
       },
@@ -189,7 +178,7 @@ export async function getGrievanceStats(
 ): Promise<void> {
   try {
     const wardId = req.query.wardId as string;
-    const w: any = wardId ? { wardId } : {};
+    const w: any = { isDeleted: false, ...(wardId ? { wardId } : {}) };
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -202,7 +191,6 @@ export async function getGrievanceStats(
       bySource,
       byWard,
       byDept,
-      overdue,
       thisMonth,
       lastMonth,
     ] = await Promise.all([
@@ -250,15 +238,6 @@ export async function getGrievanceStats(
         orderBy: { _count: { assignedDept: "desc" } },
       }),
       prisma.grievance.count({
-        where: {
-          ...w,
-          expectedResolutionDate: { lt: now },
-          status: {
-            in: ["OPEN", "IN_PROGRESS", "ESCALATED"],
-          },
-        },
-      }),
-      prisma.grievance.count({
         where: { ...w, createdAt: { gte: monthStart } },
       }),
       prisma.grievance.count({
@@ -276,7 +255,6 @@ export async function getGrievanceStats(
       select: { id: true, name: true, wardNumber: true },
     });
     const wardMap = Object.fromEntries(wards.map((w) => [w.id, w]));
-
     // Resolve department names
     const deptIds = byDept
       .map((d) => d.assignedDept)
@@ -305,7 +283,6 @@ export async function getGrievanceStats(
       data: {
         total,
         pending,
-        overdue,
         open,
         inProgress,
         escalated,
@@ -357,7 +334,10 @@ export async function getGrievanceAnalytics(
     const start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
 
     const all = await prisma.grievance.findMany({
-      where: { createdAt: { gte: start } },
+      where: {
+        createdAt: { gte: start },
+        isDeleted: false,
+      },
       select: {
         createdAt: true,
         status: true,

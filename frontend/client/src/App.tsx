@@ -25,9 +25,9 @@ import WardDetailPage from "./pages/wards/WardDetailPage";
 import CommunityListPage from "./pages/community/CommunityListPage";
 import CommunityFormPage from "./pages/community/CommunityFormPage";
 import CommunityDetailPage from "./pages/community/CommunityDetailPage";
-import InstitutionListPage from "./pages/institutions/InstitutionListPage";
-import InstitutionFormPage from "./pages/institutions/InstitutionFormPage";
-import InstitutionDetailPage from "./pages/institutions/InstitutionDetailPage";
+import PublicFacilityListPage from "./pages/public-facilities/PublicFacilityListPage";
+import PublicFacilityFormPage from "./pages/public-facilities/PublicFacilityFormPage";
+import PublicFacilityDetailPage from "./pages/public-facilities/PublicFacilityDetailPage";
 import GrievanceListPage from "./pages/grievances/GrievanceListPage";
 import GrievanceFormPage from "./pages/grievances/GrievanceFormPage";
 import GrievanceDetailPage from "./pages/grievances/GrievanceDetailPage";
@@ -48,7 +48,13 @@ import LeaderListPage from "./pages/leaders/LeaderListPage";
 import LeaderDetailPage from "./pages/leaders/LeaderDetailPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import AuditLogsPage from "./pages/auditLogs/AuditLogsPage";
+import RecycleBinPage from "./pages/recycleBin/RecycleBinPage";
 import DemographicsPage from "@/pages/Demographics";
+import RegisterPublicFacilityPage from "./pages/public-facilities/RegisterPublicFacilityPage";
+import PublicFacilityRequestsPage from "./pages/public-facilities/PublicFacilityRequestsPage";
+import MeetingListPage from "./pages/meetings/MeetingListPage";
+import MeetingFormPage from "./pages/meetings/MeetingFormPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function Router() {
   return (
@@ -57,6 +63,11 @@ function Router() {
         <GuestRoute>
           <Login />
         </GuestRoute>
+      </Route>
+
+      {/* Public route — no login required */}
+      <Route path="/register-public-facility">
+        <RegisterPublicFacilityPage />
       </Route>
 
       <Route path="/">
@@ -186,24 +197,29 @@ function Router() {
           <Institutions />
         </ProtectedRoute>
       </Route> */}
-      <Route path="/institutions">
+      <Route path="/public-facilities">
         <ProtectedRoute module="institutions" action="read">
-          <InstitutionListPage />
+          <PublicFacilityListPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/institutions/new">
+      <Route path="/public-facilities/requests">
+        <ProtectedRoute module="institutions" action="read">
+          <PublicFacilityRequestsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/public-facilities/new">
         <ProtectedRoute module="institutions" action="create">
-          <InstitutionFormPage />
+          <PublicFacilityFormPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/institutions/:id/edit">
+      <Route path="/public-facilities/:id/edit">
         <ProtectedRoute module="institutions" action="update">
-          <InstitutionFormPage />
+          <PublicFacilityFormPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/institutions/:id">
+      <Route path="/public-facilities/:id">
         <ProtectedRoute module="institutions" action="read">
-          <InstitutionDetailPage />
+          <PublicFacilityDetailPage />
         </ProtectedRoute>
       </Route>
       {/* <Route path="/reports">
@@ -279,6 +295,11 @@ function Router() {
           <SettingsPage />
         </ProtectedRoute>
       </Route>
+      <Route path="/profile">
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      </Route>
       <Route path="/audit-logs">
         <ProtectedRoute module="audit_logs" action="read">
           <AuditLogsPage />
@@ -304,6 +325,28 @@ function Router() {
           <Wards />
         </ProtectedRoute>
       </Route> */}
+
+      <Route path="/meetings">
+        <ProtectedRoute module="meeting" action="read">
+          <MeetingListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/meetings/new">
+        <ProtectedRoute module="meeting" action="create">
+          <MeetingFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/meetings/:id/edit">
+        <ProtectedRoute module="meeting" action="update">
+          <MeetingFormPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/recycle-bin">
+        <ProtectedRoute module="recycle_bin" action="read">
+          <RecycleBinPage />
+        </ProtectedRoute>
+      </Route>
 
       <Route path="/change-password" component={ChangePassword} />
 

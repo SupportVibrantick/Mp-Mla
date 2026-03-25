@@ -5,6 +5,10 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import {
+  sendAdminNotification,
+  buildActivityEmailHtml,
+} from "../../../lib/email.js";
 import { z } from "zod";
 import catchAsync from "@/utils/catchAsync.js";
 
@@ -51,7 +55,6 @@ router.get(
       byCategory,
       bySource,
       byWard,
-      overdue,
       rows,
     ] = await Promise.all([
       prisma.grievance.count({ where: w }),
@@ -70,13 +73,6 @@ router.get(
         _count: true,
         orderBy: { _count: { wardId: "desc" } },
       }),
-      prisma.grievance.count({
-        where: {
-          ...w,
-          expectedResolutionDate: { lt: new Date() },
-          status: { in: ["OPEN", "IN_PROGRESS", "ESCALATED"] },
-        },
-      }),
       prisma.grievance.findMany({
         where: w,
         select: {
@@ -91,7 +87,6 @@ router.get(
           complainantPhone: true,
           createdAt: true,
           resolvedAt: true,
-          expectedResolutionDate: true,
           ward: { select: { name: true, wardNumber: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -148,7 +143,6 @@ router.get(
           total,
           open: openCount,
           resolved: resolvedCount,
-          overdue,
           resolutionRate:
             total > 0 ? Math.round((resolvedCount / total) * 100) : 0,
         },
@@ -388,102 +382,6 @@ router.get(
 );
 
 // ════════════════════════════════════════════════════════
-// SCHEME COVERAGE REPORT
-// ════════════════════════════════════════════════════════
-
-// router.get(
-//   "/scheme",
-//   requirePermission("reports", "read"),
-//   catchAsync(async (req, res) => {
-//     const { wardId } = req.query as Record<string, string>;
-
-//     const schemeWhere: any = {};
-
-//     // Filter schemes that HAVE beneficiaries in that ward
-//     if (wardId && wardId !== "all") {
-//       schemeWhere.beneficiaries = {
-//         some: { wardId },
-//       };
-//     }
-
-//     const schemes = await prisma.scheme.findMany({
-//       where: schemeWhere,
-//       include: {
-//         beneficiaries: {
-//           ...(wardId && wardId !== "all" ? { where: { wardId } } : {}),
-//           include: {
-//             ward: { select: { name: true, wardNumber: true } },
-//           },
-//         },
-//       },
-//       orderBy: { name: "asc" },
-//     });
-
-//     const deptIds = [...new Set(schemes.map((s) => s.department))];
-
-//     const depts = await prisma.department.findMany({
-//       where: { id: { in: deptIds } },
-//       select: { id: true, name: true },
-//     });
-
-//     const deptMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
-
-//     const rows = schemes.map((s) => {
-//       const totalBeneficiaries = s.beneficiaries.reduce(
-//         (sum, b) => sum + b.beneficiaryCount,
-//         0,
-//       );
-
-//       const totalTarget = s.beneficiaries.reduce(
-//         (sum, b) => sum + b.targetCount,
-//         0,
-//       );
-
-//       const totalDisbursed = s.beneficiaries.reduce(
-//         (sum, b) => sum + b.amountDisbursed,
-//         0,
-//       );
-
-//       const coverage =
-//         totalTarget > 0
-//           ? Math.round((totalBeneficiaries / totalTarget) * 100)
-//           : 0;
-
-//       return {
-//         id: s.id,
-//         name: s.name,
-//         department: deptMap[s.department] || s.department,
-//         level: s.level,
-//         status: s.status,
-//         budget: s.budget,
-//         totalBeneficiaries,
-//         totalTarget,
-//         totalDisbursed,
-//         coverage,
-//         wardCount: s.beneficiaries.length,
-//         beneficiaries: s.beneficiaries,
-//       };
-//     });
-
-//     const totals = {
-//       schemes: rows.length,
-//       active: rows.filter((r) => r.status === "ACTIVE").length,
-//       budget: rows.reduce((s, r) => s + r.budget, 0),
-//       beneficiaries: rows.reduce((s, r) => s + r.totalBeneficiaries, 0),
-//       target: rows.reduce((s, r) => s + r.totalTarget, 0),
-//       disbursed: rows.reduce((s, r) => s + r.totalDisbursed, 0),
-//       overallCoverage: (() => {
-//         const t = rows.reduce((s, r) => s + r.totalTarget, 0);
-//         const b = rows.reduce((s, r) => s + r.totalBeneficiaries, 0);
-//         return t > 0 ? Math.round((b / t) * 100) : 0;
-//       })(),
-//     };
-
-//     res.json({ success: true, data: { rows, totals } });
-//   }),
-// );
-
-// ════════════════════════════════════════════════════════
 // INSTITUTION REPORT
 // ════════════════════════════════════════════════════════
 
@@ -600,10 +498,10 @@ router.get(
     });
 
     const totals = {
-      population: wards.reduce((s, w) => s + w.totalPopulation, 0),
-      male: wards.reduce((s, w) => s + w.totalMale, 0),
-      female: wards.reduce((s, w) => s + w.totalFemale, 0),
-      households: wards.reduce((s, w) => s + w.totalHouseholds, 0),
+      population: wards.reduce((s: number, w: any) => s + w.totalPopulation, 0),
+      male: wards.reduce((s: number, w: any) => s + w.totalMale, 0),
+      female: wards.reduce((s: number, w: any) => s + w.totalFemale, 0),
+      households: wards.reduce((s: number, w: any) => s + w.totalHouseholds, 0),
       wards: wards.length,
     };
 
@@ -748,7 +646,6 @@ router.get(
     });
   }),
 );
-
 // ════════════════════════════════════════════════════════
 // CSV EXPORT
 // ════════════════════════════════════════════════════════
@@ -812,32 +709,15 @@ router.get(
         });
         break;
       }
-      // case "scheme": {
-      //   const schemes = await prisma.scheme.findMany({
-      //     include: {
-      //       beneficiaries: {
-      //         include: { ward: { select: { name: true, wardNumber: true } } },
-      //       },
-      //     },
-      //   });
-      //   csv =
-      //     "Scheme,Department,Level,Status,Budget,Total Beneficiaries,Total Target,Coverage%\n";
-      //   schemes.forEach((s) => {
-      //     const tb = s.beneficiaries.reduce(
-      //       (sum, b) => sum + b.beneficiaryCount,
-      //       0,
-      //     );
-      //     const tt = s.beneficiaries.reduce((sum, b) => sum + b.targetCount, 0);
-      //     csv += `"${s.name.replace(/"/g, '""')}","${s.department}","${s.level}","${s.status}",${s.budget},${tb},${tt},${tt > 0 ? Math.round((tb / tt) * 100) : 0}\n`;
-      //   });
-      //   break;
-      // }
       default:
         res
           .status(400)
           .json({ success: false, message: "Invalid export type" });
         return;
     }
+
+    // Count rows (subtract 1 for header line)
+    const rowCount = csv.split("\n").filter(Boolean).length - 1;
 
     await createAuditLog({
       userId: req.user!.id,
@@ -846,6 +726,34 @@ router.get(
       description: `Exported ${type} report as CSV`,
       ...getRequestMeta(req),
     });
+
+    // Log data activity
+    prisma.dataActivity
+      .create({
+        data: {
+          userId: req.user!.id,
+          userName: req.user!.name || "Unknown",
+          action: "EXPORT",
+          module: type,
+          recordCount: rowCount,
+          fileName: filename,
+          details: `Exported ${type} report (${rowCount} records)`,
+        },
+      })
+      .catch(() => {});
+
+    // Send admin notification (fire-and-forget)
+    const now = new Date();
+    sendAdminNotification(
+      `Data Export: ${type} report by ${req.user!.name || "Unknown"}`,
+      buildActivityEmailHtml({
+        action: "EXPORT",
+        module: type,
+        userName: req.user!.name || "Unknown",
+        recordCount: rowCount,
+        timestamp: now,
+      }),
+    );
 
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);

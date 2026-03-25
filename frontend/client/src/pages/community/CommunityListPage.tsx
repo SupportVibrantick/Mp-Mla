@@ -248,15 +248,6 @@ export default function CommunityListPage() {
                 Upload an Excel or CSV file to import multiple community groups.
                 Records are upserted by Name and Ward.
               </p>
-              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
-                <p>
-                  <strong>Valid Types:</strong>{" "}
-                  {COMMUNITY_TYPES.map((t) => t.value).join(", ")}
-                </p>
-                <p>
-                  <strong>Is Active:</strong> TRUE, FALSE
-                </p>
-              </div>
             </div>
           }
           onDownloadSample={downloadSampleTemplate}

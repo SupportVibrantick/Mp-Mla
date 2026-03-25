@@ -22,6 +22,9 @@ import dashboardRoutes from "./dashboard/index.js";
 import leaderRoutes from "./leader/index.js";
 import settingsRoutes from "./settings/index.js";
 import auditLogRoutes from "./auditLog/index.js";
+import recycleBinRoutes from "./recycleBin/index.js";
+import dataActivityRoutes from "./dataActivity/index.js";
+import meetingRoutes from "./meeting/index.js";
 
 // import auditLogRoutes from "./auditLog/index.js";
 // import settingsRoutes from "./settings/index.js";
@@ -49,8 +52,11 @@ router.use("/projects", projectRoutes);
 router.use("/funds", fundRoutes);
 
 router.use("/audit-logs", auditLogRoutes);
+router.use("/recycle-bin", recycleBinRoutes);
 router.use("/leaders", leaderRoutes);
 router.use("/reports", reportRoutes);
+router.use("/data-activity", dataActivityRoutes);
+router.use("/meetings", meetingRoutes);
 // router.use("/schemes", schemeRoutes);
 // router.use("/demographics", demographicsRoutes);
 // router.use("/departments", departmentRoutes);

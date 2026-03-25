@@ -4,6 +4,7 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
 import catchAsync from "@/utils/catchAsync.js";
@@ -19,6 +20,10 @@ export const deleteDepartment = catchAsync(async (req, res) => {
   });
   if (!dept) throw ApiError.notFound("Department not found");
 
+  if (dept.isDeleted) {
+    throw ApiError.badRequest("Department is already in recycle bin");
+  }
+
   // Check references
   const [gCount, pCount] = await Promise.all([
     prisma.grievance.count({ where: { assignedDept: dept.id } }),
@@ -30,7 +35,19 @@ export const deleteDepartment = catchAsync(async (req, res) => {
     );
   }
 
-  await prisma.department.delete({ where: { id: departmentId } });
+  await archiveToRecycleBin({
+    module: "departments",
+    entityType: "department",
+    recordId: dept.id,
+    recordLabel: dept.name,
+    payload: dept,
+    deletedById: req.user!.id,
+  });
+
+  await prisma.department.update({
+    where: { id: departmentId },
+    data: { isDeleted: true },
+  });
 
   await createAuditLog({
     userId: req.user!.id,

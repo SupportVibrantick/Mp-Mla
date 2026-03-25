@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 import { recalculateFundTotals } from "./helper.js";
@@ -20,8 +21,30 @@ export const deleteFunds = catchAsync(async (req, res) => {
   });
   if (!fund) throw ApiError.notFound("Fund not found");
 
-  // Cascade deletes transactions via Prisma relation
-  await prisma.fund.delete({ where: { id: fundId } });
+  if (fund.isDeleted) {
+    throw ApiError.badRequest("Fund is already in recycle bin");
+  }
+
+  await archiveToRecycleBin({
+    module: "funds",
+    entityType: "fund",
+    recordId: fund.id,
+    recordLabel: `${fund.fundType} ${fund.financialYear}`,
+    payload: fund,
+    deletedById: req.user!.id,
+  });
+
+  // Soft delete fund
+  await prisma.fund.update({
+    where: { id: fundId },
+    data: { isDeleted: true },
+  });
+  
+  // Also soft delete transactions
+  await prisma.fundTransaction.updateMany({
+    where: { fundId },
+    data: { isDeleted: true },
+  });
 
   await createAuditLog({
     userId: req.user!.id,
@@ -53,8 +76,18 @@ export const deleteFundTransaction = catchAsync(async (req, res) => {
 
   const projectId = txn.projectId;
 
-  await prisma.fundTransaction.delete({
+  await archiveToRecycleBin({
+    module: "funds",
+    entityType: "fund_transaction",
+    recordId: txn.id,
+    recordLabel: `Reversed ${txn.type} of ₹${txn.amount.toLocaleString()}`,
+    payload: txn,
+    deletedById: req.user!.id,
+  });
+
+  await prisma.fundTransaction.update({
     where: { id: txn.id },
+    data: { isDeleted: true },
   });
 
   // Recalculate fund totals

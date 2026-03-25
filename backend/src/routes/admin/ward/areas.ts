@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 import { z } from "zod";
 import {
   recomputeWardAggregates,
@@ -33,7 +34,7 @@ export async function listAreas(
     if (!ward) throw ApiError.notFound("Ward not found");
 
     const areas = await prisma.wardArea.findMany({
-      where: { wardId },
+      where: { wardId, isDeleted: false },
       include: {
         _count: { select: { demographics: true, communityGroups: true } },
       },
@@ -62,12 +63,12 @@ export async function getArea(
         ward: { select: { id: true, name: true, wardNumber: true } },
         demographics: { orderBy: { surveyDate: "desc" }, take: 1 },
         communityGroups: {
-          where: { isActive: true },
+          where: { isActive: true, isDeleted: false },
           orderBy: { name: "asc" },
         },
       },
     });
-    if (!area) throw ApiError.notFound("Area not found");
+    if (!area || area.isDeleted) throw ApiError.notFound("Area not found");
     res.json({ success: true, data: area });
   } catch (error) {
     next(error);
@@ -256,11 +257,33 @@ export async function deleteArea(
   try {
     const areaId = req.params.areaId as string;
 
-    const area = await prisma.wardArea.findUnique({ where: { id: areaId } });
-    if (!area) throw ApiError.notFound("Area not found");
+    const area = await prisma.wardArea.findUnique({
+      where: { id: areaId },
+      include: { demographics: true },
+    });
+    if (!area || area.isDeleted) throw ApiError.notFound("Area not found");
 
-    // Demographics cascade-deletes because of onDelete: Cascade on WardArea
-    await prisma.wardArea.delete({ where: { id: areaId } });
+    const linkedGroups = await prisma.communityGroup.findMany({
+      where: { wardAreaId: areaId, isDeleted: false },
+      select: { id: true },
+    });
+
+    await archiveToRecycleBin({
+      module: "wards",
+      entityType: "ward_area",
+      recordId: area.id,
+      recordLabel: area.name,
+      payload: {
+        ...area,
+        communityGroupIds: linkedGroups.map((g) => g.id),
+      },
+      deletedById: req.user?.id,
+    });
+
+    await prisma.wardArea.update({
+      where: { id: areaId },
+      data: { isDeleted: true },
+    });
 
     // Recompute ward
     await recomputeWardAggregates(area.wardId);
@@ -272,12 +295,14 @@ export async function deleteArea(
       action: "DELETE",
       module: "wards",
       recordId: area.id,
-      description: `Deleted area "${area.name}"`,
+      description: `Moved area "${area.name}" to recycle bin`,
       ...getRequestMeta(req),
     });
 
-    res.json({ success: true, message: `Area "${area.name}" deleted` });
+    res.json({ success: true, message: `Area "${area.name}" moved to recycle bin` });
   } catch (error) {
     next(error);
   }
 }
+
+

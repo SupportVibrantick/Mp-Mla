@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 
 export async function deleteLeader(
   req: Request,
@@ -15,11 +16,26 @@ export async function deleteLeader(
     const lenderId = req.params.id as string;
     const leader = await prisma.leader.findUnique({
       where: { id: lenderId },
+      include: { greetings: true },
     });
     if (!leader) throw ApiError.notFound("Leader not found");
 
-    await prisma.leader.delete({
+    if (leader.isDeleted) {
+      throw ApiError.badRequest("Leader is already in recycle bin");
+    }
+
+    await archiveToRecycleBin({
+      module: "leaders",
+      entityType: "leader",
+      recordId: leader.id,
+      recordLabel: leader.name,
+      payload: leader,
+      deletedById: req.user?.id,
+    });
+
+    await prisma.leader.update({
       where: { id: lenderId },
+      data: { isDeleted: true },
     });
 
     await createAuditLog({
@@ -27,13 +43,13 @@ export async function deleteLeader(
       action: "DELETE",
       module: "leaders",
       recordId: leader.id,
-      description: `Deleted leader "${leader.name}"`,
+      description: `Moved leader "${leader.name}" to recycle bin`,
       ...getRequestMeta(req),
     });
 
     res.json({
       success: true,
-      message: `"${leader.name}" removed`,
+      message: `"${leader.name}" moved to recycle bin`,
     });
   } catch (error) {
     next(error);

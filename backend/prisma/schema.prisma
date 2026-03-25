@@ -55,6 +55,12 @@ enum InstitutionStatus {
   PROPOSED
 }
 
+enum InstitutionRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum InstitutionCategory {
   TEMPLE
   MOSQUE
@@ -346,6 +352,7 @@ model Ward {
   name       String     @unique
   zone       String? // "A", "B", "C" etc.
   status     WardStatus @default(ACTIVE)
+  isDeleted  Boolean    @default(false)
 
   // Aggregate fields (computed from areas, cached for performance)
   totalPopulation Int @default(0)
@@ -366,17 +373,19 @@ model Ward {
   updatedAt DateTime @updatedAt
 
   // Relations
-  areas           WardArea[]
-  councillors     WardCouncillor[]
-  institutions    Institution[]
-  grievances      Grievance[]
-  projects        Project[]
-  demographics    Demographics[]
-  communityGroups CommunityGroup[]
+  areas               WardArea[]
+  councillors         WardCouncillor[]
+  institutions        Institution[]
+  grievances          Grievance[]
+  projects            Project[]
+  demographics        Demographics[]
+  communityGroups     CommunityGroup[]
   // schemeBeneficiaries SchemeBeneficiary[]
-  leaders         Leader[]
+  leaders             Leader[]
+  institutionRequests InstitutionRequest[]
 
   @@index([status])
+  @@index([isDeleted])
   @@index([zone])
   @@map("wards")
 }
@@ -396,6 +405,7 @@ model WardArea {
   latitude    Float?
   longitude   Float?
   isActive    Boolean      @default(true)
+  isDeleted   Boolean      @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -406,6 +416,7 @@ model WardArea {
 
   @@unique([wardId, name])
   @@index([wardId])
+  @@index([isDeleted])
   @@index([areaType])
   @@map("ward_areas")
 }
@@ -451,6 +462,7 @@ model Institution {
   email           String?
   website         String?
   status          InstitutionStatus   @default(ACTIVE)
+  isDeleted       Boolean             @default(false)
   description     String?
   photoUrl        String?
   capacity        Int?
@@ -465,6 +477,7 @@ model Institution {
   @@index([wardId])
   @@index([category])
   @@index([status])
+  @@index([isDeleted])
   @@map("institutions")
 }
 
@@ -487,6 +500,54 @@ model Incharge {
 
   @@index([institutionId])
   @@map("incharges")
+}
+
+model InstitutionRequest {
+  id              String              @id @default(cuid())
+  name            String
+  category        InstitutionCategory
+  subcategory     String?
+  address         String
+  wardId          String
+  contactNo       String?
+  email           String?
+  website         String?
+  description     String?
+  capacity        Int?
+  establishedDate DateTime?
+
+  // Submitter info
+  submitterName  String
+  submitterPhone String
+  submitterEmail String?
+
+  // Head/Incharge info
+  headName          String
+  headDesignation   String
+  headContact       String
+  headEmail         String?
+  headDateOfBirth   DateTime?
+  headAppointedDate DateTime?
+
+  // KYC Documents (JSON array of {name, url, type})
+  documents Json? @default("[]")
+
+  // Approval workflow
+  status          InstitutionRequestStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  institutionId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ward Ward @relation(fields: [wardId], references: [id])
+
+  @@index([status])
+  @@index([wardId])
+  @@index([createdAt])
+  @@map("institution_requests")
 }
 
 // ════════════════════════════════════════════════════════
@@ -512,6 +573,7 @@ model CommunityGroup {
   foundedDate     DateTime?
   registrationNo  String?
   isActive        Boolean            @default(true)
+  isDeleted       Boolean            @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -521,6 +583,7 @@ model CommunityGroup {
 
   @@index([wardId])
   @@index([wardAreaId])
+  @@index([isDeleted])
   @@index([type])
   @@map("community_groups")
 }
@@ -574,9 +637,14 @@ model Demographics {
   femaleLiteracyRate Float?
 
   // Voters
-  totalVoters  Int @default(0)
-  maleVoters   Int @default(0)
-  femaleVoters Int @default(0)
+  totalVoters    Int @default(0)
+  maleVoters     Int @default(0)
+  femaleVoters   Int @default(0)
+  newVotersCount Int @default(0)
+
+  // Vital Statistics
+  totalBirths Int @default(0)
+  totalDeaths Int @default(0)
 
   // Source & Date
   surveyDate DateTime @default(now())
@@ -609,6 +677,7 @@ model Grievance {
   assignedDept String?
   assignedToId String?
   status       GrievanceStatus   @default(OPEN)
+  isDeleted    Boolean           @default(false)
   priority     GrievancePriority @default(MEDIUM)
   source       String            @default("OFFICE")
 
@@ -641,11 +710,13 @@ model Grievance {
 
   timeline     GrievanceTimeline[]
   attachments  GrievanceAttachment[]
-  department   Department?           @relation(fields: [departmentId], references: [id])
+  // department   Department?           @relation(fields: [departmentId], references: [id])
   departmentId String?
+  department   Department?           @relation(fields: [departmentId], references: [id])
 
   @@index([wardId])
   @@index([status])
+  @@index([isDeleted])
   @@index([priority])
   @@index([assignedDept])
   @@index([assignedToId])
@@ -710,6 +781,7 @@ model Project {
   fundType         FundType @default(OTHER)
 
   status            ProjectStatus @default(PENDING)
+  isDeleted         Boolean       @default(false)
   completionPercent Int           @default(0)
 
   description String?
@@ -730,6 +802,7 @@ model Project {
 
   @@index([wardId])
   @@index([status])
+  @@index([isDeleted])
   @@index([department])
   @@index([createdAt])
   @@map("projects")
@@ -837,11 +910,13 @@ model Department {
   headPhone   String?
   headEmail   String?
   isActive    Boolean @default(true)
+  isDeleted   Boolean @default(false)
 
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   grievances Grievance[]
 
+  @@index([isDeleted])
   @@map("departments")
 }
 
@@ -896,10 +971,12 @@ model Leader {
 
   // Relations
   relation  String? // "Supporter", "Neutral", "Alliance"
-  influence String? // "High", "Medium", "Low"
+  // influence String? // "High", "Medium", "Low"
   notes     String?
+
   tags      String[]
   isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -911,6 +988,7 @@ model Leader {
   @@index([category])
   @@index([wardId])
   @@index([isActive])
+  @@index([isDeleted])
   @@map("leaders")
 }
 
@@ -946,6 +1024,7 @@ model Fund {
   totalAllocated Float    @default(0)
   totalReleased  Float    @default(0)
   totalUtilized  Float    @default(0)
+  isDeleted      Boolean  @default(false)
 
   transactions FundTransaction[]
 
@@ -953,6 +1032,7 @@ model Fund {
   updatedAt DateTime @updatedAt
 
   @@unique([fundType, financialYear])
+  @@index([isDeleted])
   @@map("funds")
 }
 
@@ -964,11 +1044,13 @@ model FundTransaction {
   description String?
   projectId   String?
   date        DateTime @default(now())
+  isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   fund Fund @relation(fields: [fundId], references: [id], onDelete: Cascade)
 
   @@index([fundId])
+  @@index([isDeleted])
   @@map("fund_transactions")
 }
 
@@ -1102,4 +1184,83 @@ model Backup {
   completedAt DateTime?
 
   @@map("backups")
+}
+
+// ════════════════════════════════════════════════════════
+// DATA ACTIVITY (Export/Import Tracking)
+// ════════════════════════════════════════════════════════
+
+model DataActivity {
+  id          String   @id @default(cuid())
+  userId      String?
+  userName    String
+  action      String // "EXPORT" or "IMPORT"
+  module      String // e.g. "grievance", "ward", "leader", etc.
+  recordCount Int      @default(0)
+  fileName    String?
+  details     String? // Optional extra info
+  createdAt   DateTime @default(now())
+
+  @@index([action])
+  @@index([module])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("data_activities")
+}
+
+model RecycleBinEntry {
+  id           String    @id @default(cuid())
+  module       String
+  entityType   String
+  recordId     String
+  recordLabel  String?
+  payload      Json
+  deletedById  String?
+  deletedAt    DateTime  @default(now())
+  restoredById String?
+  restoredAt   DateTime?
+
+  @@index([module])
+  @@index([entityType])
+  @@index([recordId])
+  @@index([deletedAt])
+  @@index([restoredAt])
+  @@map("recycle_bin_entries")
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum MeetingType {
+  ONLINE
+  OFFLINE
+}
+
+model Meeting {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime
+  time        String?
+  type        MeetingType   @default(OFFLINE)
+  location    String? // Used for OFFLINE meeting location or ONLINE fallback
+  meetingLink String? // Used for ONLINE meeting link (Zoom, Meet, etc)
+  status      MeetingStatus @default(SCHEDULED)
+  attendees   String?
+  organizedBy String?
+  isDeleted   Boolean       @default(false)
+
+  reminderSent Boolean       @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([status])
+  @@index([isDeleted])
+  @@index([type])
+  @@map("meetings")
 }

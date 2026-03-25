@@ -11,7 +11,7 @@ import catchAsync from "@/utils/catchAsync.js";
 export const getDepartments = catchAsync(async (req, res) => {
   const { search, isActive } = req.query as Record<string, string>;
 
-  const where: any = {};
+  const where: any = { isDeleted: false };
   if (isActive !== undefined && isActive !== "all")
     where.isActive = isActive === "true";
   if (search) {
@@ -71,24 +71,19 @@ export const getDepartments = catchAsync(async (req, res) => {
  */
 export const getDepartmentStats = catchAsync(async (_req, res) => {
   const [total, active, inactive] = await Promise.all([
-    prisma.department.count(),
-    prisma.department.count({ where: { isActive: true } }),
-    prisma.department.count({ where: { isActive: false } }),
+    prisma.department.count({ where: { isDeleted: false } }),
+    prisma.department.count({ where: { isActive: true, isDeleted: false } }),
+    prisma.department.count({ where: { isActive: false, isDeleted: false } }),
   ]);
 
-  const totalActiveGrievances = await prisma.grievance.count({
-    where: {
-      assignedDept: { not: null },
-      status: { in: ["OPEN", "IN_PROGRESS", "ESCALATED"] },
-    },
-  });
-
-  const totalActiveProjects = await prisma.project.count({
-    where: {
-      department: { not: "" },
-      status: { in: ["PENDING", "RUNNING"] },
-    },
-  });
+  const [totalGrievances, totalProjects] = await Promise.all([
+    prisma.grievance.count({
+      where: { assignedDept: { not: null } },
+    }),
+    prisma.project.count({
+      where: { department: { not: "" } },
+    }),
+  ]);
 
   res.json({
     success: true,
@@ -96,8 +91,10 @@ export const getDepartmentStats = catchAsync(async (_req, res) => {
       total,
       active,
       inactive,
-      totalActiveGrievances,
-      totalActiveProjects,
+      totalGrievances,
+      totalProjects,
+      totalActiveGrievances: totalGrievances, // fallback if needed
+      totalActiveProjects: totalProjects, // fallback
     },
   });
 });
@@ -108,7 +105,7 @@ export const getDepartmentStats = catchAsync(async (_req, res) => {
  */
 export const getSingleDepartment = catchAsync(async (req, res) => {
   const dept = await prisma.department.findUnique({
-    where: { id: req.params.id as string },
+    where: { id: req.params.id as string, isDeleted: false },
   });
   if (!dept) throw ApiError.notFound("Department not found");
 

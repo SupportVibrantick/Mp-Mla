@@ -8,7 +8,6 @@ import { ApiError } from "../../../utils/ApiError.js";
 import {
   isValidTransition,
   getTransitionLabel,
-  calculateExpectedDate,
 } from "./helpers.js";
 
 export async function updateGrievance(
@@ -25,17 +24,6 @@ export async function updateGrievance(
 
     const data: any = { ...req.body };
     if (data.complainantEmail === "") delete data.complainantEmail;
-    if (data.expectedResolutionDate)
-      data.expectedResolutionDate = new Date(data.expectedResolutionDate);
-
-    // Recalculate SLA if priority changed
-    if (
-      data.priority &&
-      data.priority !== old.priority &&
-      !data.expectedResolutionDate
-    ) {
-      data.expectedResolutionDate = calculateExpectedDate(data.priority);
-    }
 
     const grievance = await prisma.grievance.update({
       where: { id: grievanceId },
@@ -136,13 +124,18 @@ export async function changeStatus(
         if (escalationReason) updateData.escalationReason = escalationReason;
         break;
       case "REJECTED":
-        updateData.rejectionReason = rejectionReason || "Rejected by administrator";
+        updateData.rejectionReason =
+          rejectionReason || "Rejected by administrator";
         updateData.resolvedAt = null;
         updateData.closedAt = null;
         updateData.resolutionNotes = null;
         break;
       case "IN_PROGRESS":
-        if (old.status === "RESOLVED" || old.status === "CLOSED" || old.status === "REJECTED") {
+        if (
+          old.status === "RESOLVED" ||
+          old.status === "CLOSED" ||
+          old.status === "REJECTED"
+        ) {
           updateData.resolvedAt = null;
           updateData.closedAt = null;
           updateData.resolutionNotes = null;

@@ -164,7 +164,7 @@ export function useDeleteCommunityGroup() {
       api.delete(`/admin/community-groups/${id}`).then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["community-groups"] });
-      toast({ title: "Deleted", description: res.message });
+      toast({ title: "Moved to Recycle Bin", description: res.message });
     },
     onError: (err: any) => {
       toast({

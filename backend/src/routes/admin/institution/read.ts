@@ -12,8 +12,7 @@ export async function listInstitutions(
     const { page, limit, skip } = parsePagination(req.query);
     const { wardId, category, status, search, sortBy, sortOrder } =
       req.query as Record<string, string>;
-
-    const where: any = {};
+    const where: any = { isDeleted: false };
     if (wardId) where.wardId = wardId;
     if (category && category !== "all") where.category = category;
     if (status && status !== "all") where.status = status;
@@ -75,8 +74,10 @@ export async function getInstitution(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const institutionId = req.params.id as string;
+
     const institution = await prisma.institution.findUnique({
-      where: { id: req.params.id as string },
+      where: { id: institutionId },
       include: {
         ward: {
           select: {
@@ -94,14 +95,19 @@ export async function getInstitution(
       },
     });
 
-    if (!institution) throw ApiError.notFound("Institution not found");
+    if (!institution || institution.isDeleted) {
+      throw ApiError.notFound("Institution not found");
+    }
 
     // Related institutions in same ward + category
     const related = await prisma.institution.findMany({
       where: {
         wardId: institution.wardId,
-        id: { not: institution.id },
         status: "ACTIVE",
+        AND: [
+          { id: { not: institution.id } },
+          { isDeleted: false },
+        ],
       },
       select: {
         id: true,
@@ -129,7 +135,7 @@ export async function getInstitutionStats(
 ): Promise<void> {
   try {
     const wardId = req.query.wardId as string;
-    const baseWhere: any = {};
+    const baseWhere: any = { isDeleted: false };
     if (wardId) baseWhere.wardId = wardId;
 
     const [
@@ -173,7 +179,10 @@ export async function getInstitutionStats(
       prisma.incharge.count({
         where: {
           isActive: true,
-          ...(wardId ? { institution: { wardId } } : {}),
+          institution: {
+            isDeleted: false,
+            ...(wardId ? { wardId } : {}),
+          },
         },
       }),
       prisma.institution.findMany({

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 
 /**
  * GET /api/admin/leaders/export
@@ -9,7 +10,7 @@ import catchAsync from "@/utils/catchAsync.js";
 export const exportLeaders = catchAsync(async (req: Request, res: Response) => {
   const { wardId, category } = req.query;
 
-  const where: any = {};
+  const where: any = { isDeleted: false };
   if (wardId) where.wardId = String(wardId);
   if (category && category !== "all") where.category = category;
 
@@ -21,7 +22,6 @@ export const exportLeaders = catchAsync(async (req: Request, res: Response) => {
     orderBy: { name: "asc" },
   });
 
-  // Use ?? "" instead of || "" to preserve 0 values (not relevant here but consistent)
   const exportData = data.map((item) => ({
     name: item.name,
     category: item.category,
@@ -40,11 +40,36 @@ export const exportLeaders = catchAsync(async (req: Request, res: Response) => {
     twitterUrl: item.twitterUrl ?? "",
     instagramUrl: item.instagramUrl ?? "",
     relation: item.relation ?? "",
-    influence: item.influence ?? "",
+    // influence: item.influence ?? "",
     notes: item.notes ?? "",
+
     tags: (item.tags || []).join(", "),
     isActive: item.isActive ? "TRUE" : "FALSE",
   }));
 
   res.json({ success: true, data: exportData });
+
+  // Log data activity (fire-and-forget)
+  prisma.dataActivity.create({
+    data: {
+      userId: req.user!.id,
+      userName: req.user!.name || "Unknown",
+      action: "EXPORT",
+      module: "leaders",
+      recordCount: exportData.length,
+      details: `Exported ${exportData.length} leaders`,
+    },
+  }).catch(() => {});
+
+  // Send admin notification (fire-and-forget)
+  sendAdminNotification(
+    `Data Export: leaders by ${req.user!.name || "Unknown"}`,
+    buildActivityEmailHtml({
+      action: "EXPORT",
+      module: "leaders",
+      userName: req.user!.name || "Unknown",
+      recordCount: exportData.length,
+      timestamp: new Date(),
+    }),
+  );
 });

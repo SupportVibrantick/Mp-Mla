@@ -3,6 +3,7 @@ import {
   useSettings,
   useUpdateSettings,
   useResetSettings,
+  useTestEmail,
   SETTING_GROUPS,
 } from "@/hooks/useSettings";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -62,6 +63,8 @@ import {
   CheckCircle2,
   MapPin,
   Navigation,
+  Mail,
+  Calendar,
 } from "lucide-react";
 
 // ─── Google Translate Integration ────────────────────────────────────────────
@@ -99,7 +102,9 @@ const GROUP_ICONS: Record<string, any> = {
   security: Shield,
   grievance: ClipboardList,
   notifications: Bell,
+  email_smtp: Mail,
   backup: Database,
+  meetings: Calendar,
 };
 
 // Add profile, language & location to the group list for sidebar rendering
@@ -585,11 +590,13 @@ export default function SettingsPage() {
   const { data: res, isLoading } = useSettings();
   const updateMut = useUpdateSettings();
   const resetMut = useResetSettings();
+  const testEmailMut = useTestEmail();
 
   const [activeGroup, setActiveGroup] = useState("profile");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [testEmailTo, setTestEmailTo] = useState("");
 
   const allSettings = res?.data || {};
 
@@ -972,6 +979,39 @@ export default function SettingsPage() {
                         <p className="text-sm text-muted-foreground py-8 text-center">
                           No settings available for this group yet.
                         </p>
+                      )}
+
+                      {/* Test Connection UI for Email & SMTP */}
+                      {activeGroup === "email_smtp" && (
+                        <>
+                          <Separator className="my-6" />
+                          <div className="rounded-lg border p-5 bg-muted/20">
+                            <h3 className="text-sm font-semibold mb-1">Test SMTP Connection</h3>
+                            <p className="text-xs text-muted-foreground mb-4">
+                              Save your settings first, then enter an email address below to test if the portal can send emails.
+                            </p>
+                            <div className="flex gap-3 max-w-sm">
+                              <Input
+                                placeholder="test@example.com"
+                                type="email"
+                                value={testEmailTo}
+                                onChange={(e) => setTestEmailTo(e.target.value)}
+                              />
+                              <Button 
+                                onClick={() => testEmailMut.mutate(testEmailTo)}
+                                disabled={!testEmailTo || testEmailMut.isPending}
+                                className="shrink-0 gap-2"
+                              >
+                                {testEmailMut.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Mail className="h-4 w-4" />
+                                )}
+                                Send Test
+                              </Button>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   );

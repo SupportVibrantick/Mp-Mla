@@ -163,11 +163,10 @@ export default function WardDetailPage() {
                   Ward #{ward.wardNumber}
                 </Badge>
                 <Badge
-                  className={`text-[10px] ${
-                    ward.status === "ACTIVE"
+                  className={`text-[10px] ${ward.status === "ACTIVE"
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-600"
-                  }`}
+                    }`}
                 >
                   {ward.status}
                 </Badge>
@@ -748,45 +747,48 @@ export default function WardDetailPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {[
-                        {
-                          label: "Hindu 🕉️",
-                          value: demographics.wardLevel.hinduCount,
-                          color: "bg-orange-500",
-                        },
-                        {
-                          label: "Muslim ☪️",
-                          value: demographics.wardLevel.muslimCount,
-                          color: "bg-green-600",
-                        },
-                        {
-                          label: "Sikh 🙏",
-                          value: demographics.wardLevel.sikhCount,
-                          color: "bg-blue-600",
-                        },
-                        {
-                          label: "Christian ✝️",
-                          value: demographics.wardLevel.christianCount,
-                          color: "bg-red-500",
-                        },
-                        {
-                          label: "Buddhist ☸️",
-                          value: demographics.wardLevel.buddhistCount,
-                          color: "bg-yellow-600",
-                        },
-                        {
-                          label: "Jain",
-                          value: demographics.wardLevel.jainCount,
-                          color: "bg-purple-500",
-                        },
-                        {
-                          label: "Other",
-                          value: demographics.wardLevel.otherReligionCount,
-                          color: "bg-gray-500",
-                        },
-                      ]
-                        .filter((r) => r.value > 0)
-                        .map((r) => (
+                      {(() => {
+                        const religionData = [
+                          {
+                            label: "Hindu 🕉️",
+                            value: demographics.wardLevel.hinduCount || 0,
+                            color: "bg-orange-500",
+                          },
+                          {
+                            label: "Muslim ☪️",
+                            value: demographics.wardLevel.muslimCount || 0,
+                            color: "bg-green-600",
+                          },
+                          {
+                            label: "Sikh 🙏",
+                            value: demographics.wardLevel.sikhCount || 0,
+                            color: "bg-blue-600",
+                          },
+                          {
+                            label: "Christian ✝️",
+                            value: demographics.wardLevel.christianCount || 0,
+                            color: "bg-red-500",
+                          },
+                          {
+                            label: "Buddhist ☸️",
+                            value: demographics.wardLevel.buddhistCount || 0,
+                            color: "bg-yellow-600",
+                          },
+                          {
+                            label: "Jain",
+                            value: demographics.wardLevel.jainCount || 0,
+                            color: "bg-purple-500",
+                          },
+                          {
+                            label: "Other",
+                            value: demographics.wardLevel.otherReligionCount || 0,
+                            color: "bg-gray-500",
+                          },
+                        ].filter((r) => r.value > 0);
+
+                        const totalReligion = religionData.reduce((acc, r) => acc + r.value, 0) || 1;
+
+                        return religionData.map((r) => (
                           <div
                             key={r.label}
                             className="flex items-center gap-3"
@@ -796,22 +798,17 @@ export default function WardDetailPage() {
                               <div
                                 className={`h-full ${r.color} rounded-full`}
                                 style={{
-                                  width: `${(r.value / (demographics.wardLevel.totalPopulation || 1)) * 100}%`,
+                                  width: `${(r.value / totalReligion) * 100}%`,
                                 }}
                               />
                             </div>
                             <span className="font-mono text-xs w-20 text-right">
                               {r.value.toLocaleString()} (
-                              {(
-                                (r.value /
-                                  (demographics.wardLevel.totalPopulation ||
-                                    1)) *
-                                100
-                              ).toFixed(1)}
-                              %)
+                              {((r.value / totalReligion) * 100).toFixed(1)}%)
                             </span>
                           </div>
-                        ))}
+                        ));
+                      })()}
                     </CardContent>
                   </Card>
 
@@ -822,35 +819,38 @@ export default function WardDetailPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {[
-                        {
-                          label: "General",
-                          value: demographics.wardLevel.generalCount,
-                          color: "bg-slate-500",
-                        },
-                        {
-                          label: "OBC",
-                          value: demographics.wardLevel.obcCount,
-                          color: "bg-amber-500",
-                        },
-                        {
-                          label: "SC",
-                          value: demographics.wardLevel.scCount,
-                          color: "bg-blue-500",
-                        },
-                        {
-                          label: "ST",
-                          value: demographics.wardLevel.stCount,
-                          color: "bg-emerald-500",
-                        },
-                        {
-                          label: "Minority",
-                          value: demographics.wardLevel.minorityCount,
-                          color: "bg-purple-500",
-                        },
-                      ]
-                        .filter((c) => c.value > 0)
-                        .map((c) => (
+                      {(() => {
+                        const casteData = [
+                          {
+                            label: "General",
+                            value: demographics.wardLevel.generalCount || 0,
+                            color: "bg-slate-500",
+                          },
+                          {
+                            label: "OBC",
+                            value: demographics.wardLevel.obcCount || 0,
+                            color: "bg-amber-500",
+                          },
+                          {
+                            label: "SC",
+                            value: demographics.wardLevel.scCount || 0,
+                            color: "bg-blue-500",
+                          },
+                          {
+                            label: "ST",
+                            value: demographics.wardLevel.stCount || 0,
+                            color: "bg-emerald-500",
+                          },
+                          {
+                            label: "Minority",
+                            value: demographics.wardLevel.minorityCount || 0,
+                            color: "bg-purple-500",
+                          },
+                        ].filter((c) => c.value > 0);
+
+                        const totalCaste = casteData.reduce((acc, c) => acc + c.value, 0) || 1;
+
+                        return casteData.map((c) => (
                           <div
                             key={c.label}
                             className="flex items-center gap-3"
@@ -860,22 +860,17 @@ export default function WardDetailPage() {
                               <div
                                 className={`h-full ${c.color} rounded-full`}
                                 style={{
-                                  width: `${(c.value / (demographics.wardLevel.totalPopulation || 1)) * 100}%`,
+                                  width: `${(c.value / totalCaste) * 100}%`,
                                 }}
                               />
                             </div>
                             <span className="font-mono text-xs w-20 text-right">
                               {c.value.toLocaleString()} (
-                              {(
-                                (c.value /
-                                  (demographics.wardLevel.totalPopulation ||
-                                    1)) *
-                                100
-                              ).toFixed(1)}
-                              %)
+                              {((c.value / totalCaste) * 100).toFixed(1)}%)
                             </span>
                           </div>
-                        ))}
+                        ));
+                      })()}
                     </CardContent>
                   </Card>
                 </div>
@@ -887,51 +882,49 @@ export default function WardDetailPage() {
                       <CardTitle className="text-sm">Economic</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          BPL Households
-                        </span>
-                        <span className="font-mono font-medium">
-                          {demographics.wardLevel.bplHouseholds.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          APL Households
-                        </span>
-                        <span className="font-mono font-medium">
-                          {demographics.wardLevel.aplHouseholds.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="h-3 bg-muted rounded-full overflow-hidden flex">
-                        <div
-                          className="h-full bg-red-400"
-                          style={{
-                            width: `${(demographics.wardLevel.bplHouseholds / (demographics.wardLevel.totalHouseholds || 1)) * 100}%`,
-                          }}
-                        />
-                        <div className="h-full bg-green-400 flex-1" />
-                      </div>
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span>
-                          BPL{" "}
-                          {(
-                            (demographics.wardLevel.bplHouseholds /
-                              (demographics.wardLevel.totalHouseholds || 1)) *
-                            100
-                          ).toFixed(1)}
-                          %
-                        </span>
-                        <span>
-                          APL{" "}
-                          {(
-                            (demographics.wardLevel.aplHouseholds /
-                              (demographics.wardLevel.totalHouseholds || 1)) *
-                            100
-                          ).toFixed(1)}
-                          %
-                        </span>
-                      </div>
+                      {(() => {
+                        const bpl = demographics.wardLevel.bplHouseholds || 0;
+                        const apl = demographics.wardLevel.aplHouseholds || 0;
+                        const totalHouseholds = bpl + apl || 1;
+
+                        return (
+                          <>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                BPL Households
+                              </span>
+                              <span className="font-mono font-medium">
+                                {bpl.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                APL Households
+                              </span>
+                              <span className="font-mono font-medium">
+                                {apl.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="h-3 bg-muted rounded-full overflow-hidden flex">
+                              <div
+                                className="h-full bg-red-400"
+                                style={{
+                                  width: `${(bpl / totalHouseholds) * 100}%`,
+                                }}
+                              />
+                              <div className="h-full bg-green-400 flex-1" />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-muted-foreground">
+                              <span>
+                                BPL {((bpl / totalHouseholds) * 100).toFixed(1)}%
+                              </span>
+                              <span>
+                                APL {((apl / totalHouseholds) * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
 
@@ -978,37 +971,69 @@ export default function WardDetailPage() {
 
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Voters</CardTitle>
+                      <CardTitle className="text-sm">Voters & Vital Stats</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">
-                          {demographics.wardLevel.totalVoters.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Total Voters
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-center">
+                    <CardContent className="space-y-4">
+                      {/* Voters Summary */}
+                      <div className="flex items-center justify-around text-center pb-2 border-b">
                         <div>
-                          <p className="text-lg font-bold text-blue-600">
-                            {demographics.wardLevel.maleVoters.toLocaleString()}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            Male
-                          </p>
+                          <p className="text-xl font-bold">{demographics.wardLevel.totalVoters.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase">Total Voters</p>
                         </div>
+                        <div className="w-px h-8 bg-muted" />
                         <div>
-                          <p className="text-lg font-bold text-pink-600">
-                            {demographics.wardLevel.femaleVoters.toLocaleString()}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            Female
-                          </p>
+                          <p className="text-xl font-bold text-blue-600">{demographics.wardLevel.newVotersCount.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase">New Voters</p>
                         </div>
                       </div>
+
+                      {/* Vital Stats */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-2 rounded bg-green-50 dark:bg-green-900/20 text-center border border-green-100 dark:border-green-800/30">
+                          <p className="text-lg font-bold text-green-600">
+                            {demographics.wardLevel.totalBirths.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+                            Births
+                          </p>
+                        </div>
+                        <div className="p-2 rounded bg-red-50 dark:bg-red-900/20 text-center border border-red-100 dark:border-red-800/30">
+                          <p className="text-lg font-bold text-red-600">
+                            {demographics.wardLevel.totalDeaths.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+                            Deaths
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Gender Split (Voters) */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-medium">
+                          <span>Voter Gender Split</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden flex">
+                          <div
+                            className="h-full bg-blue-500"
+                            style={{
+                              width: `${(demographics.wardLevel.maleVoters / (demographics.wardLevel.totalVoters || 1)) * 100}%`,
+                            }}
+                          />
+                          <div
+                            className="h-full bg-pink-500"
+                            style={{
+                              width: `${(demographics.wardLevel.femaleVoters / (demographics.wardLevel.totalVoters || 1)) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[10px] font-mono">
+                          <span className="text-blue-600">M: {demographics.wardLevel.maleVoters.toLocaleString()}</span>
+                          <span className="text-pink-600">F: {demographics.wardLevel.femaleVoters.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      
                       {demographics.wardLevel.source && (
-                        <p className="text-[10px] text-muted-foreground text-center border-t pt-2">
+                        <p className="text-[9px] text-muted-foreground text-center pt-2">
                           Source: {demographics.wardLevel.source}
                         </p>
                       )}

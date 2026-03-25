@@ -31,8 +31,8 @@ export const LEADER_CATEGORIES: LeaderCategory[] = [
   { value: "PARTY_LEADER", label: "Party Leader", icon: Landmark },
   { value: "OPPOSITION_LEADER", label: "Opposition", icon: Swords },
   { value: "BUREAUCRAT", label: "Bureaucrat", icon: ClipboardList },
-  { value: "COMMUNITY_LEADER", label: "Community Leader", icon: Handshake },
-  { value: "RELIGIOUS_LEADER", label: "Religious Leader", icon: Church },
+  { value: "COMMUNITY_LEADER", label: "Heads", icon: Handshake },
+  { value: "RELIGIOUS_LEADER", label: "Religious Heads", icon: Church },
   { value: "BUSINESS_LEADER", label: "Business Leader", icon: Briefcase },
   { value: "MEDIA_PERSON", label: "Media", icon: Tv },
   { value: "YOUTH_LEADER", label: "Youth Leader", icon: Sparkles },
@@ -53,7 +53,8 @@ export const RELATIONS = [
   "Opposition",
   "Other",
 ] as const;
-export const INFLUENCES = ["High", "Medium", "Low"] as const;
+// export const INFLUENCES = ["High", "Medium", "Low"] as const;
+
 
 export function getCategoryInfo(c: string) {
   return (
@@ -141,7 +142,7 @@ export function useUpdateLeader() {
 export function useDeleteLeader() {
   return useMut(
     (id: string) => api.delete(`/admin/leaders/${id}`).then((r) => r.data),
-    "Leader Removed",
+    "Moved to Recycle Bin",
   );
 }
 export function useSendGreeting() {

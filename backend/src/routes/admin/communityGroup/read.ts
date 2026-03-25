@@ -16,8 +16,7 @@ export const getCommunityGroup = catchAsync(async (req, res) => {
     string,
     string
   >;
-
-  const where: any = {};
+  const where: any = { isDeleted: false };
   if (wardId) where.wardId = wardId;
   if (wardAreaId) where.wardAreaId = wardAreaId;
   if (type && type !== "all") where.type = type;
@@ -62,12 +61,14 @@ export const getCommunityGroup = catchAsync(async (req, res) => {
  */
 export const getCommunityGroupStats = catchAsync(async (req, res) => {
   const wardId = req.query.wardId as string;
-  const baseWhere: any = { isActive: true };
+  const baseWhere: any = { isActive: true, isDeleted: false };
+  const allWhere: any = { isDeleted: false };
   if (wardId) baseWhere.wardId = wardId;
+  if (wardId) allWhere.wardId = wardId;
 
   const [total, totalAll, byType, byWard, memberAgg] = await Promise.all([
     prisma.communityGroup.count({ where: baseWhere }),
-    prisma.communityGroup.count(),
+    prisma.communityGroup.count({ where: allWhere }),
     prisma.communityGroup.groupBy({
       by: ["type"],
       where: baseWhere,
@@ -137,8 +138,10 @@ export const getCommunityGroupStats = catchAsync(async (req, res) => {
  * Gets a single community group with its ward and ward area details.
  */
 export const getOneCommunityGroup = catchAsync(async (req, res) => {
+  const groupId = req.params.id as string;
+
   const group = await prisma.communityGroup.findUnique({
-    where: { id: req.params.id as string },
+    where: { id: groupId },
     include: {
       ward: {
         select: {
@@ -160,14 +163,17 @@ export const getOneCommunityGroup = catchAsync(async (req, res) => {
       },
     },
   });
-  if (!group) throw ApiError.notFound("Community group not found");
+  if (!group || group.isDeleted) throw ApiError.notFound("Community group not found");
 
   // Get other groups in same ward for context
   const relatedGroups = await prisma.communityGroup.findMany({
     where: {
       wardId: group.wardId,
-      id: { not: group.id },
       isActive: true,
+      AND: [
+        { id: { not: group.id } },
+        { isDeleted: false },
+      ],
     },
     select: { id: true, name: true, type: true, memberCount: true },
     orderBy: { name: "asc" },

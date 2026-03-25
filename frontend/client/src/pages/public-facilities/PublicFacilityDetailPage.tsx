@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import {
-  useInstitution,
-  useDeleteInstitution,
+  usePublicFacility,
+  useDeletePublicFacility,
   useCreateIncharge,
   useUpdateIncharge,
   useDeleteIncharge,
   useToggleInchargeActive,
   getCategoryInfo,
   getStatusInfo,
-} from "@/hooks/useInstitutions";
+} from "@/hooks/usePublicFacilities";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,11 +74,11 @@ const emptyIncharge = {
   isActive: true,
 };
 
-export default function InstitutionDetailPage() {
+export default function PublicFacilityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { data: res, isLoading } = useInstitution(id);
-  const deleteMut = useDeleteInstitution();
+  const { data: res, isLoading } = usePublicFacility(id);
+  const deleteMut = useDeletePublicFacility();
   const createInchargeMut = useCreateIncharge();
   const updateInchargeMut = useUpdateIncharge();
   const deleteInchargeMut = useDeleteIncharge();
@@ -92,7 +92,7 @@ export default function InstitutionDetailPage() {
 
   if (isLoading) {
     return (
-      <MainLayout title="Institution">
+      <MainLayout title="Public Facility">
         <div className="space-y-6 max-w-4xl mx-auto">
           <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-4 gap-4">
@@ -108,11 +108,11 @@ export default function InstitutionDetailPage() {
 
   if (!inst) {
     return (
-      <MainLayout title="Institution">
+      <MainLayout title="Public Facility">
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <Building2 className="h-12 w-12 text-muted-foreground" />
-          <p className="text-muted-foreground">Institution not found</p>
-          <Link to="/institutions">
+          <p className="text-muted-foreground">Public facility not found</p>
+          <Link to="/public-facilities">
             <Button variant="outline">Back</Button>
           </Link>
         </div>
@@ -125,7 +125,7 @@ export default function InstitutionDetailPage() {
 
   const handleDelete = async () => {
     await deleteMut.mutateAsync(inst.id);
-    navigate("/institutions");
+    navigate("/public-facilities");
   };
 
   const openAddIncharge = () => {
@@ -168,13 +168,13 @@ export default function InstitutionDetailPage() {
 
     if (editingIncharge) {
       await updateInchargeMut.mutateAsync({
-        institutionId: inst.id,
+        publicFacilityId: inst.id,
         inchargeId: editingIncharge.id,
         data: payload,
       });
     } else {
       await createInchargeMut.mutateAsync({
-        institutionId: inst.id,
+        publicFacilityId: inst.id,
         data: payload,
       });
     }
@@ -189,12 +189,12 @@ export default function InstitutionDetailPage() {
   );
 
   return (
-    <MainLayout title="Institution">
+    <MainLayout title="Public Facility">
       <div className="space-y-6 max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <Link to="/institutions">
+            <Link to="/public-facilities">
               <Button variant="ghost" size="icon" className="h-9 w-9 mt-1">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -238,7 +238,7 @@ export default function InstitutionDetailPage() {
           </div>
           <div className="flex gap-2">
             <PermissionGate module="institutions" action="update">
-              <Link to={`/institutions/${inst.id}/edit`}>
+              <Link to={`/public-facilities/${inst.id}/edit`}>
                 <Button variant="outline" size="sm" className="gap-1.5">
                   <Edit className="h-3.5 w-3.5" /> Edit
                 </Button>
@@ -259,7 +259,7 @@ export default function InstitutionDetailPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete "{inst.name}"?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This removes the institution and all its incharges
+                      This removes the public facility and all its incharges
                       permanently.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -458,7 +458,7 @@ export default function InstitutionDetailPage() {
                               disabled={toggleInchargeMut.isPending}
                               onClick={() =>
                                 toggleInchargeMut.mutate({
-                                  institutionId: inst.id,
+                                  publicFacilityId: inst.id,
                                   inchargeId: ic.id,
                                 })
                               }
@@ -501,7 +501,7 @@ export default function InstitutionDetailPage() {
                                     className="bg-destructive hover:bg-destructive/90"
                                     onClick={() =>
                                       deleteInchargeMut.mutate({
-                                        institutionId: inst.id,
+                                        publicFacilityId: inst.id,
                                         inchargeId: ic.id,
                                       })
                                     }
@@ -527,12 +527,12 @@ export default function InstitutionDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Related Institutions */}
+        {/* Related Public Facilities */}
         {inst.relatedInstitutions?.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">
-                Other Institutions in {inst.ward.name}
+                Other Public Facilities in {inst.ward.name}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -540,7 +540,7 @@ export default function InstitutionDetailPage() {
                 {inst.relatedInstitutions.map((ri: any) => {
                   const riInfo = getCategoryInfo(ri.category);
                   return (
-                    <Link key={ri.id} to={`/institutions/${ri.id}`}>
+                    <Link key={ri.id} to={`/public-facilities/${ri.id}`}>
                       <Badge
                         variant="outline"
                         className="cursor-pointer hover:bg-muted gap-1.5 py-1.5"

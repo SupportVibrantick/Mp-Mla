@@ -2,6 +2,7 @@ import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { normalizeBoolean } from "../../../utils/enumParser.js";
 import { Request, Response } from "express";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 
 /**
  * POST /api/admin/department/bulk
@@ -98,5 +99,29 @@ export const bulkCreateDepartments = catchAsync(
         errors,
       },
     });
+
+    // Log data activity (fire-and-forget)
+    prisma.dataActivity.create({
+      data: {
+        userId: req.user!.id,
+        userName: req.user!.name || "Unknown",
+        action: "IMPORT",
+        module: "departments",
+        recordCount: upsertedCount,
+        details: `Bulk imported ${upsertedCount} departments (${failedCount} failed)`,
+      },
+    }).catch(() => {});
+
+    // Send admin notification (fire-and-forget)
+    sendAdminNotification(
+      `Data Import: departments by ${req.user!.name || "Unknown"}`,
+      buildActivityEmailHtml({
+        action: "IMPORT",
+        module: "departments",
+        userName: req.user!.name || "Unknown",
+        recordCount: upsertedCount,
+        timestamp: new Date(),
+      }),
+    );
   },
 );

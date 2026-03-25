@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 
 /**
  * GET /api/admin/wards/export
@@ -14,7 +15,7 @@ export async function exportWards(
     try {
         const { id } = req.query;
 
-        const whereClause: any = {};
+        const whereClause: any = { isDeleted: false };
         if (id && typeof id === "string") {
             whereClause.id = id;
         }
@@ -163,6 +164,31 @@ export async function exportWards(
             success: true,
             data: flatRows,
         });
+
+        // Log data activity (fire-and-forget)
+        prisma.dataActivity.create({
+            data: {
+                userId: req.user!.id,
+                userName: req.user!.name || "Unknown",
+                action: "EXPORT",
+                module: "wards",
+                recordCount: flatRows.length,
+                details: `Exported ${flatRows.length} ward rows`,
+            },
+        }).catch(() => {});
+
+        // Send admin notification (fire-and-forget)
+        sendAdminNotification(
+            `Data Export: wards by ${req.user!.name || "Unknown"}`,
+            buildActivityEmailHtml({
+                action: "EXPORT",
+                module: "wards",
+                userName: req.user!.name || "Unknown",
+                recordCount: flatRows.length,
+                timestamp: new Date(),
+            }),
+        );
+
     } catch (error) {
         next(error);
     }

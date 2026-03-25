@@ -13,7 +13,7 @@ export async function getTodayBirthdays(
     const year = today.getFullYear();
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDeleted: false },
       include: {
         ward: {
           select: { name: true, wardNumber: true },
@@ -66,7 +66,7 @@ export async function getUpcomingBirthdays(
     today.setHours(0, 0, 0, 0);
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDeleted: false },
       include: {
         ward: {
           select: { name: true, wardNumber: true },
@@ -121,7 +121,7 @@ export async function getThisMonthBirthdays(
     const month = today.getMonth();
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDeleted: false },
       include: {
         ward: {
           select: { name: true, wardNumber: true },
@@ -163,7 +163,7 @@ export async function getBirthdayCalendar(
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isDeleted: false },
       select: {
         id: true,
         name: true,

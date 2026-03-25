@@ -3,6 +3,7 @@ import { useParams, useLocation, Link } from "wouter";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import ReactSelect from "react-select";
 import {
   useProject,
   useCreateProject,
@@ -58,7 +59,6 @@ export default function ProjectFormPage() {
   const p = pRes?.data;
   const wards = wardsRes?.data?.wards || [];
   const departments = (deptsRes?.data || []).filter((d: any) => d.isActive);
-
   const {
     register,
     handleSubmit,
@@ -126,7 +126,19 @@ export default function ProjectFormPage() {
         </div>
       </MainLayout>
     );
+  const categoryOptions = PROJECT_CATEGORIES.map((c) => ({
+    value: c.value,
+    label: `${c.icon} ${c.label}`,
+  }));
 
+  const departmentOptions = departments.map((d: any) => ({
+    value: d.id,
+    label: d.name,
+  }));
+  const wardOptions = wards.map((w: any) => ({
+    value: w.id,
+    label: `#${w.wardNumber} ${w.name}`,
+  }));
   return (
     <MainLayout title={isEdit ? "Edit Project" : "New Project"}>
       <form
@@ -178,22 +190,15 @@ export default function ProjectFormPage() {
                   name="category"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      key={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PROJECT_CATEGORIES.map((c) => (
-                          <SelectItem key={c.value} value={c.value}>
-                            {c.icon} {c.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <ReactSelect
+                      options={categoryOptions}
+                      value={categoryOptions.find(
+                        (opt) => opt.value === field.value,
+                      )}
+                      onChange={(selected) => field.onChange(selected?.value)}
+                      placeholder="Select category"
+                      isSearchable
+                    />
                   )}
                 />
                 {errors.category && (
@@ -212,22 +217,15 @@ export default function ProjectFormPage() {
                   name="wardId"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      key={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select ward" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {wards.map((w: any) => (
-                          <SelectItem key={w.id} value={w.id}>
-                            #{w.wardNumber} {w.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <ReactSelect
+                      options={wardOptions}
+                      value={wardOptions.find(
+                        (opt) => opt.value === field.value,
+                      )}
+                      onChange={(selected) => field.onChange(selected?.value)}
+                      placeholder="Search ward..."
+                      isSearchable
+                    />
                   )}
                 />
                 {errors.wardId && (
@@ -244,22 +242,15 @@ export default function ProjectFormPage() {
                   name="department"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      key={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select dept" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.map((d: any) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <ReactSelect
+                      options={departmentOptions}
+                      value={departmentOptions.find(
+                        (opt) => opt.value === field.value,
+                      )}
+                      onChange={(selected) => field.onChange(selected?.value)}
+                      placeholder="Select department"
+                      isSearchable
+                    />
                   )}
                 />
                 {errors.department && (

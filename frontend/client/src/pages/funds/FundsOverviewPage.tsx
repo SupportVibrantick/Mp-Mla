@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import * as xlsx from "xlsx";
+import api from "@/lib/api";
+import { toast } from "sonner";
 import {
   useFundOverview,
   useCreateFund,
@@ -64,6 +67,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   AlertCircle,
+  Download,
+
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -111,6 +116,33 @@ export default function FundsOverviewPage() {
     });
   };
 
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await api.get("/admin/funds/export");
+      const data = response.data?.data;
+
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Funds");
+        xlsx.writeFile(wb, "funds_transactions_export.xlsx");
+        toast.success("Fund records exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export funds data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+
   if (isLoading)
     return (
       <MainLayout title="Funds">
@@ -155,6 +187,17 @@ export default function FundsOverviewPage() {
                 </SelectContent>
               </Select>
             )}
+            <PermissionGate module="funds" action="read">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" />
+                Export All
+              </Button>
+            </PermissionGate>
             <PermissionGate module="funds" action="create">
               <Button
                 className="gap-2"

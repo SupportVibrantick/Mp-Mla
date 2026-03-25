@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 import { z } from "zod";
 
 async function getInstitutionOrThrow(id: string) {
@@ -14,6 +15,41 @@ async function getInstitutionOrThrow(id: string) {
   });
   if (!inst) throw ApiError.notFound("Institution not found");
   return inst;
+}
+
+export async function syncToLeaders(incharge: any, wardId: string) {
+  if (!incharge.dateOfBirth) return;
+
+  // Try to find existing leader by phone and name
+  const existing = await prisma.leader.findFirst({
+    where: {
+      phone: incharge.contactNo,
+      name: incharge.name,
+      isDeleted: false,
+    },
+  });
+
+  const leaderData: any = {
+    name: incharge.name,
+    category: "COMMUNITY_LEADER",
+    designation: incharge.designation,
+    dateOfBirth: incharge.dateOfBirth,
+    phone: incharge.contactNo,
+    email: incharge.email || undefined,
+    wardId: wardId,
+    isActive: true,
+  };
+
+  if (existing) {
+    await prisma.leader.update({
+      where: { id: existing.id },
+      data: leaderData,
+    });
+  } else {
+    await prisma.leader.create({
+      data: leaderData,
+    });
+  }
 }
 
 // ─── List ───────────────────────────────────────────────
@@ -87,6 +123,15 @@ export async function createIncharge(
 
     const incharge = await prisma.incharge.create({ data });
 
+    // Sync to Leaders if DOB is provided
+    const instDetail = await prisma.institution.findUnique({
+      where: { id: institutionId },
+      select: { wardId: true },
+    });
+    if (instDetail) {
+      await syncToLeaders(incharge, instDetail.wardId);
+    }
+
     await createAuditLog({
       userId: req.user!.id,
       action: "CREATE",
@@ -133,7 +178,17 @@ export async function updateIncharge(
     const incharge = await prisma.incharge.update({
       where: { id: inchargeId },
       data,
+      include: {
+        institution: {
+          select: { wardId: true },
+        },
+      },
     });
+
+    // Sync to Leaders if DOB is provided
+    if (incharge.institution) {
+      await syncToLeaders(incharge, incharge.institution.wardId);
+    }
 
     await createAuditLog({
       userId: req.user!.id,
@@ -175,6 +230,15 @@ export async function deleteIncharge(
     });
     if (!incharge) throw ApiError.notFound("Incharge not found");
 
+    await archiveToRecycleBin({
+      module: "institutions",
+      entityType: "incharge",
+      recordId: incharge.id,
+      recordLabel: incharge.name,
+      payload: incharge,
+      deletedById: req.user?.id,
+    });
+
     await prisma.incharge.delete({
       where: { id: inchargeId },
     });
@@ -190,13 +254,12 @@ export async function deleteIncharge(
 
     res.json({
       success: true,
-      message: `Incharge "${incharge.name}" removed`,
+      message: `Incharge "${incharge.name}" moved to recycle bin`,
     });
   } catch (error) {
     next(error);
   }
 }
-
 // ─── Toggle Active ──────────────────────────────────────
 
 export async function toggleInchargeActive(

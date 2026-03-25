@@ -5,7 +5,9 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-
+import {
+  archiveToRecycleBin,
+} from "../../../lib/recycleBin.js";
 
 /**
  * DELETE /api/admin/ward/:id
@@ -23,39 +25,72 @@ export async function deleteWard(
     const ward = await prisma.ward.findUnique({
       where: { id: wardId },
       include: {
+        areas: {
+          include: {
+            demographics: true,
+          },
+        },
+        councillors: true,
+        demographics: true,
         _count: {
-          select: { grievances: true, projects: true, institutions: true },
+          select: { grievances: true, institutions: true },
         },
       },
     });
 
     if (!ward) throw ApiError.notFound("Ward not found");
 
+    if (ward.isDeleted) {
+      throw ApiError.badRequest("Ward is already in recycle bin");
+    }
+
+    const activeProjectCount = await prisma.project.count({
+      where: {
+        wardId,
+        isDeleted: false,
+      },
+    });
+
     const total =
-      ward._count.grievances + ward._count.projects + ward._count.institutions;
+      ward._count.grievances + activeProjectCount + ward._count.institutions;
     if (total > 0) {
       throw ApiError.badRequest(
-        `Cannot delete ward with ${ward._count.grievances} grievances, ${ward._count.projects} projects, and ${ward._count.institutions} institutions. Deactivate instead.`,
+        `Cannot delete ward with ${ward._count.grievances} grievances, ${activeProjectCount} projects, and ${ward._count.institutions} institutions. Deactivate instead.`,
       );
     }
 
-    await prisma.$transaction([
-      prisma.demographics.deleteMany({ where: { wardId } }),
-      prisma.wardArea.deleteMany({ where: { wardId } }),
-      prisma.wardCouncillor.deleteMany({ where: { wardId } }),
-      prisma.ward.delete({ where: { id: wardId } }),
-    ]);
+    await archiveToRecycleBin({
+      module: "wards",
+      entityType: "ward",
+      recordId: ward.id,
+      recordLabel: `#${ward.wardNumber} ${ward.name}`,
+      payload: {
+        ...ward,
+        areas: ward.areas,
+        councillors: ward.councillors,
+        demographics: ward.demographics,
+      },
+      deletedById: req.user?.id,
+    });
+
+    await prisma.ward.update({
+      where: { id: wardId },
+      data: { isDeleted: true },
+    });
 
     await createAuditLog({
       userId: req.user!.id,
       action: "DELETE",
       module: "wards",
       recordId: ward.id,
-      description: `Deleted ward #${ward.wardNumber} "${ward.name}"`,
+      description: `Moved ward #${ward.wardNumber} "${ward.name}" to recycle bin`,
       ...getRequestMeta(req),
     });
 
-    res.json({ success: true, message: `Ward "${ward.name}" deleted` });
+    res.json({
+      success: true,
+      message: `Ward "${ward.name}" moved to recycle bin`,
+    });
   } catch (error) {
     next(error);
   }

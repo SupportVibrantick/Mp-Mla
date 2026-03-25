@@ -4,6 +4,8 @@ import {
   useGrievances,
   useGrievanceStats,
   useGrievanceAnalytics,
+  useExportGrievances,
+  useBulkImportGrievances,
   getStatusInfo,
   getPriorityInfo,
   getCategoryInfo,
@@ -12,6 +14,10 @@ import {
   CATEGORIES,
   SOURCES,
 } from "@/hooks/useGrievances";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
+import * as xlsx from "xlsx";
+import { toast } from "sonner";
+
 import { useWards } from "@/hooks/useWards";
 import { useDepartments } from "@/hooks/useDepartments";
 import { PermissionGate } from "@/components/auth/PermissionGate";
@@ -60,17 +66,30 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  FileUp,
+  Download,
+  Loader2,
 } from "lucide-react";
+
+
 import { formatDistanceToNow } from "date-fns";
 
 export default function GrievanceListPage() {
   const [, navigate] = useLocation();
+  const searchParams = new URLSearchParams(window.location.search);
   const [search, setSearch] = useState("");
   const [wardFilter, setWardFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") || "all",
+  );
+  const [priorityFilter, setPriorityFilter] = useState(
+    searchParams.get("priority") || "all",
+  );
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
 
   const params = useMemo(() => {
     const p: Record<string, any> = { page, limit: 20 };
@@ -89,7 +108,6 @@ export default function GrievanceListPage() {
   const { data: analyticsRes } = useGrievanceAnalytics(6);
   const { data: wardsRes } = useWards({ limit: 100 });
   const { data: deptsRes } = useDepartments();
-
   const grievances = gRes?.data || [];
   const pagination = gRes?.pagination;
   const stats = statsRes?.data;
@@ -97,8 +115,58 @@ export default function GrievanceListPage() {
   const wards = wardsRes?.data?.wards || [];
   const departments = deptsRes?.data || [];
 
-  // Build dept map for display
+  const { mutateAsync: exportGrievances } = useExportGrievances();
+  const { mutateAsync: bulkImport } = useBulkImportGrievances();
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const res = await exportGrievances(params);
+      if (res.success && res.data) {
+        const worksheet = xlsx.utils.json_to_sheet(res.data);
+        const workbook = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(workbook, worksheet, "Grievances");
+        xlsx.writeFile(
+          workbook,
+          `Grievances_${new Date().toISOString().split("T")[0]}.xlsx`,
+        );
+        toast.success("Grievances exported successfully");
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadSample = () => {
+    const template = [
+      {
+        ticketNumber: "",
+        subject: "Example Subject",
+        category: "ROAD",
+        subcategory: "Potholes",
+        description: "Multiple potholes on Main Road",
+        status: "OPEN",
+        priority: "HIGH",
+        source: "OFFICE",
+        wardNumber: 23,
+        assignedDept: "Public Works",
+        complainantName: "John Doe",
+        complainantPhone: "9876543210",
+        complainantEmail: "john@example.com",
+        complainantAddress: "H.No 123, Street 5",
+        locationAddress: "Opposite Metro Station",
+      },
+    ];
+    const worksheet = xlsx.utils.json_to_sheet(template);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Template");
+    xlsx.writeFile(workbook, "Grievances_Import_Template.xlsx");
+  };
+
   const deptMap = useMemo(() => {
+
     const m: Record<string, string> = {};
     (departments || []).forEach((d: any) => {
       m[d.id] = d.name;
@@ -128,13 +196,40 @@ export default function GrievanceListPage() {
               Track and resolve citizen complaints
             </p>
           </div>
-          <PermissionGate module="grievances" action="create">
-            <Link to="/grievances/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> New Grievance
+          <div className="flex gap-2 flex-wrap">
+            <PermissionGate module="grievances" action="create">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setIsBulkOpen(true)}
+              >
+                <FileUp className="h-4 w-4" /> Bulk Import
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleExport}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {isExporting ? "Exporting..." : "Export All"}
+            </Button>
+
+            <PermissionGate module="grievances" action="create">
+              <Link to="/grievances/new">
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" /> New Grievance
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
+
         </div>
 
         {/* Stats */}
@@ -372,15 +467,15 @@ export default function GrievanceListPage() {
                   statusFilter !== "all" ||
                   priorityFilter !== "all" ||
                   categoryFilter !== "all") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={reset}
-                      className="text-xs"
-                    >
-                      Clear
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="text-xs"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -434,27 +529,27 @@ export default function GrievanceListPage() {
                       return (
                         <TableRow
                           key={g.id}
-                          className={`hover:bg-muted/50 ${g.isOverdue ? "bg-red-50/50 dark:bg-red-950/20" : ""}`}
+                          className="hover:bg-muted/50"
                         >
                           <TableCell>
                             <span
-                              onClick={() => navigate("/grievances/detail", { state: { id: g.id } })}
+                              onClick={() =>
+                                navigate("/grievances/detail", {
+                                  state: { id: g.id },
+                                })
+                              }
                               className="font-mono text-xs text-primary hover:underline cursor-pointer font-semibold"
                             >
                               {g.ticketNumber}
                             </span>
-                            {g.isOverdue && (
-                              <Badge
-                                variant="destructive"
-                                className="text-[8px] ml-1 px-1"
-                              >
-                                OVERDUE
-                              </Badge>
-                            )}
                           </TableCell>
                           <TableCell>
                             <p
-                              onClick={() => navigate("/grievances/detail", { state: { id: g.id } })}
+                              onClick={() =>
+                                navigate("/grievances/detail", {
+                                  state: { id: g.id },
+                                })
+                              }
                               className="font-medium text-sm hover:underline cursor-pointer max-w-[180px] truncate"
                             >
                               {g.subject}
@@ -505,7 +600,11 @@ export default function GrievanceListPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => navigate("/grievances/detail", { state: { id: g.id } })}
+                              onClick={() =>
+                                navigate("/grievances/detail", {
+                                  state: { id: g.id },
+                                })
+                              }
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -547,7 +646,21 @@ export default function GrievanceListPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          open={isBulkOpen}
+          onOpenChange={setIsBulkOpen}
+          onUpload={async (data) => {
+            await bulkImport(data);
+          }}
+          title="Bulk Import Grievances"
+          description="Download the template to see the required format. All grievances will be imported with either a new ticket number or an updated one if ticketNumber is provided."
+          onDownloadSample={handleDownloadSample}
+          sampleFileName="Grievances_Import_Template.xlsx"
+        />
       </div>
     </MainLayout>
+
   );
 }

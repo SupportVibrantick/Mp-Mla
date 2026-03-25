@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +16,7 @@ import {
   EyeOff,
   Loader2,
   AlertCircle,
+  Building2,
 } from "lucide-react";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 
@@ -116,8 +118,11 @@ export default function Login() {
           <div className="mt-12 grid grid-cols-3 gap-4">
             {[
               { label: "Wards", value: "25+" },
-              { label: "Institutions", value: "300+" },
-              // { label: "Schemes", value: "50+" },
+              { label: "Public Facilities", value: "300+" },
+              { label: "Projects", value: "150+" },
+              { label: "Local Reps", value: "500+" },
+              { label: "Grievances", value: "10K+" },
+              { label: "Comm. Groups", value: "1K+" },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -140,7 +145,20 @@ export default function Login() {
       </div>
 
       {/* ─── Right Panel — Login Form ────────────────── */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
+        {/* Simple Navigation Button */}
+        <div className="absolute top-4 right-4 md:top-8 md:right-8">
+          <Link to="/register-public-facility">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-primary/20 hover:bg-primary/5 text-primary h-9"
+            >
+              <Building2 className="h-4 w-4" /> Register Facility
+            </Button>
+          </Link>
+        </div>
+
         <Card className="w-full max-w-md border-none shadow-none bg-transparent">
           <CardHeader className="space-y-2 text-center pb-2">
             <div className="mx-auto p-3 rounded-full w-fit mb-2 lg:hidden">

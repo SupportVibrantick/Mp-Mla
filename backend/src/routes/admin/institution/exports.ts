@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 
 /**
  * GET /api/admin/institutions/export
@@ -14,7 +15,7 @@ export async function exportInstitutions(
   try {
     const { wardId, category, status } = req.query;
 
-    const where: any = {};
+    const where: any = { isDeleted: false };
     if (wardId) where.wardId = String(wardId);
     if (category && category !== "all") where.category = String(category);
     if (status && status !== "all") where.status = String(status);
@@ -50,7 +51,6 @@ export async function exportInstitutions(
       };
 
       if (inst.incharges.length === 0) {
-        // One row with empty incharge fields
         flatRows.push({
           ...instBase,
           inchargeName: "",
@@ -62,7 +62,6 @@ export async function exportInstitutions(
           inchargeIsActive: "",
         });
       } else {
-        // One row per incharge
         inst.incharges.forEach((ic, index) => {
           const inchargeData = {
             inchargeName: ic.name,
@@ -79,10 +78,8 @@ export async function exportInstitutions(
           };
 
           if (index === 0) {
-            // First row has full institution data
             flatRows.push({ ...instBase, ...inchargeData });
           } else {
-            // Subsequent rows: repeat name + wardNumber for grouping, rest empty
             flatRows.push({
               name: inst.name,
               category: "",
@@ -108,6 +105,31 @@ export async function exportInstitutions(
       success: true,
       data: flatRows,
     });
+
+    // Log data activity (fire-and-forget)
+    prisma.dataActivity.create({
+      data: {
+        userId: req.user!.id,
+        userName: req.user!.name || "Unknown",
+        action: "EXPORT",
+        module: "institutions",
+        recordCount: institutions.length,
+        details: `Exported ${institutions.length} institutions (${flatRows.length} rows)`,
+      },
+    }).catch(() => {});
+
+    // Send admin notification (fire-and-forget)
+    sendAdminNotification(
+      `Data Export: institutions by ${req.user!.name || "Unknown"}`,
+      buildActivityEmailHtml({
+        action: "EXPORT",
+        module: "institutions",
+        userName: req.user!.name || "Unknown",
+        recordCount: institutions.length,
+        timestamp: new Date(),
+      }),
+    );
+
   } catch (error) {
     next(error);
   }

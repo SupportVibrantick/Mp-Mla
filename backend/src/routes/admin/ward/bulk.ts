@@ -4,6 +4,7 @@ import {
     createAuditLog,
     getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 import { normalizeWardStatus, normalizeAreaType } from "../../../utils/enumParser.js";
 
 /**
@@ -285,6 +286,30 @@ export async function bulkCreateWards(
                 errors,
             },
         });
+
+        // Log data activity (fire-and-forget)
+        prisma.dataActivity.create({
+            data: {
+                userId: req.user!.id,
+                userName: req.user!.name || "Unknown",
+                action: "IMPORT",
+                module: "wards",
+                recordCount: upsertedWards.length,
+                details: `Bulk imported ${upsertedWards.length} wards (${errors.length} failed)`,
+            },
+        }).catch(() => {});
+
+        // Send admin notification (fire-and-forget)
+        sendAdminNotification(
+            `Data Import: wards by ${req.user!.name || "Unknown"}`,
+            buildActivityEmailHtml({
+                action: "IMPORT",
+                module: "wards",
+                userName: req.user!.name || "Unknown",
+                recordCount: upsertedWards.length,
+                timestamp: new Date(),
+            }),
+        );
 
     } catch (err) {
         next(err);

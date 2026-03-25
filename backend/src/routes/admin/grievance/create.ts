@@ -5,7 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { generateTicketNumber, calculateExpectedDate } from "./helpers.js";
+import { generateTicketNumber } from "./helpers.js";
 
 export async function createGrievance(
   req: Request,
@@ -42,15 +42,11 @@ export async function createGrievance(
     // Clean
     if (data.complainantEmail === "") delete data.complainantEmail;
 
-    const expectedDate = data.expectedResolutionDate
-      ? new Date(data.expectedResolutionDate)
-      : calculateExpectedDate(data.priority);
 
     const grievance = await prisma.grievance.create({
       data: {
         ...data,
         ticketNumber,
-        expectedResolutionDate: expectedDate,
         createdById: req.user!.id,
         // Create initial timeline
         timeline: {

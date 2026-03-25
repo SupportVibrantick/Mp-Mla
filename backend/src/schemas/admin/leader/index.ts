@@ -40,7 +40,8 @@ export const createSchema = z.object({
   relation: z
     .enum(["Supporter", "Neutral", "Alliance", "Opposition", "Other"])
     .optional(),
-  influence: z.enum(["High", "Medium", "Low"]).optional(),
+  // influence: z.enum(["High", "Medium", "Low"]).optional(),
+
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
 });

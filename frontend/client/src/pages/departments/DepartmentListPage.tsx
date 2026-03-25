@@ -262,11 +262,6 @@ export default function DepartmentListPage() {
                 Upload an Excel or CSV file to import multiple departments.
                 Records are upserted by Department Code.
               </p>
-              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
-                <p>
-                  <strong>Is Active:</strong> TRUE, FALSE
-                </p>
-              </div>
             </div>
           }
           onDownloadSample={downloadSampleTemplate}
@@ -294,14 +289,14 @@ export default function DepartmentListPage() {
               color: "#ef4444",
             },
             {
-              label: "Active Grievances",
-              value: stats?.totalActiveGrievances || 0,
+              label: "Total Grievances",
+              value: stats?.totalGrievances || 0,
               icon: MessageSquare,
               color: "#f59e0b",
             },
             {
-              label: "Active Projects",
-              value: stats?.totalActiveProjects || 0,
+              label: "Total Projects",
+              value: stats?.totalProjects || 0,
               icon: FolderKanban,
               color: "#3b82f6",
             },

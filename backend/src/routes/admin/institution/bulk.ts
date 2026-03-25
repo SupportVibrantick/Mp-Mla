@@ -9,6 +9,8 @@ import {
   // normalizeInstitutionStatus,
   normalizeBoolean,
 } from "../../../utils/enumParser.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { syncToLeaders } from "./incharges.js";
 
 // If you don't have these normalizers yet, add them to enumParser.ts:
 // They just do case-insensitive matching against the valid enum values.
@@ -324,6 +326,14 @@ export async function bulkCreateInstitutions(
           return { institution, isUpdate: !!existing };
         });
 
+        // Sync incharges to Leaders
+        const allIncharges = await prisma.incharge.findMany({
+          where: { institutionId: result.institution.id },
+        });
+        for (const ic of allIncharges) {
+          await syncToLeaders(ic, wardId);
+        }
+
         // Audit log (outside transaction to not block on failure)
         try {
           await createAuditLog({
@@ -363,6 +373,30 @@ export async function bulkCreateInstitutions(
         errors,
       },
     });
+
+    // Log data activity (fire-and-forget)
+    prisma.dataActivity.create({
+      data: {
+        userId: req.user!.id,
+        userName: req.user!.name || "Unknown",
+        action: "IMPORT",
+        module: "institutions",
+        recordCount: upsertedInstitutions.length,
+        details: `Bulk imported ${upsertedInstitutions.length} institutions (${errors.length} failed)`,
+      },
+    }).catch(() => {});
+
+    // Send admin notification (fire-and-forget)
+    sendAdminNotification(
+      `Data Import: institutions by ${req.user!.name || "Unknown"}`,
+      buildActivityEmailHtml({
+        action: "IMPORT",
+        module: "institutions",
+        userName: req.user!.name || "Unknown",
+        recordCount: upsertedInstitutions.length,
+        timestamp: new Date(),
+      }),
+    );
   } catch (err) {
     next(err);
   }

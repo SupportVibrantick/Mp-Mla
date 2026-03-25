@@ -27,7 +27,7 @@ const router = Router();
 // CRUD
 router.get("/", requirePermission("leaders", "read"), listLeaders);
 router.get("/stats", requirePermission("leaders", "read"), getLeaderStats);
-router.get("/export/all", requirePermission("leaders", "read"), exportLeaders);
+router.get("/export", requirePermission("leaders", "read"), exportLeaders);
 router.get("/:id", requirePermission("leaders", "read"), getLeader);
 router.post(
   "/",

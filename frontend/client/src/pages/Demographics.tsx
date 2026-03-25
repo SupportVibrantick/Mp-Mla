@@ -270,6 +270,28 @@ export default function DemographicsPage() {
           />
         </div>
 
+        {/* ═══ Vital Stats Summary Row ═══════════════════ */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+          <StatCard
+            icon={Baby}
+            label="Total Births"
+            value={(totals.totalBirths || 0).toLocaleString()}
+            color="#22c55e"
+          />
+          <StatCard
+            icon={Heart} // Using Heart for deaths (mortal)
+            label="Total Deaths"
+            value={(totals.totalDeaths || 0).toLocaleString()}
+            color="#ef4444"
+          />
+          <StatCard
+            icon={UserCheck}
+            label="New Voters Registered"
+            value={(totals.newVotersCount || 0).toLocaleString()}
+            color="#3b82f6"
+          />
+        </div>
+
         {/* ═══ Summary Cards Row 2 ═══════════════════════ */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
@@ -411,6 +433,35 @@ export default function DemographicsPage() {
 
           <ChartCard title="Social Category (Caste)">
             <DistributionBars data={charts.caste} total={pop} />
+          </ChartCard>
+
+          <ChartCard title="Vital Statistics (Comparative)">
+            <div className="h-48 sm:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    { label: "Births", value: totals.totalBirths, fill: "#22c55e" },
+                    { label: "Deaths", value: totals.totalDeaths, fill: "#ef4444" },
+                    { label: "New Voters", value: totals.newVotersCount, fill: "#3b82f6" },
+                  ]}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                  <XAxis dataKey="label" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis hide />
+                  <Tooltip
+                    cursor={{ fill: "transparent" }}
+                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                  />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex justify-center gap-4 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#22c55e]" /> Births</span>
+              <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#ef4444]" /> Deaths</span>
+              <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#3b82f6]" /> New Voters</span>
+            </div>
           </ChartCard>
         </div>
 

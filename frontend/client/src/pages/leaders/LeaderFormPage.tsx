@@ -11,8 +11,9 @@ import {
   useUpdateLeader,
   LEADER_CATEGORIES,
   RELATIONS,
-  INFLUENCES,
+  // INFLUENCES,
 } from "@/hooks/useLeaders";
+
 import { useWards } from "@/hooks/useWards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,8 +49,9 @@ const schema = z.object({
   twitterUrl: z.string().optional(),
   instagramUrl: z.string().optional(),
   relation: z.string().optional(),
-  influence: z.string().optional(),
+  // influence: z.string().optional(),
   notes: z.string().optional(),
+
 });
 type FV = z.infer<typeof schema>;
 
@@ -92,8 +94,9 @@ export default function LeaderFormPage() {
       twitterUrl: "",
       instagramUrl: "",
       relation: "",
-      influence: "",
+      // influence: "",
       notes: "",
+
     },
   });
 
@@ -119,8 +122,9 @@ export default function LeaderFormPage() {
       twitterUrl: l.twitterUrl || "",
       instagramUrl: l.instagramUrl || "",
       relation: l.relation || "",
-      influence: l.influence || "",
+      // influence: l.influence || "",
       notes: l.notes || "",
+
     });
   }, [l, isEdit, reset]);
 
@@ -139,13 +143,13 @@ export default function LeaderFormPage() {
   const saving = createMut.isPending || updateMut.isPending;
   if (isEdit && isLoading)
     return (
-      <MainLayout title="Edit Leader">
+      <MainLayout title="Edit Local Representative">
         <Skeleton className="h-80 max-w-3xl mx-auto" />
       </MainLayout>
     );
 
   return (
-    <MainLayout title={isEdit ? "Edit Leader" : "Add Leader"}>
+    <MainLayout title={isEdit ? "Edit Local Representative" : "Add Local Representative"}>
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-6 max-w-3xl mx-auto"
@@ -163,7 +167,7 @@ export default function LeaderFormPage() {
           </Link>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-7 w-7 text-primary" />
-            {isEdit ? `Edit ${l?.name}` : "Add Leader"}
+            {isEdit ? `Edit ${l?.name}` : "Add Local Representative"}
           </h1>
         </div>
 
@@ -372,7 +376,8 @@ export default function LeaderFormPage() {
                   )}
                 />
               </div>
-              <div className="space-y-2">
+
+              {/* <div className="space-y-2">
                 <Label>Influence Level</Label>
                 <Controller
                   control={control}
@@ -396,14 +401,15 @@ export default function LeaderFormPage() {
                     </Select>
                   )}
                 />
-              </div>
+              </div> */}
             </div>
+
             <div className="space-y-2">
               <Label>Notes</Label>
               <Textarea
                 {...register("notes")}
                 rows={3}
-                placeholder="Private notes about this leader..."
+                placeholder="Private notes about this local representative..."
               />
             </div>
           </CardContent>
@@ -428,7 +434,7 @@ export default function LeaderFormPage() {
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                {isEdit ? "Update" : "Add"} Leader
+                {isEdit ? "Update" : "Add"} Local Representative
               </>
             )}
           </Button>

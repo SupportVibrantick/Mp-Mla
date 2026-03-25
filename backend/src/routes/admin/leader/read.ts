@@ -10,14 +10,14 @@ export async function listLeaders(
 ): Promise<void> {
   try {
     const { page, limit, skip } = parsePagination(req.query);
-    const { category, wardId, relation, influence, search, isActive } =
+    const { category, wardId, relation, /* influence, */ search, isActive } =
       req.query as Record<string, string>;
 
-    const where: any = {};
+    const where: any = { isDeleted: false };
     if (category && category !== "all") where.category = category;
     if (wardId && wardId !== "all") where.wardId = wardId;
     if (relation && relation !== "all") where.relation = relation;
-    if (influence && influence !== "all") where.influence = influence;
+    // if (influence && influence !== "all") where.influence = influence;
     if (isActive !== undefined && isActive !== "all")
       where.isActive = isActive === "true";
     if (search) {
@@ -96,8 +96,10 @@ export async function getLeader(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const leaderId = req.params.id as string;
+
     const leader = await prisma.leader.findUnique({
-      where: { id: req.params.id as string },
+      where: { id: leaderId },
       include: {
         ward: {
           select: {
@@ -112,7 +114,7 @@ export async function getLeader(
         },
       },
     });
-    if (!leader) throw ApiError.notFound("Leader not found");
+    if (!leader || leader.isDeleted) throw ApiError.notFound("Leader not found");
 
     const today = new Date();
     const dob = new Date(leader.dateOfBirth);
@@ -167,23 +169,26 @@ export async function getLeaderStats(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const [total, active, byCategory, byInfluence, byRelation] =
+    const where = { isDeleted: false };
+
+    const [total, active, byCategory, /* byInfluence, */ byRelation] =
       await Promise.all([
-        prisma.leader.count(),
-        prisma.leader.count({ where: { isActive: true } }),
+        prisma.leader.count({ where }),
+        prisma.leader.count({ where: { ...where, isActive: true } }),
         prisma.leader.groupBy({
           by: ["category"],
+          where,
           _count: true,
           orderBy: { _count: { category: "desc" } },
         }),
-        prisma.leader.groupBy({
+        /* prisma.leader.groupBy({
           by: ["influence"],
-          where: { influence: { not: null } },
+          where: { ...where, influence: { not: null } },
           _count: true,
-        }),
+        }), */
         prisma.leader.groupBy({
           by: ["relation"],
-          where: { relation: { not: null } },
+          where: { ...where, relation: { not: null } },
           _count: true,
         }),
       ]);
@@ -191,7 +196,7 @@ export async function getLeaderStats(
     // Today's birthdays count
     const today = new Date();
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true },
+      where: { ...where, isActive: true },
       select: { dateOfBirth: true },
     });
     const todayBirthdays = allLeaders.filter((l) => {
@@ -223,10 +228,10 @@ export async function getLeaderStats(
           category: c.category,
           count: c._count,
         })),
-        byInfluence: byInfluence.map((i) => ({
+        /* byInfluence: byInfluence.map((i) => ({
           influence: i.influence,
           count: i._count,
-        })),
+        })), */
         byRelation: byRelation.map((r) => ({
           relation: r.relation,
           count: r._count,

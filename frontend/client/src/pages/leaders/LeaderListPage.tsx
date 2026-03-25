@@ -8,8 +8,9 @@ import {
   getCategoryInfo,
   LEADER_CATEGORIES,
   RELATIONS,
-  INFLUENCES,
+  // INFLUENCES,
 } from "@/hooks/useLeaders";
+
 import { useWards } from "@/hooks/useWards";
 import { toast } from "sonner";
 import * as xlsx from "xlsx";
@@ -88,19 +89,21 @@ const RELATION_COLORS: Record<string, string> = {
     "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
-const INFLUENCE_DOTS: Record<string, { color: string; label: string }> = {
-  High: { color: "text-red-500", label: "●●●" },
-  Medium: { color: "text-amber-500", label: "●●○" },
-  Low: { color: "text-green-500", label: "●○○" },
-};
+// const INFLUENCE_DOTS: Record<string, { color: string; label: string }> = {
+//   High: { color: "text-red-500", label: "●●●" },
+//   Medium: { color: "text-amber-500", label: "●●○" },
+//   Low: { color: "text-green-500", label: "●○○" },
+// };
+
 
 export default function LeaderListPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [wardFilter, setWardFilter] = useState("all");
   const [relationFilter, setRelationFilter] = useState("all");
-  const [influenceFilter, setInfluenceFilter] = useState("all");
+  // const [influenceFilter, setInfluenceFilter] = useState("all");
   const [page, setPage] = useState(1);
+
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -110,16 +113,17 @@ export default function LeaderListPage() {
     if (categoryFilter !== "all") p.category = categoryFilter;
     if (wardFilter !== "all") p.wardId = wardFilter;
     if (relationFilter !== "all") p.relation = relationFilter;
-    if (influenceFilter !== "all") p.influence = influenceFilter;
+    // if (influenceFilter !== "all") p.influence = influenceFilter;
     return p;
   }, [
     search,
     categoryFilter,
     wardFilter,
     relationFilter,
-    influenceFilter,
+    // influenceFilter,
     page,
   ]);
+
 
   const { data: res, isLoading } = useLeaders(params);
   const { data: statsRes } = useLeaderStats();
@@ -161,7 +165,7 @@ export default function LeaderListPage() {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to export leaders.");
+      toast.error("failed to export local representatives.");
     } finally {
       setIsExporting(false);
     }
@@ -190,8 +194,9 @@ export default function LeaderListPage() {
       { header: "twitterUrl", key: "twitterUrl", width: 25 },
       { header: "instagramUrl", key: "instagramUrl", width: 25 },
       { header: "relation", key: "relation", width: 15 },
-      { header: "influence", key: "influence", width: 12 },
+      // { header: "influence", key: "influence", width: 12 },
       { header: "notes", key: "notes", width: 30 },
+
       { header: "tags", key: "tags", width: 25 },
       { header: "isActive", key: "isActive", width: 10 },
     ];
@@ -215,8 +220,9 @@ export default function LeaderListPage() {
       twitterUrl: "",
       instagramUrl: "",
       relation: "Supporter",
-      influence: "High",
+      // influence: "High",
       notes: "Key party worker since 2010",
+
       tags: "party, senior",
       isActive: "TRUE",
     });
@@ -239,8 +245,9 @@ export default function LeaderListPage() {
       twitterUrl: "",
       instagramUrl: "",
       relation: "Alliance",
-      influence: "Medium",
+      // influence: "Medium",
       notes: "",
+
       tags: "women, community",
       isActive: "TRUE",
     });
@@ -268,12 +275,9 @@ export default function LeaderListPage() {
         allowBlank: true,
         formulae: ['"Supporter,Neutral,Alliance,Opposition,Other"'],
       };
-      // Influence dropdown
-      worksheet.getCell(`R${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: ['"High,Medium,Low"'],
-      };
+      // formulae: ['"High,Medium,Low"'],
+      // };
+
       // isActive dropdown
       worksheet.getCell(`U${i}`).dataValidation = {
         type: "list",
@@ -311,7 +315,7 @@ export default function LeaderListPage() {
       {
         field: "name",
         required: "YES",
-        description: "Full name of the leader",
+        description: "Full name of the local representative",
       },
       {
         field: "category",
@@ -328,13 +332,10 @@ export default function LeaderListPage() {
         required: "No",
         description: "Ward number (must exist in system)",
       },
-      {
-        field: "relation",
-        required: "No",
-        description: "Supporter, Neutral, Alliance, Opposition, Other",
-      },
-      { field: "influence", required: "No", description: "High, Medium, Low" },
+      { field: "relation", required: "No", description: "Supporter, Neutral, Alliance, Opposition, Other" },
+      // { field: "influence", required: "No", description: "High, Medium, Low" },
       { field: "gender", required: "No", description: "Male, Female, Other" },
+
       { field: "tags", required: "No", description: "Comma-separated tags" },
       {
         field: "isActive",
@@ -357,16 +358,16 @@ export default function LeaderListPage() {
   };
 
   return (
-    <MainLayout title="Leaders">
+    <MainLayout title="Local Representatives">
       <div className="space-y-6">
         {/* ─── Header ──────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="h-7 w-7 text-primary" /> Leaders
+              <Users className="h-7 w-7 text-primary" /> Local Representatives
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Constituency leaders, VIPs & key persons with birthday tracking
+              Constituency local representatives, VIPs & key persons with birthday tracking
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -405,7 +406,7 @@ export default function LeaderListPage() {
               </Button>
               <Link to="/leaders/new">
                 <Button className="gap-2">
-                  <Plus className="h-4 w-4" /> Add Leader
+                  <Plus className="h-4 w-4" /> Add Local Representative
                 </Button>
               </Link>
             </PermissionGate>
@@ -417,35 +418,13 @@ export default function LeaderListPage() {
           open={isBulkImportOpen}
           onOpenChange={setIsBulkImportOpen}
           onUpload={bulkCreateLeaders}
-          title="Import Leaders"
+          title="Import Local Representatives"
           description={
             <div>
               <p>
-                Upload an Excel or CSV file to import multiple leaders. Records
+                Upload an Excel or CSV file to import multiple local representatives. Records
                 are upserted by Name+Phone or Email.
               </p>
-              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
-                <p>
-                  <strong>Required:</strong> name, category, dateOfBirth
-                </p>
-                <p>
-                  <strong>Category:</strong>{" "}
-                  {LEADER_CATEGORIES.map((c) => c.value).join(", ")}
-                </p>
-                <p>
-                  <strong>Date format:</strong> YYYY-MM-DD
-                </p>
-                <p>
-                  <strong>Relation:</strong> Supporter, Neutral, Alliance,
-                  Opposition, Other
-                </p>
-                <p>
-                  <strong>Influence:</strong> High, Medium, Low
-                </p>
-                <p>
-                  <strong>isActive:</strong> TRUE, FALSE
-                </p>
-              </div>
             </div>
           }
           onDownloadSample={downloadSampleTemplate}
@@ -456,7 +435,7 @@ export default function LeaderListPage() {
           <div className=" md:grid-cols-3  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {[
               {
-                label: "Total Leaders",
+                label: "Total Local Representatives",
                 value: stats.total,
                 Icon: Users,
                 color: "#6366f1",
@@ -475,14 +454,6 @@ export default function LeaderListPage() {
                 highlight: stats.todayBirthdays > 0,
               },
               {
-                label: "High Influence",
-                value:
-                  stats.byInfluence?.find((i: any) => i.influence === "High")
-                    ?.count || 0,
-                Icon: Star,
-                color: "#ef4444",
-              },
-              {
                 label: "Supporters",
                 value:
                   stats.byRelation?.find((r: any) => r.relation === "Supporter")
@@ -490,7 +461,17 @@ export default function LeaderListPage() {
                 Icon: Shield,
                 color: "#3b82f6",
               },
+
+              /* {
+                label: "High Influence",
+                value:
+                  stats.byInfluence?.find((i: any) => i.influence === "High")
+                    ?.count || 0,
+                Icon: Star,
+                color: "#ef4444",
+              }, */
             ].map((s, i) => (
+
               <Card
                 key={i}
                 className={
@@ -650,7 +631,7 @@ export default function LeaderListPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
+                {/* <Select
                   value={influenceFilter}
                   onValueChange={(v) => {
                     setInfluenceFilter(v);
@@ -668,11 +649,11 @@ export default function LeaderListPage() {
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </Select> */}
                 {(categoryFilter !== "all" ||
                   wardFilter !== "all" ||
                   relationFilter !== "all" ||
-                  influenceFilter !== "all" ||
+                  // influenceFilter !== "all" ||
                   search) && (
                   <Button
                     variant="ghost"
@@ -682,8 +663,9 @@ export default function LeaderListPage() {
                       setCategoryFilter("all");
                       setWardFilter("all");
                       setRelationFilter("all");
-                      setInfluenceFilter("all");
+                      // setInfluenceFilter("all");
                       setPage(1);
+
                     }}
                     className="text-xs text-muted-foreground"
                   >
@@ -702,12 +684,13 @@ export default function LeaderListPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[280px]">Leader</TableHead>
+                    <TableHead className="w-[280px]">Local Representative</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Ward</TableHead>
                     <TableHead>Relation</TableHead>
-                    <TableHead className="text-center">Influence</TableHead>
+                    {/* <TableHead className="text-center">Influence</TableHead> */}
                     <TableHead>Birthday</TableHead>
+
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -729,9 +712,9 @@ export default function LeaderListPage() {
                         className="text-center py-16 text-muted-foreground"
                       >
                         <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p className="font-medium">No leaders found</p>
+                        <p className="font-medium">No local representatives found</p>
                         <p className="text-xs mt-1">
-                          Adjust filters or add a new leader
+                          Adjust filters or add a new local representative
                         </p>
                       </TableCell>
                     </TableRow>
@@ -740,7 +723,7 @@ export default function LeaderListPage() {
                       const cInfo = getCategoryInfo(l.category);
                       const CategoryIcon = cInfo.icon;
 
-                      const infDots = INFLUENCE_DOTS[l.influence] || null;
+                      // const infDots = INFLUENCE_DOTS[l.influence] || null;
                       const relColor =
                         RELATION_COLORS[l.relation] || RELATION_COLORS.Other;
                       return (
@@ -831,7 +814,7 @@ export default function LeaderListPage() {
                             )}
                           </TableCell>
 
-                          <TableCell className="text-center">
+                          {/* <TableCell className="text-center">
                             {infDots ? (
                               <TooltipProvider>
                                 <Tooltip>
@@ -852,7 +835,7 @@ export default function LeaderListPage() {
                                 —
                               </span>
                             )}
-                          </TableCell>
+                          </TableCell> */}
 
                           <TableCell>
                             <div>
@@ -964,7 +947,7 @@ export default function LeaderListPage() {
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t">
                 <p className="text-xs text-muted-foreground">
-                  {pagination.total} leaders • Page {pagination.page}/
+                  {pagination.total} local representatives • Page {pagination.page}/
                   {pagination.totalPages}
                 </p>
                 <div className="flex gap-1">

@@ -6,6 +6,7 @@ export function useDepartments(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["departments", params],
     queryFn: () => departmentsApi.list(params).then((r) => r.data),
+    staleTime: 0,
   });
 }
 

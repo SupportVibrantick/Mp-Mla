@@ -1,14 +1,14 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import {
-  useInstitutions,
-  useInstitutionStats,
-  useBulkCreateInstitutions,
+  usePublicFacilities,
+  usePublicFacilityStats,
+  useBulkCreatePublicFacilities,
   getCategoryInfo,
   getStatusInfo,
-  INSTITUTION_CATEGORIES,
-  INSTITUTION_STATUSES,
-} from "@/hooks/useInstitutions";
+  PUBLIC_FACILITY_CATEGORIES,
+  PUBLIC_FACILITY_STATUSES,
+} from "@/hooks/usePublicFacilities";
 import { useWards } from "@/hooks/useWards";
 import { toast } from "sonner";
 import * as xlsx from "xlsx";
@@ -53,9 +53,10 @@ import {
   FileUp,
   Download,
   Loader2,
+  Clock,
 } from "lucide-react";
 
-export default function InstitutionListPage() {
+export default function PublicFacilityListPage() {
   const [search, setSearch] = useState("");
   const [wardFilter, setWardFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -73,12 +74,12 @@ export default function InstitutionListPage() {
     return p;
   }, [search, wardFilter, categoryFilter, statusFilter, page]);
 
-  const { data: instRes, isLoading } = useInstitutions(queryParams);
-  const { data: statsRes } = useInstitutionStats(
+  const { data: instRes, isLoading } = usePublicFacilities(queryParams);
+  const { data: statsRes } = usePublicFacilityStats(
     wardFilter !== "all" ? wardFilter : undefined,
   );
   const { data: wardsRes } = useWards({ limit: 100 });
-  const { mutateAsync: bulkCreateInstitutions } = useBulkCreateInstitutions();
+  const { mutateAsync: bulkCreatePublicFacilities } = useBulkCreatePublicFacilities();
 
   const institutions = instRes?.data || [];
   const pagination = instRes?.pagination;
@@ -86,9 +87,9 @@ export default function InstitutionListPage() {
   const wards = wardsRes?.data?.wards || [];
 
   const categoryGroups = useMemo(() => {
-    const groups: Record<string, (typeof INSTITUTION_CATEGORIES)[number][]> =
+    const groups: Record<string, (typeof PUBLIC_FACILITY_CATEGORIES)[number][]> =
       {};
-    INSTITUTION_CATEGORIES.forEach((c) => {
+    PUBLIC_FACILITY_CATEGORIES.forEach((c) => {
       if (!groups[c.group]) groups[c.group] = [];
       groups[c.group].push(c);
     });
@@ -120,15 +121,15 @@ export default function InstitutionListPage() {
         // Remove wardName from export (it's informational, not importable)
         const ws = xlsx.utils.json_to_sheet(data);
         const wb = xlsx.utils.book_new();
-        xlsx.utils.book_append_sheet(wb, ws, "Institutions");
-        xlsx.writeFile(wb, "institutions_export.xlsx");
+        xlsx.utils.book_append_sheet(wb, ws, "Facility");
+        xlsx.writeFile(wb, "Facility_export.xlsx");
         toast.success(`Exported ${data.length} rows successfully.`);
       } else {
         toast.error("No data available to export.");
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to export institutions.");
+      toast.error("Failed to export Facility.");
     } finally {
       setIsExporting(false);
     }
@@ -137,7 +138,7 @@ export default function InstitutionListPage() {
   // ── Download Sample Template ──
   const downloadSampleTemplate = async () => {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Institutions");
+    const worksheet = workbook.addWorksheet("Public Facilities");
 
     worksheet.columns = [
       { header: "name", key: "name", width: 30 },
@@ -235,8 +236,8 @@ export default function InstitutionListPage() {
     });
 
     // Data validations
-    const categoryValues = INSTITUTION_CATEGORIES.map((c) => c.value).join(",");
-    const statusValues = INSTITUTION_STATUSES.map((s) => s.value).join(",");
+    const categoryValues = PUBLIC_FACILITY_CATEGORIES.map((c) => c.value).join(",");
+    const statusValues = PUBLIC_FACILITY_STATUSES.map((s) => s.value).join(",");
     const maxRows = 500;
 
     for (let i = 2; i <= maxRows; i++) {
@@ -373,14 +374,14 @@ export default function InstitutionListPage() {
   };
 
   return (
-    <MainLayout title="Institutions">
+    <MainLayout title="Public Facilities">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Building2 className="h-7 w-7 text-primary" />
-              Institutions
+              Public Facilities
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Schools, hospitals, temples, govt offices & more
@@ -410,9 +411,14 @@ export default function InstitutionListPage() {
               >
                 <FileUp className="h-4 w-4" /> Bulk Upload
               </Button>
-              <Link to="/institutions/new">
+              <Link to="/public-facilities/requests">
+                <Button variant="outline" className="gap-2">
+                  <Clock className="h-4 w-4" /> Review Requests
+                </Button>
+              </Link>
+              <Link to="/public-facilities/new">
                 <Button className="gap-2">
-                  <Plus className="h-4 w-4" /> Add Institution
+                  <Plus className="h-4 w-4" /> Add Facility
                 </Button>
               </Link>
             </PermissionGate>
@@ -423,32 +429,17 @@ export default function InstitutionListPage() {
         <BulkUploadModal
           open={isBulkImportOpen}
           onOpenChange={setIsBulkImportOpen}
-          onUpload={bulkCreateInstitutions}
-          title="Import Institutions"
+          onUpload={bulkCreatePublicFacilities}
+          title="Import Public Facilities"
           description={
             <div>
               <p>
-                Upload an Excel or CSV file to import institutions with
+                Upload an Excel or CSV file to import public facilities with
                 incharges. Records are upserted by Name + Ward Number.
               </p>
               <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
                 <p>
                   <strong>Required:</strong> name, category, address, wardNumber
-                </p>
-                <p>
-                  <strong>Category:</strong>{" "}
-                  {INSTITUTION_CATEGORIES.map((c) => c.value).join(", ")}
-                </p>
-                <p>
-                  <strong>Status:</strong>{" "}
-                  {INSTITUTION_STATUSES.map((s) => s.value).join(", ")}
-                </p>
-                <p>
-                  <strong>Multi-incharge:</strong> Repeat name + wardNumber on
-                  new row with only incharge fields
-                </p>
-                <p>
-                  <strong>Date format:</strong> YYYY-MM-DD
                 </p>
               </div>
             </div>
@@ -544,11 +535,10 @@ export default function InstitutionListPage() {
                   return (
                     <div
                       key={c.category}
-                      className={`text-center p-3 rounded-lg border transition-colors cursor-pointer ${
-                        categoryFilter === c.category
+                      className={`text-center p-3 rounded-lg border transition-colors cursor-pointer ${categoryFilter === c.category
                           ? "border-primary bg-primary/5"
                           : "hover:bg-muted/50"
-                      }`}
+                        }`}
                       onClick={() => {
                         setCategoryFilter(
                           categoryFilter === c.category ? "all" : c.category,
@@ -657,7 +647,7 @@ export default function InstitutionListPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    {INSTITUTION_STATUSES.map((s) => (
+                    {PUBLIC_FACILITY_STATUSES.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         {s.label}
                       </SelectItem>
@@ -669,15 +659,15 @@ export default function InstitutionListPage() {
                   wardFilter !== "all" ||
                   statusFilter !== "all" ||
                   categoryFilter !== "all") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={reset}
-                    className="text-xs"
-                  >
-                    Clear
-                  </Button>
-                )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={reset}
+                      className="text-xs"
+                    >
+                      Clear
+                    </Button>
+                  )}
               </div>
             </div>
           </CardContent>
@@ -690,7 +680,7 @@ export default function InstitutionListPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Institution</TableHead>
+                    <TableHead>Public Facility</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Ward</TableHead>
                     <TableHead>Contact</TableHead>
@@ -717,7 +707,7 @@ export default function InstitutionListPage() {
                         className="text-center py-12 text-muted-foreground"
                       >
                         <Building2 className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p>No institutions found.</p>
+                        <p>No public facilities found.</p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -728,7 +718,7 @@ export default function InstitutionListPage() {
                       return (
                         <TableRow key={inst.id} className="hover:bg-muted/50">
                           <TableCell>
-                            <Link to={`/institutions/${inst.id}`}>
+                            <Link to={`/public-facilities/${inst.id}`}>
                               <div className="cursor-pointer">
                                 <p className="font-medium text-primary hover:underline">
                                   {inst.name}
@@ -806,7 +796,7 @@ export default function InstitutionListPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Link to={`/institutions/${inst.id}`}>
+                              <Link to={`/public-facilities/${inst.id}`}>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -819,7 +809,7 @@ export default function InstitutionListPage() {
                                 module="institutions"
                                 action="update"
                               >
-                                <Link to={`/institutions/${inst.id}/edit`}>
+                                <Link to={`/public-facilities/${inst.id}/edit`}>
                                   <Button
                                     variant="ghost"
                                     size="icon"

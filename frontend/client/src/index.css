@@ -197,3 +197,65 @@
 }
 
 
+/* ═══════════════════════════════════════════════════════
+   PRINT STYLES — Hide sidebar, nav, buttons for clean PDF
+   ═══════════════════════════════════════════════════════ */
+@media print {
+  /* Hide sidebar and its container */
+  [data-sidebar],
+  [data-sidebar-rail],
+  aside,
+  nav,
+  .sidebar,
+  [class*="sidebar"] {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Hide action buttons, filters, report selector tabs */
+  .no-print,
+  button:not(.print-keep),
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  /* Make the main content take full width */
+  main,
+  [role="main"],
+  .main-content {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Remove shadows and borders for cleaner print */
+  .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: none !important;
+  }
+
+  /* Ensure white background for print */
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page settings */
+  @page {
+    margin: 1cm;
+    size: A4 landscape;
+  }
+
+  /* Ensure tables don't break across pages */
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+}

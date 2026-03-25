@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-export type InstitutionCategory = {
+export type PublicFacilityCategory = {
   value: string;
   label: string;
   icon: string;
@@ -12,7 +12,7 @@ export type InstitutionCategory = {
 const IC = "/icons/institutions";
 // ─── Category Metadata ──────────────────────────────────
 
-export const INSTITUTION_CATEGORIES: InstitutionCategory[] = [
+export const PUBLIC_FACILITY_CATEGORIES: PublicFacilityCategory[] = [
   {
     value: "TEMPLE",
     label: "Temple",
@@ -120,7 +120,7 @@ export const INSTITUTION_CATEGORIES: InstitutionCategory[] = [
   },
   { value: "OTHER", label: "Other", icon: `${IC}/other.png`, group: "Other" },
 ];
-export const INSTITUTION_STATUSES = [
+export const PUBLIC_FACILITY_STATUSES = [
   {
     value: "ACTIVE",
     label: "Active",
@@ -149,9 +149,10 @@ export const INSTITUTION_STATUSES = [
     color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
 ] as const;
+
 export function getCategoryInfo(category: string) {
   return (
-    INSTITUTION_CATEGORIES.find((c) => c.value === category) || {
+    PUBLIC_FACILITY_CATEGORIES.find((c) => c.value === category) || {
       value: category,
       label: category.replace(/_/g, " "),
       icon: `${IC}/other.png`,
@@ -162,22 +163,23 @@ export function getCategoryInfo(category: string) {
 
 export function getStatusInfo(status: string) {
   return (
-    INSTITUTION_STATUSES.find((s) => s.value === status) ||
-    INSTITUTION_STATUSES[0]
+    PUBLIC_FACILITY_STATUSES.find((s) => s.value === status) ||
+    PUBLIC_FACILITY_STATUSES[0]
   );
 }
 
 // ─── Hooks ──────────────────────────────────────────────
 
-export function useInstitutions(params?: Record<string, any>) {
+export function usePublicFacilities(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["institutions", params],
     queryFn: () =>
       api.get("/admin/institutions", { params }).then((r) => r.data),
+    staleTime: 0,
   });
 }
 
-export function useInstitutionStats(wardId?: string) {
+export function usePublicFacilityStats(wardId?: string) {
   return useQuery({
     queryKey: ["institutions", "stats", wardId],
     queryFn: () =>
@@ -187,7 +189,7 @@ export function useInstitutionStats(wardId?: string) {
   });
 }
 
-export function useInstitution(id: string | undefined) {
+export function usePublicFacility(id: string | undefined) {
   return useQuery({
     queryKey: ["institutions", id],
     queryFn: () => api.get(`/admin/institutions/${id}`).then((r) => r.data),
@@ -195,7 +197,7 @@ export function useInstitution(id: string | undefined) {
   });
 }
 
-export function useCreateInstitution() {
+export function useCreatePublicFacility() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
@@ -215,7 +217,7 @@ export function useCreateInstitution() {
   });
 }
 
-export function useUpdateInstitution() {
+export function useUpdatePublicFacility() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
@@ -235,7 +237,7 @@ export function useUpdateInstitution() {
   });
 }
 
-export function useDeleteInstitution() {
+export function useDeletePublicFacility() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
@@ -243,7 +245,7 @@ export function useDeleteInstitution() {
       api.delete(`/admin/institutions/${id}`).then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["institutions"] });
-      toast({ title: "Deleted", description: res.message });
+      toast({ title: "Moved to Recycle Bin", description: res.message });
     },
     onError: (err: any) => {
       toast({
@@ -257,7 +259,7 @@ export function useDeleteInstitution() {
 
 // ─── Bulk Import Hook ───────────────────────────────────
 
-export function useBulkCreateInstitutions() {
+export function useBulkCreatePublicFacilities() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: any[]) =>
@@ -267,7 +269,7 @@ export function useBulkCreateInstitutions() {
     },
     onError: (err: any) => {
       throw new Error(
-        err?.response?.data?.message || "Failed to bulk import institutions",
+        err?.response?.data?.message || "Failed to bulk import public facilities",
       );
     },
   });
@@ -280,14 +282,14 @@ export function useCreateIncharge() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({
-      institutionId,
+      publicFacilityId,
       data,
     }: {
-      institutionId: string;
+      publicFacilityId: string;
       data: any;
     }) =>
       api
-        .post(`/admin/institutions/${institutionId}/incharges`, data)
+        .post(`/admin/institutions/${publicFacilityId}/incharges`, data)
         .then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["institutions"] });
@@ -308,17 +310,17 @@ export function useUpdateIncharge() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({
-      institutionId,
+      publicFacilityId,
       inchargeId,
       data,
     }: {
-      institutionId: string;
+      publicFacilityId: string;
       inchargeId: string;
       data: any;
     }) =>
       api
         .put(
-          `/admin/institutions/${institutionId}/incharges/${inchargeId}`,
+          `/admin/institutions/${publicFacilityId}/incharges/${inchargeId}`,
           data,
         )
         .then((r) => r.data),
@@ -341,14 +343,14 @@ export function useDeleteIncharge() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({
-      institutionId,
+      publicFacilityId,
       inchargeId,
     }: {
-      institutionId: string;
+      publicFacilityId: string;
       inchargeId: string;
     }) =>
       api
-        .delete(`/admin/institutions/${institutionId}/incharges/${inchargeId}`)
+        .delete(`/admin/institutions/${publicFacilityId}/incharges/${inchargeId}`)
         .then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["institutions"] });
@@ -369,15 +371,15 @@ export function useToggleInchargeActive() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({
-      institutionId,
+      publicFacilityId,
       inchargeId,
     }: {
-      institutionId: string;
+      publicFacilityId: string;
       inchargeId: string;
     }) =>
       api
         .patch(
-          `/admin/institutions/${institutionId}/incharges/${inchargeId}/toggle-active`,
+          `/admin/institutions/${publicFacilityId}/incharges/${inchargeId}/toggle-active`,
         )
         .then((r) => r.data),
     onSuccess: (res) => {

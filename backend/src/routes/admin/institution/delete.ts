@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 
 export async function deleteInstitution(
   req: Request,
@@ -14,25 +15,43 @@ export async function deleteInstitution(
   try {
     const institution = await prisma.institution.findUnique({
       where: { id: req.params.id as string },
-      include: { _count: { select: { incharges: true } } },
+      include: {
+        incharges: true,
+        _count: { select: { incharges: true } },
+      },
     });
     if (!institution) throw ApiError.notFound("Institution not found");
 
-    // Cascade deletes incharges via schema relation
-    await prisma.institution.delete({ where: { id: req.params.id as string } });
+    if (institution.isDeleted) {
+      throw ApiError.badRequest("Institution is already in recycle bin");
+    }
+
+    await archiveToRecycleBin({
+      module: "institutions",
+      entityType: "institution",
+      recordId: institution.id,
+      recordLabel: institution.name,
+      payload: institution,
+      deletedById: req.user?.id,
+    });
+
+    await prisma.institution.update({
+      where: { id: req.params.id as string },
+      data: { isDeleted: true },
+    });
 
     await createAuditLog({
       userId: req.user!.id,
       action: "DELETE",
       module: "institutions",
       recordId: institution.id,
-      description: `Deleted institution "${institution.name}" (${institution.category}) and ${institution._count.incharges} incharge(s)`,
+      description: `Moved institution "${institution.name}" (${institution.category}) to recycle bin`,
       ...getRequestMeta(req),
     });
 
     res.json({
       success: true,
-      message: `"${institution.name}" deleted`,
+      message: `"${institution.name}" moved to recycle bin`,
     });
   } catch (error) {
     next(error);

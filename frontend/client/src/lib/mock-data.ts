@@ -17,8 +17,8 @@ export const MOCK_DATA = {
     {
       label: "Active Projects",
       value: 14,
-      trend: "3 Delayed",
-      status: "warning",
+      trend: "No delays",
+      status: "neutral",
     },
     {
       label: "Projects Completed",
@@ -1246,14 +1246,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     type: "success",
     is_read: false,
     created_at: "2026-02-15T14:20:00",
-  },
-  {
-    id: "n3",
-    title: "Overdue Grievance",
-    message: "GR-005 has been pending for over 10 days",
-    type: "error",
-    is_read: false,
-    created_at: "2026-02-16T08:00:00",
   },
   {
     id: "n4",

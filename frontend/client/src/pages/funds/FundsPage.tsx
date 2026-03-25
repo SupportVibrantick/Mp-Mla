@@ -1,4 +1,8 @@
 import { useState } from "react";
+import * as xlsx from "xlsx";
+import api from "@/lib/api";
+import { toast } from "sonner";
+
 import {
   useFundOverview,
   useFund,
@@ -77,7 +81,10 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Eye,
+  Download,
 } from "lucide-react";
+
+
 import { format } from "date-fns";
 
 export default function FundsPage() {
@@ -98,6 +105,31 @@ export default function FundsPage() {
     totalAllocated: 0,
   });
   const [txnDlg, setTxnDlg] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await api.get("/admin/funds/export");
+      const data = response.data?.data;
+
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Funds");
+        xlsx.writeFile(wb, "funds_transactions_export.xlsx");
+        toast.success("Fund records exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export funds data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const [txnForm, setTxnForm] = useState({
     amount: 0,
     type: "ALLOCATION" as string,
@@ -166,7 +198,19 @@ export default function FundsPage() {
                 </SelectContent>
               </Select>
             )}
+            <PermissionGate module="funds" action="read">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" />
+                Export All
+              </Button>
+            </PermissionGate>
             <PermissionGate module="funds" action="create">
+
               <Button
                 className="gap-2"
                 onClick={() => {
@@ -473,15 +517,15 @@ export default function FundsPage() {
                       })}
                       {(!o.recentTransactions ||
                         o.recentTransactions.length === 0) && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={5}
-                            className="text-center py-8 text-muted-foreground"
-                          >
-                            No transactions yet
-                          </TableCell>
-                        </TableRow>
-                      )}
+                          <TableRow>
+                            <TableCell
+                              colSpan={5}
+                              className="text-center py-8 text-muted-foreground"
+                            >
+                              No transactions yet
+                            </TableCell>
+                          </TableRow>
+                        )}
                     </TableBody>
                   </Table>
                 </CardContent>

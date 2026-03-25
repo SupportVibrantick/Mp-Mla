@@ -4,6 +4,7 @@ import { TokenStorage } from "./auth";
 // const API_BASE_URL =
 //   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const API_BASE_URL = "https://api-mp-mla.vibrantick.org/api";
+// const API_BASE_URL = "/api";
 
 // Create axios instance
 const api = axios.create({
@@ -226,7 +227,12 @@ export const grievancesApi = {
 
   addTimeline: (id: string, data: any) =>
     api.post(`/admin/grievances/${id}/timeline`, data),
+  
+  export: (params?: any) => api.get("/admin/grievances/export", { params }),
+
+  bulk: (data: any[]) => api.post("/admin/grievances/bulk", data),
 };
+
 
 export const projectsApi = {
   list: (params?: any) => api.get("/admin/projects", { params }),
@@ -300,6 +306,11 @@ export const auditLogsApi = {
   list: (params?: any) => api.get("/admin/audit-logs", { params }),
 };
 
+export const recycleBinApi = {
+  list: (params?: any) => api.get("/admin/recycle-bin", { params }),
+  restore: (id: string) => api.post(`/admin/recycle-bin/${id}/restore`),
+  delete: (id: string) => api.delete(`/admin/recycle-bin/${id}`),
+};
 export const permissionsApi = {
   list: () => api.get("/admin/permissions"),
   roleDefaults: () => api.get("/admin/permissions/role-defaults"),

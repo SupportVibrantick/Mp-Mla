@@ -140,6 +140,7 @@ export function useGrievances(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["grievances", params],
     queryFn: () => grievancesApi.list(params).then((r) => r.data),
+    staleTime: 0,
   });
 }
 
@@ -227,6 +228,44 @@ export function useAddGrievanceTimeline() {
 export function useDeleteGrievance() {
   return useGrievanceMut(
     (id: string) => grievancesApi.delete(id).then((r) => r.data),
-    "Deleted",
+    "Moved to Recycle Bin",
   );
 }
+
+export function useExportGrievances() {
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (params?: Record<string, any>) => 
+      grievancesApi.export(params).then(r => r.data),
+    onError: (err: any) => {
+      toast({
+        title: "Export Failed",
+        description: err?.response?.data?.message || "Failed to export data",
+        variant: "destructive",
+      });
+    }
+  });
+}
+
+export function useBulkImportGrievances() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: any[]) => grievancesApi.bulk(data).then(r => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["grievances"] });
+      toast({
+        title: "Import Completed",
+        description: res.message,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Import Failed",
+        description: err?.response?.data?.message || "Check your excel format",
+        variant: "destructive",
+      });
+    }
+  });
+}
+

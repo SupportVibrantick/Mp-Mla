@@ -11,6 +11,9 @@ import { createGrievance } from "./create.js";
 import { updateGrievance, changeStatus, assignGrievance } from "./update.js";
 import { deleteGrievance } from "./delete.js";
 import { addTimelineEntry } from "./timeline.js";
+import { exportGrievances } from "./export.js";
+import { bulkCreateGrievances } from "./bulk.js";
+
 import {
   createGrievanceSchema,
   updateGrievanceSchema,
@@ -32,6 +35,17 @@ router.get(
   requirePermission("grievances", "read"),
   getGrievanceAnalytics,
 );
+router.get(
+  "/export",
+  requirePermission("grievances", "read"),
+  exportGrievances,
+);
+router.post(
+  "/bulk",
+  requirePermission("grievances", "create"),
+  bulkCreateGrievances,
+);
+
 router.get("/:id", requirePermission("grievances", "read"), getGrievance);
 router.post(
   "/",

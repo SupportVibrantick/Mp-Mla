@@ -58,7 +58,27 @@ import {
   PauseCircle,
   FileUp,
   Download,
+  AlertCircle,
+  MapPin,
+  PieChart as PieChartIcon,
+  BarChart as BarChartIcon,
+  AlertTriangle,
+  X,
+  UserCheck,
 } from "lucide-react";
+import {
+  BarChart as ReBarChart,
+  Bar as ReBar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ReTooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart as RePieChart,
+  Pie as RePie,
+  Legend,
+} from "recharts";
 
 export default function ProjectListPage() {
   const [search, setSearch] = useState("");
@@ -69,6 +89,7 @@ export default function ProjectListPage() {
   const [page, setPage] = useState(1);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isAlertDismissed, setIsAlertDismissed] = useState(false);
   const { mutateAsync: bulkCreateProjects } = useBulkCreateProjects();
 
   const handleExport = async () => {
@@ -208,7 +229,6 @@ export default function ProjectListPage() {
   );
   const { data: wardsRes } = useWards({ limit: 100 });
   const { data: deptsRes } = useDepartments();
-
   const projects = pRes?.data || [];
   const pagination = pRes?.pagination;
   const stats = statsRes?.data;
@@ -282,118 +302,291 @@ export default function ProjectListPage() {
                 Upload an Excel or CSV file to import multiple projects. Records
                 are upserted by Project Code or Name.
               </p>
-              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
-                <p>
-                  <strong>Valid Status:</strong> PENDING, RUNNING, COMPLETED,
-                  ON_HOLD, CANCELLED
-                </p>
-                <p>
-                  <strong>Valid Fund Types:</strong> MPLAD, MLALAD, STATE_FUND,
-                  CENTRAL_FUND, CSR, OTHER
-                </p>
-                <p>
-                  <strong>Valid Categories:</strong> ROAD, WATER, DRAINAGE,
-                  ELECTRICITY, BUILDING, PARK, EDUCATION, HEALTH, SPORTS,
-                  SANITATION, HOUSING, IT, OTHER
-                </p>
-              </div>
             </div>
           }
           onDownloadSample={downloadSampleTemplate}
         />
 
-        {/* Stats */}
+        {/* Stats Summary Cards */}
         {stats && (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {[
-                {
-                  label: "Total",
-                  value: stats.total,
-                  Icon: FolderKanban,
-                  color: "#6366f1",
-                },
-                {
-                  label: "Running",
-                  value: stats.running,
-                  Icon: TrendingUp,
-                  color: "#f59e0b",
-                },
-                {
-                  label: "Pending",
-                  value: stats.pending,
-                  Icon: Clock,
-                  color: "#3b82f6",
-                },
-                {
-                  label: "Completed",
-                  value: stats.completed,
-                  Icon: CheckCircle2,
-                  color: "#22c55e",
-                },
-                {
-                  label: "On Hold",
-                  value: stats.onHold,
-                  Icon: PauseCircle,
-                  color: "#ef4444",
-                },
-              ].map((s, i) => (
-                <Card key={i}>
-                  <CardContent className="p-3 flex items-center gap-2.5">
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: `${s.color}20` }}
-                    >
-                      <s.Icon className="h-4 w-4" style={{ color: s.color }} />
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold leading-none">
-                        {s.value}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {s.label}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              {[
-                {
-                  label: "Sanctioned",
-                  value: stats.totalSanctioned,
-                  color: "#3b82f6",
-                },
-                {
-                  label: "Released",
-                  value: stats.totalReleased,
-                  color: "#f59e0b",
-                },
-                { label: "Utilized", value: stats.totalUsed, color: "#22c55e" },
-              ].map((b, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">{b.label}</p>
-                    <p
-                      className="text-2xl font-bold mt-1"
-                      style={{ color: b.color }}
-                    >
-                      {formatBudget(b.value)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+            {[
+              {
+                label: "Total Projects",
+                value: stats.total,
+                Icon: FolderKanban,
+                color: "#6366f1",
+              },
+              {
+                label: "Running",
+                value: stats.running,
+                Icon: TrendingUp,
+                color: "#f59e0b",
+              },
+              {
+                label: "Pending",
+                value: stats.pending,
+                Icon: Clock,
+                color: "#3b82f6",
+              },
+              {
+                label: "Completed",
+                value: stats.completed,
+                Icon: CheckCircle2,
+                color: "#22c55e",
+              },
+              {
+                label: "On Hold",
+                value: stats.onHold,
+                Icon: PauseCircle,
+                color: "#ef4444",
+              },
+            ].map((s, i) => (
+              <Card key={i}>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${s.color}15` }}
+                  >
+                    <s.Icon className="h-5 w-5" style={{ color: s.color }} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold leading-none">{s.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {s.label}
                     </p>
-                    <Progress
-                      value={
-                        stats.totalSanctioned > 0
-                          ? (b.value / stats.totalSanctioned) * 100
-                          : 0
-                      }
-                      className="h-1.5 mt-2"
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Perfected Dashboard Row */}
+        {stats && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Category Performance Matrix */}
+            <Card className="lg:col-span-1 border-none shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                    <TrendingUp className="h-4 w-4 text-indigo-500" />
+                  </div>
+                  Category Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ReBarChart data={stats.byCategory}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        opacity={0.05}
+                      />
+                      <XAxis
+                        dataKey="category"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      />
+                      <YAxis
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      />
+                      <ReTooltip
+                        cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+                        }}
+                      />
+                      <Legend
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                      />
+                      <ReBar
+                        dataKey="total"
+                        name="Total"
+                        fill="#6366f1"
+                        radius={[4, 4, 0, 0]}
+                        barSize={20}
+                      />
+                      <ReBar
+                        dataKey="completed"
+                        name="Done"
+                        fill="#10b981"
+                        radius={[4, 4, 0, 0]}
+                        barSize={20}
+                      />
+                    </ReBarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Financial Health (Funds Pie) */}
+            <Card className="lg:col-span-1 border-none shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                    <IndianRupee className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  Fund Utilisation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[250px] relative">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                      {Math.round(
+                        (stats.totalUsed / stats.totalSanctioned) * 100,
+                      ) || 0}
+                      %
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">
+                      Utilized
+                    </span>
+                  </div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <RePie
+                        data={[
+                          {
+                            name: "Available",
+                            value: stats.totalSanctioned - stats.totalUsed,
+                            color: "#e2e8f0",
+                          },
+                          {
+                            name: "Released",
+                            value: stats.totalReleased,
+                            color: "#f59e0b",
+                          },
+                          {
+                            name: "Expenditure",
+                            value: stats.totalUsed,
+                            color: "#22c55e",
+                          },
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={85}
+                        paddingAngle={8}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {[
+                          { color: "hsl(var(--muted))" },
+                          { color: "#f59e0b" },
+                          { color: "#22c55e" },
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </RePie>
+                      <ReTooltip formatter={(v: any) => formatBudget(v)} />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-3 gap-1 mt-2 text-[10px] text-center font-bold">
+                  <div className="text-slate-500">
+                    Sanctioned: {formatBudget(stats.totalSanctioned)}
+                  </div>
+                  <div className="text-amber-600">
+                    Released: {formatBudget(stats.totalReleased)}
+                  </div>
+                  <div className="text-emerald-600">
+                    Used: {formatBudget(stats.totalUsed)}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Health Alerts & Delay Metrics (Expanded) */}
+            {!isAlertDismissed && stats.delayedCount > 0 && (
+              <Card className="lg:col-span-1 border-2 border-red-500/20 bg-red-50 dark:bg-red-950/20 shadow-lg shadow-red-500/5 relative overflow-hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-6 w-6 text-red-400 hover:text-red-600 hover:bg-transparent"
+                  onClick={() => setIsAlertDismissed(true)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-black uppercase text-red-600 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 animate-bounce" />
+                      Critical Delay Alerts
+                    </span>
+                    <Badge
+                      variant="destructive"
+                      className="h-5 px-1.5 font-bold"
+                    >
+                      {stats.delayedCount} OVERDUE
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-red-100/50 dark:bg-red-900/10 p-2.5 border border-red-200/50 dark:border-red-800/20">
+                      <p className="text-[10px] text-red-700 dark:text-red-400 font-bold leading-tight flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" />
+                        WHO NEEDS ATTENTION?
+                      </p>
+                      <div className="mt-2 space-y-2 max-h-[160px] overflow-y-auto pr-1 thin-scrollbar">
+                        {stats.delayedProjects?.map((p: any) => (
+                          <Link key={p.id} to={`/projects/${p.id}`}>
+                            <div className="p-2 rounded bg-white dark:bg-slate-900 shadow-sm border border-red-100 dark:border-red-900/50 hover:border-red-300 transition-colors flex justify-between items-center group cursor-pointer mt-1 first:mt-0">
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-red-600">
+                                  {p.name}
+                                </p>
+                                <p className="text-[9px] text-muted-foreground">
+                                  Status: {p.status} • {p.daysOverdue} days late
+                                </p>
+                              </div>
+                              <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* If alert dismissed or no delays, show a nice summary or empty state placeholder to maintain layout balance */}
+            {(isAlertDismissed || stats.delayedCount === 0) && (
+              <Card className="lg:col-span-1 border-none shadow-sm bg-gradient-to-br from-indigo-50 to-white dark:from-slate-950 dark:to-slate-900 flex flex-col justify-center items-center p-8 text-center">
+                <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center mb-4 text-indigo-600">
+                  <FolderKanban className="h-6 w-6" />
+                </div>
+                <h3 className="font-bold text-indigo-900 dark:text-indigo-400">
+                  Status Clearance
+                </h3>
+                <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">
+                  No critical delays detected or notifications have been
+                  acknowledged.
+                </p>
+                {isAlertDismissed && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="mt-4 text-[10px] text-indigo-600"
+                    onClick={() => setIsAlertDismissed(false)}
+                  >
+                    Restore Delay Alerts
+                  </Button>
+                )}
+              </Card>
+            )}
+          </div>
         )}
 
         {/* Filters */}
@@ -495,15 +688,15 @@ export default function ProjectListPage() {
                   statusFilter !== "all" ||
                   deptFilter !== "all" ||
                   categoryFilter !== "all") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={reset}
-                    className="text-xs"
-                  >
-                    Clear
-                  </Button>
-                )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={reset}
+                      className="text-xs"
+                    >
+                      Clear
+                    </Button>
+                  )}
               </div>
             </div>
           </CardContent>

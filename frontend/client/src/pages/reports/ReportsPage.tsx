@@ -19,6 +19,7 @@ import {
   useMonthlyReport,
   useExportReport,
 } from "@/hooks/useReports";
+import { useDataActivityStats } from "@/hooks/useDataActivity";
 import { useWards } from "@/hooks/useWards";
 import { MainLayout } from "@/components/layout/MainLayout";
 import {
@@ -86,6 +87,9 @@ import {
   MessageSquare,
   Landmark,
   TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
 } from "lucide-react";
 
 type ReportType =
@@ -186,6 +190,8 @@ export default function ReportsPage() {
   const [customTo, setCustomTo] = useState<Date>();
   const exportReport = useExportReport();
   const { data: wardsRes } = useWards({ limit: 100 });
+  const activityStats = useDataActivityStats();
+  const stats = activityStats.data?.data;
   const wards = wardsRes?.data?.wards || [];
   const today = new Date();
 
@@ -277,7 +283,7 @@ export default function ReportsPage() {
               Generate & export governance reports
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 no-print">
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="h-4 w-4 mr-1.5" />
               Print
@@ -292,8 +298,81 @@ export default function ReportsPage() {
           </div>
         </div>
 
+        {/* Data Activity Stats */}
+        {stats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
+            <Card className="border-blue-200 dark:border-blue-900">
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <ArrowUpRight className="h-4 w-4 text-blue-500" />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Total Exports
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {stats.totalExports}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-green-200 dark:border-green-900">
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <ArrowDownRight className="h-4 w-4 text-green-500" />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Total Imports
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {stats.totalImports}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="col-span-2">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    Recent Activity
+                  </span>
+                </div>
+                <div className="space-y-1.5 max-h-[80px] overflow-y-auto">
+                  {stats.recentActivity.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No activity yet
+                    </p>
+                  ) : (
+                    stats.recentActivity.slice(0, 4).map((a) => (
+                      <div
+                        key={a.id}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Badge
+                            variant={
+                              a.action === "EXPORT" ? "default" : "secondary"
+                            }
+                            className="text-[9px] px-1.5 py-0"
+                          >
+                            {a.action}
+                          </Badge>
+                          <span className="text-muted-foreground capitalize">
+                            {a.module}
+                          </span>
+                        </span>
+                        <span className="text-muted-foreground">
+                          {a.userName} • {a.recordCount} records
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Report Selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 no-print">
           {REPORTS.map((r) => {
             const Icon = r.icon;
             const isAct = active === r.id;
@@ -318,7 +397,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="no-print">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -419,7 +498,6 @@ export default function ReportsPage() {
                     { label: "Total", value: s.total, color: "#6366f1" },
                     { label: "Open", value: s.open, color: "#3b82f6" },
                     { label: "Resolved", value: s.resolved, color: "#22c55e" },
-                    { label: "Overdue", value: s.overdue, color: "#ef4444" },
                     {
                       label: "Resolution",
                       value: `${s.resolutionRate}%`,

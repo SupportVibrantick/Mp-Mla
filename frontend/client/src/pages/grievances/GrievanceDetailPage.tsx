@@ -100,7 +100,7 @@ export default function GrievanceDetailPage() {
   const tlMut = useAddGrievanceTimeline();
   const deleteMut = useDeleteGrievance();
   const { data: usersRes } = useUsers({ limit: 100 });
-  const { data: deptsRes } = useDepartments();
+  const { data: deptsRes } = useDepartments({ isActive: "true" });
   const users = usersRes?.data?.users || [];
   const departments = deptsRes?.data || [];
 
@@ -226,11 +226,6 @@ export default function GrievanceDetailPage() {
                   {pI.icon} {pI.label}
                 </Badge>
                 <Badge className={`text-[10px] ${sI.color}`}>{sI.label}</Badge>
-                {/* {g.isOverdue && (
-                  <Badge variant="destructive" className="text-[10px]">
-                    ⚠️ OVERDUE
-                  </Badge>
-                )} */}
               </div>
               <h2 className="text-lg font-semibold mt-1">{g.subject}</h2>
               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
@@ -558,28 +553,13 @@ export default function GrievanceDetailPage() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Dates & SLA</CardTitle>
+                <CardTitle className="text-sm">Dates</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Created</span>
                   <span>{format(new Date(g.createdAt), "dd MMM yyyy")}</span>
                 </div>
-                {/* {g.expectedResolutionDate && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Expected By</span>
-                    <span
-                      className={
-                        g.isOverdue ? "text-red-600 font-semibold" : ""
-                      }
-                    >
-                      {format(
-                        new Date(g.expectedResolutionDate),
-                        "dd MMM yyyy",
-                      )}
-                    </span>
-                  </div>
-                )} */}
                 {g.resolvedAt && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Resolved</span>

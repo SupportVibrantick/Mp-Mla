@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { normalizeProjectStatus, normalizeFundType } from "../../../utils/enumParser.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 
 /**
  * POST /api/admin/projects/bulk
@@ -29,7 +30,6 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
         deptMap.set(d.code.toUpperCase(), d.id);
         deptMap.set(d.name.toUpperCase(), d.id);
     });
-
     for (const row of projects) {
         try {
             const {
@@ -70,19 +70,20 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
             const safeFloat = (val: any) => (val !== undefined && val !== null && !isNaN(parseFloat(val)) ? parseFloat(val) : undefined);
             const safeInt = (val: any) => (val !== undefined && val !== null && !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : undefined);
             const safeDate = (val: any) => (val && !isNaN(new Date(val).getTime()) ? new Date(val) : undefined);
-
-            // Map departmentCode or departmentName to ID
+    // Map departmentCode or departmentName to ID
             let resolvedDeptId = safeString(department);
             if (department) {
                 const dKey = String(department).toUpperCase();
                 resolvedDeptId = deptMap.get(dKey) || resolvedDeptId;
             }
+            // // Use department name directly (stores string in projects)
+            // const resolvedDeptName = safeString(department) || "Unassigned";
 
             const projectData: any = {
                 name: sName,
                 projectCode: sCode,
                 category: String(category || "General"),
-                department: resolvedDeptId || "Unassigned",
+ department: resolvedDeptId || "Unassigned",
                 contractor: safeString(contractor),
                 contractorPhone: safeString(contractorPhone),
                 wardId,
@@ -145,4 +146,28 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
             errors,
         },
     });
+
+    // Log data activity (fire-and-forget)
+    prisma.dataActivity.create({
+        data: {
+            userId: req.user!.id,
+            userName: req.user!.name || "Unknown",
+            action: "IMPORT",
+            module: "projects",
+            recordCount: upsertedCount,
+            details: `Bulk imported ${upsertedCount} projects (${failedCount} failed)`,
+        },
+    }).catch(() => {});
+
+    // Send admin notification (fire-and-forget)
+    sendAdminNotification(
+        `Data Import: projects by ${req.user!.name || "Unknown"}`,
+        buildActivityEmailHtml({
+            action: "IMPORT",
+            module: "projects",
+            userName: req.user!.name || "Unknown",
+            recordCount: upsertedCount,
+            timestamp: new Date(),
+        }),
+    );
 });

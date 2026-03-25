@@ -119,26 +119,27 @@ const CHANNEL_ICONS: Record<string, { icon: LucideIcon; label: string }> = {
   EMAIL: { icon: Mail, label: "Email" },
   IN_APP: { icon: Bell, label: "In-App" },
 };
-const INFLUENCE_DISPLAY: Record<
-  string,
-  { dots: string; color: string; bg: string }
-> = {
-  High: {
-    dots: "●●●",
-    color: "text-red-600",
-    bg: "bg-red-100 dark:bg-red-900/30",
-  },
-  Medium: {
-    dots: "●●○",
-    color: "text-amber-600",
-    bg: "bg-amber-100 dark:bg-amber-900/30",
-  },
-  Low: {
-    dots: "●○○",
-    color: "text-green-600",
-    bg: "bg-green-100 dark:bg-green-900/30",
-  },
-};
+// const INFLUENCE_DISPLAY: Record<
+//   string,
+//   { dots: string; color: string; bg: string }
+// > = {
+//   High: {
+//     dots: "●●●",
+//     color: "text-red-600",
+//     bg: "bg-red-100 dark:bg-red-900/30",
+//   },
+//   Medium: {
+//     dots: "●●○",
+//     color: "text-amber-600",
+//     bg: "bg-amber-100 dark:bg-amber-900/30",
+//   },
+//   Low: {
+//     dots: "●○○",
+//     color: "text-green-600",
+//     bg: "bg-green-100 dark:bg-green-900/30",
+//   },
+// };
+
 
 const RELATION_STYLES: Record<string, string> = {
   Supporter:
@@ -162,7 +163,7 @@ export default function LeaderDetailPage() {
 
   if (isLoading) {
     return (
-      <MainLayout title="Leader">
+      <MainLayout title="Local Representative">
         <div className="max-w-4xl mx-auto space-y-6">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-80" />
@@ -173,12 +174,12 @@ export default function LeaderDetailPage() {
 
   if (!l) {
     return (
-      <MainLayout title="Leader">
+      <MainLayout title="Local Representative">
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <Users className="h-12 w-12 text-muted-foreground" />
-          <p>Leader not found</p>
+          <p>Local representative not found</p>
           <Link to="/leaders">
-            <Button variant="outline">Back to Leaders</Button>
+            <Button variant="outline">Back to Local Representatives</Button>
           </Link>
         </div>
       </MainLayout>
@@ -187,7 +188,8 @@ export default function LeaderDetailPage() {
 
   const cInfo = getCategoryInfo(l.category);
   const dob = new Date(l.dateOfBirth);
-  const infDisplay = INFLUENCE_DISPLAY[l.influence] || null;
+  // const infDisplay = INFLUENCE_DISPLAY[l.influence] || null;
+
 
   const openGreet = () => {
     const msg = GREETING_TEMPLATES[0].message
@@ -207,7 +209,7 @@ export default function LeaderDetailPage() {
   };
 
   return (
-    <MainLayout title="Leader">
+    <MainLayout title="Local Representative">
       <div className="space-y-6 max-w-4xl mx-auto">
         {/* ─── Header ──────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -258,15 +260,16 @@ export default function LeaderDetailPage() {
                       {l.relation}
                     </Badge>
                   )}
-                  {infDisplay && (
+                  {/* {infDisplay && (
                     <Badge
                       variant="outline"
                       className={`text-[10px] font-mono ${infDisplay.color}`}
                     >
                       {infDisplay.dots} {l.influence}
                     </Badge>
-                  )}
+                  )} */}
                   {!l.isActive && (
+
                     <Badge variant="destructive" className="text-[10px]">
                       Inactive
                     </Badge>
@@ -540,7 +543,7 @@ export default function LeaderDetailPage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">Influence</p>
-                  {infDisplay ? (
+                  {/* {infDisplay ? (
                     <div className="flex items-center gap-2 mt-1">
                       <span
                         className={`font-mono text-lg tracking-widest ${infDisplay.color}`}
@@ -551,7 +554,7 @@ export default function LeaderDetailPage() {
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground mt-1">—</p>
-                  )}
+                  )} */}
                 </div>
               </div>
 

@@ -126,7 +126,7 @@ export function useUpdateProject() {
 export function useDeleteProject() {
   return useProjMut(
     (id: string) => projectsApi.delete(id).then((r) => r.data),
-    "Deleted",
+    "Moved to Recycle Bin",
   );
 }
 export function useChangeProjectStatus() {
@@ -182,7 +182,6 @@ export function useBulkCreateProjects() {
     },
   });
 }
-
 
 export function formatBudget(amount: number): string {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;

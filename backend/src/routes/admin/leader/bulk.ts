@@ -5,6 +5,7 @@ import {
   normalizeLeaderCategory,
   normalizeBoolean,
 } from "../../../utils/enumParser.js";
+import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 
 const VALID_RELATIONS = [
   "Supporter",
@@ -214,5 +215,29 @@ export const bulkCreateLeaders = catchAsync(
       message: `Bulk import completed. Upserted ${upsertedCount} leaders. Failed ${failedCount}.`,
       data: { upsertedCount, failedCount, errors },
     });
+
+    // Log data activity (fire-and-forget)
+    prisma.dataActivity.create({
+      data: {
+        userId: req.user!.id,
+        userName: req.user!.name || "Unknown",
+        action: "IMPORT",
+        module: "leaders",
+        recordCount: upsertedCount,
+        details: `Bulk imported ${upsertedCount} leaders (${failedCount} failed)`,
+      },
+    }).catch(() => {});
+
+    // Send admin notification (fire-and-forget)
+    sendAdminNotification(
+      `Data Import: leaders by ${req.user!.name || "Unknown"}`,
+      buildActivityEmailHtml({
+        action: "IMPORT",
+        module: "leaders",
+        userName: req.user!.name || "Unknown",
+        recordCount: upsertedCount,
+        timestamp: new Date(),
+      }),
+    );
   },
 );

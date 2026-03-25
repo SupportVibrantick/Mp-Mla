@@ -31,8 +31,8 @@ export const NAV_ITEMS = [
     roles: ["super_admin", "mla", "staff"],
   },
   {
-    title: "Institutions",
-    url: "/institutions",
+    title: "Public Facilities",
+    url: "/public-facilities",
     icon: Building2,
     roles: ["super_admin", "mla", "staff"],
   },

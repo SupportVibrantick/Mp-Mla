@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
-
-
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 
 /**
  * POST /api/admin/project/:id/milestones
@@ -38,8 +37,6 @@ export async function addMilestone(
   }
 }
 
-
-
 /**
  * PUT /api/admin/project/:id/milestones/:msId
  * Updates an existing milestone.
@@ -68,8 +65,6 @@ export async function updateMilestone(
   }
 }
 
-
-
 /**
  * DELETE /api/admin/project/:id/milestones/:msId
  * Deletes a milestone from a project.
@@ -80,16 +75,31 @@ export async function deleteMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const milestone = await prisma.projectMilestone.findUnique({
+      where: { id: req.params.msId as string },
+    });
+
+    if (!milestone) {
+      throw ApiError.notFound("Milestone not found");
+    }
+
+    await archiveToRecycleBin({
+      module: "projects",
+      entityType: "project_milestone",
+      recordId: milestone.id,
+      recordLabel: milestone.title,
+      payload: milestone,
+      deletedById: req.user?.id,
+    });
+
     await prisma.projectMilestone.delete({
       where: { id: req.params.msId as string },
     });
-    res.json({ success: true, message: "Milestone removed" });
+    res.json({ success: true, message: "Milestone moved to recycle bin" });
   } catch (error) {
     next(error);
   }
 }
-
-
 
 /**
  * PUT /api/admin/project/:id/milestones/:msId/toggle

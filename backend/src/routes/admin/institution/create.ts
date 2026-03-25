@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { syncToLeaders } from "./incharges.js";
 
 export async function createInstitution(
   req: Request,
@@ -50,6 +51,13 @@ export async function createInstitution(
         _count: { select: { incharges: true } },
       },
     });
+
+    // Sync incharges to Leaders
+    if (institution.incharges && institution.incharges.length > 0) {
+      for (const ic of institution.incharges) {
+        await syncToLeaders(ic, institution.wardId);
+      }
+    }
 
     await createAuditLog({
       userId: req.user!.id,

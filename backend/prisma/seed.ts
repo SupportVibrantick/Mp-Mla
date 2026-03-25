@@ -1244,7 +1244,6 @@ async function main() {
       whatsapp: "919811000001",
       email: "ramesh.gupta@email.com",
       relation: "Supporter",
-      influence: "High",
       notes:
         "Key supporter since 2014. Active in all ward programs. Former Municipal Councillor.",
       tags: ["VIP", "Core Team", "Ward 1 Incharge"],
@@ -1263,7 +1262,6 @@ async function main() {
       whatsapp: "919811000002",
       email: "kavita.sharma@email.com",
       relation: "Supporter",
-      influence: "High",
       notes:
         "Heads the women's wing. Very active in social causes. Organizes monthly health camps.",
       tags: ["Women Wing", "Health Camps"],
@@ -1283,7 +1281,6 @@ async function main() {
       whatsapp: "919811000003",
       email: "dr.anil@dav.edu.in",
       relation: "Neutral",
-      influence: "Medium",
       notes:
         "Respected educationist. Invited to all official functions. Helps with youth programs.",
       tags: ["Education", "Youth"],
@@ -1302,7 +1299,6 @@ async function main() {
       phone: "9811000004",
       whatsapp: "919811000004",
       relation: "Alliance",
-      influence: "High",
       notes:
         "Very influential in Muslim community. Peace committee member. Helps during festivals.",
       tags: ["Religious", "Peace Committee", "Minority"],
@@ -1324,7 +1320,6 @@ async function main() {
       instagramUrl: "https://instagram.com/vikramsingh",
       twitterUrl: "https://twitter.com/vikramsingh",
       relation: "Supporter",
-      influence: "Medium",
       notes:
         "Energetic youth leader. Organizes sports events and employment drives.",
       tags: ["Youth", "Sports", "Employment"],
@@ -1344,7 +1339,6 @@ async function main() {
       phone: "9811000006",
       whatsapp: "919811000006",
       relation: "Opposition",
-      influence: "High",
       notes:
         "Strong opposition leader. Has good grassroots network. Ex-MLA candidate.",
       tags: ["Opposition", "Ex-Candidate"],
@@ -1364,7 +1358,6 @@ async function main() {
       whatsapp: "919811000007",
       email: "manoj.jain@traders.com",
       relation: "Supporter",
-      influence: "High",
       notes:
         "Controls 500+ shops association. Major fundraiser. Helps in event organization.",
       tags: ["Business", "Market", "Fundraiser"],
@@ -1383,7 +1376,6 @@ async function main() {
       email: "nisha@agarwalindustries.com",
       facebookUrl: "https://facebook.com/nishaagarwal",
       relation: "Neutral",
-      influence: "Medium",
       notes: "Runs CSR programs. Potential ally for infrastructure projects.",
       tags: ["Industry", "CSR", "Women Entrepreneur"],
     },
@@ -1399,7 +1391,6 @@ async function main() {
       phone: "9811000009",
       email: "dm.centraldelhi@gov.in",
       relation: "Neutral",
-      influence: "High",
       notes:
         "Current DM. Key for all government approvals. Professional and efficient.",
       tags: ["IAS", "Administration", "VIP"],
@@ -1418,7 +1409,6 @@ async function main() {
       phone: "9811000010",
       whatsapp: "919811000010",
       relation: "Alliance",
-      influence: "Medium",
       notes:
         "Village head. Strong influence in rural ward. Helps with farmer issues.",
       tags: ["Rural", "Farmer", "Pradhan"],
@@ -1437,7 +1427,6 @@ async function main() {
       email: "pankaj.tiwari@jagran.com",
       twitterUrl: "https://twitter.com/pankajtiwari",
       relation: "Neutral",
-      influence: "Medium",
       notes:
         "Covers constituency news. Good for positive media coverage. Handle carefully.",
       tags: ["Media", "Press", "Print"],
@@ -1455,7 +1444,6 @@ async function main() {
       wardId: wards[1].id,
       phone: "9811000012",
       relation: "Supporter",
-      influence: "Low",
       notes:
         "Retired High Court Judge. Respected elder. Invited as chief guest at events.",
       tags: ["Legal", "Senior", "Respected Elder"],
@@ -1474,7 +1462,6 @@ async function main() {
       whatsapp: "919811000013",
       email: "dr.sunita@cityhospital.in",
       relation: "Neutral",
-      influence: "Medium",
       notes:
         "Key for health camps. Coordinates free medical camps. COVID warrior.",
       tags: ["Medical", "Health Camps", "COVID Warrior"],
@@ -1495,7 +1482,6 @@ async function main() {
       email: "ashok@janseva.org",
       facebookUrl: "https://facebook.com/jansevafoundation",
       relation: "Alliance",
-      influence: "Medium",
       notes:
         "Runs education and livelihood programs. 500+ volunteers. Good outreach partner.",
       tags: ["NGO", "Education", "Livelihood", "Volunteers"],
@@ -1518,7 +1504,6 @@ async function main() {
       phone: "9811000015",
       whatsapp: "919811000015",
       relation: "Alliance",
-      influence: "Medium",
       notes:
         "Controls 2000+ workers union. Important for labour votes. Can mobilize crowds.",
       tags: ["Labour", "Union", "Mobilization"],
@@ -1546,7 +1531,6 @@ async function main() {
         twitterUrl: ld.twitterUrl || null,
         instagramUrl: ld.instagramUrl || null,
         relation: ld.relation || null,
-        influence: ld.influence || null,
         notes: ld.notes || null,
         tags: ld.tags || [],
         isActive: true,

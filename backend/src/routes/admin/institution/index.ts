@@ -20,6 +20,12 @@ import {
   toggleInchargeActive,
 } from "./incharges.js";
 import {
+  listRequests,
+  getRequest,
+  approveRequest,
+  rejectRequest,
+} from "./requests.js";
+import {
   createInstitutionSchema,
   updateInstitutionSchema,
   createInchargeSchema,
@@ -40,7 +46,6 @@ router.get(
   requirePermission("institutions", "read"),
   exportInstitutions,
 );
-router.get("/:id", requirePermission("institutions", "read"), getInstitution);
 router.post(
   "/",
   requirePermission("institutions", "create"),
@@ -52,6 +57,32 @@ router.post(
   requirePermission("institutions", "create"),
   bulkCreateInstitutions,
 );
+
+// ─── Registration Requests (admin review) ───────────────
+// NOTE: These MUST come BEFORE /:id routes to avoid matching "requests" as :id
+router.get(
+  "/requests",
+  requirePermission("institutions", "read"),
+  listRequests,
+);
+router.get(
+  "/requests/:requestId",
+  requirePermission("institutions", "read"),
+  getRequest,
+);
+router.patch(
+  "/requests/:requestId/approve",
+  requirePermission("institutions", "update"),
+  approveRequest,
+);
+router.patch(
+  "/requests/:requestId/reject",
+  requirePermission("institutions", "update"),
+  rejectRequest,
+);
+
+// ─── Single institution (must come AFTER /requests) ─────
+router.get("/:id", requirePermission("institutions", "read"), getInstitution);
 router.put(
   "/:id",
   requirePermission("institutions", "update"),

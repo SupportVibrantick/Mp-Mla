@@ -76,6 +76,11 @@ export async function getWardDemographics(
             color: "#6b7280",
           },
         ].filter((r) => r.value > 0),
+        vitalStatistics: [
+          { label: "Births", value: wardLevel.totalBirths, color: "#22c55e" },
+          { label: "Deaths", value: wardLevel.totalDeaths, color: "#ef4444" },
+          { label: "New Voters", value: wardLevel.newVotersCount, color: "#3b82f6" },
+        ],
       }
       : null;
 

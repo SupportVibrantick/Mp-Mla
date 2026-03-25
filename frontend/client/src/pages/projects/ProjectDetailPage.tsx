@@ -86,6 +86,7 @@ export default function ProjectDetailPage() {
     description: "",
     targetDate: "",
   });
+
   const [updateText, setUpdateText] = useState("");
 
   const p = res?.data;
