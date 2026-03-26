@@ -50,6 +50,7 @@ import {
   Landmark,
   Target,
   BarChart3,
+  Calendar,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import BirthdayWidget from "./dashboard/BirthdayWidget";
@@ -322,6 +323,77 @@ export default function Dashboard() {
           </Link>
         </div>
 
+        {/* ═══ Row 1b: Additional Stat Cards ══════════════ */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Link to="/departments">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Building2 className="h-4 w-4 text-cyan-500" />
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{s.totalDepartments}</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                  Total Departments
+                </p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
+                  Across constituency
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/public-facilities">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Landmark className="h-4 w-4 text-emerald-500" />
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{s.totalInstitutions}</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                  Total Public Facilities
+                </p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
+                  Active institutions
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/meetings">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Calendar className="h-4 w-4 text-rose-500" />
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{s.scheduledMeetings}</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                  Meetings Scheduled
+                </p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
+                  Upcoming sessions
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/community">
+            <Card className="hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Users className="h-4 w-4 text-violet-500" />
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{s.totalCommunityGroups}</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                  Active Community Groups
+                </p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
+                  Citizen collectives
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         <BirthdayWidget />
 
         {/* ═══ Row 2: Institutions Breakdown + Grievance Trend ═════ */}
@@ -335,7 +407,7 @@ export default function Dashboard() {
                   </CardTitle>
                   <CardDescription>By Category</CardDescription>
                 </div>
-                <Link to="/institutions">
+                <Link to="/public-facilities">
                   <Button variant="ghost" size="sm" className="text-xs">
                     View All →
                   </Button>
@@ -373,7 +445,7 @@ export default function Dashboard() {
                   </ResponsiveContainer>
                 ) : (
                   <p className="text-muted-foreground text-sm">
-                    No institution data
+                    No public facility data
                   </p>
                 )}
               </div>

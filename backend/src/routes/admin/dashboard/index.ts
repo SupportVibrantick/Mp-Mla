@@ -65,37 +65,47 @@ router.get(
 
       // Ward population
       wardPopulation,
+
+      // Total Departments
+      totalDepartments,
+
+      // Scheduled Meetings
+      scheduledMeetings,
     ] = await Promise.all([
       // ─── Counts
-      prisma.ward.count({ where: { status: "ACTIVE" } }),
-      prisma.grievance.count(),
-      prisma.project.count(),
+      prisma.ward.count({ where: { status: "ACTIVE", isDeleted: false } }),
+      prisma.grievance.count({ where: { isDeleted: false } }),
+      prisma.project.count({ where: { isDeleted: false } }),
       prisma.institution.count({
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", isDeleted: false },
       }),
-      prisma.communityGroup.count({ where: { isActive: true } }),
+      prisma.communityGroup.count({ where: { isActive: true, isDeleted: false } }),
 
       // ─── Grievances
       prisma.grievance.groupBy({
         by: ["status"],
         _count: true,
+        where: { isDeleted: false },
       }),
       prisma.grievance.groupBy({
         by: ["priority"],
         _count: true,
+        where: { isDeleted: false },
       }),
       prisma.grievance.groupBy({
         by: ["category"],
         _count: true,
+        where: { isDeleted: false },
         orderBy: { _count: { category: "desc" } },
         take: 8,
       }),
       prisma.grievance.count({
-        where: { createdAt: { gte: monthStart } },
+        where: { createdAt: { gte: monthStart }, isDeleted: false },
       }),
       prisma.grievance.count({
         where: {
           createdAt: { gte: lastMonthStart, lt: monthStart },
+          isDeleted: false,
         },
       }),
 
@@ -104,6 +114,7 @@ router.get(
         by: ["status"],
         _count: true,
         _sum: { budgetSanctioned: true, budgetUsed: true },
+        where: { isDeleted: false },
       }),
       prisma.project.aggregate({
         _sum: {
@@ -111,23 +122,24 @@ router.get(
           budgetReleased: true,
           budgetUsed: true,
         },
+        where: { isDeleted: false },
       }),
       prisma.project.count({
-        where: { createdAt: { gte: monthStart } },
+        where: { createdAt: { gte: monthStart }, isDeleted: false },
       }),
 
       // ─── Institutions
       prisma.institution.groupBy({
         by: ["category"],
         _count: true,
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", isDeleted: false },
       }),
 
       // ─── Community Groups
       prisma.communityGroup.groupBy({
         by: ["type"],
         _count: true,
-        where: { isActive: true },
+        where: { isActive: true, isDeleted: false },
       }),
 
       // ─── Demographics (Aggregate Voters)
@@ -154,6 +166,7 @@ router.get(
             select: { name: true, wardNumber: true },
           },
         },
+        where: { isDeleted: false },
         orderBy: { createdAt: "desc" },
         take: 7,
       }),
@@ -171,6 +184,7 @@ router.get(
             select: { name: true, wardNumber: true },
           },
         },
+        where: { isDeleted: false },
         orderBy: { updatedAt: "desc" },
         take: 5,
       }),
@@ -183,12 +197,20 @@ router.get(
           totalHouseholds: true,
         },
       }),
+
+      // ─── Departments
+      prisma.department.count({ where: { isDeleted: false } }),
+
+      // ─── Meetings
+      prisma.meeting.count({
+        where: { status: "SCHEDULED", isDeleted: false },
+      }),
     ]);
 
     // ─── Grievance Monthly Trend (6 months) ──────────
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const allGrievances = await prisma.grievance.findMany({
-      where: { createdAt: { gte: sixMonthsAgo } },
+      where: { createdAt: { gte: sixMonthsAgo }, isDeleted: false },
       select: {
         createdAt: true,
         status: true,
@@ -263,6 +285,8 @@ router.get(
           totalVoters: demographicsSummary._sum.totalVoters || 0,
           maleVoters: demographicsSummary._sum.maleVoters || 0,
           femaleVoters: demographicsSummary._sum.femaleVoters || 0,
+          totalDepartments,
+          scheduledMeetings,
           financialYear: fy,
         },
 

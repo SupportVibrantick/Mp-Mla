@@ -227,12 +227,11 @@ export const grievancesApi = {
 
   addTimeline: (id: string, data: any) =>
     api.post(`/admin/grievances/${id}/timeline`, data),
-  
+
   export: (params?: any) => api.get("/admin/grievances/export", { params }),
 
   bulk: (data: any[]) => api.post("/admin/grievances/bulk", data),
 };
-
 
 export const projectsApi = {
   list: (params?: any) => api.get("/admin/projects", { params }),
