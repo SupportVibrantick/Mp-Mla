@@ -80,9 +80,21 @@ export const PUBLIC_FACILITY_CATEGORIES: PublicFacilityCategory[] = [
     group: "Government",
   },
   {
+    value: "FIRE_STATION",
+    label: "Fire Station",
+    icon: `${IC}/fire-station.png`,
+    group: "Government",
+  },
+  {
+    value: "LAW_OFFICE",
+    label: "Law Office",
+    icon: `${IC}/govt-office.png`,
+    group: "Government",
+  },
+  {
     value: "GOVT_OFFICE",
     label: "Govt Office",
-    icon: `${IC}/govt-office.png`,
+    icon: `${IC}/public-administration.png`,
     group: "Government",
   },
   { value: "NGO", label: "NGO", icon: `${IC}/ngo.png`, group: "Social" },
@@ -106,6 +118,24 @@ export const PUBLIC_FACILITY_CATEGORIES: PublicFacilityCategory[] = [
     group: "Public",
   },
   {
+    value: "PUBLIC_LIBRARY",
+    label: "Public Library",
+    icon: `${IC}/public-library.png`,
+    group: "Public",
+  },
+  {
+    value: "BUS_STAND",
+    label: "Bus Stand",
+    icon: `${IC}/other.png`,
+    group: "Public",
+  },
+  {
+    value: "PARK",
+    label: "Park",
+    icon: `${IC}/park.png`,
+    group: "Public",
+  },
+  {
     value: "MARKET",
     label: "Market",
     icon: `${IC}/market.png`,
@@ -118,7 +148,25 @@ export const PUBLIC_FACILITY_CATEGORIES: PublicFacilityCategory[] = [
     icon: `${IC}/old-age-home.png`,
     group: "Social",
   },
-  { value: "OTHER", label: "Other", icon: `${IC}/other.png`, group: "Other" },
+  {
+    value: "STADIUM",
+    label: "Stadium",
+    icon: `${IC}/stadium.png`,
+    group: "Sports",
+  },
+  {
+    value: "SKILL_DEVELOPMENT_CENTER",
+    label: "Skill Development Center",
+    icon: `${IC}/conceptual.png`,
+    group: "Education",
+  },
+  {
+    value: "CSC_CENTER",
+    label: "CSC Center",
+    icon: `${IC}/security.png`,
+    group: "Government",
+  },
+  { value: "OTHER", label: "Other", icon: `${IC}/more.png`, group: "Other" },
 ];
 export const PUBLIC_FACILITY_STATUSES = [
   {
@@ -269,7 +317,8 @@ export function useBulkCreatePublicFacilities() {
     },
     onError: (err: any) => {
       throw new Error(
-        err?.response?.data?.message || "Failed to bulk import public facilities",
+        err?.response?.data?.message ||
+          "Failed to bulk import public facilities",
       );
     },
   });
@@ -350,7 +399,9 @@ export function useDeleteIncharge() {
       inchargeId: string;
     }) =>
       api
-        .delete(`/admin/institutions/${publicFacilityId}/incharges/${inchargeId}`)
+        .delete(
+          `/admin/institutions/${publicFacilityId}/incharges/${inchargeId}`,
+        )
         .then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["institutions"] });

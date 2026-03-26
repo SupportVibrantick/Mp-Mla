@@ -48,6 +48,7 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 const statusColors: Record<string, string> = {
   PENDING:
@@ -63,9 +64,7 @@ const statusIcons: Record<string, React.ReactNode> = {
   REJECTED: <XCircle className="h-3.5 w-3.5" />,
 };
 
-const BACKEND_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api"
-).replace("/api", "");
+const BACKEND_URL = API_BASE_URL.replace("/api", "");
 
 export default function PublicFacilityRequestsPage() {
   const [statusFilter, setStatusFilter] = useState("all");

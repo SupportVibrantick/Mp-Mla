@@ -11,12 +11,8 @@ export default function ProfilePage() {
   const { data: deptRes, isLoading: deptLoading } = useDepartments();
   const departments = deptRes?.data || [];
 
-  // Filter departments managed by this user (by email or name)
-  const managedDepartments = departments.filter(
-    (d: any) =>
-      (d.headEmail && user?.email && d.headEmail.toLowerCase() === user.email.toLowerCase()) ||
-      (d.headName && user?.name && d.headName.toLowerCase() === user.name.toLowerCase())
-  );
+  // Filter all active departments
+  const activeDepartments = departments.filter((d: any) => d.isActive !== false);
 
   return (
     <MainLayout title="My Profile">
@@ -83,21 +79,26 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
-            {user?.role === "MLA_MP" ? "Departments Overlook" : "Departments Under Your Management"}
+            Active Departments
           </h2>
           <p className="text-sm text-muted-foreground">
-            {user?.role === "MLA_MP" 
-              ? "As an MLA/MP, you have oversight over all constituency departments. Below are the departments assigned to you directly or broadly overseen."
-              : "Departments where you are listed as the active manager or head."}
+            All active departments across the constituency.
           </p>
 
           {deptLoading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                {[1,2,3].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />)}
             </div>
-          ) : user?.role === "MLA_MP" && departments.length > 0 ? (
+          ) : activeDepartments.length === 0 ? (
+            <Card className="border-dashed bg-transparent shadow-none">
+               <CardContent className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
+                 <Building2 className="h-12 w-12 mb-4 opacity-20" />
+                 <p>No active departments found.</p>
+               </CardContent>
+            </Card>
+          ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {departments.map((dept: any) => (
+              {activeDepartments.map((dept: any) => (
                 <Card key={dept.id} className="hover:shadow-md transition-shadow cursor-pointer border-t-4 border-t-primary">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex justify-between items-start">
@@ -114,44 +115,6 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <UserIcon className="h-3.5 w-3.5" />
                           <span className="truncate">{dept.headName || "No Head Assigned"} (Head)</span>
-                        </div>
-                        {dept.headPhone && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Phone className="h-3.5 w-3.5" />
-                            <span>{dept.headPhone}</span>
-                          </div>
-                        )}
-                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : managedDepartments.length === 0 ? (
-            <Card className="border-dashed bg-transparent shadow-none">
-               <CardContent className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
-                 <Building2 className="h-12 w-12 mb-4 opacity-20" />
-                 <p>No departments currently assigned under your direct management.</p>
-               </CardContent>
-            </Card>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {managedDepartments.map((dept: any) => (
-                <Card key={dept.id} className="hover:shadow-md transition-shadow cursor-pointer border-t-4 border-t-primary">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex justify-between items-start">
-                      <span className="truncate pr-2">{dept.name}</span>
-                      <Badge variant="outline" className="text-xs bg-primary/5">{dept.code}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                     <p className="text-sm text-muted-foreground line-clamp-2">
-                       {dept.description || "No description provided."}
-                     </p>
-                     
-                     <div className="space-y-2 pt-2 border-t text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <UserIcon className="h-3.5 w-3.5" />
-                          <span className="truncate">{dept.headName} (Head)</span>
                         </div>
                         {dept.headPhone && (
                           <div className="flex items-center gap-2 text-muted-foreground">

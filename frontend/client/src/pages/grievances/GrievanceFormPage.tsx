@@ -111,8 +111,18 @@ export default function GrievanceFormPage() {
     try {
       const payload: any = { ...data };
       if (!payload.complainantEmail) delete payload.complainantEmail;
-      if (!payload.assignedDept) delete payload.assignedDept;
-      if (!payload.assignedToId) delete payload.assignedToId;
+      
+      if (payload.assignedDept === "none") {
+        payload.assignedDept = null;
+      } else if (!payload.assignedDept) {
+        delete payload.assignedDept;
+      }
+
+      if (payload.assignedToId === "none") {
+        payload.assignedToId = null;
+      } else if (!payload.assignedToId) {
+        delete payload.assignedToId;
+      }
 
       if (isEdit && id) {
         await updateMut.mutateAsync({ id, data: payload });

@@ -136,7 +136,7 @@ const REPORTS = [
   // },
   {
     id: "institution" as const,
-    label: "Institutions",
+    label: "Public Facilities",
     icon: Building2,
     desc: "Category-wise listing",
   },
@@ -175,11 +175,21 @@ const COLORS = [
   "#14b8a6",
 ];
 
+const ACTIVITY_MODULE_LABELS: Record<string, string> = {
+  leaders: "Local Representative",
+  grievances: "Public Requests",
+  institutions: "Public Facilities",
+};
+
 function fmt(n: number): string {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
   if (n >= 100000) return `₹${(n / 100000).toFixed(2)} L`;
   if (n >= 1000) return `₹${(n / 1000).toFixed(1)}K`;
   return `₹${n.toLocaleString("en-IN")}`;
+}
+
+function getActivityModuleLabel(module: string): string {
+  return ACTIVITY_MODULE_LABELS[module] || module;
 }
 
 export default function ReportsPage() {
@@ -356,7 +366,7 @@ export default function ReportsPage() {
                             {a.action}
                           </Badge>
                           <span className="text-muted-foreground capitalize">
-                            {a.module}
+                            {getActivityModuleLabel(a.module)}
                           </span>
                         </span>
                         <span className="text-muted-foreground">
@@ -909,9 +919,9 @@ export default function ReportsPage() {
                             name="Projects"
                           />
                           <Bar
-                            dataKey="institutions"
+                            dataKey="Public Facilities"
                             fill="#22c55e"
-                            name="Institutions"
+                            name="public facilities"
                           />
                         </BarChart>
                       </ResponsiveContainer>
@@ -935,7 +945,7 @@ export default function ReportsPage() {
                             Projects
                           </TableHead>
                           <TableHead className="text-center">
-                            Institutions
+                            Public Facilities
                           </TableHead>
                           <TableHead className="text-right">
                             Project Budget
@@ -1368,7 +1378,7 @@ export default function ReportsPage() {
                     { label: "Resolved (Month)", value: s.resolvedThisMonth },
                     { label: "Running Projects", value: s.runningProjects },
                     { label: "Completed Projects", value: s.completedProjects },
-                    { label: "Institutions", value: s.activeInstitutions },
+                    { label: "Public Facilities", value: s.activeInstitutions },
                     // { label: "Active Schemes", value: s.activeSchemes },
                   ].map((c) => (
                     <Card key={c.label}>

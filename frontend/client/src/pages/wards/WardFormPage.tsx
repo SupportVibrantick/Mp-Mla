@@ -65,7 +65,17 @@ import {
   Loader2,
   User,
   BarChart3,
+  Users,
 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { 
+  faOm, 
+  faStarAndCrescent, 
+  faKhanda, 
+  faCross, 
+  faDharmachakra, 
+  faHandsPraying 
+} from "@fortawesome/free-solid-svg-icons";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Schemas ────────────────────────────────────────────
@@ -972,17 +982,24 @@ export default function WardFormPage() {
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mt-2">
                 {(
                   [
-                    { key: "hinduCount", label: "Hindu 🕉️" },
-                    { key: "muslimCount", label: "Muslim ☪️" },
-                    { key: "sikhCount", label: "Sikh 🙏" },
-                    { key: "christianCount", label: "Christian ✝️" },
-                    { key: "buddhistCount", label: "Buddhist ☸️" },
-                    { key: "jainCount", label: "Jain 🙏" },
-                    { key: "otherReligionCount", label: "Other" },
+                    { key: "hinduCount", label: "Hindu", faIcon: faOm, color: "text-orange-500" },
+                    { key: "muslimCount", label: "Muslim", faIcon: faStarAndCrescent, color: "text-emerald-600" },
+                    { key: "sikhCount", label: "Sikh", faIcon: faKhanda, color: "text-blue-600" },
+                    { key: "christianCount", label: "Christian", faIcon: faCross, color: "text-purple-600" },
+                    { key: "buddhistCount", label: "Buddhist", faIcon: faDharmachakra, color: "text-amber-600" },
+                    { key: "jainCount", label: "Jain", faIcon: faHandsPraying, color: "text-teal-600" },
+                    { key: "otherReligionCount", label: "Other", Icon: Users, color: "text-gray-500" },
                   ] as const
-                ).map((f) => (
+                ).map((f: any) => (
                   <div key={f.key} className="space-y-1">
-                    <Label className="text-xs">{f.label}</Label>
+                    <Label className="text-xs flex items-center gap-1.5">
+                      {f.label}
+                      {f.faIcon ? (
+                        <FontAwesomeIcon icon={f.faIcon} className={`h-3 w-3 ${f.color}`} />
+                      ) : (
+                        <f.Icon className={`h-3.5 w-3.5 ${f.color}`} />
+                      )}
+                    </Label>
                     <Input
                       type="number"
                       placeholder="0"

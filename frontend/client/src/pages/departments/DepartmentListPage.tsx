@@ -289,7 +289,7 @@ export default function DepartmentListPage() {
               color: "#ef4444",
             },
             {
-              label: "Total Grievances",
+              label: "Total Public Requests",
               value: stats?.totalGrievances || 0,
               icon: MessageSquare,
               color: "#f59e0b",
@@ -338,7 +338,10 @@ export default function DepartmentListPage() {
                   <TableHead>Department</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Head</TableHead>
-                  <TableHead className="text-center">Grievances</TableHead>
+                  <TableHead className="text-center">
+                    {" "}
+                    Public Requests
+                  </TableHead>
                   <TableHead className="text-center">Projects</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>

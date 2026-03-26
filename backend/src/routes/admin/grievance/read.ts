@@ -142,7 +142,7 @@ export async function getGrievance(
     if (grievance.resolvedAt) {
       resolutionDays = Math.floor(
         (grievance.resolvedAt.getTime() - grievance.createdAt.getTime()) /
-          (1000 * 60 * 60 * 24),
+        (1000 * 60 * 60 * 24),
       );
     }
     // Fetch department name if assigned

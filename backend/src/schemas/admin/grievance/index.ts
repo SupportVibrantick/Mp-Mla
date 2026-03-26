@@ -42,6 +42,8 @@ export const updateGrievanceSchema = z
     complainantAddress: z.string().optional(),
     locationAddress: z.string().optional(),
     expectedResolutionDate: z.string().datetime().optional(),
+    assignedDept: z.string().optional().nullable(),
+    assignedToId: z.string().optional().nullable(),
   })
   .partial();
 

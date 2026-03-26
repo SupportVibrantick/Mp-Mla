@@ -353,7 +353,7 @@ export default function Dashboard() {
                   Total Public Facilities
                 </p>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">
-                  Active institutions
+                  Active facilities
                 </p>
               </CardContent>
             </Card>
@@ -403,7 +403,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm sm:text-base">
-                    Institutions
+                    Public Facilities
                   </CardTitle>
                   <CardDescription>By Category</CardDescription>
                 </div>
@@ -913,9 +913,9 @@ export default function Dashboard() {
             <CardContent className="space-y-2 px-3 sm:px-6">
               {[
                 {
-                  label: "Institutions",
+                  label: "Public Facilities",
                   count: s.totalInstitutions,
-                  href: "/institutions",
+                  href: "/public-facilities",
                   Icon: Building2,
                   color: "#6366f1",
                 },

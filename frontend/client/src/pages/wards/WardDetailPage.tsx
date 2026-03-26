@@ -163,10 +163,11 @@ export default function WardDetailPage() {
                   Ward #{ward.wardNumber}
                 </Badge>
                 <Badge
-                  className={`text-[10px] ${ward.status === "ACTIVE"
+                  className={`text-[10px] ${
+                    ward.status === "ACTIVE"
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-600"
-                    }`}
+                  }`}
                 >
                   {ward.status}
                 </Badge>
@@ -245,7 +246,9 @@ export default function WardDetailPage() {
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <Home className="h-5 w-5 text-accent mx-auto mb-1" />
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                <Home className="h-5 w-5" />
+              </div>
               <p className="text-xl font-bold">
                 {ward.totalHouseholds.toLocaleString()}
               </p>
@@ -277,11 +280,13 @@ export default function WardDetailPage() {
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <Building2 className="h-5 w-5 text-accent mx-auto mb-1" />
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                <Building2 className="h-5 w-5" />
+              </div>
               <p className="text-xl font-bold">
                 {ward._count?.institutions || 0}
               </p>
-              <p className="text-xs text-muted-foreground">Institutions</p>
+              <p className="text-xs text-muted-foreground">Public Facility</p>
             </CardContent>
           </Card>
         </div>
@@ -781,12 +786,15 @@ export default function WardDetailPage() {
                           },
                           {
                             label: "Other",
-                            value: demographics.wardLevel.otherReligionCount || 0,
+                            value:
+                              demographics.wardLevel.otherReligionCount || 0,
                             color: "bg-gray-500",
                           },
                         ].filter((r) => r.value > 0);
 
-                        const totalReligion = religionData.reduce((acc, r) => acc + r.value, 0) || 1;
+                        const totalReligion =
+                          religionData.reduce((acc, r) => acc + r.value, 0) ||
+                          1;
 
                         return religionData.map((r) => (
                           <div
@@ -848,7 +856,8 @@ export default function WardDetailPage() {
                           },
                         ].filter((c) => c.value > 0);
 
-                        const totalCaste = casteData.reduce((acc, c) => acc + c.value, 0) || 1;
+                        const totalCaste =
+                          casteData.reduce((acc, c) => acc + c.value, 0) || 1;
 
                         return casteData.map((c) => (
                           <div
@@ -916,10 +925,12 @@ export default function WardDetailPage() {
                             </div>
                             <div className="flex justify-between text-[10px] text-muted-foreground">
                               <span>
-                                BPL {((bpl / totalHouseholds) * 100).toFixed(1)}%
+                                BPL {((bpl / totalHouseholds) * 100).toFixed(1)}
+                                %
                               </span>
                               <span>
-                                APL {((apl / totalHouseholds) * 100).toFixed(1)}%
+                                APL {((apl / totalHouseholds) * 100).toFixed(1)}
+                                %
                               </span>
                             </div>
                           </>
@@ -971,19 +982,29 @@ export default function WardDetailPage() {
 
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Voters & Vital Stats</CardTitle>
+                      <CardTitle className="text-sm">
+                        Voters & Vital Stats
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Voters Summary */}
                       <div className="flex items-center justify-around text-center pb-2 border-b">
                         <div>
-                          <p className="text-xl font-bold">{demographics.wardLevel.totalVoters.toLocaleString()}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase">Total Voters</p>
+                          <p className="text-xl font-bold">
+                            {demographics.wardLevel.totalVoters.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase">
+                            Total Voters
+                          </p>
                         </div>
                         <div className="w-px h-8 bg-muted" />
                         <div>
-                          <p className="text-xl font-bold text-blue-600">{demographics.wardLevel.newVotersCount.toLocaleString()}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase">New Voters</p>
+                          <p className="text-xl font-bold text-blue-600">
+                            {demographics.wardLevel.newVotersCount.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase">
+                            New Voters
+                          </p>
                         </div>
                       </div>
 
@@ -1027,11 +1048,17 @@ export default function WardDetailPage() {
                           />
                         </div>
                         <div className="flex justify-between text-[10px] font-mono">
-                          <span className="text-blue-600">M: {demographics.wardLevel.maleVoters.toLocaleString()}</span>
-                          <span className="text-pink-600">F: {demographics.wardLevel.femaleVoters.toLocaleString()}</span>
+                          <span className="text-blue-600">
+                            M:{" "}
+                            {demographics.wardLevel.maleVoters.toLocaleString()}
+                          </span>
+                          <span className="text-pink-600">
+                            F:{" "}
+                            {demographics.wardLevel.femaleVoters.toLocaleString()}
+                          </span>
                         </div>
                       </div>
-                      
+
                       {demographics.wardLevel.source && (
                         <p className="text-[9px] text-muted-foreground text-center pt-2">
                           Source: {demographics.wardLevel.source}

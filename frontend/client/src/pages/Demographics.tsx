@@ -286,7 +286,7 @@ export default function DemographicsPage() {
           />
           <StatCard
             icon={UserCheck}
-            label="New Voters Registered"
+            label="New Eligible Voters"
             value={(totals.newVotersCount || 0).toLocaleString()}
             color="#3b82f6"
           />
