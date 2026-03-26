@@ -162,6 +162,11 @@ const ALL_PERMISSIONS = [
     action: "create",
     description: "Import data via Excel",
   },
+
+  { module: "meeting", action: "create", description: "Schedule a meeting" },
+  { module: "meeting", action: "read", description: "View meetings" },
+  { module: "meeting", action: "update", description: "Edit meeting details" },
+  { module: "meeting", action: "delete", description: "Delete a meeting" },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -205,6 +210,11 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "reports", action: "read" },
     { module: "reports", action: "export" },
     { module: "audit_logs", action: "read" },
+    // ── Meetings ──
+    { module: "meeting", action: "create" },
+    { module: "meeting", action: "read" },
+    { module: "meeting", action: "update" },
+    { module: "meeting", action: "delete" },
   ],
 
   OFFICE_STAFF: [
@@ -254,6 +264,10 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "reports", action: "read" },
     { module: "reports", action: "export" },
     { module: "data_import", action: "create" },
+    // ── Meetings ──
+    { module: "meeting", action: "create" },
+    { module: "meeting", action: "read" },
+    { module: "meeting", action: "update" },
   ],
 };
 

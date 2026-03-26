@@ -17,6 +17,7 @@ const MODULES = [
   "tasks",
   "notifications",
   "reports",
+  "meeting",
   "users",
   "audit_logs",
   "backups",
