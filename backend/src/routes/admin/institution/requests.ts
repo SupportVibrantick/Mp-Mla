@@ -6,6 +6,19 @@ import {
 } from "../../../middleware/auditLog.js";
 import { syncToLeaders } from "./incharges.js";
 
+const formatDocumentsUrl = (documents: any, req: Request) => {
+  if (!documents || !Array.isArray(documents)) return documents;
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  return documents.map(doc => {
+    if (doc.url) {
+      let cleanUrl = doc.url.replace(/\\/g, "/");
+      if (!cleanUrl.startsWith("/")) cleanUrl = "/" + cleanUrl;
+      return { ...doc, url: `${baseUrl}${cleanUrl}` };
+    }
+    return doc;
+  });
+};
+
 // ─── List institution requests ───────────────────────────
 export async function listRequests(
   req: Request,
@@ -49,10 +62,15 @@ export async function listRequests(
       where: { status: "PENDING" },
     });
 
+    const formattedRequests = requests.map(r => ({
+      ...r,
+      documents: formatDocumentsUrl(r.documents, req),
+    }));
+
     res.json({
       success: true,
       data: {
-        requests,
+        requests: formattedRequests,
         total,
         pendingCount,
         page: Number(page),
@@ -84,7 +102,12 @@ export async function getRequest(
       return;
     }
 
-    res.json({ success: true, data: request });
+    const formattedRequest = {
+      ...request,
+      documents: formatDocumentsUrl(request.documents, req),
+    };
+
+    res.json({ success: true, data: formattedRequest });
   } catch (error) {
     next(error);
   }

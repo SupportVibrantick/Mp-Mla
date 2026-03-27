@@ -48,7 +48,6 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-import { API_BASE_URL } from "@/lib/api";
 
 const statusColors: Record<string, string> = {
   PENDING:
@@ -63,9 +62,6 @@ const statusIcons: Record<string, React.ReactNode> = {
   APPROVED: <CheckCircle2 className="h-3.5 w-3.5" />,
   REJECTED: <XCircle className="h-3.5 w-3.5" />,
 };
-
-const BACKEND_URL = API_BASE_URL.replace("/api", "");
-
 export default function PublicFacilityRequestsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -486,7 +482,7 @@ export default function PublicFacilityRequestsPage() {
                                   </div>
                                 </div>
                                 <a
-                                  href={`${BACKEND_URL}${doc.url}`}
+                                  href={doc.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-xs text-primary hover:underline flex items-center gap-1"

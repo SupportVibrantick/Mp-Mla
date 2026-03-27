@@ -16,12 +16,16 @@ export function useProjectReport(params?: Record<string, any>) {
     queryFn: () =>
       api.get("/admin/reports/project", { params }).then((r) => r.data),
     enabled: !!params,
+    staleTime: 0,
+
   });
 }
 export function useWardReport() {
   return useQuery({
     queryKey: ["reports", "ward"],
     queryFn: () => api.get("/admin/reports/ward").then((r) => r.data),
+    staleTime: 0,
+
   });
 }
 // export function useSchemeReport(params?: Record<string, any>) {
@@ -38,18 +42,24 @@ export function useInstitutionReport(params?: Record<string, any>) {
     queryFn: () =>
       api.get("/admin/reports/institution", { params }).then((r) => r.data),
     enabled: !!params,
+    staleTime: 0,
+
   });
 }
 export function useDemographicReport() {
   return useQuery({
     queryKey: ["reports", "demographic"],
     queryFn: () => api.get("/admin/reports/demographic").then((r) => r.data),
+    staleTime: 0,
+
   });
 }
 export function useMonthlyReport() {
   return useQuery({
     queryKey: ["reports", "monthly"],
     queryFn: () => api.get("/admin/reports/monthly").then((r) => r.data),
+    staleTime: 0,
+
   });
 }
 

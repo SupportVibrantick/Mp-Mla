@@ -26,6 +26,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 
@@ -149,11 +155,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   );
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: collapsed ? 80 : 280 }}
-      className="h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-xl"
-    >
+    <TooltipProvider delayDuration={0}>
+      <motion.aside
+        initial={false}
+        animate={{ width: collapsed ? 80 : 280 }}
+        className="h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-xl"
+      >
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border/50">
         {!collapsed && (
@@ -223,29 +230,41 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       <div className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
         {filteredNavItems.map((item) => {
           const isActive = location === item.href;
+          const content = (
+            <div
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
+                isActive
+                  ? "bg-primary text-primary-foreground font-medium shadow-md"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+              )}
+            >
+              <item.icon
+                className={cn(
+                  "h-5 w-5 min-w-5",
+                  isActive ? "text-white" : "group-hover:text-primary",
+                )}
+              />
+              {!collapsed && <span className="truncate">{item.label}</span>}
+            </div>
+          );
+
+          if (collapsed) {
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link href={item.href}>{content}</Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={14} className="font-semibold text-xs ml-1">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+
           return (
             <Link key={item.href} href={item.href}>
-              <div
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
-                  isActive
-                    ? "bg-primary text-primary-foreground font-medium shadow-md"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    "h-5 w-5 min-w-5",
-                    isActive ? "text-white" : "group-hover:text-primary",
-                  )}
-                />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-                {collapsed && (
-                  <div className="absolute left-14 bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap border border-border">
-                    {item.label}
-                  </div>
-                )}
-              </div>
+              {content}
             </Link>
           );
         })}
@@ -264,31 +283,43 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
             {adminItems.map((item) => {
               const isActive = location === item.href;
+              const content = (
+                <div
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
+                    isActive
+                      ? "bg-primary/20 text-primary font-medium"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5 min-w-5",
+                      isActive ? "text-primary" : "group-hover:text-primary",
+                    )}
+                  />
+                  {!collapsed && (
+                    <span className="truncate">{item.label}</span>
+                  )}
+                </div>
+              );
+
+              if (collapsed) {
+                return (
+                  <Tooltip key={item.href}>
+                    <TooltipTrigger asChild>
+                      <Link href={item.href}>{content}</Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={14} className="font-semibold text-xs ml-1">
+                      {item.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
               return (
                 <Link key={item.href} href={item.href}>
-                  <div
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
-                      isActive
-                        ? "bg-primary/20 text-primary font-medium"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                    )}
-                  >
-                    <item.icon
-                      className={cn(
-                        "h-5 w-5 min-w-5",
-                        isActive ? "text-primary" : "group-hover:text-primary",
-                      )}
-                    />
-                    {!collapsed && (
-                      <span className="truncate">{item.label}</span>
-                    )}
-                    {collapsed && (
-                      <div className="absolute left-14 bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap border border-border">
-                        {item.label}
-                      </div>
-                    )}
-                  </div>
+                  {content}
                 </Link>
               );
             })}
@@ -297,8 +328,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
         <div className="my-4 border-t border-sidebar-border/50 mx-2" />
 
-        {bottomItems.map((item) => (
-          <Link key={item.href} href={item.href}>
+        {bottomItems.map((item) => {
+          const content = (
             <div
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
@@ -309,14 +340,28 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
             >
               <item.icon className="h-5 w-5 min-w-5" />
               {!collapsed && <span className="truncate">{item.label}</span>}
-              {collapsed && (
-                <div className="absolute left-14 bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap border border-border">
-                  {item.label}
-                </div>
-              )}
             </div>
-          </Link>
-        ))}
+          );
+
+          if (collapsed) {
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link href={item.href}>{content}</Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={14} className="font-semibold text-xs ml-1">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+
+          return (
+            <Link key={item.href} href={item.href}>
+              {content}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Expand Button (when collapsed) */}
@@ -367,5 +412,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         </div>
       </div>
     </motion.aside>
+    </TooltipProvider>
   );
 }

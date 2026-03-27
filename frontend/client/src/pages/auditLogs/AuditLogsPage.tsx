@@ -183,7 +183,7 @@ export default function AuditLogsPage() {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               {
                 label: "Total Logs",
@@ -373,22 +373,22 @@ export default function AuditLogsPage() {
                 moduleFilter !== "all" ||
                 dateFrom ||
                 dateTo) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => {
-                    setSearch("");
-                    setActionFilter("all");
-                    setModuleFilter("all");
-                    setDateFrom(undefined);
-                    setDateTo(undefined);
-                    setPage(1);
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      setSearch("");
+                      setActionFilter("all");
+                      setModuleFilter("all");
+                      setDateFrom(undefined);
+                      setDateTo(undefined);
+                      setPage(1);
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
             </div>
           </CardContent>
         </Card>
