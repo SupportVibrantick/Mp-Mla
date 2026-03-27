@@ -240,16 +240,24 @@ export default function PublicFacilityListPage() {
     const statusValues = PUBLIC_FACILITY_STATUSES.map((s) => s.value).join(",");
     const maxRows = 500;
 
+    // Create a hidden sheet for dropdown lists to bypass Excel's 255-character limit for data validation
+    const dropdownSheet = workbook.addWorksheet("DropdownData", { state: "hidden" });
+    const catList = PUBLIC_FACILITY_CATEGORIES.map((c) => c.value);
+    const statusList = PUBLIC_FACILITY_STATUSES.map((s) => s.value);
+    
+    dropdownSheet.getColumn(1).values = ["Categories", ...catList];
+    dropdownSheet.getColumn(2).values = ["Statuses", ...statusList];
+
     for (let i = 2; i <= maxRows; i++) {
       worksheet.getCell(`B${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`"${categoryValues}"`],
+        formulae: [`DropdownData!$A$2:$A$${catList.length + 1}`],
       };
       worksheet.getCell(`I${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`"${statusValues}"`],
+        formulae: [`DropdownData!$B$2:$B$${statusList.length + 1}`],
       };
       worksheet.getCell(`S${i}`).dataValidation = {
         type: "list",
