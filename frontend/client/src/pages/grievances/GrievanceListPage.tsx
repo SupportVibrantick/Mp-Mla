@@ -16,6 +16,7 @@ import {
 } from "@/hooks/useGrievances";
 import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import { toast } from "sonner";
 
 import { useWards } from "@/hooks/useWards";
@@ -139,9 +140,35 @@ export default function GrievanceListPage() {
     }
   };
 
-  const handleDownloadSample = () => {
-    const template = [
-      {
+  const handleDownloadSample = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Template");
+      const dropdownSheet = workbook.addWorksheet("DropdownData", {
+        state: "hidden",
+      });
+
+      const columns = [
+        { header: "ticketNumber", key: "ticketNumber", width: 20 },
+        { header: "subject", key: "subject", width: 30 },
+        { header: "category", key: "category", width: 20 },
+        { header: "subcategory", key: "subcategory", width: 22 },
+        { header: "description", key: "description", width: 40 },
+        { header: "status", key: "status", width: 16 },
+        { header: "priority", key: "priority", width: 14 },
+        { header: "source", key: "source", width: 18 },
+        { header: "wardNumber", key: "wardNumber", width: 14 },
+        { header: "assignedDept", key: "assignedDept", width: 24 },
+        { header: "complainantName", key: "complainantName", width: 24 },
+        { header: "complainantPhone", key: "complainantPhone", width: 18 },
+        { header: "complainantEmail", key: "complainantEmail", width: 28 },
+        { header: "complainantAddress", key: "complainantAddress", width: 30 },
+        { header: "locationAddress", key: "locationAddress", width: 30 },
+      ];
+
+      worksheet.columns = columns;
+
+      worksheet.addRow({
         ticketNumber: "",
         subject: "Example Subject",
         category: "ROAD",
@@ -150,19 +177,99 @@ export default function GrievanceListPage() {
         status: "OPEN",
         priority: "HIGH",
         source: "OFFICE",
-        wardNumber: 23,
-        assignedDept: "Public Works",
+        wardNumber: wards[0]?.wardNumber || "",
+        assignedDept: departments[0]?.name || "",
         complainantName: "John Doe",
         complainantPhone: "9876543210",
         complainantEmail: "john@example.com",
         complainantAddress: "H.No 123, Street 5",
         locationAddress: "Opposite Metro Station",
-      },
-    ];
-    const worksheet = xlsx.utils.json_to_sheet(template);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Template");
-    xlsx.writeFile(workbook, "PublicRequests_Import_Template.xlsx");
+      });
+
+      const categoryList = CATEGORIES.map((c) => c.value);
+      const statusList = GRIEVANCE_STATUSES.map((s) => s.value);
+      const priorityList = PRIORITIES.map((p) => p.value);
+      const sourceList = SOURCES.map((s) => s.value);
+      const wardList = wards
+        .map((w: any) => String(w.wardNumber))
+        .filter(Boolean)
+        .sort((a: string, b: string) => Number(a) - Number(b));
+      const deptList = departments
+        .map((d: any) => String(d.name || "").trim())
+        .filter(Boolean)
+        .sort((a: string, b: string) => a.localeCompare(b));
+
+      dropdownSheet.getColumn(1).values = ["Categories", ...categoryList];
+      dropdownSheet.getColumn(2).values = ["Statuses", ...statusList];
+      dropdownSheet.getColumn(3).values = ["Priorities", ...priorityList];
+      dropdownSheet.getColumn(4).values = ["Sources", ...sourceList];
+      dropdownSheet.getColumn(5).values = ["WardNumbers", ...wardList];
+      dropdownSheet.getColumn(6).values = ["Departments", ...deptList];
+
+      for (let i = 2; i <= 501; i++) {
+        worksheet.getCell(`C${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$A$2:$A$${categoryList.length + 1}`],
+          showErrorMessage: true,
+        };
+        worksheet.getCell(`F${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$B$2:$B$${statusList.length + 1}`],
+          showErrorMessage: true,
+        };
+        worksheet.getCell(`G${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$C$2:$C$${priorityList.length + 1}`],
+          showErrorMessage: true,
+        };
+        worksheet.getCell(`H${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$D$2:$D$${sourceList.length + 1}`],
+          showErrorMessage: true,
+        };
+        worksheet.getCell(`I${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [
+            `=DropdownData!$E$2:$E$${Math.max(wardList.length + 1, 2)}`,
+          ],
+          showErrorMessage: true,
+        };
+        worksheet.getCell(`J${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [
+            `=DropdownData!$F$2:$F$${Math.max(deptList.length + 1, 2)}`,
+          ],
+          showErrorMessage: true,
+        };
+      }
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFEFF2F7" },
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "PublicRequests_Import_Template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Template download error:", error);
+      toast.error("Failed to download sample template");
+    }
   };
 
   const deptMap = useMemo(() => {
