@@ -348,38 +348,49 @@ export default function WardsPage() {
     <MainLayout title="Wards">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
-          <PermissionGate module="wards" action="read">
-            <Button
-              variant="outline"
-              className="gap-2 w-full sm:w-auto justify-center"
-              onClick={handleExport}
-              disabled={isExporting}
-            >
-              <Download className="h-4 w-4" />
-              Export All
-            </Button>
-          </PermissionGate>
-
-          <PermissionGate module="wards" action="create">
-            <Button
-              variant="outline"
-              className="gap-2 w-full sm:w-auto justify-center"
-              onClick={() => setIsBulkImportOpen(true)}
-            >
-              <FileUp className="h-4 w-4" />
-              Bulk Upload
-            </Button>
-          </PermissionGate>
-
-          <PermissionGate module="wards" action="create">
-            <Link to="/wards/new" className="w-full sm:w-auto">
-              <Button className="gap-2 w-full sm:w-auto justify-center">
-                <Plus className="h-4 w-4" />
-                Add New Ward
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Map className="h-7 w-7 text-primary" />
+              Wards
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage constituency wards, areas, demographics and councillors
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+            <PermissionGate module="wards" action="read">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto justify-center"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" />
+                Export All
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+
+            <PermissionGate module="wards" action="create">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto justify-center"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" />
+                Bulk Upload
+              </Button>
+            </PermissionGate>
+
+            <PermissionGate module="wards" action="create">
+              <Link to="/wards/new" className="w-full sm:w-auto">
+                <Button className="gap-2 w-full sm:w-auto justify-center">
+                  <Plus className="h-4 w-4" />
+                  Add New Ward
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
         </div>
         {/* Delete Confirmation Modal */}
         <AlertDialog
