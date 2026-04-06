@@ -137,7 +137,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="relative z-10 text-sm text-sidebar-foreground/50">
+        <div className="relative z-10 text-sm text-sidebar-foreground/50 sm:mt-10">
           © {new Date().getFullYear()}{" "}
           {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All
           rights reserved.
