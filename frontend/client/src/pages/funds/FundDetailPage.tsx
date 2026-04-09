@@ -221,7 +221,7 @@ export default function FundDetailPage() {
               >
                 📤 Add Utilization
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 className="gap-1"
@@ -229,7 +229,7 @@ export default function FundDetailPage() {
               >
                 <Edit className="h-3.5 w-3.5" />
                 Edit Totals
-              </Button>
+              </Button> */}
             </PermissionGate>
             <PermissionGate module="funds" action="delete">
               <AlertDialog>
