@@ -7,13 +7,13 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
-import { validate } from "../../../middleware/validate.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { DEFAULT_SETTING_DEFS } from "../../../lib/settingDefaults.js";
 import { clearSettingsCache } from "../../../lib/settings.js";
+import { createUploader, deleteFile, getUploadPath } from "../../../lib/upload.js";
 
 const router = Router();
+const settingsUploader = createUploader("settings");
 
 // ════════════════════════════════════════════════════════
 // DEFAULT SETTINGS DEFINITION (map for fast lookup)
@@ -23,6 +23,29 @@ const DEFAULT_SETTINGS: Record<string, any> = {};
 DEFAULT_SETTING_DEFS.forEach((d) => {
   DEFAULT_SETTINGS[d.key] = d;
 });
+
+// ════════════════════════════════════════════════════════
+// Helper: parse settings from multipart or JSON body
+// ════════════════════════════════════════════════════════
+
+function parseIncomingSettings(req: any) {
+  if (Array.isArray(req.body?.settings)) {
+    return req.body.settings;
+  }
+
+  if (typeof req.body?.settings === "string") {
+    try {
+      const parsed = JSON.parse(req.body.settings);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      throw ApiError.badRequest("settings must be valid JSON");
+    }
+  }
+
+  return null;
+}
 
 // ════════════════════════════════════════════════════════
 // PUBLIC ROUTE (Branding/General)
@@ -38,7 +61,7 @@ export const getPublicBranding = catchAsync(async (_req, res) => {
     "brand_primary_color",
     "brand_secondary_color",
     "brand_logo_url",
-    "brand_favicon_emoji",
+    "brand_favicon_url",
     "brand_login_bg",
     "brand_footer_text",
   ];
@@ -123,36 +146,63 @@ router.get(
   }),
 );
 
-const updateSchema = z.object({
-  settings: z.array(
-    z.object({
-      key: z.string().min(1),
-      value: z.string(),
-    }),
-  ),
-});
-
 router.put(
   "/",
   authenticate,
   requireActiveUser,
   requirePermission("settings", "update"),
-  validate(updateSchema),
+  settingsUploader.any(),
   catchAsync(async (req, res) => {
-    const { settings: updates } = req.body;
+    const settings = parseIncomingSettings(req);
+    if (!settings) {
+      throw ApiError.badRequest("Expected body.settings to be an array");
+    }
+
+    const defsByKey = new Map(DEFAULT_SETTING_DEFS.map((def) => [def.key, def]));
+    const fileMap = new Map<string, Express.Multer.File>();
+    const files = Array.isArray(req.files) ? (req.files as Express.Multer.File[]) : [];
+
+    for (const file of files) {
+      if (file.fieldname.startsWith("settingImage__")) {
+        const key = file.fieldname.replace("settingImage__", "");
+        fileMap.set(key, file);
+      }
+    }
+
     const changed: any[] = [];
 
-    for (const { key, value } of updates) {
-      const def = DEFAULT_SETTINGS[key];
+    for (const item of settings) {
+      const key = typeof item?.key === "string" ? item.key : "";
+      const rawValue = typeof item?.value === "string" ? item.value : "";
+      const def = defsByKey.get(key);
+
       if (!def) continue;
 
       // Skip if masked secret and user sent dots
-      if (def.type === "secret" && value.includes("••••")) continue;
+      if (def.type === "secret" && rawValue.includes("••••")) continue;
 
-      const old = await prisma.systemSetting.findUnique({ where: { key } });
-      const oldValue = old?.value ?? def.value;
+      const uploadedFile = fileMap.get(key);
+      const existing = await prisma.systemSetting.findUnique({
+        where: { key },
+      });
 
-      if (oldValue === value) continue;
+      let value = rawValue;
+
+      if (uploadedFile) {
+        value = getUploadPath(uploadedFile.filename, "settings");
+
+        // Delete old file if different
+        if (
+          existing?.value &&
+          existing.value !== value &&
+          existing.value.startsWith("/uploads/settings/")
+        ) {
+          deleteFile(existing.value);
+        }
+      }
+
+      const oldValue = existing?.value ?? def.value;
+      if (oldValue === value && !uploadedFile) continue;
 
       await prisma.systemSetting.upsert({
         where: { key },
@@ -207,6 +257,18 @@ router.post(
     if (groupDefs.length === 0) throw ApiError.notFound("Group not found");
 
     for (const def of groupDefs) {
+      // Delete uploaded files when resetting
+      const existing = await prisma.systemSetting.findUnique({
+        where: { key: def.key },
+      });
+      if (
+        existing?.value &&
+        typeof existing.value === "string" &&
+        existing.value.startsWith("/uploads/settings/")
+      ) {
+        deleteFile(existing.value);
+      }
+
       await prisma.systemSetting.upsert({
         where: { key: def.key },
         update: { value: def.value },

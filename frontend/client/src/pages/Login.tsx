@@ -19,6 +19,7 @@ import {
   Building2,
 } from "lucide-react";
 import { useSystemSettings } from "@/contexts/SettingsContext";
+import { getImageUrl } from "@/lib/utils";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -83,26 +84,23 @@ export default function Login() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
             {settings.brand_logo_url ? (
-              <div className="h-12 w-12 flex items-center justify-center bg-white/10 rounded-xl p-1">
-                {settings.brand_logo_url.startsWith("http") ||
-                settings.brand_logo_url.startsWith("data:") ? (
-                  <img
-                    src={settings.brand_logo_url}
-                    alt="Logo"
-                    className="h-full w-auto object-contain"
-                  />
-                ) : (
-                  <span className="text-3xl">{settings.brand_logo_url}</span>
-                )}
+              <div className="h-16 max-w-[200px] flex items-center justify-center bg-white/10 rounded-xl p-2">
+                <img
+                  src={getImageUrl(settings.brand_logo_url)}
+                  alt="Logo"
+                  className="h-full w-auto object-contain"
+                />
               </div>
             ) : (
-              <div className="bg-primary p-2.5 rounded-xl">
-                <Shield className="h-8 w-8 text-primary-foreground" />
-              </div>
+              <>
+                <div className="bg-primary p-2.5 rounded-xl">
+                  <Shield className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {settings.org_name || "Constituency Portal"}
+                </h1>
+              </>
             )}
-            <h1 className="text-2xl font-bold tracking-tight">
-              {settings.org_name || "Constituency Portal"}
-            </h1>
           </div>
 
           <div className="space-y-6 max-w-lg">
@@ -163,17 +161,12 @@ export default function Login() {
           <CardHeader className="space-y-2 text-center pb-2">
             <div className="mx-auto p-3 rounded-full w-fit mb-2 lg:hidden">
               {settings.brand_logo_url ? (
-                <div className="h-12 w-12 flex items-center justify-center mb-2">
-                  {settings.brand_logo_url.startsWith("http") ||
-                  settings.brand_logo_url.startsWith("data:") ? (
-                    <img
-                      src={settings.brand_logo_url}
-                      alt="Logo"
-                      className="h-full w-auto object-contain"
-                    />
-                  ) : (
-                    <span className="text-3xl">{settings.brand_logo_url}</span>
-                  )}
+                <div className="h-16 max-w-[200px] flex items-center justify-center mb-2 mx-auto">
+                  <img
+                    src={getImageUrl(settings.brand_logo_url)}
+                    alt="Logo"
+                    className="h-full w-auto object-contain"
+                  />
                 </div>
               ) : (
                 <div className="bg-primary/10 p-3 rounded-full">

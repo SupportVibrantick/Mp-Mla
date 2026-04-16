@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 interface SettingsContextType {
   settings: Record<string, string>;
@@ -45,28 +46,20 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       document.title = data.org_name;
     }
 
-    // Update Favicon (Emoji support)
-    if (data.brand_favicon_emoji) {
-      updateFavicon(data.brand_favicon_emoji);
+    // Update Favicon
+    if (data.brand_favicon_url) {
+      updateFavicon(getImageUrl(data.brand_favicon_url));
     }
   };
 
-  const updateFavicon = (emoji: string) => {
+  const updateFavicon = (url: string) => {
     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (!link) {
       link = document.createElement("link");
       link.rel = "icon";
       document.getElementsByTagName("head")[0].appendChild(link);
     }
-    const canvas = document.createElement("canvas");
-    canvas.height = 32;
-    canvas.width = 32;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.font = "28px serif";
-      ctx.fillText(emoji, 0, 28);
-      link.href = canvas.toDataURL();
-    }
+    link.href = url;
   };
 
   // Helper to convert Hex to HSL for Shadcn/Tailwind variables

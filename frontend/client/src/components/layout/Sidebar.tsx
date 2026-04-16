@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import {
   LayoutDashboard,
   MessageSquareWarning,
@@ -166,47 +166,39 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {!collapsed && (
           <div className="flex items-center gap-2 overflow-hidden">
             {settings.brand_logo_url ? (
-              <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center">
-                {settings.brand_logo_url.startsWith("http") ||
-                settings.brand_logo_url.startsWith("data:") ? (
-                  <img
-                    src={settings.brand_logo_url}
-                    alt="Logo"
-                    className="h-full w-auto object-contain"
-                  />
-                ) : (
-                  <span className="text-2xl">{settings.brand_logo_url}</span>
-                )}
+              <div className="h-10 max-w-[160px] flex-shrink-0 flex items-center justify-start">
+                <img
+                  src={getImageUrl(settings.brand_logo_url)}
+                  alt="Logo"
+                  className="h-full w-auto object-contain"
+                />
               </div>
             ) : (
-              <div className="bg-primary/20 p-1.5 rounded-lg flex-shrink-0">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
+              <>
+                <div className="bg-primary/20 p-1.5 rounded-lg flex-shrink-0">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <h1 className="font-heading font-bold text-sm leading-tight truncate">
+                    {settings.org_name || "Constituency"}
+                  </h1>
+                  <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider">
+                    {settings.org_short_name || "Management Portal"}
+                  </p>
+                </div>
+              </>
             )}
-            <div className="flex flex-col min-w-0">
-              <h1 className="font-heading font-bold text-sm leading-tight truncate">
-                {settings.org_name || "Constituency"}
-              </h1>
-              <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider">
-                {settings.org_short_name || "Management Portal"}
-              </p>
-            </div>
           </div>
         )}
         {collapsed && (
           <div className="w-full flex justify-center">
             {settings.brand_logo_url ? (
-              <div className="h-8 w-8 flex items-center justify-center">
-                {settings.brand_logo_url.startsWith("http") ||
-                settings.brand_logo_url.startsWith("data:") ? (
-                  <img
-                    src={settings.brand_logo_url}
-                    alt="Logo"
-                    className="h-full w-auto object-contain"
-                  />
-                ) : (
-                  <span className="text-xl">{settings.brand_logo_url}</span>
-                )}
+              <div className="h-8 max-w-[50px] flex items-center justify-center">
+                <img
+                  src={getImageUrl(settings.brand_logo_url)}
+                  alt="Logo"
+                  className="h-full w-auto object-contain"
+                />
               </div>
             ) : (
               <Shield className="h-8 w-8 text-primary" />

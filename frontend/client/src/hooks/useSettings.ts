@@ -65,8 +65,16 @@ export function useUpdateSettings() {
   const { refreshSettings } = useSystemSettings();
 
   return useMutation({
-    mutationFn: (settings: { key: string; value: string }[]) =>
-      api.put("/admin/settings", { settings }).then((r) => r.data),
+    mutationFn: (payload: { key: string; value: string }[] | FormData) => {
+      if (payload instanceof FormData) {
+        return api
+          .put("/admin/settings", payload, {
+            headers: { "Content-Type": "multipart/form-data" },
+          })
+          .then((r) => r.data);
+      }
+      return api.put("/admin/settings", { settings: payload }).then((r) => r.data);
+    },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["settings"] });
       refreshSettings();

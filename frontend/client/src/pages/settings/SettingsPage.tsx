@@ -44,7 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import {
   Settings,
   Save,
@@ -65,6 +65,7 @@ import {
   Navigation,
   Mail,
   Calendar,
+  Upload,
 } from "lucide-react";
 
 // ─── Google Translate Integration ────────────────────────────────────────────
@@ -597,6 +598,8 @@ export default function SettingsPage() {
   const [dirty, setDirty] = useState(false);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [testEmailTo, setTestEmailTo] = useState("");
+  const [imageFiles, setImageFiles] = useState<Record<string, File>>({});
+  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
 
   const allSettings = res?.data || {};
 
@@ -623,20 +626,36 @@ export default function SettingsPage() {
   }, []);
 
   const handleSave = async () => {
+    const hasFiles = Object.keys(imageFiles).length > 0;
+    
     const changes = groupSettings
       .filter((s: any) => {
         const current = formValues[s.key] ?? "";
         return (
-          current !== (s.value || "") && !(s.masked && current.includes("••••"))
+          imageFiles[s.key] ||
+          (current !== (s.value || "") && !(s.masked && current.includes("••••")))
         );
       })
       .map((s: any) => ({ key: s.key, value: formValues[s.key] ?? "" }));
 
-    if (changes.length === 0) {
+    if (changes.length === 0 && !hasFiles) {
       setDirty(false);
       return;
     }
-    await updateMut.mutateAsync(changes);
+
+    if (hasFiles) {
+      const formData = new FormData();
+      formData.append("settings", JSON.stringify(changes));
+      Object.entries(imageFiles).forEach(([key, file]) => {
+        formData.append(`settingImage__${key}`, file);
+      });
+      await updateMut.mutateAsync(formData);
+    } else {
+      await updateMut.mutateAsync(changes);
+    }
+    
+    setImageFiles({});
+    setImagePreviews({});
     setDirty(false);
   };
 
@@ -650,6 +669,66 @@ export default function SettingsPage() {
     const key = s.key;
 
     switch (s.type) {
+      case "image": {
+        const currentImageUrl = imagePreviews[key] || getImageUrl(value);
+        return (
+          <div className="space-y-4 border p-5 rounded-xl relative overflow-hidden bg-card" key={key}>
+            <div className="absolute inset-0 bg-muted/5 pointer-events-none" />
+            <div className="relative">
+              <Label className="text-base font-semibold">{s.label}</Label>
+              <div className="mt-4 flex items-start gap-6">
+                <div className="relative group shrink-0">
+                  <div className="w-24 h-24 rounded-xl border-2 border-dashed border-primary/20 bg-muted/30 overflow-hidden flex flex-col justify-center items-center relative transition-all group-hover:border-primary/50 group-hover:bg-primary/5">
+                    {currentImageUrl ? (
+                      <img src={currentImageUrl} alt={s.label} className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <Upload className="h-6 w-6 text-muted-foreground/50 mb-1" />
+                    )}
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white text-xs font-medium px-2 text-center flex flex-col items-center">
+                        <Upload className="h-4 w-4 mb-1" />
+                        Change
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setImageFiles((p) => ({ ...p, [key]: file }));
+                        const url = URL.createObjectURL(file);
+                        setImagePreviews((p) => ({ ...p, [key]: url }));
+                        setDirty(true);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="space-y-1.5 flex-1">
+                  <p className="text-sm font-medium text-foreground/90">Upload a new {s.label.toLowerCase()}</p>
+                  <p className="text-xs text-muted-foreground">{s.description || "Recommended format: PNG, SVG, or JPG."}</p>
+                  {imageFiles[key] && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setImageFiles((p) => { const n = {...p}; delete n[key]; return n; });
+                        setImagePreviews((p) => { const n = {...p}; delete n[key]; return n; });
+                      }} 
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2 mt-2 -ml-2"
+                    >
+                      Remove Selected File
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       case "boolean":
         return (
           <div
