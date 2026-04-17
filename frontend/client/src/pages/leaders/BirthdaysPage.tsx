@@ -75,10 +75,10 @@ export default function BirthdaysPage() {
 
   const [greetDlg, setGreetDlg] = useState(false);
   const [greetTarget, setGreetTarget] = useState<any>(null);
-  const [gf, setGf] = useState({ channel: "WHATSAPP" as string, message: "" });
+  const [gf, setGf] = useState({ channel: "EMAIL" as string, message: "" });
   const [bulkDlg, setBulkDlg] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bf, setBf] = useState({ channel: "WHATSAPP" as string, message: "" });
+  const [bf, setBf] = useState({ channel: "EMAIL" as string, message: "" });
 
   const todayList = todayRes?.data || [];
   const upcomingList = (upRes?.data || []).filter((l: any) => l.daysUntil > 0);
@@ -87,7 +87,7 @@ export default function BirthdaysPage() {
   const openGreet = (leader: any) => {
     setGreetTarget(leader);
     setGf({
-      channel: "WHATSAPP",
+      channel: "EMAIL",
       message: GREETING_TEMPLATES[0].message
         .replace(/\{name\}/g, leader.name)
         .replace(/\{age\}/g, String(leader.turningAge || leader.age)),
@@ -116,7 +116,7 @@ export default function BirthdaysPage() {
   };
 
   const openBulk = () => {
-    setBf({ channel: "WHATSAPP", message: GREETING_TEMPLATES[0].message });
+    setBf({ channel: "EMAIL", message: GREETING_TEMPLATES[0].message });
     setBulkDlg(true);
   };
   const sendBulk = async () => {
@@ -379,10 +379,8 @@ export default function BirthdaysPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="WHATSAPP">💬 WhatsApp</SelectItem>
-                  <SelectItem value="SMS">📱 SMS</SelectItem>
                   <SelectItem value="EMAIL">📧 Email</SelectItem>
-                  <SelectItem value="IN_APP">🔔 In-App</SelectItem>
+                  <SelectItem value="WHATSAPP">💬 WhatsApp</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -461,9 +459,8 @@ export default function BirthdaysPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="WHATSAPP">💬 WhatsApp</SelectItem>
-                  <SelectItem value="SMS">📱 SMS</SelectItem>
                   <SelectItem value="EMAIL">📧 Email</SelectItem>
+                  <SelectItem value="WHATSAPP">💬 WhatsApp</SelectItem>
                 </SelectContent>
               </Select>
             </div>

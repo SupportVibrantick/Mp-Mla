@@ -6,12 +6,13 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { z } from "zod";
+import { sendEmail } from "../../../lib/email.js";
 
 export const greetingSchema = z.object({
   type: z
     .enum(["BIRTHDAY", "FESTIVAL", "ACHIEVEMENT", "CUSTOM"])
     .default("BIRTHDAY"),
-  channel: z.enum(["SMS", "EMAIL", "WHATSAPP", "IN_APP"]),
+  channel: z.enum(["EMAIL", "WHATSAPP"]),
   message: z.string().min(1, "Message required"),
 });
 
@@ -20,7 +21,7 @@ export const bulkGreetingSchema = z.object({
   type: z
     .enum(["BIRTHDAY", "FESTIVAL", "ACHIEVEMENT", "CUSTOM"])
     .default("BIRTHDAY"),
-  channel: z.enum(["SMS", "EMAIL", "WHATSAPP", "IN_APP"]),
+  channel: z.enum(["EMAIL", "WHATSAPP"]),
   message: z.string().min(1, "Message required"),
 });
 
@@ -66,15 +67,34 @@ export async function sendGreeting(
       .replace(/\{designation\}/g, leader.designation || "")
       .replace(/\{party\}/g, leader.partyName || "");
 
-    // In production: integrate SMS/WhatsApp/Email API here
-    // For now, mark as SENT
+    let status: "SENT" | "FAILED" | "PENDING" = "SENT";
+
+    // Handle Email
+    if (channel === "EMAIL") {
+      if (!leader.email) {
+        throw ApiError.badRequest("Leader does not have an email address");
+      }
+      const subject = `${type} Greeting from ${req.user!.name || "Admin"}`;
+      const emailSent = await sendEmail(
+        leader.email,
+        subject,
+        `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
+          <h2 style="color: #6366f1;">${type} Greeting</h2>
+          <p>${personalizedMsg.replace(/\n/g, "<br/>")}</p>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="color: #64748b; font-size: 12px;">Sent via Constituency Management Portal</p>
+        </div>`,
+      );
+      if (!emailSent) status = "FAILED";
+    }
+
     const greeting = await prisma.leaderGreeting.create({
       data: {
         leaderId: leader.id,
         type,
         channel,
         message: personalizedMsg,
-        status: "SENT",
+        status,
         sentAt: new Date(),
         sentBy: req.user!.name || req.user!.email,
         year,
@@ -87,9 +107,9 @@ export async function sendGreeting(
         channel,
         title: `${type} Greeting — ${leader.name}`,
         message: personalizedMsg,
-        status: "SENT",
+        status,
         recipientPhone:
-          channel === "SMS" || channel === "WHATSAPP"
+          channel === "WHATSAPP"
             ? leader.whatsapp || leader.phone
             : undefined,
         recipientEmail: channel === "EMAIL" ? leader.email : undefined,
@@ -108,7 +128,9 @@ export async function sendGreeting(
 
     res.status(201).json({
       success: true,
-      message: `${type} greeting sent to ${leader.name} via ${channel}`,
+      message: status === "SENT" 
+        ? `${type} greeting sent to ${leader.name} via ${channel}`
+        : `Failed to send ${type} greeting via ${channel}`,
       data: greeting,
     });
   } catch (error) {
@@ -136,7 +158,23 @@ export async function sendBulkGreeting(
         .replace(
           /\{age\}/g,
           String(year - new Date(leader.dateOfBirth).getFullYear()),
+        )
+        .replace(/\{designation\}/g, leader.designation || "")
+        .replace(/\{party\}/g, leader.partyName || "");
+
+      let status: "SENT" | "FAILED" | "PENDING" = "SENT";
+
+      if (channel === "EMAIL" && leader.email) {
+        const subject = `${type} Greeting`;
+        const emailSent = await sendEmail(
+          leader.email,
+          subject,
+          `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
+            <p>${personalizedMsg.replace(/\n/g, "<br/>")}</p>
+          </div>`,
         );
+        if (!emailSent) status = "FAILED";
+      }
 
       const greeting = await prisma.leaderGreeting.create({
         data: {
@@ -144,7 +182,7 @@ export async function sendBulkGreeting(
           type,
           channel,
           message: personalizedMsg,
-          status: "SENT",
+          status,
           sentAt: new Date(),
           sentBy: req.user!.name || req.user!.email,
           year,

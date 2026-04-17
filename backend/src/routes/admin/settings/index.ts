@@ -321,4 +321,30 @@ router.post(
   })
 );
 
+import { testWhatsAppConnection } from "../../../lib/whatsapp.js";
+
+router.post(
+  "/test-whatsapp",
+  authenticate,
+  requireActiveUser,
+  requirePermission("settings", "read"),
+  catchAsync(async (req, res) => {
+    const { to } = req.body;
+    if (!to) {
+      throw ApiError.badRequest("Recipient phone number 'to' is required");
+    }
+
+    const result = await testWhatsAppConnection(to);
+    
+    if (result.success) {
+      res.json({ success: true, message: "Test WhatsApp message sent successfully!" });
+    } else {
+      res.status(400).json({ 
+        success: false, 
+        message: result.error || "Failed to send test WhatsApp message" 
+      });
+    }
+  })
+);
+
 export default router;
