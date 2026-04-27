@@ -109,6 +109,7 @@ const GREETING_STATUS_STYLES: Record<
   DELIVERED: { color: "text-blue-600", Icon: CheckCircle2, label: "Delivered" },
   PENDING: { color: "text-amber-600", Icon: Clock, label: "Pending" },
   FAILED: { color: "text-red-600", Icon: XCircle, label: "Failed" },
+  READ: { color: "text-indigo-600", Icon: Check, label: "Read" },
 };
 
 import type { LucideIcon } from "lucide-react";
@@ -116,6 +117,8 @@ import type { LucideIcon } from "lucide-react";
 const CHANNEL_ICONS: Record<string, { icon: LucideIcon; label: string }> = {
   WHATSAPP: { icon: MessageCircle, label: "WhatsApp" },
   EMAIL: { icon: Mail, label: "Email" },
+  SMS: { icon: Smartphone, label: "SMS" },
+  IN_APP: { icon: Bell, label: "In-App" },
 };
 // const INFLUENCE_DISPLAY: Record<
 //   string,
@@ -686,7 +689,7 @@ export default function LeaderDetailPage() {
                       GREETING_STATUS_STYLES[g.status] ||
                       GREETING_STATUS_STYLES.PENDING;
                     const channelInfo =
-                      CHANNEL_ICONS[g.channel] || CHANNEL_ICONS.IN_APP;
+                      CHANNEL_ICONS[g.channel] || CHANNEL_ICONS.IN_APP || CHANNEL_ICONS.EMAIL;
                     return (
                       <TableRow key={g.id}>
                         <TableCell className="text-sm whitespace-nowrap">
