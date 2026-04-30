@@ -139,6 +139,20 @@ export async function approveRequest(
       return;
     }
 
+    // Check if Aadhaar number is already registered for an incharge
+    if (request.headAdharNumber) {
+      const existingIncharge = await prisma.incharge.findUnique({
+        where: { adharNumber: request.headAdharNumber },
+      });
+      if (existingIncharge) {
+        res.status(400).json({
+          success: false,
+          message: "An incharge with this Aadhaar number is already registered. Cannot approve this request.",
+        });
+        return;
+      }
+    }
+
     // Create the institution from the request data
     const institution = await prisma.institution.create({
       data: {
@@ -161,6 +175,7 @@ export async function approveRequest(
             contactNo: request.headContact,
             email: request.headEmail,
             dateOfBirth: request.headDateOfBirth,
+            adharNumber: request.headAdharNumber,
             appointedDate: request.headAppointedDate,
             isActive: true,
           },

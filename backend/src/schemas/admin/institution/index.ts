@@ -48,6 +48,7 @@ const inchargeInlineSchema = z.object({
   dateOfBirth: z.string().datetime().optional(),
   appointedDate: z.string().datetime().optional(),
   photoUrl: z.string().optional(),
+  adharNumber: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
   isActive: z.boolean().default(true),
 });
 
@@ -82,6 +83,7 @@ export const createInchargeSchema = z.object({
   dateOfBirth: z.string().datetime().optional(),
   photoUrl: z.string().optional(),
   appointedDate: z.string().datetime().optional(),
+  adharNumber: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
   isActive: z.boolean().default(true),
 });
 

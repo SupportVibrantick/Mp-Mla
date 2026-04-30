@@ -71,6 +71,7 @@ const emptyIncharge = {
   email: "",
   dateOfBirth: "",
   appointedDate: "",
+  adharNumber: "",
   isActive: true,
 };
 
@@ -141,6 +142,7 @@ export default function PublicFacilityDetailPage() {
       designation: ic.designation,
       contactNo: ic.contactNo,
       email: ic.email || "",
+      adharNumber: ic.adharNumber || "",
       dateOfBirth: ic.dateOfBirth ? ic.dateOfBirth.split("T")[0] : "",
       appointedDate: ic.appointedDate ? ic.appointedDate.split("T")[0] : "",
       isActive: ic.isActive,
@@ -158,6 +160,7 @@ export default function PublicFacilityDetailPage() {
     const payload: any = {
       ...inchargeForm,
       email: inchargeForm.email || undefined,
+      adharNumber: inchargeForm.adharNumber || undefined,
       dateOfBirth: inchargeForm.dateOfBirth
         ? new Date(inchargeForm.dateOfBirth).toISOString()
         : undefined,
@@ -615,6 +618,22 @@ export default function PublicFacilityDetailPage() {
                   placeholder="9876543210"
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Aadhaar Number</Label>
+                <Input
+                  value={inchargeForm.adharNumber || ""}
+                  onChange={(e) =>
+                    setInchargeForm((p) => ({
+                      ...p,
+                      adharNumber: e.target.value,
+                    }))
+                  }
+                  placeholder="1234 5678 9012"
+                  maxLength={12}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input

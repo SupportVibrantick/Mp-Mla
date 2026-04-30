@@ -66,6 +66,37 @@ router.post(
         return;
       }
 
+      // Check if Aadhaar number is already registered for an incharge or in another pending request
+      if (data.headAdharNumber) {
+        const [existingIncharge, existingRequest] = await Promise.all([
+          prisma.incharge.findUnique({
+            where: { adharNumber: data.headAdharNumber },
+          }),
+          prisma.institutionRequest.findFirst({
+            where: {
+              headAdharNumber: data.headAdharNumber,
+              status: "PENDING",
+            },
+          }),
+        ]);
+
+        if (existingIncharge) {
+          res.status(400).json({
+            success: false,
+            message: "An incharge with this Aadhaar number is already registered.",
+          });
+          return;
+        }
+
+        if (existingRequest) {
+          res.status(400).json({
+            success: false,
+            message: "A pending registration request with this Aadhaar number already exists.",
+          });
+          return;
+        }
+      }
+
       // Process uploaded files
       const files = req.files as {
         [fieldname: string]: Express.Multer.File[];
@@ -132,6 +163,7 @@ router.post(
           headDateOfBirth: data.headDateOfBirth
             ? new Date(data.headDateOfBirth)
             : null,
+          headAdharNumber: data.headAdharNumber || null,
           headAppointedDate: data.headAppointedDate
             ? new Date(data.headAppointedDate)
             : null,
@@ -175,3 +207,4 @@ router.post(
 );
 
 export default router;
+

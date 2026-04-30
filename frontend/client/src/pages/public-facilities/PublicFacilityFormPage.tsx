@@ -81,6 +81,7 @@ interface InchargeLocal {
   email: string;
   dateOfBirth: string;
   appointedDate: string;
+  adharNumber?: string;
   isNew?: boolean;
 }
 
@@ -91,6 +92,7 @@ const emptyIncharge: InchargeLocal = {
   email: "",
   dateOfBirth: "",
   appointedDate: "",
+  adharNumber: "",
 };
 
 export default function PublicFacilityFormPage() {
@@ -214,6 +216,7 @@ export default function PublicFacilityFormPage() {
           designation: ic.designation,
           contactNo: ic.contactNo,
           email: ic.email || undefined,
+          adharNumber: ic.adharNumber || undefined,
           dateOfBirth: ic.dateOfBirth
             ? new Date(ic.dateOfBirth).toISOString()
             : undefined,
@@ -619,6 +622,19 @@ export default function PublicFacilityFormPage() {
                   placeholder="9876543210"
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Aadhaar Number</Label>
+                <Input
+                  value={icForm.adharNumber || ""}
+                  onChange={(e) =>
+                    setIcForm((p) => ({ ...p, adharNumber: e.target.value }))
+                  }
+                  placeholder="1234 5678 9012"
+                  maxLength={12}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input

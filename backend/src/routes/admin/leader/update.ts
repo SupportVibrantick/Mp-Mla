@@ -21,6 +21,14 @@ export async function updateLeader(
     const data: any = { ...req.body };
     if (data.email === "") delete data.email;
     if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
+    if (data.adharNumber && data.adharNumber !== old.adharNumber) {
+      const existingLeader = await prisma.leader.findUnique({
+        where: { adharNumber: data.adharNumber },
+      });
+      if (existingLeader) {
+        throw ApiError.badRequest(`Leader with Aadhaar "${data.adharNumber}" already exists`);
+      }
+    }
 
     const leader = await prisma.leader.update({
       where: { id: lenderId },

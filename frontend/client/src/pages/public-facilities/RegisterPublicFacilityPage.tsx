@@ -54,6 +54,11 @@ const formSchema = z.object({
   headName: z.string().min(1, "Head name is required"),
   headDesignation: z.string().min(1, "Head designation is required"),
   headContact: z.string().min(1, "Head contact is required"),
+  headAdharNumber: z
+    .string()
+    .regex(/^\d{12}$/, "Aadhaar number must be exactly 12 digits")
+    .optional()
+    .or(z.literal("")),
   headEmail: z.string().optional(),
   headDateOfBirth: z.string().optional(),
   headAppointedDate: z.string().optional(),
@@ -79,11 +84,10 @@ function FileUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div
-      className={`relative border-2 border-dashed rounded-xl p-4 transition-all cursor-pointer hover:border-primary/50 hover:bg-primary/5 ${
-        file
+      className={`relative border-2 border-dashed rounded-xl p-4 transition-all cursor-pointer hover:border-primary/50 hover:bg-primary/5 ${file
           ? "border-primary/50 bg-primary/5"
           : "border-muted-foreground/25"
-      }`}
+        }`}
       onClick={() => inputRef.current?.click()}
     >
       <input
@@ -95,11 +99,10 @@ function FileUploadField({
       />
       <div className="flex items-start gap-3">
         <div
-          className={`p-2 rounded-lg ${
-            file
+          className={`p-2 rounded-lg ${file
               ? "bg-primary/10 text-primary"
               : "bg-muted text-muted-foreground"
-          }`}
+            }`}
         >
           {file ? (
             <FileCheck className="h-5 w-5" />
@@ -178,6 +181,7 @@ export default function RegisterPublicFacilityPage() {
       headName: "",
       headDesignation: "",
       headContact: "",
+      headAdharNumber: "",
     },
   });
 
@@ -542,6 +546,21 @@ export default function RegisterPublicFacilityPage() {
                   </p>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label>Aadhaar Number</Label>
+                <Input
+                  {...register("headAdharNumber")}
+                  placeholder="1234 5678 9012"
+                  maxLength={12}
+                />
+                {errors.headAdharNumber && (
+                  <p className="text-xs text-destructive">
+                    {errors.headAdharNumber.message}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input

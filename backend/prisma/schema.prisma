@@ -499,6 +499,7 @@ model Incharge {
   dateOfBirth   DateTime?
   photoUrl      String?
   appointedDate DateTime?
+  adharNumber   String?   @unique
   isActive      Boolean   @default(true)
 
   createdAt DateTime @default(now())
@@ -535,6 +536,7 @@ model InstitutionRequest {
   headContact       String
   headEmail         String?
   headDateOfBirth   DateTime?
+  headAdharNumber   String?
   headAppointedDate DateTime?
 
   // KYC Documents (JSON array of {name, url, type})
@@ -961,6 +963,7 @@ model Leader {
 
   // Personal
   dateOfBirth DateTime
+  adharNumber String? @unique
   gender      String?
   photoUrl    String?
   address     String?

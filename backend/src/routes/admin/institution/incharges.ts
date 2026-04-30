@@ -20,20 +20,33 @@ async function getInstitutionOrThrow(id: string) {
 export async function syncToLeaders(incharge: any, wardId: string) {
   if (!incharge.dateOfBirth) return;
 
-  // Try to find existing leader by phone and name
-  const existing = await prisma.leader.findFirst({
-    where: {
-      phone: incharge.contactNo,
-      name: incharge.name,
-      isDeleted: false,
-    },
-  });
+  // Try to find existing leader by adharNumber first, then phone and name
+  let existing = null;
+  if (incharge.adharNumber) {
+    existing = await prisma.leader.findFirst({
+      where: {
+        adharNumber: incharge.adharNumber,
+        isDeleted: false,
+      },
+    });
+  }
+
+  if (!existing) {
+    existing = await prisma.leader.findFirst({
+      where: {
+        phone: incharge.contactNo,
+        name: incharge.name,
+        isDeleted: false,
+      },
+    });
+  }
 
   const leaderData: any = {
     name: incharge.name,
     category: "COMMUNITY_LEADER",
     designation: incharge.designation,
     dateOfBirth: incharge.dateOfBirth,
+    adharNumber: incharge.adharNumber || undefined,
     phone: incharge.contactNo,
     email: incharge.email || undefined,
     wardId: wardId,
@@ -118,8 +131,19 @@ export async function createIncharge(
 
     const data: any = { ...req.body, institutionId };
     if (data.email === "") delete data.email;
+    if (data.adharNumber === "") delete data.adharNumber;
     if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
     if (data.appointedDate) data.appointedDate = new Date(data.appointedDate);
+
+    // Check Aadhaar uniqueness manually for better error message
+    if (data.adharNumber) {
+      const existing = await prisma.incharge.findUnique({
+        where: { adharNumber: data.adharNumber },
+      });
+      if (existing) {
+        throw ApiError.conflict("An incharge with this Aadhaar number is already registered.");
+      }
+    }
 
     const incharge = await prisma.incharge.create({ data });
 
@@ -172,8 +196,19 @@ export async function updateIncharge(
 
     const data: any = { ...req.body };
     if (data.email === "") delete data.email;
+    if (data.adharNumber === "") delete data.adharNumber;
     if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
     if (data.appointedDate) data.appointedDate = new Date(data.appointedDate);
+
+    // Check Aadhaar uniqueness manually for better error message
+    if (data.adharNumber && data.adharNumber !== old.adharNumber) {
+      const existing = await prisma.incharge.findUnique({
+        where: { adharNumber: data.adharNumber },
+      });
+      if (existing) {
+        throw ApiError.conflict("An incharge with this Aadhaar number is already registered.");
+      }
+    }
 
     const incharge = await prisma.incharge.update({
       where: { id: inchargeId },

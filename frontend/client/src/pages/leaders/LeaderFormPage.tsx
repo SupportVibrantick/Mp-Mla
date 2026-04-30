@@ -51,7 +51,11 @@ const schema = z.object({
   relation: z.string().optional(),
   // influence: z.string().optional(),
   notes: z.string().optional(),
-
+  adharNumber: z
+    .string()
+    .regex(/^\d{12}$/, "Aadhaar number must be exactly 12 digits")
+    .optional()
+    .or(z.literal("")),
 });
 type FV = z.infer<typeof schema>;
 
@@ -96,7 +100,7 @@ export default function LeaderFormPage() {
       relation: "",
       // influence: "",
       notes: "",
-
+      adharNumber: "",
     },
   });
 
@@ -124,7 +128,7 @@ export default function LeaderFormPage() {
       relation: l.relation || "",
       // influence: l.influence || "",
       notes: l.notes || "",
-
+      adharNumber: l.adharNumber || "",
     });
   }, [l, isEdit, reset]);
 
@@ -310,9 +314,24 @@ export default function LeaderFormPage() {
                 <Input {...register("partyName")} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Address</Label>
-              <Input {...register("address")} />
+            <div className="grid md:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-2">
+                <Label>Address</Label>
+                <Input {...register("address")} />
+              </div>
+              <div className="space-y-2">
+                <Label>Aadhaar Number</Label>
+                <Input
+                  {...register("adharNumber")}
+                  placeholder="12-digit Aadhaar number"
+                  maxLength={12}
+                />
+                {errors.adharNumber && (
+                  <p className="text-xs text-destructive">
+                    {errors.adharNumber.message}
+                  </p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

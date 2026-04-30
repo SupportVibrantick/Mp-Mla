@@ -411,6 +411,12 @@ export default function PublicFacilityRequestsPage() {
                           {formatDate(selectedReq.headDateOfBirth)}
                         </div>
                       )}
+                      {selectedReq.headAdharNumber && (
+                        <div>
+                          <span className="text-muted-foreground">Aadhaar:</span>{" "}
+                          {selectedReq.headAdharNumber}
+                        </div>
+                      )}
                       {selectedReq.headAppointedDate && (
                         <div>
                           <span className="text-muted-foreground">

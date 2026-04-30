@@ -23,6 +23,15 @@ export async function createLeader(
       if (!ward) throw ApiError.notFound("Ward not found");
     }
 
+    if (data.adharNumber) {
+      const existingLeader = await prisma.leader.findUnique({
+        where: { adharNumber: data.adharNumber },
+      });
+      if (existingLeader) {
+        throw ApiError.badRequest(`Leader with Aadhaar "${data.adharNumber}" already exists`);
+      }
+    }
+
     const leader = await prisma.leader.create({
       data,
       include: {
