@@ -56,6 +56,11 @@ import MeetingListPage from "./pages/meetings/MeetingListPage";
 import MeetingFormPage from "./pages/meetings/MeetingFormPage";
 import ProfilePage from "./pages/ProfilePage";
 
+import CompetitorListPage from "./pages/competitors/CompetitorListPage";
+import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
+import CompetitorDashboard from "./pages/competitors/CompetitorDashboard";
+import CompetitorDetailPage from "./pages/competitors/CompetitorDetailPage";
+
 function Router() {
   return (
     <Switch>
@@ -261,6 +266,33 @@ function Router() {
       <Route path="/demographics">
         <ProtectedRoute module="demographics" action="read">
           <DemographicsPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Competitor Analysis */}
+      <Route path="/competitor-analysis">
+        <ProtectedRoute module="competitors" action="read">
+          <CompetitorListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/competitor-analysis/dashboard">
+        <ProtectedRoute module="competitors" action="read">
+          <CompetitorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/competitor-analysis/new">
+        <ProtectedRoute module="competitors" action="create">
+          <CompetitorFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/competitor-analysis/:id/edit">
+        <ProtectedRoute module="competitors" action="update">
+          <CompetitorFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/competitor-analysis/:id">
+        <ProtectedRoute module="competitors" action="read">
+          <CompetitorDetailPage />
         </ProtectedRoute>
       </Route>
 

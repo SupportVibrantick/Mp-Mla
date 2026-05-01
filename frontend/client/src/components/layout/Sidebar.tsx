@@ -110,6 +110,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       module: "meeting",
     },
     { label: "Reports", icon: BarChart3, href: "/reports", module: "reports" },
+    {
+      label: "Competitor Analysis",
+      icon: BarChart4,
+      href: "/competitor-analysis",
+      module: "competitors",
+    },
   ];
 
   const filteredNavItems = navItems.filter(

@@ -1275,3 +1275,146 @@ model Meeting {
   @@index([type])
   @@map("meetings")
 }
+
+// ════════════════════════════════════════════════════════
+// COMPETITOR ANALYSIS
+// ════════════════════════════════════════════════════════
+
+enum CompetitorAnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Competitor {
+  id              String   @id @default(cuid())
+  candidateName   String
+  partyName       String
+  partyLogoUrl    String?
+  candidatePhoto  String?
+  designation     String?
+  constituency    String?
+  phone           String?
+  email           String?
+  facebookUrl     String?
+  twitterUrl      String?
+  instagramUrl    String?
+  youtubeUrl      String?
+  websiteUrl      String?
+  notes           String?
+  isActive        Boolean  @default(true)
+  isDeleted       Boolean  @default(false)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  metrics   CompetitorMetricEntry[]
+  analyses  CompetitorAnalysis[]
+
+  @@index([isDeleted])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("competitors")
+}
+
+model CompetitorMetricEntry {
+  id            String   @id @default(cuid())
+  competitorId  String
+  category      String   // VOTER_OUTREACH, GROUND_NETWORK, ISSUE_RESOLUTION, PUBLIC_SENTIMENT, DIGITAL_PRESENCE, EVENTS_ACTIVITIES, FINANCIAL_DEVELOPMENT
+  metricKey     String   // e.g. "rallies_held", "door_to_door_visits"
+  metricLabel   String   // Human-readable: "Rallies/Sabhas Held"
+  value         Float
+  unit          String?  // "count", "percentage", "days", "currency"
+  period        String   // "2026-04" (YYYY-MM format)
+  notes         String?
+  source        String?  // "field_workers", "news", "social_media"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  competitor Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+
+  @@unique([competitorId, metricKey, period])
+  @@index([competitorId])
+  @@index([category])
+  @@index([period])
+  @@map("competitor_metric_entries")
+}
+
+model OwnMetricEntry {
+  id          String  @id @default(cuid())
+  category    String  // Same categories as competitor
+  metricKey   String  // e.g. "rallies_held", "social_media_followers"
+  metricLabel String  // Human-readable label
+  value       Float
+  unit        String? // "count", "percentage", "days", "currency"
+  period      String  // "2026-04" (YYYY-MM format)
+  isAuto      Boolean @default(false) // true = system-computed, false = manual
+  notes       String?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([metricKey, period])
+  @@index([category])
+  @@index([period])
+  @@index([isAuto])
+  @@map("own_metric_entries")
+}
+
+model CompetitorAnalysis {
+  id             String                   @id @default(cuid())
+  competitorId   String
+  status         CompetitorAnalysisStatus @default(PENDING)
+  
+  // Snapshot of data used for analysis
+  ownMetricsSnapshot       Json?  // Snapshot of own metrics at time of analysis
+  competitorMetricsSnapshot Json?  // Snapshot of competitor metrics at time of analysis
+
+  // AI-generated analysis
+  executiveSummary    String?
+  metricComparisons   Json?    // Array of {metric, ours, theirs, gap, advantage, insight, recommendation}
+  strengths           Json?    // Array of strings
+  weaknesses          Json?    // Array of strings
+  opportunities       Json?    // Array of strings
+  threats             Json?    // Array of strings
+  recommendations     Json?    // Array of {priority, action, expectedImpact, timeline}
+  overallScore        Float?   // 0-100 competitive position score
+  areasLeading        Int      @default(0)
+  areasTrailing       Int      @default(0)
+  areasTied           Int      @default(0)
+
+  errorMessage String?
+  
+  triggeredById String?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  competitor Competitor     @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  chatMessages CompetitorChat[]
+
+  @@index([competitorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("competitor_analyses")
+}
+
+model CompetitorChat {
+  id         String @id @default(cuid())
+  analysisId String
+  role       String // "user" or "assistant"
+  message    String
+
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  analysis CompetitorAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([createdAt])
+  @@map("competitor_chats")
+}

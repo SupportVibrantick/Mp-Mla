@@ -167,6 +167,11 @@ const ALL_PERMISSIONS = [
   { module: "meeting", action: "read", description: "View meetings" },
   { module: "meeting", action: "update", description: "Edit meeting details" },
   { module: "meeting", action: "delete", description: "Delete a meeting" },
+
+  { module: "competitors", action: "create", description: "Add competitor profile & metrics" },
+  { module: "competitors", action: "read", description: "View competitor analysis" },
+  { module: "competitors", action: "update", description: "Edit competitor data" },
+  { module: "competitors", action: "delete", description: "Delete competitor" },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -215,6 +220,9 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "meeting", action: "read" },
     { module: "meeting", action: "update" },
     { module: "meeting", action: "delete" },
+    // ── Competitors ──
+    { module: "competitors", action: "read" },
+    { module: "competitors", action: "create" },
   ],
 
   OFFICE_STAFF: [
@@ -268,6 +276,11 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "meeting", action: "create" },
     { module: "meeting", action: "read" },
     { module: "meeting", action: "update" },
+    // ── Competitors ──
+    { module: "competitors", action: "create" },
+    { module: "competitors", action: "read" },
+    { module: "competitors", action: "update" },
+    { module: "competitors", action: "delete" },
   ],
 };
 

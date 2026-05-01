@@ -25,6 +25,7 @@ import auditLogRoutes from "./auditLog/index.js";
 import recycleBinRoutes from "./recycleBin/index.js";
 import dataActivityRoutes from "./dataActivity/index.js";
 import meetingRoutes from "./meeting/index.js";
+import competitorRoutes from "./competitor/index.js";
 
 // import auditLogRoutes from "./auditLog/index.js";
 // import settingsRoutes from "./settings/index.js";
@@ -57,6 +58,7 @@ router.use("/leaders", leaderRoutes);
 router.use("/reports", reportRoutes);
 router.use("/data-activity", dataActivityRoutes);
 router.use("/meetings", meetingRoutes);
+router.use("/competitor-analysis", competitorRoutes);
 // router.use("/schemes", schemeRoutes);
 // router.use("/demographics", demographicsRoutes);
 // router.use("/departments", departmentRoutes);
