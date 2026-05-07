@@ -42,7 +42,7 @@ export async function refresh(
       );
     }
 
-    if (stored.user.status !== "ACTIVE") {
+    if (!stored.user || stored.user.status !== "ACTIVE") {
       throw ApiError.forbidden("Account is deactivated.");
     }
 

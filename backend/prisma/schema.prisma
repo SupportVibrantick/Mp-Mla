@@ -17,6 +17,42 @@ enum UserRole {
   OFFICE_STAFF
 }
 
+enum PlatformRole {
+  SUPER_ADMIN
+  PLATFORM_ADMIN
+  SUPPORT_STAFF
+  BILLING_MANAGER
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -239,6 +275,206 @@ model Organization {
 }
 
 // ════════════════════════════════════════════════════════
+// TENANT (SaaS Multi-Tenancy Core)
+// ════════════════════════════════════════════════════════
+
+model Tenant {
+  id                  String       @id @default(cuid())
+  name                String
+  constituencyName    String
+  state               String
+  district            String
+  address             String?
+  phone               String?
+  email               String?
+  website             String?
+  logoUrl             String?
+  faviconUrl          String?
+  primaryColor        String       @default("#1e40af")
+  secondaryColor      String       @default("#3b82f6")
+
+  representativeName  String
+  representativeTitle String
+  representativePhoto String?
+  partyName           String?
+  partyLogoUrl        String?
+  termStartDate       DateTime?
+  termEndDate         DateTime?
+
+  status              TenantStatus @default(ACTIVE)
+  maxUsers            Int          @default(5)
+  storageQuotaMB      Int          @default(1024)
+  storageUsedMB       Float        @default(0)
+
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  users               User[]
+  subscription        TenantSubscription?
+  moduleAccess        TenantModuleAccess[]
+  wards               Ward[]
+  grievances          Grievance[]
+  projects            Project[]
+  departments         Department[]
+  leaders             Leader[]
+  institutions        Institution[]
+  institutionRequests InstitutionRequest[]
+  communityGroups     CommunityGroup[]
+  demographics        Demographics[]
+  funds               Fund[]
+  meetings            Meeting[]
+  competitors         Competitor[]
+  tasks               Task[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  settings            TenantSetting[]
+  ownMetrics          OwnMetricEntry[]
+
+  @@index([status])
+  @@map("tenants")
+}
+
+// ════════════════════════════════════════════════════════
+// PLATFORM USERS (Master Dashboard)
+// ════════════════════════════════════════════════════════
+
+model PlatformUser {
+  id          String       @id @default(cuid())
+  email       String       @unique
+  password    String
+  name        String
+  role        PlatformRole @default(SUPER_ADMIN)
+  avatarUrl   String?
+  isActive    Boolean      @default(true)
+  lastLoginAt DateTime?
+  lastLoginIp String?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  refreshTokens RefreshToken[]
+
+  @@index([role])
+  @@index([isActive])
+  @@map("platform_users")
+}
+
+// ════════════════════════════════════════════════════════
+// SUBSCRIPTION, MODULES & PAYMENTS
+// ════════════════════════════════════════════════════════
+
+model SubscriptionPlan {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  code          String   @unique
+  description   String?
+  priceMonthly  Float    @default(0)
+  priceYearly   Float    @default(0)
+  maxUsers      Int      @default(5)
+  maxWards      Int      @default(10)
+  storageMB     Int      @default(1024)
+  features      Json     @default("[]")
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions TenantSubscription[]
+
+  @@index([isActive])
+  @@map("subscription_plans")
+}
+
+model TenantSubscription {
+  id                 String             @id @default(cuid())
+  tenantId           String             @unique
+  planId             String
+  status             SubscriptionStatus @default(TRIALING)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialEndsAt        DateTime?
+  cancelledAt        DateTime?
+  suspendedAt        DateTime?
+  lastPaymentAt      DateTime?
+  nextPaymentDue     DateTime?
+  amountDue          Float              @default(0)
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan               SubscriptionPlan   @relation(fields: [planId], references: [id])
+  payments           Payment[]
+
+  @@index([status])
+  @@index([nextPaymentDue])
+  @@map("tenant_subscriptions")
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String
+  description String?
+  category    String  @default("core")
+  isAddon     Boolean @default(false)
+  addonPrice  Float   @default(0)
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantAccess TenantModuleAccess[]
+
+  @@index([isActive])
+  @@map("modules")
+}
+
+model TenantModuleAccess {
+  id        String    @id @default(cuid())
+  tenantId  String
+  moduleId  String
+  isEnabled Boolean   @default(true)
+  grantedAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, moduleId])
+  @@index([tenantId])
+  @@index([moduleId])
+  @@map("tenant_module_access")
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  subscriptionId String
+  amount         Float
+  currency       String        @default("INR")
+  method         String?
+  transactionId  String?
+  status         PaymentStatus @default(PENDING)
+  invoiceNumber  String?
+  invoiceUrl     String?
+  notes          String?
+  paidAt         DateTime?
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  subscription   TenantSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+// ════════════════════════════════════════════════════════
 // USERS & AUTH
 // ════════════════════════════════════════════════════════
 
@@ -246,6 +482,7 @@ model User {
   id          String     @id @default(cuid())
   email       String     @unique
   phone       String?    @unique
+  tenantId    String
   password    String
   name        String
   role        UserRole
@@ -270,6 +507,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
+  tenant         Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdByAdmin User?  @relation("UserCreatedBy", fields: [createdById], references: [id])
   usersCreated   User[] @relation("UserCreatedBy")
 
@@ -283,6 +521,7 @@ model User {
   projectsCreated    Project[]        @relation("ProjectCreatedBy")
   notifications      Notification[]
 
+  @@index([tenantId])
   @@index([email])
   @@index([role])
   @@index([status])
@@ -290,19 +529,22 @@ model User {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  ipAddress String?
-  userAgent String?
-  expiresAt DateTime
-  isRevoked Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String?
+  platformUserId String?
+  token          String   @unique
+  ipAddress      String?
+  userAgent      String?
+  expiresAt      DateTime
+  isRevoked      Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformUser PlatformUser? @relation(fields: [platformUserId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
+  @@index([platformUserId])
   @@map("refresh_tokens")
 }
 
@@ -356,8 +598,9 @@ model UserPermission {
 
 model Ward {
   id         String     @id @default(cuid())
-  wardNumber Int        @unique
-  name       String     @unique
+  tenantId   String
+  wardNumber Int
+  name       String
   zone       String? // "A", "B", "C" etc.
   status     WardStatus @default(ACTIVE)
   isDeleted  Boolean    @default(false)
@@ -381,6 +624,7 @@ model Ward {
   updatedAt DateTime @updatedAt
 
   // Relations
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   areas               WardArea[]
   councillors         WardCouncillor[]
   institutions        Institution[]
@@ -392,6 +636,9 @@ model Ward {
   leaders             Leader[]
   institutionRequests InstitutionRequest[]
 
+  @@unique([tenantId, wardNumber])
+  @@unique([tenantId, name])
+  @@index([tenantId])
   @@index([status])
   @@index([isDeleted])
   @@index([zone])
@@ -408,8 +655,8 @@ model WardArea {
   maleCount   Int          @default(0)
   femaleCount Int          @default(0)
   pincode     String?
-  landmark    String?
-  description String?
+  landmark    String?                                      
+  description String?                                       
   latitude    Float?
   longitude   Float?
   isActive    Boolean      @default(true)
@@ -459,6 +706,7 @@ model WardCouncillor {
 
 model Institution {
   id              String              @id @default(cuid())
+  tenantId        String
   name            String
   category        InstitutionCategory
   subcategory     String?
@@ -479,9 +727,11 @@ model Institution {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ward      Ward       @relation(fields: [wardId], references: [id])
   incharges Incharge[]
 
+  @@index([tenantId])
   @@index([wardId])
   @@index([category])
   @@index([status])
@@ -513,6 +763,7 @@ model Incharge {
 
 model InstitutionRequest {
   id              String              @id @default(cuid())
+  tenantId        String
   name            String
   category        InstitutionCategory
   subcategory     String?
@@ -552,8 +803,10 @@ model InstitutionRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ward Ward @relation(fields: [wardId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward   Ward   @relation(fields: [wardId], references: [id])
 
+  @@index([tenantId])
   @@index([status])
   @@index([wardId])
   @@index([createdAt])
@@ -566,6 +819,7 @@ model InstitutionRequest {
 
 model CommunityGroup {
   id              String             @id @default(cuid())
+  tenantId        String
   name            String
   type            CommunityGroupType
   wardId          String
@@ -588,9 +842,11 @@ model CommunityGroup {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ward     Ward      @relation(fields: [wardId], references: [id])
   wardArea WardArea? @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
 
+  @@index([tenantId])
   @@index([wardId])
   @@index([wardAreaId])
   @@index([isDeleted])
@@ -604,6 +860,7 @@ model CommunityGroup {
 
 model Demographics {
   id         String  @id @default(cuid())
+  tenantId   String
   wardId     String
   wardAreaId String? // null = ward-level, set = area-level
 
@@ -664,10 +921,12 @@ model Demographics {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ward     Ward      @relation(fields: [wardId], references: [id], onDelete: Cascade)
   wardArea WardArea? @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
 
-  @@unique([wardId, wardAreaId])
+  @@unique([tenantId, wardId, wardAreaId])
+  @@index([tenantId])
   @@index([wardId])
   @@index([wardAreaId])
   @@map("demographics")
@@ -678,7 +937,8 @@ model Demographics {
 // ════════════════════════════════════════════════════════
 model Grievance {
   id           String            @id @default(cuid())
-  ticketNumber String            @unique
+  tenantId     String
+  ticketNumber String
   subject      String            @default("")
   category     String
   subcategory  String?
@@ -714,6 +974,7 @@ model Grievance {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ward       Ward  @relation(fields: [wardId], references: [id])
   createdBy  User? @relation("GrievanceCreatedBy", fields: [createdById], references: [id])
   assignedTo User? @relation("GrievanceAssignedTo", fields: [assignedToId], references: [id])
@@ -724,6 +985,8 @@ model Grievance {
   departmentId String?
   department   Department?           @relation(fields: [departmentId], references: [id])
 
+  @@unique([tenantId, ticketNumber])
+  @@index([tenantId])
   @@index([wardId])
   @@index([status])
   @@index([isDeleted])
@@ -773,7 +1036,8 @@ model GrievanceAttachment {
 
 model Project {
   id              String  @id @default(cuid())
-  projectCode     String  @unique
+  tenantId        String
+  projectCode     String
   name            String
   category        String
   department      String
@@ -804,12 +1068,15 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ward        Ward                @relation(fields: [wardId], references: [id])
   createdBy   User?               @relation("ProjectCreatedBy", fields: [createdById], references: [id])
   milestones  ProjectMilestone[]
   updates     ProjectUpdate[]
   attachments ProjectAttachment[]
 
+  @@unique([tenantId, projectCode])
+  @@index([tenantId])
   @@index([wardId])
   @@index([status])
   @@index([isDeleted])
@@ -913,8 +1180,9 @@ model ProjectAttachment {
 
 model Department {
   id          String  @id @default(cuid())
-  name        String  @unique
-  code        String  @unique
+  tenantId    String
+  name        String
+  code        String
   description String?
   headName    String?
   headPhone   String?
@@ -924,8 +1192,12 @@ model Department {
 
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   grievances Grievance[]
 
+  @@unique([tenantId, name])
+  @@unique([tenantId, code])
+  @@index([tenantId])
   @@index([isDeleted])
   @@map("departments")
 }
@@ -955,6 +1227,7 @@ enum LeaderCategory {
 
 model Leader {
   id           String         @id @default(cuid())
+  tenantId     String
   name         String
   category     LeaderCategory
   designation  String?
@@ -963,7 +1236,7 @@ model Leader {
 
   // Personal
   dateOfBirth DateTime
-  adharNumber String? @unique
+  adharNumber String?
   gender      String?
   photoUrl    String?
   address     String?
@@ -992,9 +1265,12 @@ model Leader {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ward      Ward?            @relation(fields: [wardId], references: [id])
   greetings LeaderGreeting[]
 
+  @@unique([tenantId, adharNumber])
+  @@index([tenantId])
   @@index([dateOfBirth])
   @@index([category])
   @@index([wardId])
@@ -1030,6 +1306,7 @@ model LeaderGreeting {
 
 model Fund {
   id             String   @id @default(cuid())
+  tenantId       String
   fundType       FundType
   financialYear  String
   totalAllocated Float    @default(0)
@@ -1037,12 +1314,14 @@ model Fund {
   totalUtilized  Float    @default(0)
   isDeleted      Boolean  @default(false)
 
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   transactions FundTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([fundType, financialYear])
+  @@unique([tenantId, fundType, financialYear])
+  @@index([tenantId])
   @@index([isDeleted])
   @@map("funds")
 }
@@ -1071,6 +1350,7 @@ model FundTransaction {
 
 model Task {
   id           String       @id @default(cuid())
+  tenantId     String
   title        String
   description  String?
   assignedToId String
@@ -1085,9 +1365,11 @@ model Task {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  assignedTo User @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
-  createdBy  User @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedTo User   @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User   @relation("TaskCreatedBy", fields: [createdById], references: [id])
 
+  @@index([tenantId])
   @@index([assignedToId])
   @@index([status])
   @@index([dueDate])
@@ -1100,6 +1382,7 @@ model Task {
 
 model Notification {
   id             String              @id @default(cuid())
+  tenantId       String
   userId         String?
   channel        NotificationChannel
   title          String
@@ -1113,8 +1396,10 @@ model Notification {
 
   createdAt DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
 
+  @@index([tenantId])
   @@index([userId])
   @@index([status])
   @@map("notifications")
@@ -1122,7 +1407,8 @@ model Notification {
 
 model NotificationTemplate {
   id        String              @id @default(cuid())
-  name      String              @unique
+  tenantId  String
+  name      String
   channel   NotificationChannel
   subject   String?
   body      String
@@ -1132,6 +1418,8 @@ model NotificationTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([tenantId, name])
+  @@index([tenantId])
   @@map("notification_templates")
 }
 
@@ -1141,6 +1429,7 @@ model NotificationTemplate {
 
 model AuditLog {
   id          String      @id @default(cuid())
+  tenantId    String?
   userId      String?
   action      AuditAction
   module      String
@@ -1152,8 +1441,10 @@ model AuditLog {
   userAgent   String?
   createdAt   DateTime    @default(now())
 
-  user User? @relation(fields: [userId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id])
 
+  @@index([tenantId])
   @@index([userId])
   @@index([action])
   @@index([module])
@@ -1176,6 +1467,25 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+model TenantSetting {
+  id          String  @id @default(cuid())
+  tenantId    String
+  key         String
+  value       String
+  type        String  @default("string")
+  group       String  @default("general")
+  description String?
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([group])
+  @@map("tenant_settings")
 }
 
 // ════════════════════════════════════════════════════════
@@ -1203,6 +1513,7 @@ model Backup {
 
 model DataActivity {
   id          String   @id @default(cuid())
+  tenantId    String
   userId      String?
   userName    String
   action      String // "EXPORT" or "IMPORT"
@@ -1212,6 +1523,7 @@ model DataActivity {
   details     String? // Optional extra info
   createdAt   DateTime @default(now())
 
+  @@index([tenantId])
   @@index([action])
   @@index([module])
   @@index([createdAt])
@@ -1221,6 +1533,7 @@ model DataActivity {
 
 model RecycleBinEntry {
   id           String    @id @default(cuid())
+  tenantId     String
   module       String
   entityType   String
   recordId     String
@@ -1231,6 +1544,7 @@ model RecycleBinEntry {
   restoredById String?
   restoredAt   DateTime?
 
+  @@index([tenantId])
   @@index([module])
   @@index([entityType])
   @@index([recordId])
@@ -1252,6 +1566,7 @@ enum MeetingType {
 
 model Meeting {
   id          String        @id @default(cuid())
+  tenantId    String
   title       String
   description String?
   date        DateTime
@@ -1269,6 +1584,9 @@ model Meeting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
   @@index([date])
   @@index([status])
   @@index([isDeleted])
@@ -1289,6 +1607,7 @@ enum CompetitorAnalysisStatus {
 
 model Competitor {
   id              String   @id @default(cuid())
+  tenantId        String
   candidateName   String
   partyName       String
   partyLogoUrl    String?
@@ -1310,9 +1629,11 @@ model Competitor {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  tenant    Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   metrics   CompetitorMetricEntry[]
   analyses  CompetitorAnalysis[]
 
+  @@index([tenantId])
   @@index([isDeleted])
   @@index([isActive])
   @@index([createdAt])
@@ -1345,6 +1666,7 @@ model CompetitorMetricEntry {
 
 model OwnMetricEntry {
   id          String  @id @default(cuid())
+  tenantId    String
   category    String  // Same categories as competitor
   metricKey   String  // e.g. "rallies_held", "social_media_followers"
   metricLabel String  // Human-readable label
@@ -1358,7 +1680,10 @@ model OwnMetricEntry {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([metricKey, period])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, metricKey, period])
+  @@index([tenantId])
   @@index([category])
   @@index([period])
   @@index([isAuto])

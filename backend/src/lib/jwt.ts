@@ -6,11 +6,13 @@ export interface AccessTokenPayload {
   email: string;
   role: string;
   name: string;
+  accountType?: "admin" | "platform";
 }
 
 export interface RefreshTokenPayload {
   userId: string;
   tokenId: string;
+  accountType?: "admin" | "platform";
 }
 
 /**

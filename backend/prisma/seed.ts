@@ -328,6 +328,353 @@ async function main() {
   });
   console.log("✅ Organization created");
 
+  const tenant = await prisma.tenant.upsert({
+    where: { id: "tenant-default" },
+    update: {
+      name: "MP/MLA Constituency Platform",
+      constituencyName: "Chandni Chowk",
+      state: "Delhi",
+      district: "Central Delhi",
+      representativeName: "Shri Example Singh",
+      representativeTitle: "Member of Parliament",
+      maxUsers: 100,
+      storageQuotaMB: 51200,
+    },
+    create: {
+      id: "tenant-default",
+      name: "MP/MLA Constituency Platform",
+      constituencyName: "Chandni Chowk",
+      state: "Delhi",
+      district: "Central Delhi",
+      representativeName: "Shri Example Singh",
+      representativeTitle: "Member of Parliament",
+      maxUsers: 100,
+      storageQuotaMB: 51200,
+    },
+  });
+  console.log("✅ Default tenant created");
+
+  // ─── 1b. SaaS Plans, Modules & Tenant Access ─────────
+  const subscriptionPlans = [
+    {
+      name: "Starter",
+      code: "STARTER",
+      description: "Basic constituency operations for small offices.",
+      priceMonthly: 2999,
+      priceYearly: 29990,
+      maxUsers: 5,
+      maxWards: 10,
+      storageMB: 1024,
+      features: [
+        "Dashboard",
+        "Wards",
+        "Institutions",
+        "Grievances",
+        "Projects",
+        "Reports",
+      ],
+      sortOrder: 1,
+    },
+    {
+      name: "Professional",
+      code: "PROFESSIONAL",
+      description: "Full MP/MLA office workflow for growing teams.",
+      priceMonthly: 7999,
+      priceYearly: 79990,
+      maxUsers: 25,
+      maxWards: 50,
+      storageMB: 10240,
+      features: [
+        "Everything in Starter",
+        "Leaders",
+        "Meetings",
+        "Notifications",
+        "Data Import",
+        "Audit Logs",
+      ],
+      sortOrder: 2,
+    },
+    {
+      name: "Enterprise",
+      code: "ENTERPRISE",
+      description: "Complete platform access for MP/MLA offices.",
+      priceMonthly: 19999,
+      priceYearly: 199990,
+      maxUsers: 100,
+      maxWards: 250,
+      storageMB: 51200,
+      features: [
+        "Everything in Professional",
+        "Competitor Analysis",
+        "Backups",
+        "Branding",
+        "Priority Support",
+      ],
+      sortOrder: 3,
+    },
+  ];
+
+  let enterprisePlanId = "";
+  for (const plan of subscriptionPlans) {
+    const savedPlan = await prisma.subscriptionPlan.upsert({
+      where: { code: plan.code },
+      update: {
+        name: plan.name,
+        description: plan.description,
+        priceMonthly: plan.priceMonthly,
+        priceYearly: plan.priceYearly,
+        maxUsers: plan.maxUsers,
+        maxWards: plan.maxWards,
+        storageMB: plan.storageMB,
+        features: plan.features,
+        isActive: true,
+        sortOrder: plan.sortOrder,
+      },
+      create: {
+        ...plan,
+        isActive: true,
+      },
+    });
+
+    if (savedPlan.code === "ENTERPRISE") {
+      enterprisePlanId = savedPlan.id;
+    }
+  }
+  console.log(`✅ ${subscriptionPlans.length} subscription plans seeded`);
+
+  const platformModules = [
+    {
+      code: "dashboard",
+      name: "Dashboard",
+      description: "Overview, metrics, and quick office insights.",
+      category: "core",
+      sortOrder: 1,
+    },
+    {
+      code: "wards",
+      name: "Wards",
+      description: "Ward profiles, areas, councillors, and demographics.",
+      category: "core",
+      sortOrder: 2,
+    },
+    {
+      code: "institutions",
+      name: "Institutions",
+      description: "Schools, hospitals, religious places, NGOs, and offices.",
+      category: "core",
+      sortOrder: 3,
+    },
+    {
+      code: "incharges",
+      name: "Incharges",
+      description: "Institution head and incharge records.",
+      category: "core",
+      sortOrder: 4,
+    },
+    {
+      code: "grievances",
+      name: "Grievances",
+      description: "Complaint registration, tracking, and resolution.",
+      category: "core",
+      sortOrder: 5,
+    },
+    {
+      code: "projects",
+      name: "Projects",
+      description: "Development work, budgets, status, and updates.",
+      category: "core",
+      sortOrder: 6,
+    },
+    {
+      code: "community_groups",
+      name: "Community Groups",
+      description: "RWA, market, youth, senior citizen, and local groups.",
+      category: "engagement",
+      sortOrder: 7,
+    },
+    {
+      code: "demographics",
+      name: "Demographics",
+      description: "Population, households, voters, and social data.",
+      category: "analytics",
+      sortOrder: 8,
+    },
+    {
+      code: "funds",
+      name: "Funds",
+      description: "MPLAD, MLALAD, CSR, and fund utilization tracking.",
+      category: "finance",
+      sortOrder: 9,
+    },
+    {
+      code: "departments",
+      name: "Departments",
+      description: "Government department configuration.",
+      category: "core",
+      sortOrder: 10,
+    },
+    {
+      code: "tasks",
+      name: "Tasks",
+      description: "Office task assignment and follow-up tracking.",
+      category: "core",
+      sortOrder: 11,
+    },
+    {
+      code: "leaders",
+      name: "Leaders",
+      description: "Political, social, community, and stakeholder profiles.",
+      category: "engagement",
+      sortOrder: 12,
+    },
+    {
+      code: "notifications",
+      name: "Notifications",
+      description: "SMS, email, WhatsApp, and in-app communication.",
+      category: "engagement",
+      sortOrder: 13,
+    },
+    {
+      code: "reports",
+      name: "Reports",
+      description: "Reports, exports, and constituency analytics.",
+      category: "analytics",
+      sortOrder: 14,
+    },
+    {
+      code: "meeting",
+      name: "Meetings",
+      description: "Online and offline meeting scheduling.",
+      category: "engagement",
+      sortOrder: 15,
+    },
+    {
+      code: "users",
+      name: "Users",
+      description: "Tenant user and role management.",
+      category: "admin",
+      sortOrder: 16,
+    },
+    {
+      code: "audit_logs",
+      name: "Audit Logs",
+      description: "Security and activity audit trails.",
+      category: "admin",
+      sortOrder: 17,
+    },
+    {
+      code: "backups",
+      name: "Backups",
+      description: "Backup history and restore operations.",
+      category: "admin",
+      sortOrder: 18,
+    },
+    {
+      code: "settings",
+      name: "Settings",
+      description: "System and tenant-level configuration.",
+      category: "admin",
+      sortOrder: 19,
+    },
+    {
+      code: "branding",
+      name: "Branding",
+      description: "Logo, color, and constituency branding settings.",
+      category: "admin",
+      sortOrder: 20,
+    },
+    {
+      code: "data_import",
+      name: "Data Import",
+      description: "Excel and bulk data import workflows.",
+      category: "admin",
+      sortOrder: 21,
+    },
+    {
+      code: "competitors",
+      name: "Competitors",
+      description: "Competitor profiles, metrics, and AI analysis.",
+      category: "analytics",
+      isAddon: true,
+      addonPrice: 4999,
+      sortOrder: 22,
+    },
+  ];
+
+  const savedModules = [];
+  for (const moduleData of platformModules) {
+    const savedModule = await prisma.module.upsert({
+      where: { code: moduleData.code },
+      update: {
+        name: moduleData.name,
+        description: moduleData.description,
+        category: moduleData.category,
+        isAddon: moduleData.isAddon ?? false,
+        addonPrice: moduleData.addonPrice ?? 0,
+        isActive: true,
+        sortOrder: moduleData.sortOrder,
+      },
+      create: {
+        ...moduleData,
+        isAddon: moduleData.isAddon ?? false,
+        addonPrice: moduleData.addonPrice ?? 0,
+        isActive: true,
+      },
+    });
+    savedModules.push(savedModule);
+  }
+  console.log(`✅ ${savedModules.length} modules seeded`);
+
+  const subscriptionStart = new Date();
+  const currentPeriodEnd = new Date(subscriptionStart);
+  currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+
+  await prisma.tenantSubscription.upsert({
+    where: { tenantId: tenant.id },
+    update: {
+      planId: enterprisePlanId,
+      status: "ACTIVE",
+      billingCycle: "YEARLY",
+      currentPeriodStart: subscriptionStart,
+      currentPeriodEnd,
+      trialEndsAt: null,
+      cancelledAt: null,
+      suspendedAt: null,
+      amountDue: 0,
+    },
+    create: {
+      tenantId: tenant.id,
+      planId: enterprisePlanId,
+      status: "ACTIVE",
+      billingCycle: "YEARLY",
+      currentPeriodStart: subscriptionStart,
+      currentPeriodEnd,
+      amountDue: 0,
+    },
+  });
+  console.log("✅ Tenant subscription seeded");
+
+  for (const moduleData of savedModules) {
+    await prisma.tenantModuleAccess.upsert({
+      where: {
+        tenantId_moduleId: {
+          tenantId: tenant.id,
+          moduleId: moduleData.id,
+        },
+      },
+      update: {
+        isEnabled: true,
+        expiresAt: null,
+      },
+      create: {
+        tenantId: tenant.id,
+        moduleId: moduleData.id,
+        isEnabled: true,
+      },
+    });
+  }
+  console.log(`✅ ${savedModules.length} modules enabled for default tenant`);
+
   // ─── 2. Permissions ──────────────────────────────────
   for (const perm of ALL_PERMISSIONS) {
     await prisma.permission.upsert({
@@ -364,9 +711,27 @@ async function main() {
   }
 
   // ─── 4. Users ────────────────────────────────────────
+  const platformPwd = await bcrypt.hash("Platform@123456", 12);
   const adminPwd = await bcrypt.hash("Admin@123456", 12);
   const mlaPwd = await bcrypt.hash("Mla@123456", 12);
   const staffPwd = await bcrypt.hash("Staff@123456", 12);
+
+  const platformAdmin = await prisma.platformUser.upsert({
+    where: { email: "superadmin@gmail.com" },
+    update: {
+      name: "Platform Super Admin",
+      role: "SUPER_ADMIN",
+      isActive: true,
+    },
+    create: {
+      name: "Platform Super Admin",
+      email: "superadmin@gmail.com",
+      password: platformPwd,
+      role: "SUPER_ADMIN",
+      isActive: true,
+    },
+  });
+  console.log(`✅ Platform Admin: ${platformAdmin.email}`);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@constituency.gov.in" },
@@ -375,6 +740,7 @@ async function main() {
       name: "System Administrator",
       email: "admin@constituency.gov.in",
       phone: "9999900001",
+      tenantId: tenant.id,
       password: adminPwd,
       role: "SYSTEM_ADMIN",
       status: "ACTIVE",
@@ -389,6 +755,7 @@ async function main() {
       name: "Shri Example Singh",
       email: "mla@constituency.gov.in",
       phone: "9999900002",
+      tenantId: tenant.id,
       password: mlaPwd,
       role: "MLA_MP",
       status: "ACTIVE",
@@ -404,6 +771,7 @@ async function main() {
       name: "Rajesh Kumar (PA)",
       email: "pa@constituency.gov.in",
       phone: "9999900003",
+      tenantId: tenant.id,
       password: staffPwd,
       role: "OFFICE_STAFF",
       status: "ACTIVE",
@@ -419,6 +787,7 @@ async function main() {
       name: "Priya Sharma (Data Entry)",
       email: "dataentry@constituency.gov.in",
       phone: "9999900004",
+      tenantId: tenant.id,
       password: staffPwd,
       role: "OFFICE_STAFF",
       status: "ACTIVE",
@@ -485,9 +854,9 @@ async function main() {
 
   for (const dept of departments) {
     await prisma.department.upsert({
-      where: { code: dept.code },
+      where: { tenantId_code: { tenantId: tenant.id, code: dept.code } },
       update: {},
-      create: dept,
+      create: { tenantId: tenant.id, ...dept },
     });
   }
   console.log(`✅ ${departments.length} departments created`);
@@ -733,9 +1102,15 @@ async function main() {
     const totalFemale = wd.areas.reduce((s, a) => s + a.femaleCount, 0);
 
     const ward = await prisma.ward.upsert({
-      where: { wardNumber: wd.wardNumber },
+      where: {
+        tenantId_wardNumber: {
+          tenantId: tenant.id,
+          wardNumber: wd.wardNumber,
+        },
+      },
       update: {},
       create: {
+        tenantId: tenant.id,
         wardNumber: wd.wardNumber,
         name: wd.name,
         zone: wd.zone,
@@ -842,12 +1217,14 @@ async function main() {
   ];
 
   for (const inst of institutions) {
-    await prisma.institution.create({ data: inst });
+    await prisma.institution.create({ data: { tenantId: tenant.id, ...inst } });
   }
   console.log(`✅ ${institutions.length} institutions created`);
 
   // ─── 9. Incharges ────────────────────────────────────
-  const allInstitutions = await prisma.institution.findMany();
+  const allInstitutions = await prisma.institution.findMany({
+    where: { tenantId: tenant.id },
+  });
   for (const inst of allInstitutions.slice(0, 4)) {
     await prisma.incharge.create({
       data: {
@@ -927,7 +1304,9 @@ async function main() {
   ];
 
   for (const g of grievances) {
-    const created = await prisma.grievance.create({ data: g });
+    const created = await prisma.grievance.create({
+      data: { tenantId: tenant.id, ...g },
+    });
     await prisma.grievanceTimeline.create({
       data: {
         grievanceId: created.id,
@@ -1012,9 +1391,14 @@ async function main() {
 
   for (const p of projects) {
     await prisma.project.upsert({
-      where: { projectCode: p.projectCode },
+      where: {
+        tenantId_projectCode: {
+          tenantId: tenant.id,
+          projectCode: p.projectCode,
+        },
+      },
       update: {},
-      create: p,
+      create: { tenantId: tenant.id, ...p },
     });
   }
 
@@ -1081,6 +1465,7 @@ async function main() {
 
     await prisma.demographics.create({
       data: {
+        tenantId: tenant.id,
         wardId: ward.id,
         totalPopulation: totalPop,
         maleCount: totalMale,
@@ -1233,6 +1618,7 @@ async function main() {
     }
     await prisma.communityGroup.create({
       data: {
+        tenantId: tenant.id,
         name: cg.name,
         type: cg.type,
         wardId: wards[cg.wardIdx].id,
@@ -1542,6 +1928,7 @@ async function main() {
   for (const ld of leadersData) {
     const leader = await prisma.leader.create({
       data: {
+        tenantId: tenant.id,
         name: ld.name,
         category: ld.category,
         designation: ld.designation || null,
@@ -1801,9 +2188,9 @@ async function main() {
 
   for (const t of templates) {
     await prisma.notificationTemplate.upsert({
-      where: { name: t.name },
+      where: { tenantId_name: { tenantId: tenant.id, name: t.name } },
       update: {},
-      create: t,
+      create: { tenantId: tenant.id, ...t },
     });
   }
   console.log(`✅ ${templates.length} notification templates created`);
@@ -1813,6 +2200,7 @@ async function main() {
   console.log("╔══════════════════════════════════════════════════════════╗");
   console.log("║  Login Credentials                                      ║");
   console.log("╠══════════════════════════════════════════════════════════╣");
+  console.log("║  Platform: superadmin@admin.mpmla.in / Platform@123456  ║");
   console.log("║  Admin:  admin@constituency.gov.in    / Admin@123456    ║");
   console.log("║  MLA:    mla@constituency.gov.in      / Mla@123456     ║");
   console.log("║  PA:     pa@constituency.gov.in       / Staff@123456   ║");

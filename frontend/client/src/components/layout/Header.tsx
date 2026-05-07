@@ -19,10 +19,10 @@ export function Header({ title }: { title: string }) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-30 px-6 flex items-center justify-between transition-all duration-300">
+    <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-md  top-0 z-30 px-6 flex items-center justify-between transition-all duration-300">
       <div className="flex flex-col">
         <h2 className="text-xl font-heading font-semibold text-foreground tracking-tight">
-          {title}
+          {title}sticky
         </h2>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Home</span>
