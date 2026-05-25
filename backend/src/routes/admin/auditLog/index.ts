@@ -4,6 +4,7 @@ import { requirePermission } from "../../../middleware/permission.js";
 import { parsePagination, buildPagination } from "../../../utils/helpers.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 const router = Router();
 
@@ -15,11 +16,12 @@ router.get(
   "/",
   requirePermission("audit_logs", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const { page, limit, skip } = parsePagination(req.query);
     const { userId, action, module, search, dateFrom, dateTo, recordId } =
       req.query as Record<string, string>;
 
-    const where: any = {};
+    const where: any = { tenantId };
     if (userId) where.userId = userId;
     if (action && action !== "all") where.action = action;
     if (module && module !== "all") where.module = module;
@@ -69,8 +71,9 @@ router.get(
   "/:id",
   requirePermission("audit_logs", "read"),
   catchAsync(async (req, res) => {
-    const log = await prisma.auditLog.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const log = await prisma.auditLog.findFirst({
+      where: { id: req.params.id as string, tenantId },
       include: {
         user: { select: { id: true, name: true, email: true, role: true } },
       },
@@ -88,6 +91,7 @@ router.get(
   "/meta/stats",
   requirePermission("audit_logs", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const now = new Date();
     const todayStart = new Date(
       now.getFullYear(),
@@ -105,28 +109,32 @@ router.get(
       byUser,
       recentUsers,
     ] = await Promise.all([
-      prisma.auditLog.count(),
-      prisma.auditLog.count({ where: { createdAt: { gte: todayStart } } }),
-      prisma.auditLog.count({ where: { createdAt: { gte: weekAgo } } }),
+      prisma.auditLog.count({ where: { tenantId } }),
+      prisma.auditLog.count({ where: { tenantId, createdAt: { gte: todayStart } } }),
+      prisma.auditLog.count({ where: { tenantId, createdAt: { gte: weekAgo } } }),
       prisma.auditLog.groupBy({
         by: ["action"],
         _count: true,
+        where: { tenantId },
         orderBy: { _count: { action: "desc" } },
       }),
       prisma.auditLog.groupBy({
         by: ["module"],
         _count: true,
+        where: { tenantId },
         orderBy: { _count: { module: "desc" } },
         take: 10,
       }),
       prisma.auditLog.groupBy({
         by: ["userId"],
         _count: true,
+        where: { tenantId },
         orderBy: { _count: { userId: "desc" } },
         take: 10,
       }),
       prisma.auditLog.findMany({
         select: { userId: true, user: { select: { name: true } } },
+        where: { tenantId },
         distinct: ["userId"],
         orderBy: { createdAt: "desc" },
         take: 20,
@@ -138,18 +146,20 @@ router.get(
       .map((u) => u.userId)
       .filter((id): id is string => id !== null && id !== undefined);
     const users = await prisma.user.findMany({
-      where: { id: { in: userIds } },
+      where: { tenantId, id: { in: userIds } },
       select: { id: true, name: true, email: true },
     });
     const userMap = new Map(users.map((u) => [u.id, u]));
 
     // All distinct modules and actions for filters
     const allModules = await prisma.auditLog.findMany({
+      where: { tenantId },
       select: { module: true },
       distinct: ["module"],
       orderBy: { module: "asc" },
     });
     const allActions = await prisma.auditLog.findMany({
+      where: { tenantId },
       select: { action: true },
       distinct: ["action"],
       orderBy: { action: "asc" },
@@ -187,6 +197,7 @@ router.get(
   "/meta/export",
   requirePermission("audit_logs", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const {
       userId,
       action,
@@ -194,7 +205,7 @@ router.get(
       dateFrom,
       dateTo,
     } = req.query as Record<string, string>;
-    const where: any = {};
+    const where: any = { tenantId };
     if (userId) where.userId = userId;
     if (action && action !== "all") where.action = action;
     if (mod && mod !== "all") where.module = mod;

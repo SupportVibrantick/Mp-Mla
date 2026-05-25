@@ -480,8 +480,8 @@ model Payment {
 
 model User {
   id          String     @id @default(cuid())
-  email       String     @unique
-  phone       String?    @unique
+  email       String
+  phone       String?
   tenantId    String
   password    String
   name        String
@@ -523,8 +523,11 @@ model User {
 
   @@index([tenantId])
   @@index([email])
+  @@index([phone])
   @@index([role])
   @@index([status])
+  @@unique([tenantId, email])
+  @@unique([tenantId, phone])
   @@map("users")
 }
 

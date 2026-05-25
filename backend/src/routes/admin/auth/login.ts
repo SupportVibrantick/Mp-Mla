@@ -10,6 +10,14 @@ import { ApiError } from "../../../utils/ApiError.js";
 import { getSetting, getSettingNumber } from "../../../lib/settings.js";
 import { isPasswordExpired } from "../../../lib/authUtils.js";
 
+function getTenantIdFromLoginRequest(req: Request): string | null {
+  const value =
+    (req.body?.tenantId as string | undefined) ||
+    (req.headers["x-tenant-id"] as string | undefined) ;
+
+  return value || null;
+}
+
 export async function login(
   req: Request,
   res: Response,
@@ -18,6 +26,7 @@ export async function login(
   try {
     const { email, password } = req.body;
     const meta = getRequestMeta(req);
+    const tenantId = getTenantIdFromLoginRequest(req);
 
     // 0. Check IP Restrictions
     const allowedIps = await getSetting("allowed_ip_ranges");
@@ -34,8 +43,27 @@ export async function login(
       }
     }
 
-    // 1. Find user
-    const user = await prisma.user.findUnique({ where: { email } });
+    // 1. Find user within a tenant when provided; otherwise allow legacy
+    // login only when the email maps to exactly one tenant user.
+    const matches = tenantId
+      ? []
+      : await prisma.user.findMany({
+          where: { email },
+          take: 2,
+          orderBy: { createdAt: "asc" },
+        });
+
+    if (!tenantId && matches.length > 1) {
+      throw ApiError.badRequest(
+        "Tenant ID is required for this email. Provide it in `tenantId` or the `x-tenant-id` header.",
+      );
+    }
+
+    const user = tenantId
+      ? await prisma.user.findFirst({
+          where: { tenantId, email },
+        })
+      : (matches[0] ?? null);
 
     if (!user) {
       throw ApiError.unauthorized("Invalid email or password.");
@@ -127,6 +155,8 @@ export async function login(
         email: user.email,
         role: user.role,
         name: user.name,
+        accountType: "admin",
+        tenantId: user.tenantId,
       },
       expiresIn,
     );
@@ -145,6 +175,8 @@ export async function login(
     const refreshToken = generateRefreshToken({
       userId: user.id,
       tokenId: refreshRecord.id,
+      accountType: "admin",
+      tenantId: user.tenantId,
     });
 
     await prisma.refreshToken.update({

@@ -7,12 +7,14 @@ export interface AccessTokenPayload {
   role: string;
   name: string;
   accountType?: "admin" | "platform";
+  tenantId?: string;
 }
 
 export interface RefreshTokenPayload {
   userId: string;
   tokenId: string;
   accountType?: "admin" | "platform";
+  tenantId?: string;
 }
 
 /**

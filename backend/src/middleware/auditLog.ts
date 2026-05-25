@@ -5,6 +5,7 @@ import { AuditAction } from "@prisma/client";
 import { Request } from "express";
 
 interface AuditLogInput {
+  tenantId?: string;
   userId?: string | null;
 
   action: AuditAction;
@@ -36,6 +37,7 @@ export async function createAuditLog(input: AuditLogInput): Promise<void> {
     prisma.auditLog
       .create({
         data: {
+          tenantId: input.tenantId ?? undefined,
           userId: input.userId ?? undefined,
           action: input.action,
           module: input.module,

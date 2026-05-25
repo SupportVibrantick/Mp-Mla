@@ -10,6 +10,7 @@ import catchAsync from "../../../utils/catchAsync.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { env } from "@/lib/env.js";
 import { validatePasswordComplexity } from "../../../lib/authUtils.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * POST /api/admin/users
@@ -18,12 +19,15 @@ import { validatePasswordComplexity } from "../../../lib/authUtils.js";
  */
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const { name, email, password, phone, role } = req.body;
 
   // Check duplicate email
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findFirst({
+    where: { tenantId, email },
+  });
   if (existing) {
-    throw ApiError.conflict("User with this email already exists.");
+    throw ApiError.conflict("User with this email already exists in this organization.");
   }
 
   if (!req.user) {
@@ -32,9 +36,13 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
 
   // Check duplicate phone if provided
   if (phone) {
-    const phoneExists = await prisma.user.findUnique({ where: { phone } });
+    const phoneExists = await prisma.user.findFirst({
+      where: { tenantId, phone },
+    });
     if (phoneExists) {
-      throw ApiError.conflict("User with this phone number already exists.");
+      throw ApiError.conflict(
+        "User with this phone number already exists in this organization.",
+      );
     }
   }
 
@@ -50,6 +58,7 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       phone: phone || null,
+      tenantId,
       role,
       status: "ACTIVE",
       forcePasswordChange: true, // Must change on first login
@@ -70,6 +79,7 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
   //  Audit log (non-blocking)
   await createAuditLog({
     userId: req.user!.id,
+    tenantId,
     action: "CREATE",
     module: "users",
     recordId: user.id,

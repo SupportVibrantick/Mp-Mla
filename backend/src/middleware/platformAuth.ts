@@ -9,7 +9,7 @@ export type PlatformAccessTokenPayload = AccessTokenPayload & {
 };
 
 declare global {
-  namespace Express {
+  namespace Express { 
     interface Request {
       platformUser?: PlatformAccessTokenPayload;
     }

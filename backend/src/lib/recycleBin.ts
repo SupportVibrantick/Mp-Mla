@@ -16,6 +16,7 @@ export type RecycleEntityType =
   | "ward_area";
 
 interface ArchiveInput {
+  tenantId?: string;
   module: string;
   entityType: RecycleEntityType;
   recordId: string;
@@ -27,6 +28,7 @@ interface ArchiveInput {
 export async function archiveToRecycleBin(input: ArchiveInput) {
   return (prisma as any).recycleBinEntry.create({
     data: {
+      tenantId: input.tenantId,
       module: input.module,
       entityType: input.entityType,
       recordId: input.recordId,
@@ -562,5 +564,4 @@ export async function permanentlyDeleteRecycledRecord(entry: {
       break;
   }
 }
-
 

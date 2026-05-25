@@ -168,9 +168,21 @@ const ALL_PERMISSIONS = [
   { module: "meeting", action: "update", description: "Edit meeting details" },
   { module: "meeting", action: "delete", description: "Delete a meeting" },
 
-  { module: "competitors", action: "create", description: "Add competitor profile & metrics" },
-  { module: "competitors", action: "read", description: "View competitor analysis" },
-  { module: "competitors", action: "update", description: "Edit competitor data" },
+  {
+    module: "competitors",
+    action: "create",
+    description: "Add competitor profile & metrics",
+  },
+  {
+    module: "competitors",
+    action: "read",
+    description: "View competitor analysis",
+  },
+  {
+    module: "competitors",
+    action: "update",
+    description: "Edit competitor data",
+  },
   { module: "competitors", action: "delete", description: "Delete competitor" },
 ];
 
@@ -311,6 +323,76 @@ function dobInDays(birthYear: number, days: number): Date {
 
 async function main() {
   console.log("🌱 Starting seed...\n");
+
+  console.log("🧹 Cleaning up existing database records...");
+
+  // 1. AI & Competitor Metrics / Analysis (Child models first)
+  await prisma.competitorChat.deleteMany();
+  await prisma.competitorAnalysis.deleteMany();
+  await prisma.competitorMetricEntry.deleteMany();
+  await prisma.competitor.deleteMany();
+  await prisma.ownMetricEntry.deleteMany();
+
+  // 2. Meetings, Bin, Logs & Activities
+  await prisma.meeting.deleteMany();
+  await prisma.recycleBinEntry.deleteMany();
+  await prisma.dataActivity.deleteMany();
+  await prisma.backup.deleteMany();
+  await prisma.tenantSetting.deleteMany();
+  await prisma.systemSetting.deleteMany();
+  await prisma.auditLog.deleteMany();
+
+  // 3. Notifications & Tasks
+  await prisma.notificationTemplate.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.task.deleteMany();
+
+  // 4. Funds & Transactions
+  await prisma.fundTransaction.deleteMany();
+  await prisma.fund.deleteMany();
+
+  // 5. Leaders & Greetings
+  await prisma.leaderGreeting.deleteMany();
+  await prisma.leader.deleteMany();
+
+  // 6. Departments & Project Child Models
+  await prisma.projectAttachment.deleteMany();
+  await prisma.projectUpdate.deleteMany();
+  await prisma.projectMilestone.deleteMany();
+  await prisma.project.deleteMany();
+
+  // 7. Grievances & Wards
+  await prisma.grievanceAttachment.deleteMany();
+  await prisma.grievanceTimeline.deleteMany();
+  await prisma.grievance.deleteMany();
+  await prisma.department.deleteMany(); // Deleted after Grievance which references it
+  await prisma.demographics.deleteMany();
+  await prisma.communityGroup.deleteMany();
+  await prisma.institutionRequest.deleteMany();
+  await prisma.incharge.deleteMany();
+  await prisma.institution.deleteMany();
+  await prisma.wardCouncillor.deleteMany();
+  await prisma.wardArea.deleteMany();
+  await prisma.ward.deleteMany();
+
+  // 8. Permissions & Security
+  await prisma.userPermission.deleteMany();
+  await prisma.roleDefaultPermission.deleteMany();
+  await prisma.permission.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.user.deleteMany();
+
+  // 9. Subscriptions & Tenants (Core parent models)
+  await prisma.payment.deleteMany();
+  await prisma.tenantModuleAccess.deleteMany();
+  await prisma.module.deleteMany();
+  await prisma.tenantSubscription.deleteMany();
+  await prisma.subscriptionPlan.deleteMany();
+  await prisma.platformUser.deleteMany();
+  await prisma.tenant.deleteMany();
+  await prisma.organization.deleteMany();
+
+  console.log("✨ Database cleanup complete!\n");
 
   // ─── 1. Organization ─────────────────────────────────
   await prisma.organization.upsert({
@@ -717,15 +799,16 @@ async function main() {
   const staffPwd = await bcrypt.hash("Staff@123456", 12);
 
   const platformAdmin = await prisma.platformUser.upsert({
-    where: { email: "superadmin@gmail.com" },
+    where: { email: "superadmin@admin.mpmla.in" },
     update: {
       name: "Platform Super Admin",
+      password: platformPwd,
       role: "SUPER_ADMIN",
       isActive: true,
     },
     create: {
       name: "Platform Super Admin",
-      email: "superadmin@gmail.com",
+      email: "superadmin@admin.mpmla.in",
       password: platformPwd,
       role: "SUPER_ADMIN",
       isActive: true,
@@ -733,10 +816,31 @@ async function main() {
   });
   console.log(`✅ Platform Admin: ${platformAdmin.email}`);
 
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@constituency.gov.in" },
-    update: {},
-    create: {
+  async function upsertTenantUserByEmail(
+    email: string,
+    createData: Parameters<typeof prisma.user.create>[0]["data"],
+    updateData: Parameters<typeof prisma.user.update>[0]["data"],
+  ) {
+    const existingUser = await prisma.user.findFirst({
+      where: { tenantId: tenant.id, email },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      return prisma.user.update({
+        where: { id: existingUser.id },
+        data: updateData,
+      });
+    }
+
+    return prisma.user.create({
+      data: createData,
+    });
+  }
+
+  const admin = await upsertTenantUserByEmail(
+    "admin@constituency.gov.in",
+    {
       name: "System Administrator",
       email: "admin@constituency.gov.in",
       phone: "9999900001",
@@ -745,13 +849,18 @@ async function main() {
       role: "SYSTEM_ADMIN",
       status: "ACTIVE",
     },
-  });
+    {
+      tenantId: tenant.id,
+      password: adminPwd,
+      role: "SYSTEM_ADMIN",
+      status: "ACTIVE",
+    },
+  );
   console.log(`✅ Admin: ${admin.email}`);
 
-  const mla = await prisma.user.upsert({
-    where: { email: "mla@constituency.gov.in" },
-    update: {},
-    create: {
+  const mla = await upsertTenantUserByEmail(
+    "mla@constituency.gov.in",
+    {
       name: "Shri Example Singh",
       email: "mla@constituency.gov.in",
       phone: "9999900002",
@@ -761,13 +870,13 @@ async function main() {
       status: "ACTIVE",
       createdById: admin.id,
     },
-  });
+    {},
+  );
   console.log(`✅ MLA: ${mla.email}`);
 
-  const staff1 = await prisma.user.upsert({
-    where: { email: "pa@constituency.gov.in" },
-    update: {},
-    create: {
+  const staff1 = await upsertTenantUserByEmail(
+    "pa@constituency.gov.in",
+    {
       name: "Rajesh Kumar (PA)",
       email: "pa@constituency.gov.in",
       phone: "9999900003",
@@ -777,13 +886,13 @@ async function main() {
       status: "ACTIVE",
       createdById: admin.id,
     },
-  });
+    {},
+  );
   console.log(`✅ Staff PA: ${staff1.email}`);
 
-  const staff2 = await prisma.user.upsert({
-    where: { email: "dataentry@constituency.gov.in" },
-    update: {},
-    create: {
+  const staff2 = await upsertTenantUserByEmail(
+    "dataentry@constituency.gov.in",
+    {
       name: "Priya Sharma (Data Entry)",
       email: "dataentry@constituency.gov.in",
       phone: "9999900004",
@@ -793,7 +902,8 @@ async function main() {
       status: "ACTIVE",
       createdById: admin.id,
     },
-  });
+    {},
+  );
   console.log(`✅ Staff DE: ${staff2.email}`);
 
   // ─── 5. Per-User Permission Overrides ────────────────

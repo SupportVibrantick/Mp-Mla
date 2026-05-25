@@ -46,6 +46,21 @@ export async function refresh(
       throw ApiError.forbidden("Account is deactivated.");
     }
 
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: stored.user.tenantId },
+      select: { status: true },
+    });
+
+    if (!tenant) {
+      throw ApiError.forbidden("Tenant not found.");
+    }
+
+    if (tenant.status !== "ACTIVE") {
+      throw ApiError.forbidden(
+        `Your organization account is ${tenant.status.toLowerCase()}. Contact support.`,
+      );
+    }
+
     // 3. Rotate: revoke old token
     await prisma.refreshToken.update({
       where: { id: stored.id },
@@ -58,6 +73,8 @@ export async function refresh(
       email: stored.user.email,
       role: stored.user.role,
       name: stored.user.name,
+      accountType: "admin",
+      tenantId: stored.user.tenantId,
     });
 
     const newRefreshRecord = await prisma.refreshToken.create({
@@ -73,6 +90,8 @@ export async function refresh(
     const newRefreshToken = generateRefreshToken({
       userId: stored.user.id,
       tokenId: newRefreshRecord.id,
+      accountType: "admin",
+      tenantId: stored.user.tenantId,
     });
 
     await prisma.refreshToken.update({

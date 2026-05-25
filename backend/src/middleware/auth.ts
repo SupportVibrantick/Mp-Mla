@@ -10,6 +10,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: AccessTokenPayload;
+      tenantId?: string;
     }
   }
 }
@@ -31,6 +32,11 @@ export function authenticate(
 
     const token = authHeader.split(" ")[1];
     const decoded = verifyAccessToken(token);
+
+    if (decoded.accountType && decoded.accountType !== "admin") {
+      throw ApiError.unauthorized("Invalid admin token");
+    }
+
     req.user = decoded;
 
     next();
@@ -76,6 +82,12 @@ export async function requireActiveUser(
       select: {
         status: true,
         lockedUntil: true,
+        tenantId: true,
+        tenant: {
+          select: {
+            status: true,
+          },
+        },
       },
     });
 
@@ -86,6 +98,18 @@ export async function requireActiveUser(
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       throw ApiError.forbidden("Account locked");
     }
+
+    if (!req.user.tenantId) {
+      req.user.tenantId = user.tenantId;
+    }
+
+    if (user.tenant.status !== "ACTIVE") {
+      throw ApiError.forbidden(
+        `Your organization account is ${user.tenant.status.toLowerCase()}. Contact support.`,
+      );
+    }
+
+    req.tenantId = user.tenantId;
 
     next();
   } catch (error) {

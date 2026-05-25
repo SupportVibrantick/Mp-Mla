@@ -3,6 +3,7 @@ import { z } from "zod";
 export const loginSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(1, "Password is required"),
+  tenantId: z.string().min(1).optional(),
 });
 
 export const registerSchema = z.object({
@@ -10,7 +11,9 @@ export const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().optional(),
-  role: z.enum(["SYSTEM_ADMIN", "MP_MLA", "STAFF"]).default("STAFF"),
+  role: z
+    .enum(["SYSTEM_ADMIN", "MP_MLA", "OFFICE_STAFF"])
+    .default("OFFICE_STAFF"),
 });
 
 export const changePasswordSchema = z.object({
