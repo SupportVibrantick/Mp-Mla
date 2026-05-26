@@ -2,6 +2,7 @@ import { Router } from "express";
 import prisma from "../../../lib/prisma.js";
 import { requirePermission } from "../../../middleware/permission.js";
 import catchAsync from "@/utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 const router = Router();
 
@@ -21,7 +22,8 @@ function getCurrentFY(): string {
 router.get(
   "/",
   requirePermission("dashboard", "read"),
-  catchAsync(async (_req, res) => {
+  catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const now = new Date();
     const fy = getCurrentFY();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -73,38 +75,39 @@ router.get(
       scheduledMeetings,
     ] = await Promise.all([
       // ─── Counts
-      prisma.ward.count({ where: { status: "ACTIVE", isDeleted: false } }),
-      prisma.grievance.count({ where: { isDeleted: false } }),
-      prisma.project.count({ where: { isDeleted: false } }),
+      prisma.ward.count({ where: { tenantId, status: "ACTIVE", isDeleted: false } }),
+      prisma.grievance.count({ where: { tenantId, isDeleted: false } }),
+      prisma.project.count({ where: { tenantId, isDeleted: false } }),
       prisma.institution.count({
-        where: { status: "ACTIVE", isDeleted: false },
+        where: { tenantId, status: "ACTIVE", isDeleted: false },
       }),
-      prisma.communityGroup.count({ where: { isActive: true, isDeleted: false } }),
+      prisma.communityGroup.count({ where: { tenantId, isActive: true, isDeleted: false } }),
 
       // ─── Grievances
       prisma.grievance.groupBy({
         by: ["status"],
         _count: true,
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.grievance.groupBy({
         by: ["priority"],
         _count: true,
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.grievance.groupBy({
         by: ["category"],
         _count: true,
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
         orderBy: { _count: { category: "desc" } },
         take: 8,
       }),
       prisma.grievance.count({
-        where: { createdAt: { gte: monthStart }, isDeleted: false },
+        where: { tenantId, createdAt: { gte: monthStart }, isDeleted: false },
       }),
       prisma.grievance.count({
         where: {
           createdAt: { gte: lastMonthStart, lt: monthStart },
+          tenantId,
           isDeleted: false,
         },
       }),
@@ -114,7 +117,7 @@ router.get(
         by: ["status"],
         _count: true,
         _sum: { budgetSanctioned: true, budgetUsed: true },
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.project.aggregate({
         _sum: {
@@ -122,28 +125,29 @@ router.get(
           budgetReleased: true,
           budgetUsed: true,
         },
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.project.count({
-        where: { createdAt: { gte: monthStart }, isDeleted: false },
+        where: { tenantId, createdAt: { gte: monthStart }, isDeleted: false },
       }),
 
       // ─── Institutions
       prisma.institution.groupBy({
         by: ["category"],
         _count: true,
-        where: { status: "ACTIVE", isDeleted: false },
+        where: { tenantId, status: "ACTIVE", isDeleted: false },
       }),
 
       // ─── Community Groups
       prisma.communityGroup.groupBy({
         by: ["type"],
         _count: true,
-        where: { isActive: true, isDeleted: false },
+        where: { tenantId, isActive: true, isDeleted: false },
       }),
 
       // ─── Demographics (Aggregate Voters)
       prisma.demographics.aggregate({
+        where: { tenantId },
         _sum: {
           totalVoters: true,
           maleVoters: true,
@@ -166,7 +170,7 @@ router.get(
             select: { name: true, wardNumber: true },
           },
         },
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
         orderBy: { createdAt: "desc" },
         take: 7,
       }),
@@ -184,14 +188,14 @@ router.get(
             select: { name: true, wardNumber: true },
           },
         },
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
         orderBy: { updatedAt: "desc" },
         take: 5,
       }),
 
       // ─── Population
       prisma.ward.aggregate({
-        where: { status: "ACTIVE" },
+        where: { tenantId, status: "ACTIVE" },
         _sum: {
           totalPopulation: true,
           totalHouseholds: true,
@@ -199,18 +203,18 @@ router.get(
       }),
 
       // ─── Departments
-      prisma.department.count({ where: { isDeleted: false } }),
+      prisma.department.count({ where: { tenantId, isDeleted: false } }),
 
       // ─── Meetings
       prisma.meeting.count({
-        where: { status: "SCHEDULED", isDeleted: false },
+        where: { tenantId, status: "SCHEDULED", isDeleted: false },
       }),
     ]);
 
     // ─── Grievance Monthly Trend (6 months) ──────────
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const allGrievances = await prisma.grievance.findMany({
-      where: { createdAt: { gte: sixMonthsAgo }, isDeleted: false },
+      where: { tenantId, createdAt: { gte: sixMonthsAgo }, isDeleted: false },
       select: {
         createdAt: true,
         status: true,
