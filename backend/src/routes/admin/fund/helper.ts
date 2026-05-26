@@ -10,8 +10,9 @@ export function getCurrentFY(): string {
     : `${y - 1}-${String(y).slice(2)}`;
 }
 
-export async function recalculateFundTotals(fundId: string) {
-  const txns = await prisma.fundTransaction.findMany({
+export async function recalculateFundTotals(fundId: string, prismaInstance?: any) {
+  const p = prismaInstance || prisma;
+  const txns = await p.fundTransaction.findMany({
     where: { fundId, isDeleted: false },
   });
 
@@ -19,16 +20,17 @@ export async function recalculateFundTotals(fundId: string) {
   let totalReleased = 0;
   let totalUtilized = 0;
 
-  txns.forEach((t) => {
+  txns.forEach((t: any) => {
     if (t.type === "ALLOCATION") totalAllocated += t.amount;
     if (t.type === "RELEASE") totalReleased += t.amount;
     if (t.type === "UTILIZATION") totalUtilized += t.amount;
   });
 
-  await prisma.fund.update({
+  await p.fund.update({
     where: { id: fundId },
     data: { totalAllocated, totalReleased, totalUtilized },
   });
 
   return { totalAllocated, totalReleased, totalUtilized };
 }
+

@@ -2,15 +2,19 @@ import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { ApiError } from "../../../utils/ApiError.js";
 
 /**
  * GET /api/admin/fund/export
  * Exports all fund transactions in a flat structure.
  */
 export const exportFunds = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = req.tenantId;
+    if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
     // We want all transactions
     const txns = await prisma.fundTransaction.findMany({
-        where: { isDeleted: false },
+        where: { isDeleted: false, fund: { tenantId } },
         include: {
             fund: true
         },
@@ -22,7 +26,7 @@ export const exportFunds = catchAsync(async (req: Request, res: Response) => {
     
     const projects = projIds.length > 0 
         ? await prisma.project.findMany({
-            where: { id: { in: projIds } },
+            where: { id: { in: projIds }, tenantId, isDeleted: false },
             select: { id: true, name: true, projectCode: true }
         })
         : [];
@@ -49,6 +53,7 @@ export const exportFunds = catchAsync(async (req: Request, res: Response) => {
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
         data: {
+            tenantId,
             userId: req.user!.id,
             userName: req.user!.name || "Unknown",
             action: "EXPORT",

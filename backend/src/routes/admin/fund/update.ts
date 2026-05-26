@@ -12,9 +12,12 @@ import catchAsync from "@/utils/catchAsync.js";
  * Updates a fund's totals.
  */
 export const updateFunds = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
   const fundId = req.params.id as string;
-  const old = await prisma.fund.findUnique({
-    where: { id: fundId },
+  const old = await prisma.fund.findFirst({
+    where: { id: fundId, tenantId, isDeleted: false },
   });
   if (!old) throw ApiError.notFound("Fund not found");
 
@@ -24,6 +27,7 @@ export const updateFunds = catchAsync(async (req, res) => {
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "UPDATE",
     module: "funds",

@@ -9,9 +9,12 @@ import { getCurrentFY } from "./helper.js";
  * Lists all funds with optional filtering.
  */
 export const getFunds = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
   const { fundType, financialYear } = req.query as Record<string, string>;
 
-  const where: any = { isDeleted: false };
+  const where: any = { tenantId, isDeleted: false };
   if (fundType && fundType !== "all") where.fundType = fundType;
   if (financialYear && financialYear !== "all")
     where.financialYear = financialYear;
@@ -46,11 +49,14 @@ export const getFunds = catchAsync(async (req, res) => {
  * Gets dashboard overview for a financial year.
  */
 export const overviewDashboard = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
   const fy = (req.query.financialYear as string) || getCurrentFY();
 
   // All funds for this FY
   const funds = await prisma.fund.findMany({
-    where: { financialYear: fy, isDeleted: false },
+    where: { tenantId, financialYear: fy, isDeleted: false },
     include: {
       _count: { select: { transactions: { where: { isDeleted: false } } } },
     },
@@ -80,6 +86,7 @@ export const overviewDashboard = catchAsync(async (req, res) => {
 
   // All FYs for dropdown
   const allYears = await prisma.fund.findMany({
+    where: { tenantId, isDeleted: false },
     select: { financialYear: true },
     distinct: ["financialYear"],
     orderBy: { financialYear: "desc" },
@@ -87,7 +94,7 @@ export const overviewDashboard = catchAsync(async (req, res) => {
 
   // Recent transactions with project info
   const recentTxns = await prisma.fundTransaction.findMany({
-    where: { fund: { financialYear: fy }, isDeleted: false },
+    where: { fund: { tenantId, financialYear: fy }, isDeleted: false },
     include: {
       fund: {
         select: {
@@ -108,7 +115,7 @@ export const overviewDashboard = catchAsync(async (req, res) => {
   const projects =
     projIds.length > 0
       ? await prisma.project.findMany({
-        where: { id: { in: projIds } },
+        where: { id: { in: projIds }, tenantId, isDeleted: false },
         select: {
           id: true,
           name: true,
@@ -126,7 +133,7 @@ export const overviewDashboard = catchAsync(async (req, res) => {
   // Monthly utilization trend
   const utilTxns = await prisma.fundTransaction.findMany({
     where: {
-      fund: { financialYear: fy },
+      fund: { tenantId, financialYear: fy },
       type: "UTILIZATION",
       isDeleted: false,
     },
@@ -174,9 +181,12 @@ export const overviewDashboard = catchAsync(async (req, res) => {
  * Gets a single fund with its transactions.
  */
 export const getSingleFunds = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
   const fundId = req.params.id as string;
-  const fund = await prisma.fund.findUnique({
-    where: { id: fundId, isDeleted: false },
+  const fund = await prisma.fund.findFirst({
+    where: { id: fundId, tenantId, isDeleted: false },
     include: {
       transactions: {
         where: { isDeleted: false },
@@ -194,7 +204,7 @@ export const getSingleFunds = catchAsync(async (req, res) => {
   const projects =
     projIds.length > 0
       ? await prisma.project.findMany({
-        where: { id: { in: projIds } },
+        where: { id: { in: projIds }, tenantId, isDeleted: false },
         select: {
           id: true,
           name: true,

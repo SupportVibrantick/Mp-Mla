@@ -15,9 +15,12 @@ import { recalculateFundTotals } from "./helper.js";
  * Deletes a fund and all its transactions.
  */
 export const deleteFunds = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
   const fundId = req.params.id as string;
-  const fund = await prisma.fund.findUnique({
-    where: { id: fundId },
+  const fund = await prisma.fund.findFirst({
+    where: { id: fundId, tenantId },
   });
   if (!fund) throw ApiError.notFound("Fund not found");
 
@@ -26,6 +29,7 @@ export const deleteFunds = catchAsync(async (req, res) => {
   }
 
   await archiveToRecycleBin({
+    tenantId,
     module: "funds",
     entityType: "fund",
     recordId: fund.id,
@@ -47,6 +51,7 @@ export const deleteFunds = catchAsync(async (req, res) => {
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "DELETE",
     module: "funds",
@@ -67,16 +72,22 @@ export const deleteFunds = catchAsync(async (req, res) => {
  * Deletes a transaction and reverses its effect.
  */
 export const deleteFundTransaction = catchAsync(async (req, res) => {
-  const txn = await prisma.fundTransaction.findUnique({
-    where: { id: req.params.txnId as string },
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
+  const txn = await prisma.fundTransaction.findFirst({
+    where: {
+      id: req.params.txnId as string,
+      fundId: req.params.id as string,
+      fund: { tenantId, isDeleted: false },
+    },
   });
   if (!txn) throw ApiError.notFound("Transaction not found");
-  if (txn.fundId !== req.params.id)
-    throw ApiError.badRequest("Transaction mismatch");
 
   const projectId = txn.projectId;
 
   await archiveToRecycleBin({
+    tenantId,
     module: "funds",
     entityType: "fund_transaction",
     recordId: txn.id,
@@ -96,7 +107,12 @@ export const deleteFundTransaction = catchAsync(async (req, res) => {
   // If was utilization linked to project, recalculate project
   if (txn.type === "UTILIZATION" && projectId) {
     const remaining = await prisma.fundTransaction.findMany({
-      where: { projectId, type: "UTILIZATION" },
+      where: {
+        projectId,
+        type: "UTILIZATION",
+        isDeleted: false,
+        fund: { tenantId },
+      },
       select: { amount: true },
     });
     const totalProjectUsed = remaining.reduce((s, t) => s + t.amount, 0);
@@ -107,6 +123,7 @@ export const deleteFundTransaction = catchAsync(async (req, res) => {
   }
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "DELETE",
     module: "funds",

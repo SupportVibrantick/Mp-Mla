@@ -12,10 +12,13 @@ import { recalculateFundTotals } from "./helper.js";
  * Creates a new fund.
  */
 export const createFund = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
   const { fundType, financialYear, totalAllocated } = req.body;
 
   const existing = await prisma.fund.findFirst({
-    where: { fundType, financialYear },
+    where: { tenantId, fundType, financialYear, isDeleted: false },
   });
   if (existing)
     throw ApiError.badRequest(
@@ -24,6 +27,7 @@ export const createFund = catchAsync(async (req, res) => {
 
   const fund = await prisma.fund.create({
     data: {
+      tenantId,
       fundType,
       financialYear,
       totalAllocated: totalAllocated || 0,
@@ -45,6 +49,7 @@ export const createFund = catchAsync(async (req, res) => {
   }
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "CREATE",
     module: "funds",
@@ -67,8 +72,11 @@ export const createFund = catchAsync(async (req, res) => {
  * Adds a transaction (release or utilization) to a fund.
  */
 export const createTransactionFund = catchAsync(async (req, res) => {
-  const fund = await prisma.fund.findUnique({
-    where: { id: req.params.id as string },
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
+  const fund = await prisma.fund.findFirst({
+    where: { id: req.params.id as string, tenantId, isDeleted: false },
   });
   if (!fund) throw ApiError.notFound("Fund not found");
 
@@ -77,8 +85,8 @@ export const createTransactionFund = catchAsync(async (req, res) => {
   // Validate project exists if provided
   let projectInfo = null;
   if (projectId) {
-    projectInfo = await prisma.project.findUnique({
-      where: { id: projectId },
+    projectInfo = await prisma.project.findFirst({
+      where: { id: projectId, tenantId, isDeleted: false },
       select: { id: true, name: true, projectCode: true },
     });
     if (!projectInfo) throw ApiError.notFound("Project not found");
@@ -121,7 +129,12 @@ export const createTransactionFund = catchAsync(async (req, res) => {
   // If utilization linked to project, update project budgetUsed
   if (type === "UTILIZATION" && projectId) {
     const projectTxns = await prisma.fundTransaction.findMany({
-      where: { projectId, type: "UTILIZATION" },
+      where: {
+        projectId,
+        type: "UTILIZATION",
+        isDeleted: false,
+        fund: { tenantId },
+      },
       select: { amount: true },
     });
     const totalProjectUsed = projectTxns.reduce((s, t) => s + t.amount, 0);
@@ -132,6 +145,7 @@ export const createTransactionFund = catchAsync(async (req, res) => {
   }
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "CREATE",
     module: "funds",
