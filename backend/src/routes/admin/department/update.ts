@@ -9,15 +9,17 @@ import { ApiError } from "../../../utils/ApiError.js";
 import { validate } from "../../../middleware/validate.js";
 import { z } from "zod";
 import catchAsync from "@/utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * PUT /api/admin/department/:id
  * Updates a department.
  */
 export const updateDepartment = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const departmentId = req.params.id as string;
-  const old = await prisma.department.findUnique({
-    where: { id: departmentId },
+  const old = await prisma.department.findFirst({
+    where: { id: departmentId, tenantId },
   });
   if (!old) throw ApiError.notFound("Department not found");
 
@@ -26,9 +28,16 @@ export const updateDepartment = catchAsync(async (req, res) => {
 
   if (data.code && data.code !== old.code) {
     const dup = await prisma.department.findFirst({
-      where: { code: data.code, id: { not: old.id } },
+      where: { tenantId, code: data.code, id: { not: old.id } },
     });
     if (dup) throw ApiError.badRequest("Code already used");
+  }
+
+  if (data.name && data.name !== old.name) {
+    const dup = await prisma.department.findFirst({
+      where: { tenantId, name: data.name, id: { not: old.id } },
+    });
+    if (dup) throw ApiError.badRequest("Name already used");
   }
 
   const dept = await prisma.department.update({
@@ -37,6 +46,7 @@ export const updateDepartment = catchAsync(async (req, res) => {
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "UPDATE",
     module: "departments",
@@ -55,9 +65,10 @@ export const updateDepartment = catchAsync(async (req, res) => {
  * Toggles the active status of a department.
  */
 export const toggleDepartment = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const departmentId = req.params.id as string;
-  const dept = await prisma.department.findUnique({
-    where: { id: departmentId },
+  const dept = await prisma.department.findFirst({
+    where: { id: departmentId, tenantId },
   });
   if (!dept) throw ApiError.notFound("Department not found");
 
@@ -67,6 +78,7 @@ export const toggleDepartment = catchAsync(async (req, res) => {
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "STATUS_CHANGE",
     module: "departments",

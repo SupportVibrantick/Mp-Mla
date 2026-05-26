@@ -1,6 +1,7 @@
 import prisma from "../../../lib/prisma.js";
 
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
@@ -9,9 +10,10 @@ import catchAsync from "@/utils/catchAsync.js";
  * Lists all departments with optional filtering.
  */
 export const getDepartments = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const { search, isActive } = req.query as Record<string, string>;
 
-  const where: any = { isDeleted: false };
+  const where: any = { tenantId, isDeleted: false };
   if (isActive !== undefined && isActive !== "all")
     where.isActive = isActive === "true";
   if (search) {
@@ -34,6 +36,7 @@ export const getDepartments = catchAsync(async (req, res) => {
     prisma.grievance.groupBy({
       by: ["assignedDept"],
       where: {
+        tenantId,
         assignedDept: { in: deptIds },
         status: { in: ["OPEN", "IN_PROGRESS", "ESCALATED"] },
       },
@@ -42,6 +45,7 @@ export const getDepartments = catchAsync(async (req, res) => {
     prisma.project.groupBy({
       by: ["department"],
       where: {
+        tenantId,
         department: { in: deptIds },
         status: { in: ["PENDING", "RUNNING"] },
       },
@@ -70,18 +74,23 @@ export const getDepartments = catchAsync(async (req, res) => {
  * Gets dashboard statistics for departments.
  */
 export const getDepartmentStats = catchAsync(async (_req, res) => {
+  const tenantId = requireTenantId(_req);
   const [total, active, inactive] = await Promise.all([
-    prisma.department.count({ where: { isDeleted: false } }),
-    prisma.department.count({ where: { isActive: true, isDeleted: false } }),
-    prisma.department.count({ where: { isActive: false, isDeleted: false } }),
+    prisma.department.count({ where: { tenantId, isDeleted: false } }),
+    prisma.department.count({
+      where: { tenantId, isActive: true, isDeleted: false },
+    }),
+    prisma.department.count({
+      where: { tenantId, isActive: false, isDeleted: false },
+    }),
   ]);
 
   const [totalGrievances, totalProjects] = await Promise.all([
     prisma.grievance.count({
-      where: { assignedDept: { not: null } },
+      where: { tenantId, assignedDept: { not: null } },
     }),
     prisma.project.count({
-      where: { department: { not: "" } },
+      where: { tenantId, department: { not: "" } },
     }),
   ]);
 
@@ -104,14 +113,15 @@ export const getDepartmentStats = catchAsync(async (_req, res) => {
  * Gets a single department with its recent activities.
  */
 export const getSingleDepartment = catchAsync(async (req, res) => {
-  const dept = await prisma.department.findUnique({
-    where: { id: req.params.id as string, isDeleted: false },
+  const tenantId = requireTenantId(req);
+  const dept = await prisma.department.findFirst({
+    where: { id: req.params.id as string, tenantId, isDeleted: false },
   });
   if (!dept) throw ApiError.notFound("Department not found");
 
   const [grievances, projects] = await Promise.all([
     prisma.grievance.findMany({
-      where: { assignedDept: dept.id },
+      where: { tenantId, assignedDept: dept.id },
       select: {
         id: true,
         ticketNumber: true,
@@ -125,7 +135,7 @@ export const getSingleDepartment = catchAsync(async (req, res) => {
       take: 10,
     }),
     prisma.project.findMany({
-      where: { department: dept.id },
+      where: { tenantId, department: dept.id },
       select: {
         id: true,
         projectCode: true,

@@ -3,6 +3,7 @@ import catchAsync from "@/utils/catchAsync.js";
 import { normalizeBoolean } from "../../../utils/enumParser.js";
 import { Request, Response } from "express";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * POST /api/admin/department/bulk
@@ -10,6 +11,7 @@ import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/emai
  */
 export const bulkCreateDepartments = catchAsync(
   async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const departments = req.body;
 
     if (!Array.isArray(departments)) {
@@ -50,6 +52,7 @@ export const bulkCreateDepartments = catchAsync(
         // Find if department exists by code OR name
         const existing = await prisma.department.findFirst({
           where: {
+            tenantId,
             OR: [{ code: sCode }, { name: sName }],
           },
         });
@@ -71,6 +74,7 @@ export const bulkCreateDepartments = catchAsync(
           await prisma.department.create({
             data: {
               name: sName,
+              tenantId,
               code: sCode,
               description: safeString(description) || null,
               headName: safeString(headName) || null,
@@ -104,6 +108,7 @@ export const bulkCreateDepartments = catchAsync(
     prisma.dataActivity.create({
       data: {
         userId: req.user!.id,
+        tenantId,
         userName: req.user!.name || "Unknown",
         action: "IMPORT",
         module: "departments",

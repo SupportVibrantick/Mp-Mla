@@ -3,15 +3,17 @@ import prisma from "../../../lib/prisma.js";
 import { requirePermission } from "../../../middleware/permission.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/demographics/summary
  * Gets constituency-wide demographic summary.
  */
 export const summaryDemographics = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   // Get all ward-level demographics (wardAreaId = null)
   const wardDemos = await prisma.demographics.findMany({
-    where: { wardAreaId: null },
+    where: { tenantId, wardAreaId: null },
     include: {
       ward: {
         select: {
@@ -245,21 +247,22 @@ export const summaryDemographics = catchAsync(async (req, res) => {
  * Gets demographics for a single ward.
  */
 export const getWardDemographics = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const wardId = req.params.wardId as string;
 
-  const ward = await prisma.ward.findUnique({
-    where: { id: wardId },
+  const ward = await prisma.ward.findFirst({
+    where: { id: wardId, tenantId },
     select: { id: true, name: true, wardNumber: true },
   });
   if (!ward) throw ApiError.notFound("Ward not found");
 
   const wardLevel = await prisma.demographics.findFirst({
-    where: { wardId, wardAreaId: null },
+    where: { tenantId, wardId, wardAreaId: null },
     orderBy: { surveyDate: "desc" },
   });
 
   const areaLevel = await prisma.demographics.findMany({
-    where: { wardId, wardAreaId: { not: null } },
+    where: { tenantId, wardId, wardAreaId: { not: null } },
     include: {
       wardArea: { select: { id: true, name: true, areaType: true } },
     },

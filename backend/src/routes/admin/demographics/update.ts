@@ -6,6 +6,7 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
@@ -14,16 +15,27 @@ import catchAsync from "@/utils/catchAsync.js";
  * Updates demographics for a ward or ward area.
  */
 export const updateDemographics = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const wardId = req.params.wardId as string;
   const { wardAreaId, ...demoData } = req.body;
 
-  const ward = await prisma.ward.findUnique({ where: { id: wardId } });
+  const ward = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
   if (!ward) throw ApiError.notFound("Ward not found");
+
+  if (wardAreaId) {
+    const wardArea = await prisma.wardArea.findFirst({
+      where: { id: wardAreaId, wardId, ward: { tenantId } },
+      select: { id: true },
+    });
+    if (!wardArea) {
+      throw ApiError.badRequest("Ward area not found in this ward");
+    }
+  }
 
   if (demoData.surveyDate) demoData.surveyDate = new Date(demoData.surveyDate);
 
   const existing = await prisma.demographics.findFirst({
-    where: { wardId, wardAreaId: wardAreaId || null },
+    where: { tenantId, wardId, wardAreaId: wardAreaId || null },
   });
 
   let demo;
@@ -34,11 +46,12 @@ export const updateDemographics = catchAsync(async (req, res) => {
     });
   } else {
     demo = await prisma.demographics.create({
-      data: { wardId, wardAreaId: wardAreaId || null, ...demoData },
+      data: { tenantId, wardId, wardAreaId: wardAreaId || null, ...demoData },
     });
   }
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "UPDATE",
     module: "demographics",

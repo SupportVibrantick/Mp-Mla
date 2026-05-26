@@ -2,14 +2,16 @@ import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/department/export
  * Exports all departments to a flat JSON array for Excel/CSV.
  */
 export const exportDepartments = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const departments = await prisma.department.findMany({
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
         orderBy: { name: "asc" },
     });
 
@@ -33,6 +35,7 @@ export const exportDepartments = catchAsync(async (req: Request, res: Response) 
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
         data: {
+            tenantId,
             userId: req.user!.id,
             userName: req.user!.name || "Unknown",
             action: "EXPORT",

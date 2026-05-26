@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
@@ -14,9 +15,10 @@ import catchAsync from "@/utils/catchAsync.js";
  * Deletes a department.
  */
 export const deleteDepartment = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const departmentId = req.params.id as string;
-  const dept = await prisma.department.findUnique({
-    where: { id: departmentId },
+  const dept = await prisma.department.findFirst({
+    where: { id: departmentId, tenantId },
   });
   if (!dept) throw ApiError.notFound("Department not found");
 
@@ -26,8 +28,8 @@ export const deleteDepartment = catchAsync(async (req, res) => {
 
   // Check references
   const [gCount, pCount] = await Promise.all([
-    prisma.grievance.count({ where: { assignedDept: dept.id } }),
-    prisma.project.count({ where: { department: dept.id } }),
+    prisma.grievance.count({ where: { tenantId, assignedDept: dept.id } }),
+    prisma.project.count({ where: { tenantId, department: dept.id } }),
   ]);
   if (gCount > 0 || pCount > 0) {
     throw ApiError.badRequest(
@@ -36,6 +38,7 @@ export const deleteDepartment = catchAsync(async (req, res) => {
   }
 
   await archiveToRecycleBin({
+    tenantId,
     module: "departments",
     entityType: "department",
     recordId: dept.id,
@@ -50,6 +53,7 @@ export const deleteDepartment = catchAsync(async (req, res) => {
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "DELETE",
     module: "departments",
