@@ -7,10 +7,11 @@ import {
 import { ApiError } from "../../../utils/ApiError.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 import { z } from "zod";
+import { requireTenantId } from "../../../utils/tenant.js";
 
-async function getInstitutionOrThrow(id: string) {
-  const inst = await prisma.institution.findUnique({
-    where: { id },
+async function getInstitutionOrThrow(id: string, tenantId: string) {
+  const inst = await prisma.institution.findFirst({
+    where: { id, tenantId },
     select: { id: true, name: true },
   });
   if (!inst) throw ApiError.notFound("Institution not found");
@@ -19,12 +20,19 @@ async function getInstitutionOrThrow(id: string) {
 
 export async function syncToLeaders(incharge: any, wardId: string) {
   if (!incharge.dateOfBirth) return;
+  const institution = await prisma.institution.findUnique({
+    where: { id: incharge.institutionId },
+    select: { tenantId: true },
+  });
+  if (!institution) return;
+  const tenantId = institution.tenantId;
 
   // Try to find existing leader by adharNumber first, then phone and name
   let existing = null;
   if (incharge.adharNumber) {
     existing = await prisma.leader.findFirst({
       where: {
+        tenantId,
         adharNumber: incharge.adharNumber,
         isDeleted: false,
       },
@@ -34,6 +42,7 @@ export async function syncToLeaders(incharge: any, wardId: string) {
   if (!existing) {
     existing = await prisma.leader.findFirst({
       where: {
+        tenantId,
         phone: incharge.contactNo,
         name: incharge.name,
         isDeleted: false,
@@ -42,6 +51,7 @@ export async function syncToLeaders(incharge: any, wardId: string) {
   }
 
   const leaderData: any = {
+    tenantId,
     name: incharge.name,
     category: "COMMUNITY_LEADER",
     designation: incharge.designation,
@@ -73,11 +83,12 @@ export async function listIncharges(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const institutionId = req.params.institutionId as string;
-    const inst = await getInstitutionOrThrow(institutionId);
+    const inst = await getInstitutionOrThrow(institutionId, tenantId);
 
     const incharges = await prisma.incharge.findMany({
-      where: { institutionId },
+      where: { institutionId, institution: { tenantId } },
       orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
     });
 
@@ -98,8 +109,13 @@ export async function getIncharge(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const incharge = await prisma.incharge.findUnique({
-      where: { id: req.params.inchargeId as string },
+    const tenantId = requireTenantId(req);
+    const incharge = await prisma.incharge.findFirst({
+      where: {
+        id: req.params.inchargeId as string,
+        institutionId: req.params.institutionId as string,
+        institution: { tenantId },
+      },
       include: {
         institution: {
           select: {
@@ -126,8 +142,9 @@ export async function createIncharge(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const institutionId = req.params.institutionId as string;
-    const inst = await getInstitutionOrThrow(institutionId);
+    const inst = await getInstitutionOrThrow(institutionId, tenantId);
 
     const data: any = { ...req.body, institutionId };
     if (data.email === "") delete data.email;
@@ -137,8 +154,11 @@ export async function createIncharge(
 
     // Check Aadhaar uniqueness manually for better error message
     if (data.adharNumber) {
-      const existing = await prisma.incharge.findUnique({
-        where: { adharNumber: data.adharNumber },
+      const existing = await prisma.incharge.findFirst({
+        where: {
+          adharNumber: data.adharNumber,
+          institution: { tenantId },
+        },
       });
       if (existing) {
         throw ApiError.conflict("An incharge with this Aadhaar number is already registered.");
@@ -148,8 +168,8 @@ export async function createIncharge(
     const incharge = await prisma.incharge.create({ data });
 
     // Sync to Leaders if DOB is provided
-    const instDetail = await prisma.institution.findUnique({
-      where: { id: institutionId },
+    const instDetail = await prisma.institution.findFirst({
+      where: { id: institutionId, tenantId },
       select: { wardId: true },
     });
     if (instDetail) {
@@ -157,6 +177,7 @@ export async function createIncharge(
     }
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "institutions",
@@ -188,9 +209,14 @@ export async function updateIncharge(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const inchargeId = req.params.inchargeId as string;
-    const old = await prisma.incharge.findUnique({
-      where: { id: inchargeId },
+    const old = await prisma.incharge.findFirst({
+      where: {
+        id: inchargeId,
+        institutionId: req.params.institutionId as string,
+        institution: { tenantId },
+      },
     });
     if (!old) throw ApiError.notFound("Incharge not found");
 
@@ -202,8 +228,11 @@ export async function updateIncharge(
 
     // Check Aadhaar uniqueness manually for better error message
     if (data.adharNumber && data.adharNumber !== old.adharNumber) {
-      const existing = await prisma.incharge.findUnique({
-        where: { adharNumber: data.adharNumber },
+      const existing = await prisma.incharge.findFirst({
+        where: {
+          adharNumber: data.adharNumber,
+          institution: { tenantId },
+        },
       });
       if (existing) {
         throw ApiError.conflict("An incharge with this Aadhaar number is already registered.");
@@ -226,6 +255,7 @@ export async function updateIncharge(
     }
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "institutions",
@@ -258,14 +288,20 @@ export async function deleteIncharge(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const inchargeId = req.params.inchargeId as string;
 
-    const incharge = await prisma.incharge.findUnique({
-      where: { id: inchargeId },
+    const incharge = await prisma.incharge.findFirst({
+      where: {
+        id: inchargeId,
+        institutionId: req.params.institutionId as string,
+        institution: { tenantId },
+      },
     });
     if (!incharge) throw ApiError.notFound("Incharge not found");
 
     await archiveToRecycleBin({
+      tenantId,
       module: "institutions",
       entityType: "incharge",
       recordId: incharge.id,
@@ -279,6 +315,7 @@ export async function deleteIncharge(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "DELETE",
       module: "institutions",
@@ -303,10 +340,15 @@ export async function toggleInchargeActive(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const inchargeId = req.params.inchargeId as string;
 
-    const incharge = await prisma.incharge.findUnique({
-      where: { id: inchargeId },
+    const incharge = await prisma.incharge.findFirst({
+      where: {
+        id: inchargeId,
+        institutionId: req.params.institutionId as string,
+        institution: { tenantId },
+      },
     });
     if (!incharge) throw ApiError.notFound("Incharge not found");
 
@@ -316,6 +358,7 @@ export async function toggleInchargeActive(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "STATUS_CHANGE",
       module: "institutions",

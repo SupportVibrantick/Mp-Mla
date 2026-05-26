@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function listGrievances(
   req: Request,
@@ -9,6 +10,7 @@ export async function listGrievances(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { page, limit, skip } = parsePagination(req.query);
     const {
       wardId,
@@ -23,7 +25,7 @@ export async function listGrievances(
       dateTo,
       overdue,
     } = req.query as Record<string, string>;
-    const where: any = { isDeleted: false };
+    const where: any = { tenantId, isDeleted: false };
     if (wardId) where.wardId = wardId;
     if (status && status !== "all") where.status = status;
     if (priority && priority !== "all") where.priority = priority;
@@ -99,10 +101,11 @@ export async function getGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const grievanceId = req.params.id as string;
 
-    const grievance = await prisma.grievance.findUnique({
-      where: { id: grievanceId },
+    const grievance = await prisma.grievance.findFirst({
+      where: { id: grievanceId, tenantId },
       include: {
         ward: {
           select: {
@@ -148,8 +151,8 @@ export async function getGrievance(
     // Fetch department name if assigned
     let departmentName: string | null = null;
     if (grievance.assignedDept) {
-      const dept = await prisma.department.findUnique({
-        where: { id: grievance.assignedDept },
+      const dept = await prisma.department.findFirst({
+        where: { id: grievance.assignedDept, tenantId },
         select: { name: true },
       });
       departmentName = dept?.name || grievance.assignedDept;
@@ -177,8 +180,9 @@ export async function getGrievanceStats(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.query.wardId as string;
-    const w: any = { isDeleted: false, ...(wardId ? { wardId } : {}) };
+    const w: any = { tenantId, isDeleted: false, ...(wardId ? { wardId } : {}) };
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -251,7 +255,7 @@ export async function getGrievanceStats(
     // Resolve ward names
     const wardIds = byWard.map((x) => x.wardId);
     const wards = await prisma.ward.findMany({
-      where: { id: { in: wardIds } },
+      where: { tenantId, id: { in: wardIds } },
       select: { id: true, name: true, wardNumber: true },
     });
     const wardMap = Object.fromEntries(wards.map((w) => [w.id, w]));
@@ -260,7 +264,7 @@ export async function getGrievanceStats(
       .map((d) => d.assignedDept)
       .filter(Boolean) as string[];
     const depts = await prisma.department.findMany({
-      where: { id: { in: deptIds } },
+      where: { tenantId, id: { in: deptIds } },
       select: { id: true, name: true },
     });
     const deptMap = Object.fromEntries(depts.map((d) => [d.id, d]));
@@ -329,12 +333,14 @@ export async function getGrievanceAnalytics(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const months = parseInt(req.query.months as string) || 6;
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
 
     const all = await prisma.grievance.findMany({
       where: {
+        tenantId,
         createdAt: { gte: start },
         isDeleted: false,
       },

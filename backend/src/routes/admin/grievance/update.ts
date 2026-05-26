@@ -9,6 +9,7 @@ import {
   isValidTransition,
   getTransitionLabel,
 } from "./helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function updateGrievance(
   req: Request,
@@ -16,14 +17,36 @@ export async function updateGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const grievanceId = req.params.id as string;
-    const old = await prisma.grievance.findUnique({
-      where: { id: grievanceId },
+    const old = await prisma.grievance.findFirst({
+      where: { id: grievanceId, tenantId },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
 
     const data: any = { ...req.body };
     if (data.complainantEmail === "") delete data.complainantEmail;
+
+    if (data.wardId && data.wardId !== old.wardId) {
+      const ward = await prisma.ward.findFirst({
+        where: { id: data.wardId, tenantId },
+      });
+      if (!ward) throw ApiError.notFound("Ward not found");
+    }
+
+    if (data.assignedToId) {
+      const user = await prisma.user.findFirst({
+        where: { id: data.assignedToId, tenantId },
+      });
+      if (!user) throw ApiError.notFound("Assigned user not found");
+    }
+
+    if (data.assignedDept) {
+      const dept = await prisma.department.findFirst({
+        where: { id: data.assignedDept, tenantId },
+      });
+      if (!dept) throw ApiError.notFound("Department not found");
+    }
 
     const grievance = await prisma.grievance.update({
       where: { id: grievanceId },
@@ -55,6 +78,7 @@ export async function updateGrievance(
     }
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "grievances",
@@ -84,8 +108,9 @@ export async function changeStatus(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const old = await prisma.grievance.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const old = await prisma.grievance.findFirst({
+      where: { id: req.params.id as string, tenantId },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
 
@@ -186,6 +211,7 @@ export async function changeStatus(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "STATUS_CHANGE",
       module: "grievances",
@@ -212,13 +238,28 @@ export async function assignGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const grievanceId = req.params.id as string;
-    const old = await prisma.grievance.findUnique({
-      where: { id: grievanceId },
+    const old = await prisma.grievance.findFirst({
+      where: { id: grievanceId, tenantId },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
 
     const { assignedToId, assignedDept, comment } = req.body;
+
+    if (assignedToId) {
+      const user = await prisma.user.findFirst({
+        where: { id: assignedToId, tenantId },
+      });
+      if (!user) throw ApiError.notFound("Assigned user not found");
+    }
+
+    if (assignedDept) {
+      const dept = await prisma.department.findFirst({
+        where: { id: assignedDept, tenantId },
+      });
+      if (!dept) throw ApiError.notFound("Department not found");
+    }
 
     const updateData: any = {};
     if (assignedToId !== undefined)
@@ -238,8 +279,8 @@ export async function assignGrievance(
     const parts: string[] = [];
     if (grievance.assignedTo) parts.push(`to ${grievance.assignedTo.name}`);
     if (assignedDept) {
-      const dept = await prisma.department.findUnique({
-        where: { id: assignedDept },
+      const dept = await prisma.department.findFirst({
+        where: { id: assignedDept, tenantId },
         select: { name: true },
       });
       if (dept) parts.push(`(Dept: ${dept.name})`);
@@ -257,6 +298,7 @@ export async function assignGrievance(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "grievances",

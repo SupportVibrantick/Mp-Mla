@@ -15,6 +15,7 @@ import { syncToLeaders } from "./incharges.js";
 // If you don't have these normalizers yet, add them to enumParser.ts:
 // They just do case-insensitive matching against the valid enum values.
 import { InstitutionCategory, InstitutionStatus } from "@prisma/client";
+import { requireTenantId } from "../../../utils/tenant.js";
 const VALID_CATEGORIES = [
   "TEMPLE",
   "MOSQUE",
@@ -122,6 +123,7 @@ export async function bulkCreateInstitutions(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const rawRows: FlatRow[] = req.body;
 
     if (!Array.isArray(rawRows) || rawRows.length === 0) {
@@ -134,6 +136,7 @@ export async function bulkCreateInstitutions(
 
     // Pre-fetch wards for wardNumber -> wardId mapping
     const allWards = await prisma.ward.findMany({
+      where: { tenantId },
       select: { id: true, wardNumber: true },
     });
     const wardMap = new Map(allWards.map((w) => [w.wardNumber, w.id]));
@@ -220,6 +223,7 @@ export async function bulkCreateInstitutions(
         }
 
         const institutionData = {
+          tenantId,
           name: instName,
           category: category as InstitutionCategory,
           subcategory: getFirst("subcategory") || null,
@@ -385,6 +389,7 @@ export async function bulkCreateInstitutions(
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
       data: {
+        tenantId: req.tenantId!,
         userId: req.user!.id,
         userName: req.user!.name || "Unknown",
         action: "IMPORT",

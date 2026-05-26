@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { syncToLeaders } from "./incharges.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 const formatDocumentsUrl = (documents: any, req: Request) => {
   if (!documents || !Array.isArray(documents)) return documents;
@@ -26,6 +27,7 @@ export async function listRequests(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const {
       status,
       page = "1",
@@ -33,7 +35,7 @@ export async function listRequests(
       search,
     } = req.query as Record<string, string>;
 
-    const where: any = {};
+    const where: any = { tenantId };
     if (status && status !== "all") where.status = status;
     if (search) {
       where.OR = [
@@ -59,7 +61,7 @@ export async function listRequests(
     ]);
 
     const pendingCount = await prisma.institutionRequest.count({
-      where: { status: "PENDING" },
+      where: { tenantId, status: "PENDING" },
     });
 
     const formattedRequests = requests.map(r => ({
@@ -89,9 +91,10 @@ export async function getRequest(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const requestId = req.params.requestId as string;
-    const request = await prisma.institutionRequest.findUnique({
-      where: { id: requestId },
+    const request = await prisma.institutionRequest.findFirst({
+      where: { id: requestId, tenantId },
       include: {
         ward: { select: { name: true, wardNumber: true } },
       },
@@ -120,10 +123,11 @@ export async function approveRequest(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const requestId = req.params.requestId as string;
 
-    const request = await prisma.institutionRequest.findUnique({
-      where: { id: requestId },
+    const request = await prisma.institutionRequest.findFirst({
+      where: { id: requestId, tenantId },
     });
 
     if (!request) {
@@ -156,6 +160,7 @@ export async function approveRequest(
     // Create the institution from the request data
     const institution = await prisma.institution.create({
       data: {
+        tenantId,
         name: request.name,
         category: request.category,
         subcategory: request.subcategory,
@@ -206,6 +211,7 @@ export async function approveRequest(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "institutions",

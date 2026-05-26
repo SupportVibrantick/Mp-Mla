@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { z } from "zod";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function addTimelineEntry(
   req: Request,
@@ -9,8 +10,9 @@ export async function addTimelineEntry(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const grievance = await prisma.grievance.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const grievance = await prisma.grievance.findFirst({
+      where: { id: req.params.id as string, tenantId },
     });
     if (!grievance) throw ApiError.notFound("Grievance not found");
 

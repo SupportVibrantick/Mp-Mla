@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function deleteInstitution(
   req: Request,
@@ -13,8 +14,9 @@ export async function deleteInstitution(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const institution = await prisma.institution.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const institution = await prisma.institution.findFirst({
+      where: { id: req.params.id as string, tenantId },
       include: {
         incharges: true,
         _count: { select: { incharges: true } },
@@ -27,6 +29,7 @@ export async function deleteInstitution(
     }
 
     await archiveToRecycleBin({
+      tenantId,
       module: "institutions",
       entityType: "institution",
       recordId: institution.id,
@@ -41,6 +44,7 @@ export async function deleteInstitution(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "DELETE",
       module: "institutions",

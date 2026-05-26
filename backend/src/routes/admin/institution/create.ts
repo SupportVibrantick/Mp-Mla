@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { syncToLeaders } from "./incharges.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function createInstitution(
   req: Request,
@@ -13,11 +14,12 @@ export async function createInstitution(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { incharges, ...data } = req.body;
 
     // Verify ward
-    const ward = await prisma.ward.findUnique({
-      where: { id: data.wardId },
+    const ward = await prisma.ward.findFirst({
+      where: { id: data.wardId, tenantId },
     });
     if (!ward) throw ApiError.notFound("Ward not found");
 
@@ -37,6 +39,7 @@ export async function createInstitution(
     const institution = await prisma.institution.create({
       data: {
         ...data,
+        tenantId,
         ...(inchargeData.length > 0
           ? {
               incharges: {
@@ -60,6 +63,7 @@ export async function createInstitution(
     }
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "institutions",

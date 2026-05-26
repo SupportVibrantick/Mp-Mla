@@ -4,6 +4,7 @@ import catchAsync from "@/utils/catchAsync.js";
 import { normalizeBoolean } from "@/utils/enumParser.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 import { generateTicketNumber } from "./helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 const VALID_STATUSES = ["OPEN", "IN_PROGRESS", "ESCALATED", "RESOLVED", "CLOSED", "REJECTED"];
 const VALID_PRIORITIES = ["URGENT", "HIGH", "MEDIUM", "LOW"];
@@ -26,6 +27,7 @@ function normalizeFromList(val: any, list: string[]): string | undefined {
  * Bulk imports grievances. Upserts by ticketNumber if provided, otherwise creates new.
  */
 export const bulkCreateGrievances = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const grievances = req.body;
 
   if (!Array.isArray(grievances) || grievances.length === 0) {
@@ -41,12 +43,14 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
 
   // Pre-fetch all wards for wardNumber -> wardId mapping
   const allWards = await prisma.ward.findMany({
+    where: { tenantId },
     select: { id: true, wardNumber: true },
   });
   const wardMap = new Map(allWards.map((w) => [w.wardNumber, w.id]));
 
   // Pre-fetch departments for name -> id mapping
   const allDepts = await prisma.department.findMany({
+    where: { tenantId },
     select: { id: true, name: true },
   });
   const deptMap = new Map(allDepts.map((d) => [d.name.toLowerCase(), d.id]));
@@ -105,6 +109,7 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
       const normalizedSource = normalizeFromList(source, VALID_SOURCES) || "OFFICE";
 
       const grievanceData: any = {
+        tenantId,
         subject: String(subject).trim(),
         category: normalizedCategory,
         subcategory: safeString(subcategory),
@@ -126,12 +131,12 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
       if (ticketNumber && String(ticketNumber).trim()) {
         const tNum = String(ticketNumber).trim();
         await prisma.grievance.upsert({
-          where: { ticketNumber: tNum },
+          where: { tenantId_ticketNumber: { tenantId, ticketNumber: tNum } },
           create: { ...grievanceData, ticketNumber: tNum },
           update: grievanceData,
         });
       } else {
-        const tNum = await generateTicketNumber();
+        const tNum = await generateTicketNumber(tenantId);
         await prisma.grievance.create({
           data: { ...grievanceData, ticketNumber: tNum },
         });
@@ -158,6 +163,7 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
   prisma.dataActivity.create({
     data: {
       userId: req.user!.id,
+      tenantId,
       userName: req.user!.name || "Unknown",
       action: "IMPORT",
       module: "grievances",

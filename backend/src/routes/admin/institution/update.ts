@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 
 export async function updateInstitution(
@@ -13,9 +14,10 @@ export async function updateInstitution(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const institutionId = req.params.id as string;
-    const old = await prisma.institution.findUnique({
-      where: { id: institutionId },
+    const old = await prisma.institution.findFirst({
+      where: { id: institutionId, tenantId },
     });
     if (!old) throw ApiError.notFound("Institution not found");
 
@@ -26,8 +28,8 @@ export async function updateInstitution(
 
     // Verify ward if changing
     if (data.wardId && data.wardId !== old.wardId) {
-      const ward = await prisma.ward.findUnique({
-        where: { id: data.wardId },
+      const ward = await prisma.ward.findFirst({
+        where: { id: data.wardId, tenantId },
       });
       if (!ward) throw ApiError.notFound("Ward not found");
     }
@@ -42,6 +44,7 @@ export async function updateInstitution(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "institutions",

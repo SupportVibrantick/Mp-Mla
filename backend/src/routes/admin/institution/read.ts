@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function listInstitutions(
   req: Request,
@@ -9,10 +10,11 @@ export async function listInstitutions(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { page, limit, skip } = parsePagination(req.query);
     const { wardId, category, status, search, sortBy, sortOrder } =
       req.query as Record<string, string>;
-    const where: any = { isDeleted: false };
+    const where: any = { tenantId, isDeleted: false };
     if (wardId) where.wardId = wardId;
     if (category && category !== "all") where.category = category;
     if (status && status !== "all") where.status = status;
@@ -74,10 +76,11 @@ export async function getInstitution(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const institutionId = req.params.id as string;
 
-    const institution = await prisma.institution.findUnique({
-      where: { id: institutionId },
+    const institution = await prisma.institution.findFirst({
+      where: { id: institutionId, tenantId },
       include: {
         ward: {
           select: {
@@ -102,6 +105,7 @@ export async function getInstitution(
     // Related institutions in same ward + category
     const related = await prisma.institution.findMany({
       where: {
+        tenantId,
         wardId: institution.wardId,
         status: "ACTIVE",
         AND: [
@@ -134,8 +138,9 @@ export async function getInstitutionStats(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.query.wardId as string;
-    const baseWhere: any = { isDeleted: false };
+    const baseWhere: any = { tenantId, isDeleted: false };
     if (wardId) baseWhere.wardId = wardId;
 
     const [
@@ -181,6 +186,7 @@ export async function getInstitutionStats(
           isActive: true,
           institution: {
             isDeleted: false,
+            tenantId,
             ...(wardId ? { wardId } : {}),
           },
         },
@@ -203,7 +209,7 @@ export async function getInstitutionStats(
     // Get ward names for byWard
     const wardIds = byWard.map((w) => w.wardId);
     const wards = await prisma.ward.findMany({
-      where: { id: { in: wardIds } },
+      where: { tenantId, id: { in: wardIds } },
       select: { id: true, name: true, wardNumber: true },
     });
     const wardMap = Object.fromEntries(wards.map((w) => [w.id, w]));

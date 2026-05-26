@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/institutions/export
@@ -13,9 +14,10 @@ export async function exportInstitutions(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { wardId, category, status } = req.query;
 
-    const where: any = { isDeleted: false };
+    const where: any = { tenantId, isDeleted: false };
     if (wardId) where.wardId = String(wardId);
     if (category && category !== "all") where.category = String(category);
     if (status && status !== "all") where.status = String(status);
@@ -109,6 +111,7 @@ export async function exportInstitutions(
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
       data: {
+        tenantId,
         userId: req.user!.id,
         userName: req.user!.name || "Unknown",
         action: "EXPORT",

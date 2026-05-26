@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { generateTicketNumber } from "./helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function createGrievance(
   req: Request,
@@ -13,31 +14,32 @@ export async function createGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const data = req.body;
 
     // Verify ward
-    const ward = await prisma.ward.findUnique({
-      where: { id: data.wardId },
+    const ward = await prisma.ward.findFirst({
+      where: { id: data.wardId, tenantId },
     });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     // Verify assigned user
     if (data.assignedToId) {
-      const user = await prisma.user.findUnique({
-        where: { id: data.assignedToId },
+      const user = await prisma.user.findFirst({
+        where: { id: data.assignedToId, tenantId },
       });
       if (!user) throw ApiError.notFound("Assigned user not found");
     }
 
     // Verify department
     if (data.assignedDept) {
-      const dept = await prisma.department.findUnique({
-        where: { id: data.assignedDept },
+      const dept = await prisma.department.findFirst({
+        where: { id: data.assignedDept, tenantId },
       });
       if (!dept) throw ApiError.notFound("Department not found");
     }
 
-    const ticketNumber = await generateTicketNumber();
+    const ticketNumber = await generateTicketNumber(tenantId);
 
     // Clean
     if (data.complainantEmail === "") delete data.complainantEmail;
@@ -46,6 +48,7 @@ export async function createGrievance(
     const grievance = await prisma.grievance.create({
       data: {
         ...data,
+        tenantId,
         ticketNumber,
         createdById: req.user!.id,
         // Create initial timeline
@@ -77,8 +80,8 @@ export async function createGrievance(
         parts.push(`to ${grievance.assignedTo.name}`);
       }
       if (data.assignedDept) {
-        const dept = await prisma.department.findUnique({
-          where: { id: data.assignedDept },
+        const dept = await prisma.department.findFirst({
+          where: { id: data.assignedDept, tenantId },
           select: { name: true },
         });
         if (dept) parts.push(`(Dept: ${dept.name})`);
@@ -100,6 +103,7 @@ export async function createGrievance(
     }
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "grievances",

@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function deleteGrievance(
   req: Request,
@@ -13,9 +14,10 @@ export async function deleteGrievance(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const grievanceId = req.params.id as string;
-    const g = await prisma.grievance.findUnique({
-      where: { id: grievanceId },
+    const g = await prisma.grievance.findFirst({
+      where: { id: grievanceId, tenantId },
       include: {
         timeline: true,
         attachments: true,
@@ -28,6 +30,7 @@ export async function deleteGrievance(
     }
 
     await archiveToRecycleBin({
+      tenantId,
       module: "grievances",
       entityType: "grievance",
       recordId: g.id,
@@ -42,6 +45,7 @@ export async function deleteGrievance(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "DELETE",
       module: "grievances",

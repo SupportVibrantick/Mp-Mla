@@ -2,15 +2,17 @@ import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/grievances/export
  * Exports grievances as flat JSON array for Excel download.
  */
 export const exportGrievances = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const { wardId, status, priority, category } = req.query;
 
-  const where: any = { isDeleted: false };
+  const where: any = { tenantId, isDeleted: false };
   if (wardId && wardId !== "all") where.wardId = String(wardId);
   if (status && status !== "all") where.status = status;
   if (priority && priority !== "all") where.priority = priority;
@@ -59,6 +61,7 @@ export const exportGrievances = catchAsync(async (req: Request, res: Response) =
   // Log data activity
   prisma.dataActivity.create({
     data: {
+      tenantId,
       userId: req.user!.id,
       userName: req.user!.name || "Unknown",
       action: "EXPORT",
