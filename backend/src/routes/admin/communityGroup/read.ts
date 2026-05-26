@@ -4,6 +4,7 @@ import { ApiError } from "../../../utils/ApiError.js";
 
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 import catchAsync from "@/utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/community-groups
@@ -11,12 +12,13 @@ import catchAsync from "@/utils/catchAsync.js";
  * Used by admin UI to render the Communty Group editor grid.
  */
 export const getCommunityGroup = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const { page, limit, skip } = parsePagination(req.query);
   const { wardId, wardAreaId, type, search, isActive } = req.query as Record<
     string,
     string
   >;
-  const where: any = { isDeleted: false };
+  const where: any = { tenantId, isDeleted: false };
   if (wardId) where.wardId = wardId;
   if (wardAreaId) where.wardAreaId = wardAreaId;
   if (type && type !== "all") where.type = type;
@@ -60,9 +62,10 @@ export const getCommunityGroup = catchAsync(async (req, res) => {
  * Gets dashboard statistics for community groups.
  */
 export const getCommunityGroupStats = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const wardId = req.query.wardId as string;
-  const baseWhere: any = { isActive: true, isDeleted: false };
-  const allWhere: any = { isDeleted: false };
+  const baseWhere: any = { tenantId, isActive: true, isDeleted: false };
+  const allWhere: any = { tenantId, isDeleted: false };
   if (wardId) baseWhere.wardId = wardId;
   if (wardId) allWhere.wardId = wardId;
 
@@ -100,7 +103,7 @@ export const getCommunityGroupStats = catchAsync(async (req, res) => {
   // Ward names
   const wardIds = byWard.map((w) => w.wardId);
   const wards = await prisma.ward.findMany({
-    where: { id: { in: wardIds } },
+    where: { tenantId, id: { in: wardIds }, isDeleted: false },
     select: { id: true, name: true, wardNumber: true },
   });
   const wardMap = Object.fromEntries(wards.map((w) => [w.id, w]));
@@ -138,10 +141,11 @@ export const getCommunityGroupStats = catchAsync(async (req, res) => {
  * Gets a single community group with its ward and ward area details.
  */
 export const getOneCommunityGroup = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
   const groupId = req.params.id as string;
 
-  const group = await prisma.communityGroup.findUnique({
-    where: { id: groupId },
+  const group = await prisma.communityGroup.findFirst({
+    where: { id: groupId, tenantId, isDeleted: false },
     include: {
       ward: {
         select: {
@@ -163,11 +167,12 @@ export const getOneCommunityGroup = catchAsync(async (req, res) => {
       },
     },
   });
-  if (!group || group.isDeleted) throw ApiError.notFound("Community group not found");
+  if (!group) throw ApiError.notFound("Community group not found");
 
   // Get other groups in same ward for context
   const relatedGroups = await prisma.communityGroup.findMany({
     where: {
+      tenantId,
       wardId: group.wardId,
       isActive: true,
       AND: [

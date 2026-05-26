@@ -3,12 +3,14 @@ import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { normalizeCommunityType, normalizeBoolean } from "../../../utils/enumParser.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * POST /api/admin/community-groups/bulk
  * Bulk imports community groups with upsert logic by name.
  */
 export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const groups = req.body;
 
     if (!Array.isArray(groups)) {
@@ -20,7 +22,10 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
     const errors = [];
 
     // Pre-fetch all wards to map wardNumber to wardId
-    const allWards = await prisma.ward.findMany({ select: { id: true, wardNumber: true } });
+    const allWards = await prisma.ward.findMany({
+        where: { tenantId, isDeleted: false },
+        select: { id: true, wardNumber: true },
+    });
     const wardMap = new Map(allWards.map(w => [w.wardNumber, w.id]));
 
     for (const row of groups) {
@@ -57,6 +62,7 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
             const safeInt = (val: any) => (val !== undefined && val !== null && !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : undefined);
 
             const groupData: any = {
+                tenantId,
                 name: String(name),
                 type: normalizeCommunityType(type) || "OTHER",
                 wardId,
@@ -74,7 +80,7 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
             };
 
             const existing = await prisma.communityGroup.findFirst({
-                where: { name: String(name), wardId }
+                where: { tenantId, name: String(name), wardId, isDeleted: false }
             });
 
             if (existing) {
@@ -110,6 +116,7 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
         data: {
+            tenantId,
             userId: req.user!.id,
             userName: req.user!.name || "Unknown",
             action: "IMPORT",

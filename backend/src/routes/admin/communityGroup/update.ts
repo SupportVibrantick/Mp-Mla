@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
@@ -13,8 +14,11 @@ import catchAsync from "@/utils/catchAsync.js";
  * Updates a community group.
  */
 export const updateCommunityGroup = catchAsync(async (req, res) => {
-  const old = await prisma.communityGroup.findUnique({
-    where: { id: req.params.id as string },
+  const tenantId = requireTenantId(req);
+  const groupId = req.params.id as string;
+
+  const old = await prisma.communityGroup.findFirst({
+    where: { id: groupId, tenantId, isDeleted: false },
   });
   if (!old) throw ApiError.notFound("Community group not found");
 
@@ -23,18 +27,55 @@ export const updateCommunityGroup = catchAsync(async (req, res) => {
   if (data.wardAreaId === "") data.wardAreaId = null;
   if (data.headEmail === "") delete data.headEmail;
 
-  // Verify area belongs to ward
-  if (data.wardAreaId && data.wardId) {
-    const area = await prisma.wardArea.findUnique({
-      where: { id: data.wardAreaId },
+  const nextWardId = data.wardId || old.wardId;
+
+  if (data.wardId) {
+    const ward = await prisma.ward.findFirst({
+      where: { id: data.wardId, tenantId, isDeleted: false },
+      select: { id: true },
     });
-    if (area && area.wardId !== (data.wardId || old.wardId)) {
+    if (!ward) throw ApiError.notFound("Ward not found");
+  }
+
+  // Verify area belongs to ward
+  if (data.wardAreaId) {
+    const area = await prisma.wardArea.findFirst({
+      where: {
+        id: data.wardAreaId,
+        isDeleted: false,
+        ward: { tenantId, isDeleted: false },
+      },
+    });
+    if (!area) throw ApiError.notFound("Area not found");
+    if (area.wardId !== nextWardId) {
       throw ApiError.badRequest("Area does not belong to selected ward");
     }
   }
 
+  if (
+    (data.name !== undefined && data.name !== old.name) ||
+    (data.wardId !== undefined && data.wardId !== old.wardId)
+  ) {
+    const duplicate = await prisma.communityGroup.findFirst({
+      where: {
+        tenantId,
+        wardId: nextWardId,
+        name: data.name || old.name,
+        isDeleted: false,
+        id: { not: groupId },
+      },
+      select: { id: true },
+    });
+
+    if (duplicate) {
+      throw ApiError.conflict(
+        "Community group with this name already exists in the selected ward.",
+      );
+    }
+  }
+
   const group = await prisma.communityGroup.update({
-    where: { id: req.params.id as string },
+    where: { id: groupId },
     data,
     include: {
       ward: { select: { name: true } },
@@ -42,6 +83,7 @@ export const updateCommunityGroup = catchAsync(async (req, res) => {
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "UPDATE",
     module: "community_groups",
@@ -69,17 +111,21 @@ export const updateCommunityGroup = catchAsync(async (req, res) => {
  * Toggles the active status of a community group.
  */
 export const toggleCommmunity = catchAsync(async (req, res) => {
-  const group = await prisma.communityGroup.findUnique({
-    where: { id: req.params.id as string },
+  const tenantId = requireTenantId(req);
+  const groupId = req.params.id as string;
+
+  const group = await prisma.communityGroup.findFirst({
+    where: { id: groupId, tenantId, isDeleted: false },
   });
   if (!group) throw ApiError.notFound("Community group not found");
 
   const updated = await prisma.communityGroup.update({
-    where: { id: req.params.id as string },
+    where: { id: groupId },
     data: { isActive: !group.isActive },
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "STATUS_CHANGE",
     module: "community_groups",

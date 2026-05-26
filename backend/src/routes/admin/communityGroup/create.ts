@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 import catchAsync from "@/utils/catchAsync.js";
 
@@ -14,26 +15,46 @@ import catchAsync from "@/utils/catchAsync.js";
  */
 
 export const createCommunityGroup = catchAsync(async (req, res) => {
-  const data: any = { ...req.body };
+  const tenantId = requireTenantId(req);
+  const data: any = { ...req.body, tenantId };
   if (data.foundedDate) data.foundedDate = new Date(data.foundedDate);
   if (data.wardAreaId === "" || data.wardAreaId === undefined)
     data.wardAreaId = null;
   if (data.headEmail === "") delete data.headEmail;
 
   // Verify ward exists
-  const ward = await prisma.ward.findUnique({
-    where: { id: data.wardId },
+  const ward = await prisma.ward.findFirst({
+    where: { id: data.wardId, tenantId, isDeleted: false },
   });
   if (!ward) throw ApiError.notFound("Ward not found");
 
   // Verify area if provided
   if (data.wardAreaId) {
-    const area = await prisma.wardArea.findUnique({
-      where: { id: data.wardAreaId },
+    const area = await prisma.wardArea.findFirst({
+      where: {
+        id: data.wardAreaId,
+        isDeleted: false,
+        ward: { tenantId, isDeleted: false },
+      },
     });
     if (!area) throw ApiError.notFound("Area not found");
     if (area.wardId !== data.wardId)
       throw ApiError.badRequest("Area does not belong to selected ward");
+  }
+
+  const existing = await prisma.communityGroup.findFirst({
+    where: {
+      tenantId,
+      wardId: data.wardId,
+      name: data.name,
+      isDeleted: false,
+    },
+    select: { id: true },
+  });
+  if (existing) {
+    throw ApiError.conflict(
+      "Community group with this name already exists in the selected ward.",
+    );
   }
 
   const group = await prisma.communityGroup.create({
@@ -45,6 +66,7 @@ export const createCommunityGroup = catchAsync(async (req, res) => {
   });
 
   await createAuditLog({
+    tenantId,
     userId: req.user!.id,
     action: "CREATE",
     module: "community_groups",

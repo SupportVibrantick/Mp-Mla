@@ -29,14 +29,14 @@ router.get(
   getCommunityGroupStats,
 );
 router.get(
-  "/:id",
-  requirePermission("community_groups", "read"),
-  getOneCommunityGroup,
-);
-router.get(
   "/export/all",
   requirePermission("community_groups", "read"),
   exportCommunityGroups,
+);
+router.get(
+  "/:id",
+  requirePermission("community_groups", "read"),
+  getOneCommunityGroup,
 );
 
 // create Community Group
