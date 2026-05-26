@@ -2,15 +2,17 @@ import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/leaders/export
  * Exports leaders as flat JSON array — round-trip compatible with bulk import.
  */
 export const exportLeaders = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const { wardId, category } = req.query;
 
-  const where: any = { isDeleted: false };
+  const where: any = { tenantId, isDeleted: false };
   if (wardId) where.wardId = String(wardId);
   if (category && category !== "all") where.category = category;
 
@@ -52,6 +54,7 @@ export const exportLeaders = catchAsync(async (req: Request, res: Response) => {
   // Log data activity (fire-and-forget)
   prisma.dataActivity.create({
     data: {
+      tenantId,
       userId: req.user!.id,
       userName: req.user!.name || "Unknown",
       action: "EXPORT",

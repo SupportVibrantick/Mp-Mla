@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function updateLeader(
   req: Request,
@@ -12,18 +13,25 @@ export async function updateLeader(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const lenderId = req.params.id as string;
-    const old = await prisma.leader.findUnique({
-      where: { id: lenderId },
+    const old = await prisma.leader.findFirst({
+      where: { id: lenderId, tenantId },
     });
     if (!old) throw ApiError.notFound("Leader not found");
 
     const data: any = { ...req.body };
     if (data.email === "") delete data.email;
     if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);
+    if (data.wardId && data.wardId !== old.wardId) {
+      const ward = await prisma.ward.findFirst({
+        where: { id: data.wardId, tenantId },
+      });
+      if (!ward) throw ApiError.notFound("Ward not found");
+    }
     if (data.adharNumber && data.adharNumber !== old.adharNumber) {
-      const existingLeader = await prisma.leader.findUnique({
-        where: { adharNumber: data.adharNumber },
+      const existingLeader = await prisma.leader.findFirst({
+        where: { tenantId, adharNumber: data.adharNumber },
       });
       if (existingLeader) {
         throw ApiError.badRequest(`Leader with Aadhaar "${data.adharNumber}" already exists`);
@@ -39,6 +47,7 @@ export async function updateLeader(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "leaders",

@@ -1,19 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function getTodayBirthdays(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const today = new Date();
     const month = today.getMonth();
     const day = today.getDate();
     const year = today.getFullYear();
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true, isDeleted: false },
+      where: { tenantId, isActive: true, isDeleted: false },
       include: {
         ward: {
           select: { name: true, wardNumber: true },
@@ -61,12 +63,13 @@ export async function getUpcomingBirthdays(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const days = parseInt(req.query.days as string) || 30;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true, isDeleted: false },
+      where: { tenantId, isActive: true, isDeleted: false },
       include: {
         ward: {
           select: { name: true, wardNumber: true },
@@ -112,16 +115,17 @@ export async function getUpcomingBirthdays(
 }
 
 export async function getThisMonthBirthdays(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const today = new Date();
     const month = today.getMonth();
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true, isDeleted: false },
+      where: { tenantId, isActive: true, isDeleted: false },
       include: {
         ward: {
           select: { name: true, wardNumber: true },
@@ -159,11 +163,12 @@ export async function getBirthdayCalendar(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const month = parseInt(req.query.month as string);
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
 
     const allLeaders = await prisma.leader.findMany({
-      where: { isActive: true, isDeleted: false },
+      where: { tenantId, isActive: true, isDeleted: false },
       select: {
         id: true,
         name: true,

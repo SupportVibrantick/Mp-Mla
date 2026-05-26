@@ -5,11 +5,12 @@ import { z } from "zod";
 import { createAuditLog } from "../../middleware/auditLog.js";
 import { sendEmail, buildMeetingEmailHtml } from "../../lib/email.js";
 import { getSetting } from "../../lib/settings.js";
+import { requireTenantId } from "../../utils/tenant.js";
 
 // Validation Schemas
 const meetingSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  description: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),   
   date: z.string().min(1, "Date is required").or(z.date()),
   time: z.string().optional().nullable(),
   type: z.enum(["ONLINE", "OFFLINE"]),
@@ -22,6 +23,8 @@ const meetingSchema = z.object({
 
 export const getMeetings = async (req: Request, res: Response): Promise<void> => {
   try {
+    const tenantId = requireTenantId(req);
+
     const { status, type, search, page = "1", limit = "10" } = req.query;
 
     const pageNumber = parseInt(page as string);
@@ -29,6 +32,7 @@ export const getMeetings = async (req: Request, res: Response): Promise<void> =>
     const skip = (pageNumber - 1) * limitNumber;
 
     const where: Prisma.MeetingWhereInput = {
+      tenantId,
       isDeleted: false,
     };
 
@@ -74,17 +78,21 @@ export const getMeetings = async (req: Request, res: Response): Promise<void> =>
 
 export const createMeeting = async (req: Request, res: Response): Promise<void> => {
   try {
+    const tenantId = requireTenantId(req);
+
     const validData = meetingSchema.parse(req.body);
 
     const meeting = await prisma.meeting.create({
       data: {
         ...validData,
+        tenantId,
         date: new Date(validData.date),
         meetingLink: validData.meetingLink || null, // convert empty string to null safely
       },
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user?.id,
       action: "CREATE" as any,
       module: "meeting",
@@ -121,9 +129,11 @@ export const createMeeting = async (req: Request, res: Response): Promise<void> 
 
 export const getMeetingById = async (req: Request, res: Response): Promise<void> => {
   try {
+    const tenantId = requireTenantId(req);
+
     const id = req.params.id as string;
-    const meeting = await prisma.meeting.findUnique({
-      where: { id, isDeleted: false },
+    const meeting = await prisma.meeting.findFirst({
+      where: { id, tenantId, isDeleted: false },
     });
 
     if (!meeting) {
@@ -139,11 +149,13 @@ export const getMeetingById = async (req: Request, res: Response): Promise<void>
 
 export const updateMeeting = async (req: Request, res: Response): Promise<void> => {
   try {
+    const tenantId = requireTenantId(req);
+
     const id = req.params.id as string;
     const validData = meetingSchema.partial().parse(req.body);
 
-    const existingMeeting = await prisma.meeting.findUnique({
-      where: { id },
+    const existingMeeting = await prisma.meeting.findFirst({
+      where: { id, tenantId },
     });
 
     if (!existingMeeting || existingMeeting.isDeleted) {
@@ -170,6 +182,7 @@ export const updateMeeting = async (req: Request, res: Response): Promise<void> 
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user?.id,
       action: "UPDATE" as any,
       module: "meeting",
@@ -216,9 +229,13 @@ export const updateMeeting = async (req: Request, res: Response): Promise<void> 
 
 export const deleteMeeting = async (req: Request, res: Response): Promise<void> => {
   try {
+    const tenantId = requireTenantId(req);
+
     const id = req.params.id as string;
 
-    const existingMeeting = await prisma.meeting.findUnique({ where: { id } });
+    const existingMeeting = await prisma.meeting.findFirst({
+      where: { id, tenantId },
+    });
 
     if (!existingMeeting || existingMeeting.isDeleted) {
       res.status(404).json({ success: false, error: "Meeting not found" });
@@ -233,6 +250,7 @@ export const deleteMeeting = async (req: Request, res: Response): Promise<void> 
     // Handle Recycle Bin
     await prisma.recycleBinEntry.create({
       data: {
+        tenantId,
         module: "meetings",
         entityType: "meeting",
         recordId: existingMeeting.id,
@@ -243,6 +261,7 @@ export const deleteMeeting = async (req: Request, res: Response): Promise<void> 
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user?.id,
       action: "DELETE" as any,
       module: "meeting",
@@ -266,9 +285,11 @@ export const deleteMeeting = async (req: Request, res: Response): Promise<void> 
 
 export const getMeetingStats = async (req: Request, res: Response): Promise<void> => {
   try {
+    const tenantId = requireTenantId(req);
+
     const counts = await prisma.meeting.groupBy({
       by: ['status'],
-      where: { isDeleted: false },
+      where: { tenantId, isDeleted: false },
       _count: true
     });
 

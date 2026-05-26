@@ -5,27 +5,29 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 export async function createLeader(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const data: any = { ...req.body };
+    const tenantId = requireTenantId(req);
+    const data: any = { ...req.body, tenantId };
 
     if (data.email === "") delete data.email;
     data.dateOfBirth = new Date(data.dateOfBirth);
 
     if (data.wardId) {
-      const ward = await prisma.ward.findUnique({
-        where: { id: data.wardId },
+      const ward = await prisma.ward.findFirst({
+        where: { id: data.wardId, tenantId },
       });
       if (!ward) throw ApiError.notFound("Ward not found");
     }
 
     if (data.adharNumber) {
-      const existingLeader = await prisma.leader.findUnique({
-        where: { adharNumber: data.adharNumber },
+      const existingLeader = await prisma.leader.findFirst({
+        where: { tenantId, adharNumber: data.adharNumber },
       });
       if (existingLeader) {
         throw ApiError.badRequest(`Leader with Aadhaar "${data.adharNumber}" already exists`);
@@ -42,6 +44,7 @@ export async function createLeader(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "leaders",

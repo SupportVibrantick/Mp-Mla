@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function deleteLeader(
   req: Request,
@@ -13,9 +14,10 @@ export async function deleteLeader(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const lenderId = req.params.id as string;
-    const leader = await prisma.leader.findUnique({
-      where: { id: lenderId },
+    const leader = await prisma.leader.findFirst({
+      where: { id: lenderId, tenantId },
       include: { greetings: true },
     });
     if (!leader) throw ApiError.notFound("Leader not found");
@@ -25,6 +27,7 @@ export async function deleteLeader(
     }
 
     await archiveToRecycleBin({
+      tenantId,
       module: "leaders",
       entityType: "leader",
       recordId: leader.id,
@@ -39,6 +42,7 @@ export async function deleteLeader(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "DELETE",
       module: "leaders",

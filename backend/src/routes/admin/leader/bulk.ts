@@ -6,6 +6,7 @@ import {
   normalizeBoolean,
 } from "../../../utils/enumParser.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 const VALID_RELATIONS = [
   "Supporter",
@@ -30,6 +31,7 @@ function normalizeFromList(val: any, list: string[]): string | undefined {
  */
 export const bulkCreateLeaders = catchAsync(
   async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const leaders = req.body;
 
     if (!Array.isArray(leaders) || leaders.length === 0) {
@@ -45,6 +47,7 @@ export const bulkCreateLeaders = catchAsync(
 
     // Pre-fetch all wards for wardNumber -> wardId mapping
     const allWards = await prisma.ward.findMany({
+      where: { tenantId },
       select: { id: true, wardNumber: true },
     });
     const wardMap = new Map(allWards.map((w) => [w.wardNumber, w.id]));
@@ -145,6 +148,7 @@ export const bulkCreateLeaders = catchAsync(
         }
 
         const leaderData = {
+          tenantId,
           name: String(name).trim(),
           category: normalizedCategory,
           designation: safeString(designation),
@@ -184,7 +188,7 @@ export const bulkCreateLeaders = catchAsync(
         let existing = null;
         if (orConditions.length > 0) {
           existing = await prisma.leader.findFirst({
-            where: { OR: orConditions },
+            where: { tenantId, OR: orConditions },
           });
         }
 
@@ -219,6 +223,7 @@ export const bulkCreateLeaders = catchAsync(
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
       data: {
+        tenantId,
         userId: req.user!.id,
         userName: req.user!.name || "Unknown",
         action: "IMPORT",

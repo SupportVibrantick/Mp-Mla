@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export async function listLeaders(
   req: Request,
@@ -9,11 +10,12 @@ export async function listLeaders(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { page, limit, skip } = parsePagination(req.query);
     const { category, wardId, relation, /* influence, */ search, isActive } =
       req.query as Record<string, string>;
 
-    const where: any = { isDeleted: false };
+    const where: any = { tenantId, isDeleted: false };
     if (category && category !== "all") where.category = category;
     if (wardId && wardId !== "all") where.wardId = wardId;
     if (relation && relation !== "all") where.relation = relation;
@@ -96,10 +98,11 @@ export async function getLeader(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const leaderId = req.params.id as string;
 
-    const leader = await prisma.leader.findUnique({
-      where: { id: leaderId },
+    const leader = await prisma.leader.findFirst({
+      where: { id: leaderId, tenantId },
       include: {
         ward: {
           select: {
@@ -141,6 +144,7 @@ export async function getLeader(
     const thisYearGreeting = await prisma.leaderGreeting.findFirst({
       where: {
         leaderId: leader.id,
+        leader: { tenantId },
         type: "BIRTHDAY",
         year: today.getFullYear(),
         status: { in: ["SENT", "DELIVERED"] },
@@ -169,7 +173,8 @@ export async function getLeaderStats(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const where = { isDeleted: false };
+    const tenantId = requireTenantId(req);
+    const where = { tenantId, isDeleted: false };
 
     const [total, active, byCategory, /* byInfluence, */ byRelation] =
       await Promise.all([

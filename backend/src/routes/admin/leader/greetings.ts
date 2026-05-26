@@ -7,6 +7,7 @@ import {
 import { ApiError } from "../../../utils/ApiError.js";
 import { z } from "zod";
 import { sendEmail } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export const greetingSchema = z.object({
   type: z
@@ -31,8 +32,9 @@ export async function sendGreeting(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const leader = await prisma.leader.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const leader = await prisma.leader.findFirst({
+      where: { id: req.params.id as string, tenantId },
     });
     if (!leader) throw ApiError.notFound("Leader not found");
 
@@ -104,6 +106,7 @@ export async function sendGreeting(
     // Also create a notification record for tracking
     await prisma.notification.create({
       data: {
+        tenantId,
         channel,
         title: `${type} Greeting — ${leader.name}`,
         message: personalizedMsg,
@@ -118,6 +121,7 @@ export async function sendGreeting(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "SEND_NOTIFICATION",
       module: "leaders",
@@ -144,12 +148,13 @@ export async function sendBulkGreeting(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { leaderIds, type, channel, message } = req.body;
     const year = new Date().getFullYear();
     const results: any[] = [];
 
     const leaders = await prisma.leader.findMany({
-      where: { id: { in: leaderIds } },
+      where: { tenantId, id: { in: leaderIds } },
     });
 
     for (const leader of leaders) {
@@ -192,6 +197,7 @@ export async function sendBulkGreeting(
     }
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "SEND_NOTIFICATION",
       module: "leaders",
@@ -215,8 +221,9 @@ export async function getGreetingHistory(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const greetings = await prisma.leaderGreeting.findMany({
-      where: { leaderId: req.params.id as string },
+      where: { leaderId: req.params.id as string, leader: { tenantId } },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
