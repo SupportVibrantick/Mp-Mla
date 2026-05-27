@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * DELETE /api/admin/project/:id
@@ -17,9 +18,10 @@ export async function deleteProject(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const projectId = req.params.id as string;
-    const p = await prisma.project.findUnique({
-      where: { id: projectId },
+    const p = await prisma.project.findFirst({
+      where: { id: projectId, tenantId },
       include: {
         milestones: true,
         updates: true,
@@ -33,6 +35,7 @@ export async function deleteProject(
     }
 
     await archiveToRecycleBin({
+      tenantId,
       module: "projects",
       entityType: "project",
       recordId: p.id,
@@ -47,6 +50,7 @@ export async function deleteProject(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "DELETE",
       module: "projects",

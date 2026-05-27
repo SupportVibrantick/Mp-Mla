@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * POST /api/admin/project/:id/milestones
@@ -13,8 +14,9 @@ export async function addMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const project = await prisma.project.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id as string, tenantId, isDeleted: false },
     });
     if (!project) throw ApiError.notFound("Project not found");
     const count = await prisma.projectMilestone.count({
@@ -47,9 +49,10 @@ export async function updateMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const milestoneId = req.params.msId as string;
-    const ms = await prisma.projectMilestone.findUnique({
-      where: { id: milestoneId },
+    const ms = await prisma.projectMilestone.findFirst({
+      where: { id: milestoneId, project: { tenantId } },
     });
     if (!ms) throw ApiError.notFound("Milestone not found");
     const data: any = { ...req.body };
@@ -75,8 +78,9 @@ export async function deleteMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const milestone = await prisma.projectMilestone.findUnique({
-      where: { id: req.params.msId as string },
+    const tenantId = requireTenantId(req);
+    const milestone = await prisma.projectMilestone.findFirst({
+      where: { id: req.params.msId as string, project: { tenantId } },
     });
 
     if (!milestone) {
@@ -84,6 +88,7 @@ export async function deleteMilestone(
     }
 
     await archiveToRecycleBin({
+      tenantId,
       module: "projects",
       entityType: "project_milestone",
       recordId: milestone.id,
@@ -111,9 +116,10 @@ export async function toggleMilestone(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const milstoneId = req.params.msId as string;
-    const ms = await prisma.projectMilestone.findUnique({
-      where: { id: milstoneId },
+    const ms = await prisma.projectMilestone.findFirst({
+      where: { id: milstoneId, project: { tenantId } },
     });
     if (!ms) throw ApiError.notFound("Milestone not found");
     const updated = await prisma.projectMilestone.update({

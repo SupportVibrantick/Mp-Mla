@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 
 
@@ -14,8 +15,9 @@ export async function addUpdate(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const project = await prisma.project.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id as string, tenantId, isDeleted: false },
     });
     if (!project) throw ApiError.notFound("Project not found");
     const entry = await prisma.projectUpdate.create({

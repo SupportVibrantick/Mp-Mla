@@ -5,6 +5,7 @@ import { createAuditLog, getRequestMeta } from "../../../middleware/auditLog.js"
 import { parsePagination, buildPagination } from "../../../utils/helpers.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 import {
   permanentlyDeleteRecycledRecord,
   restoreRecycleBinEntry,
@@ -16,10 +17,11 @@ router.get(
   "/",
   requirePermission("recycle_bin", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const { page, limit, skip } = parsePagination(req.query);
     const { module, entityType, search } = req.query as Record<string, string>;
 
-    const where: any = { restoredAt: null };
+    const where: any = { tenantId, restoredAt: null };
 
     if (module && module !== "all") {
       where.module = module;
@@ -47,13 +49,13 @@ router.get(
       }),
       (prisma as any).recycleBinEntry.count({ where }),
       (prisma as any).recycleBinEntry.findMany({
-        where: { restoredAt: null },
+        where: { tenantId, restoredAt: null },
         select: { module: true },
         distinct: ["module"],
         orderBy: { module: "asc" },
       }),
       (prisma as any).recycleBinEntry.findMany({
-        where: { restoredAt: null },
+        where: { tenantId, restoredAt: null },
         select: { entityType: true },
         distinct: ["entityType"],
         orderBy: { entityType: "asc" },
@@ -76,8 +78,9 @@ router.post(
   "/:id/restore",
   requirePermission("recycle_bin", "restore"),
   catchAsync(async (req, res) => {
-    const entry = await (prisma as any).recycleBinEntry.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const entry = await (prisma as any).recycleBinEntry.findFirst({
+      where: { id: req.params.id as string, tenantId },
     });
 
     if (!entry) {
@@ -103,6 +106,7 @@ router.post(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user?.id,
       action: "RESTORE",
       module: "recycle_bin",
@@ -122,8 +126,9 @@ router.delete(
   "/:id",
   requirePermission("recycle_bin", "delete"),
   catchAsync(async (req, res) => {
-    const entry = await (prisma as any).recycleBinEntry.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const entry = await (prisma as any).recycleBinEntry.findFirst({
+      where: { id: req.params.id as string, tenantId },
     });
 
     if (!entry) {
@@ -140,6 +145,7 @@ router.delete(
     await (prisma as any).recycleBinEntry.delete({ where: { id: entry.id } });
 
     await createAuditLog({
+      tenantId,
       userId: req.user?.id,
       action: "DELETE",
       module: "recycle_bin",

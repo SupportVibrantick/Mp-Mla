@@ -3,12 +3,14 @@ import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { normalizeProjectStatus, normalizeFundType } from "../../../utils/enumParser.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * POST /api/admin/projects/bulk
  * Bulk imports projects with upsert logic by projectCode or name.
  */
 export const bulkCreateProjects = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const projects = req.body;
 
     if (!Array.isArray(projects)) {
@@ -20,11 +22,17 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
     const errors = [];
 
     // Pre-fetch all wards to map wardNumber to wardId
-    const allWards = await prisma.ward.findMany({ select: { id: true, wardNumber: true } });
+    const allWards = await prisma.ward.findMany({
+        where: { tenantId },
+        select: { id: true, wardNumber: true }
+    });
     const wardMap = new Map(allWards.map(w => [w.wardNumber, w.id]));
 
     // Pre-fetch all departments to map code/name to ID
-    const allDepts = await prisma.department.findMany({ select: { id: true, name: true, code: true } });
+    const allDepts = await prisma.department.findMany({
+        where: { tenantId },
+        select: { id: true, name: true, code: true }
+    });
     const deptMap = new Map();
     allDepts.forEach(d => {
         deptMap.set(d.code.toUpperCase(), d.id);
@@ -82,8 +90,9 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
             const projectData: any = {
                 name: sName,
                 projectCode: sCode,
+                tenantId,
                 category: String(category || "General"),
- department: resolvedDeptId || "Unassigned",
+                department: resolvedDeptId || "Unassigned",
                 contractor: safeString(contractor),
                 contractorPhone: safeString(contractorPhone),
                 wardId,
@@ -106,7 +115,8 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
                     OR: [
                         { projectCode: sCode },
                         { name: sName }
-                    ]
+                    ],
+                    tenantId,
                 }
             });
 
@@ -150,6 +160,7 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
         data: {
+            tenantId,
             userId: req.user!.id,
             userName: req.user!.name || "Unknown",
             action: "IMPORT",

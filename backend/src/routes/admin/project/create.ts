@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { generateProjectCode } from "./helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 
 /**
@@ -18,12 +19,22 @@ export async function createProject(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { milestones, ...data } = req.body;
 
-    const ward = await prisma.ward.findUnique({ where: { id: data.wardId } });
+    const ward = await prisma.ward.findFirst({
+      where: { id: data.wardId, tenantId },
+    });
     if (!ward) throw ApiError.notFound("Ward not found");
 
-    const projectCode = await generateProjectCode(data.category);
+    if (data.department) {
+      const department = await prisma.department.findFirst({
+        where: { id: data.department, tenantId, isDeleted: false },
+      });
+      if (!department) throw ApiError.notFound("Department not found");
+    }
+
+    const projectCode = await generateProjectCode(data.category, tenantId);
 
     if (data.startDate) data.startDate = new Date(data.startDate);
     if (data.expectedEndDate)
@@ -39,6 +50,7 @@ export async function createProject(
     const project = await prisma.project.create({
       data: {
         ...data,
+        tenantId,
         projectCode,
         createdById: req.user!.id,
         ...(msData.length > 0
@@ -52,6 +64,7 @@ export async function createProject(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "projects",

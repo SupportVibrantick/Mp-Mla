@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 
 
@@ -18,9 +19,10 @@ export async function updateProject(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const projectId = req.params.id as string;
-    const old = await prisma.project.findUnique({
-      where: { id: projectId },
+    const old = await prisma.project.findFirst({
+      where: { id: projectId, tenantId },
     });
     if (!old) throw ApiError.notFound("Project not found");
 
@@ -29,6 +31,20 @@ export async function updateProject(
     if (data.expectedEndDate)
       data.expectedEndDate = new Date(data.expectedEndDate);
 
+    if (data.wardId && data.wardId !== old.wardId) {
+      const ward = await prisma.ward.findFirst({
+        where: { id: data.wardId, tenantId },
+      });
+      if (!ward) throw ApiError.notFound("Ward not found");
+    }
+
+    if (data.department && data.department !== old.department) {
+      const department = await prisma.department.findFirst({
+        where: { id: data.department, tenantId, isDeleted: false },
+      });
+      if (!department) throw ApiError.notFound("Department not found");
+    }
+
     const project = await prisma.project.update({
       where: { id: projectId },
       data,
@@ -36,6 +52,7 @@ export async function updateProject(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "projects",
@@ -72,8 +89,9 @@ export async function updateStatus(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const old = await prisma.project.findUnique({
-      where: { id: req.params.id as string },
+    const tenantId = requireTenantId(req);
+    const old = await prisma.project.findFirst({
+      where: { id: req.params.id as string, tenantId },
     });
     if (!old) throw ApiError.notFound("Project not found");
 
@@ -92,6 +110,7 @@ export async function updateStatus(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "STATUS_CHANGE",
       module: "projects",

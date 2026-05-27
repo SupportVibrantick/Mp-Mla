@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/project
@@ -13,11 +14,12 @@ export async function listProjects(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { page, limit, skip } = parsePagination(req.query);
     const { wardId, status, department, category, fundType, search } =
       req.query as Record<string, string>;
 
-    const where: any = { isDeleted: false };
+    const where: any = { tenantId, isDeleted: false };
     if (wardId) where.wardId = wardId;
     if (status && status !== "all") where.status = status;
     if (department && department !== "all") where.department = department;
@@ -50,7 +52,7 @@ export async function listProjects(
     // Resolve department names
     const deptIds = [...new Set(data.map((p) => p.department).filter(Boolean))];
     const depts = await prisma.department.findMany({
-      where: { id: { in: deptIds } },
+      where: { tenantId, id: { in: deptIds } },
       select: { id: true, name: true, code: true },
     });
     const deptMap = Object.fromEntries(depts.map((d) => [d.id, d]));
@@ -84,10 +86,11 @@ export async function getProject(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const projectId = req.params.id as string;
 
     const project = await prisma.project.findFirst({
-      where: { id: projectId, isDeleted: false },
+      where: { id: projectId, tenantId, isDeleted: false },
       include: {
         ward: {
           select: { id: true, name: true, wardNumber: true, zone: true },
@@ -101,8 +104,8 @@ export async function getProject(
     if (!project) throw ApiError.notFound("Project not found");
  let departmentInfo = null;
     if (project.department) {
-      departmentInfo = await prisma.department.findUnique({
-        where: { id: project.department },
+      departmentInfo = await prisma.department.findFirst({
+        where: { id: project.department, tenantId },
         select: {
           id: true,
           name: true,
@@ -144,8 +147,9 @@ export async function getProjectStats(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.query.wardId as string;
-    const w: any = { isDeleted: false, ...(wardId ? { wardId } : {}) };
+    const w: any = { tenantId, isDeleted: false, ...(wardId ? { wardId } : {}) };
 
     const [
       total,
@@ -234,7 +238,7 @@ export async function getProjectStats(
 
     const wardIds = byWard.map((x) => x.wardId);
     const wards = await prisma.ward.findMany({
-      where: { id: { in: wardIds } },
+      where: { tenantId, id: { in: wardIds } },
       select: { id: true, name: true, wardNumber: true },
     });
     const wardMap = Object.fromEntries(wards.map((w) => [w.id, w]));

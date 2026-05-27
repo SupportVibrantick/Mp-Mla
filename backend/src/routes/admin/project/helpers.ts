@@ -1,10 +1,13 @@
 import prisma from "../../../lib/prisma.js";
 
-export async function generateProjectCode(category: string): Promise<string> {
+export async function generateProjectCode(
+  category: string,
+  tenantId: string,
+): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `PRJ-${category.substring(0, 3).toUpperCase()}-${year}-`;
   const last = await prisma.project.findFirst({
-    where: { projectCode: { startsWith: prefix } },
+    where: { tenantId, projectCode: { startsWith: prefix } },
     orderBy: { projectCode: "desc" },
     select: { projectCode: true },
   });

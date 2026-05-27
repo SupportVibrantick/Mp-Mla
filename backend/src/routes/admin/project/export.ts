@@ -2,14 +2,16 @@ import { Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/projects/export
  * Exports all projects in a flat structure.
  */
 export const exportProjects = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const projects = await prisma.project.findMany({
-        where: { isDeleted: false },
+        where: { tenantId, isDeleted: false },
         include: {
             ward: {
                 select: {
@@ -52,6 +54,7 @@ export const exportProjects = catchAsync(async (req: Request, res: Response) => 
     // Log data activity (fire-and-forget)
     prisma.dataActivity.create({
         data: {
+            tenantId,
             userId: req.user!.id,
             userName: req.user!.name || "Unknown",
             action: "EXPORT",
