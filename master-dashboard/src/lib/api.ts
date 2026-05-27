@@ -325,3 +325,17 @@ export const settingsApi = {
       "/admin/settings/public/branding",
     ),
 };
+
+export const tenantsApi = {
+  list: (params?: any) => api.get("/platform/tenants", { params }),
+  get: (id: string) => api.get(`/platform/tenants/${id}`),
+  create: (data: any) => api.post("/platform/tenants", data),
+  update: (id: string, data: any) => api.patch(`/platform/tenants/${id}`, data),
+  suspend: (id: string) => api.post(`/platform/tenants/${id}/suspend`),
+  activate: (id: string) => api.post(`/platform/tenants/${id}/activate`),
+  remove: (id: string) => api.delete(`/platform/tenants/${id}`),
+  listUsers: (id: string) => api.get(`/platform/tenants/${id}/users`),
+  createUser: (id: string, data: any) => api.post(`/platform/tenants/${id}/users`, data),
+  listPlans: () => api.get("/platform/tenants/plans"),
+};
+

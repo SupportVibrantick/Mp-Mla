@@ -48,74 +48,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-
-    {
-      label: "Projects",
-      icon: ClipboardList,
-      href: "/projects",
-      module: "projects",
-    },
-    {
-      label: "Public Facilities",
-      icon: Building2,
-      href: "/public-facilities",
-      module: "institutions",
-    },
-
-    {
-      label: " Community Groups",
-      icon: Users,
-      href: "/community",
-      module: "community_groups",
-    },
-
-    // { label: "Schemes", icon: FileText, href: "/schemes", module: "schemes" },
-    { label: "Wards", icon: Map, href: "/wards", module: "wards" },
-    {
-      label: "Demographics",
-      icon: BarChart,
-      href: "/demographics",
-      module: "demographics",
-    },
-    {
-      label: "Departments",
-      icon: Landmark,
-      href: "/departments",
-      module: "departments",
-    },
-    {
-      label: "Funds",
-      icon: IndianRupeeIcon,
-      href: "/funds",
-      module: "funds",
-    },
-    // { type: "divider", label: "People" },
-    { label: "Local Representatives", icon: Users, href: "/leaders", module: "leaders" },
-    {
-      label: "Birthdays",
-      icon: Cake,
-      href: "/leaders/birthdays",
-      module: "leaders",
-    },
-    {
-      label: "Public Requests",
-      icon: MessageSquareWarning,
-      href: "/public-requests",
-      module: "grievances",
-    },
-    {
-      label: "Meetings & Events",
-      icon: CalendarDays,
-      href: "/meetings",
-      module: "meeting",
-    },
-    { label: "Reports", icon: BarChart3, href: "/reports", module: "reports" },
-    {
-      label: "Competitor Analysis",
-      icon: BarChart4,
-      href: "/competitor-analysis",
-      module: "competitors",
-    },
   ];
 
   const filteredNavItems = navItems.filter(
@@ -124,13 +56,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   );
 
   const adminItems = [
+    { label: "Tenant Management", icon: Building2, href: "/tenants" },
     { label: "User Management", icon: Users, href: "/users", module: "users" },
-    {
-      label: "Permissions",
-      icon: Shield,
-      href: "/permissions",
-      module: "users",
-    },
   ].filter(
     (item) =>
         !item.module || canAny(item.module) || user?.role === "SUPER_ADMIN",

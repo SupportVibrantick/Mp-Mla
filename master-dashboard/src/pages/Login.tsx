@@ -67,7 +67,7 @@ export default function Login() {
   ) => {
     const creds = {
       platform_admin: {
-        email: "superadmin@gmail.com",
+        email: "superadmin@admin.mpmla.in",
         password: "Platform@123456",
       },
 

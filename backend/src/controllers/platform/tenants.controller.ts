@@ -27,6 +27,49 @@ function calculatePeriodEnd(billingCycle = "MONTHLY"): Date {
   return end;
 }
 
+function buildTenantWhere(search?: string, status?: string, planId?: string): Prisma.TenantWhereInput {
+  const where: Prisma.TenantWhereInput = {};
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { constituencyName: { contains: search, mode: "insensitive" } },
+      { representativeName: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  if (status) {
+    where.status = status as any;
+  }
+
+  if (planId) {
+    where.subscription = {
+      is: {
+        planId,
+      },
+    };
+  }
+
+  return where;
+}
+
+function getMonthlyRecurringRevenue(
+  subscription?: {
+    billingCycle: string;
+    plan?: { priceMonthly: number; priceYearly: number } | null;
+  } | null,
+) {
+  if (!subscription?.plan) return 0;
+
+  const { billingCycle, plan } = subscription;
+
+  if (billingCycle === "YEARLY") return plan.priceYearly / 12;
+  if (billingCycle === "HALF_YEARLY") return plan.priceYearly / 12;
+  if (billingCycle === "QUARTERLY") return plan.priceMonthly * 3 / 3;
+
+  return plan.priceMonthly;
+}
+
 // --- Create Tenant ---
 export const createTenant = async (
   req: Request,
@@ -229,6 +272,7 @@ export const listTenants = async (
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string;
     const status = req.query.status as string;
+    const planId = req.query.planId as string;
     const allowedSortFields = new Set(["createdAt", "updatedAt", "name", "status"]);
     const requestedSortBy = (req.query.sortBy as string) || "createdAt";
     const sortBy = allowedSortFields.has(requestedSortBy)
@@ -236,21 +280,9 @@ export const listTenants = async (
       : "createdAt";
     const sortOrder = (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
 
-    const where: Prisma.TenantWhereInput = {};
+    const where = buildTenantWhere(search, status, planId);
 
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { constituencyName: { contains: search, mode: "insensitive" } },
-        { representativeName: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    if (status) {
-      where.status = status as any;
-    }
-
-    const [tenants, total] = await Promise.all([
+    const [tenants, total, activeTenants, filteredSubscriptions] = await Promise.all([
       prisma.tenant.findMany({
         where,
         orderBy: { [sortBy]: sortOrder },
@@ -268,11 +300,40 @@ export const listTenants = async (
         },
       }),
       prisma.tenant.count({ where }),
+      prisma.tenant.count({
+        where: {
+          ...where,
+          status: "ACTIVE",
+        },
+      }),
+      prisma.tenantSubscription.findMany({
+        where: {
+          tenant: where,
+        },
+        select: {
+          billingCycle: true,
+          plan: {
+            select: {
+              priceMonthly: true,
+              priceYearly: true,
+            },
+          },
+        },
+      }),
     ]);
+
+    const filteredMrr = filteredSubscriptions.reduce((sum, subscription) => {
+      return sum + getMonthlyRecurringRevenue(subscription);
+    }, 0);
 
     res.status(200).json(
       ApiResponse.success({
         tenants,
+        stats: {
+          totalTenants: total,
+          activeTenants,
+          filteredMrr,
+        },
         pagination: {
           total,
           page,
@@ -476,6 +537,185 @@ export const listTenantUsers = async (
     });
 
     res.status(200).json(ApiResponse.success(users));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Suspend Tenant ---
+export const suspendTenant = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const id = getParamId(req);
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        subscription: true,
+      },
+    });
+
+    if (!tenant) {
+      throw ApiError.notFound("Tenant not found");
+    }
+
+    const updatedTenant = await prisma.$transaction(async (tx) => {
+      const nextTenant = await tx.tenant.update({
+        where: { id },
+        data: { status: "SUSPENDED" },
+      });
+
+      await tx.user.updateMany({
+        where: {
+          tenantId: id,
+          status: "ACTIVE",
+        },
+        data: {
+          status: "SUSPENDED",
+        },
+      });
+
+      if (tenant.subscription) {
+        await tx.tenantSubscription.update({
+          where: { tenantId: id },
+          data: {
+            status: "SUSPENDED",
+            suspendedAt: new Date(),
+          },
+        });
+      }
+
+      return nextTenant;
+    });
+
+    res.status(200).json(ApiResponse.success(updatedTenant, "Tenant suspended successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Activate Tenant ---
+export const activateTenant = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const id = getParamId(req);
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        subscription: true,
+      },
+    });
+
+    if (!tenant) {
+      throw ApiError.notFound("Tenant not found");
+    }
+
+    const updatedTenant = await prisma.$transaction(async (tx) => {
+      const nextTenant = await tx.tenant.update({
+        where: { id },
+        data: { status: "ACTIVE" },
+      });
+
+      await tx.user.updateMany({
+        where: {
+          tenantId: id,
+          status: "SUSPENDED",
+        },
+        data: {
+          status: "ACTIVE",
+        },
+      });
+
+      if (tenant.subscription && tenant.subscription.status !== "CANCELLED") {
+        await tx.tenantSubscription.update({
+          where: { tenantId: id },
+          data: {
+            status: "ACTIVE",
+            suspendedAt: null,
+          },
+        });
+      }
+
+      return nextTenant;
+    });
+
+    res.status(200).json(ApiResponse.success(updatedTenant, "Tenant activated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Delete Tenant (Safe Deactivation) ---
+export const deleteTenant = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const id = getParamId(req);
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        subscription: true,
+      },
+    });
+
+    if (!tenant) {
+      throw ApiError.notFound("Tenant not found");
+    }
+
+    const updatedTenant = await prisma.$transaction(async (tx) => {
+      const nextTenant = await tx.tenant.update({
+        where: { id },
+        data: { status: "DEACTIVATED" },
+      });
+
+      await tx.user.updateMany({
+        where: { tenantId: id },
+        data: { status: "INACTIVE" },
+      });
+
+      if (tenant.subscription) {
+        await tx.tenantSubscription.update({
+          where: { tenantId: id },
+          data: {
+            status: "CANCELLED",
+            cancelledAt: new Date(),
+          },
+        });
+      }
+
+      return nextTenant;
+    });
+
+    res.status(200).json(
+      ApiResponse.success(updatedTenant, "Tenant deactivated successfully"),
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- List Active Subscription Plans ---
+export const listPlans = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const plans = await prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+    });
+    res.status(200).json(ApiResponse.success(plans));
   } catch (error) {
     next(error);
   }
