@@ -8,6 +8,7 @@ import { ApiError } from "../../../utils/ApiError.js";
 import {
   archiveToRecycleBin,
 } from "../../../lib/recycleBin.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * DELETE /api/admin/ward/:id
@@ -20,10 +21,11 @@ export async function deleteWard(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.id as string;
 
-    const ward = await prisma.ward.findUnique({
-      where: { id: wardId },
+    const ward = await prisma.ward.findFirst({
+      where: { id: wardId, tenantId },
       include: {
         areas: {
           include: {
@@ -47,6 +49,7 @@ export async function deleteWard(
     const activeProjectCount = await prisma.project.count({
       where: {
         wardId,
+        tenantId,
         isDeleted: false,
       },
     });
@@ -60,6 +63,7 @@ export async function deleteWard(
     }
 
     await archiveToRecycleBin({
+      tenantId,
       module: "wards",
       entityType: "ward",
       recordId: ward.id,
@@ -79,6 +83,7 @@ export async function deleteWard(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "DELETE",
       module: "wards",

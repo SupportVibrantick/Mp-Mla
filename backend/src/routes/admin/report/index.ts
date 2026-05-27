@@ -11,6 +11,8 @@ import {
 } from "../../../lib/email.js";
 import { z } from "zod";
 import catchAsync from "@/utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
+import { ApiError } from "../../../utils/ApiError.js";
 
 const router = Router();
 
@@ -44,8 +46,9 @@ router.get(
   "/grievance",
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const { where, wardId } = parseDateFilters(req.query);
-    const w: any = { ...where };
+    const w: any = { ...where, tenantId, isDeleted: false };
     if (wardId) w.wardId = wardId;
 
     const [
@@ -94,10 +97,10 @@ router.get(
       }),
     ]);
 
-    // Resolve ward names
+    // Resolve ward names (scope to tenantId)
     const wardIds = byWard.map((x) => x.wardId);
     const wards = await prisma.ward.findMany({
-      where: { id: { in: wardIds } },
+      where: { id: { in: wardIds }, tenantId },
       select: { id: true, name: true, wardNumber: true },
     });
     const wardMap = Object.fromEntries(wards.map((w) => [w.id, w]));
@@ -177,8 +180,9 @@ router.get(
   "/project",
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const { wardId } = req.query as Record<string, string>;
-    const w: any = {};
+    const w: any = { tenantId, isDeleted: false };
     if (wardId) w.wardId = wardId;
 
     const [total, byStatus, budgetAgg, byCategory, byFund, rows] =
@@ -241,10 +245,10 @@ router.get(
         }),
       ]);
 
-    // Resolve department names
+    // Resolve department names (scope to tenantId)
     const deptIds = [...new Set(rows.map((r) => r.department).filter(Boolean))];
     const depts = await prisma.department.findMany({
-      where: { id: { in: deptIds } },
+      where: { id: { in: deptIds }, tenantId, isDeleted: false },
       select: { id: true, name: true },
     });
     const deptMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
@@ -300,8 +304,9 @@ router.get(
   "/ward",
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const wards = await prisma.ward.findMany({
-      where: { status: "ACTIVE" },
+      where: { tenantId, status: "ACTIVE", isDeleted: false },
       select: {
         id: true,
         name: true,
@@ -319,25 +324,20 @@ router.get(
     const [gCounts, pCounts, iCounts] = await Promise.all([
       prisma.grievance.groupBy({
         by: ["wardId"],
-        where: { wardId: { in: wardIds } },
+        where: { tenantId, wardId: { in: wardIds }, isDeleted: false },
         _count: true,
       }),
       prisma.project.groupBy({
         by: ["wardId"],
-        where: { wardId: { in: wardIds } },
+        where: { tenantId, wardId: { in: wardIds }, isDeleted: false },
         _count: true,
         _sum: { budgetSanctioned: true },
       }),
       prisma.institution.groupBy({
         by: ["wardId"],
-        where: { wardId: { in: wardIds } },
+        where: { tenantId, wardId: { in: wardIds }, isDeleted: false },
         _count: true,
       }),
-      // prisma.schemeBeneficiary.groupBy({
-      //   by: ["wardId"],
-      //   where: { wardId: { in: wardIds } },
-      //   _sum: { beneficiaryCount: true, targetCount: true },
-      // }),
     ]);
 
     const gMap = Object.fromEntries(gCounts.map((g) => [g.wardId, g._count]));
@@ -348,15 +348,6 @@ router.get(
       ]),
     );
     const iMap = Object.fromEntries(iCounts.map((i) => [i.wardId, i._count]));
-    // const sMap = Object.fromEntries(
-    //   sCounts.map((s) => [
-    //     s.wardId,
-    //     {
-    //       beneficiaries: s._sum.beneficiaryCount || 0,
-    //       target: s._sum.targetCount || 0,
-    //     },
-    //   ]),
-    // );
 
     const wardData = wards.map((w) => ({
       ...w,
@@ -364,8 +355,6 @@ router.get(
       projects: pMap[w.id]?.count || 0,
       projectBudget: pMap[w.id]?.budget || 0,
       institutions: iMap[w.id] || 0,
-      // beneficiaries: sMap[w.id]?.beneficiaries || 0,
-      // schemeTarget: sMap[w.id]?.target || 0,
     }));
 
     const totals = {
@@ -389,8 +378,9 @@ router.get(
   "/institution",
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const { wardId } = req.query as Record<string, string>;
-    const w: any = {};
+    const w: any = { tenantId, isDeleted: false };
     if (wardId) w.wardId = wardId;
 
     const [total, byCategory, byStatus, rows] = await Promise.all([
@@ -451,8 +441,9 @@ router.get(
   "/demographic",
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const wards = await prisma.ward.findMany({
-      where: { status: "ACTIVE" },
+      where: { tenantId, status: "ACTIVE", isDeleted: false },
       select: {
         id: true,
         name: true,
@@ -468,6 +459,7 @@ router.get(
     });
 
     const demographics = await prisma.demographics.findMany({
+      where: { tenantId },
       select: {
         wardId: true,
         totalPopulation: true,
@@ -517,6 +509,7 @@ router.get(
   "/monthly",
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -531,26 +524,24 @@ router.get(
       pCompleted,
       pTotal,
       iTotal,
-      // schemeActive,
       fundData,
       deptPerformance,
     ] = await Promise.all([
-      prisma.grievance.count({ where: { createdAt: { gte: monthStart } } }),
+      prisma.grievance.count({ where: { tenantId, isDeleted: false, createdAt: { gte: monthStart } } }),
       prisma.grievance.count({
-        where: { createdAt: { gte: lastMonthStart, lt: monthStart } },
+        where: { tenantId, isDeleted: false, createdAt: { gte: lastMonthStart, lt: monthStart } },
       }),
-      prisma.grievance.count({ where: { resolvedAt: { gte: monthStart } } }),
-      prisma.grievance.count(),
-      prisma.project.count({ where: { status: "RUNNING" } }),
-      prisma.project.count({ where: { status: "COMPLETED" } }),
-      prisma.project.count(),
-      prisma.institution.count({ where: { status: "ACTIVE" } }),
-      // prisma.scheme.count({ where: { status: "ACTIVE" } }),
-      prisma.fund.findMany({ where: { financialYear: fy } }),
+      prisma.grievance.count({ where: { tenantId, isDeleted: false, resolvedAt: { gte: monthStart } } }),
+      prisma.grievance.count({ where: { tenantId, isDeleted: false } }),
+      prisma.project.count({ where: { tenantId, isDeleted: false, status: "RUNNING" } }),
+      prisma.project.count({ where: { tenantId, isDeleted: false, status: "COMPLETED" } }),
+      prisma.project.count({ where: { tenantId, isDeleted: false } }),
+      prisma.institution.count({ where: { tenantId, isDeleted: false, status: "ACTIVE" } }),
+      prisma.fund.findMany({ where: { tenantId, financialYear: fy, isDeleted: false } }),
       // Department performance: grievances assigned per dept, resolved count
       prisma.grievance.groupBy({
         by: ["assignedDept"],
-        where: { assignedDept: { not: null } },
+        where: { tenantId, isDeleted: false, assignedDept: { not: null } },
         _count: true,
       }),
     ]);
@@ -562,6 +553,8 @@ router.get(
     const deptResolvedCounts = await prisma.grievance.groupBy({
       by: ["assignedDept"],
       where: {
+        tenantId,
+        isDeleted: false,
         assignedDept: { in: deptIds },
         status: { in: ["RESOLVED", "CLOSED"] },
       },
@@ -571,7 +564,7 @@ router.get(
       deptResolvedCounts.map((d) => [d.assignedDept!, d._count]),
     );
     const depts = await prisma.department.findMany({
-      where: { id: { in: deptIds } },
+      where: { tenantId, id: { in: deptIds }, isDeleted: false },
       select: { id: true, name: true },
     });
     const deptNameMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
@@ -594,7 +587,7 @@ router.get(
     sixAgo.setMonth(sixAgo.getMonth() - 5);
     sixAgo.setDate(1);
     const allG = await prisma.grievance.findMany({
-      where: { createdAt: { gte: sixAgo } },
+      where: { tenantId, isDeleted: false, createdAt: { gte: sixAgo } },
       select: { createdAt: true, resolvedAt: true },
     });
     const monthly: Record<string, { filed: number; resolved: number }> = {};
@@ -636,7 +629,6 @@ router.get(
           completedProjects: pCompleted,
           totalProjects: pTotal,
           activeInstitutions: iTotal,
-          // activeSchemes: schemeActive,
           ...fundTotal,
           financialYear: fy,
         },
@@ -646,6 +638,7 @@ router.get(
     });
   }),
 );
+
 // ════════════════════════════════════════════════════════
 // CSV EXPORT
 // ════════════════════════════════════════════════════════
@@ -654,6 +647,7 @@ router.get(
   "/export/:type",
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
     const { type } = req.params;
     const { wardId, dateFrom, dateTo } = req.query as Record<string, string>;
     let csv = "";
@@ -661,7 +655,7 @@ router.get(
 
     switch (type) {
       case "grievance": {
-        const where: any = {};
+        const where: any = { tenantId, isDeleted: false };
         if (wardId) where.wardId = wardId;
         if (dateFrom || dateTo) {
           where.createdAt = {};
@@ -681,7 +675,7 @@ router.get(
         break;
       }
       case "project": {
-        const where: any = {};
+        const where: any = { tenantId, isDeleted: false };
         if (wardId) where.wardId = wardId;
         const rows = await prisma.project.findMany({
           where,
@@ -696,7 +690,7 @@ router.get(
         break;
       }
       case "institution": {
-        const where: any = {};
+        const where: any = { tenantId, isDeleted: false };
         if (wardId) where.wardId = wardId;
         const rows = await prisma.institution.findMany({
           where,
@@ -721,6 +715,7 @@ router.get(
 
     await createAuditLog({
       userId: req.user!.id,
+      tenantId,
       action: "EXPORT",
       module: "reports",
       description: `Exported ${type} report as CSV`,
@@ -731,6 +726,7 @@ router.get(
     prisma.dataActivity
       .create({
         data: {
+          tenantId,
           userId: req.user!.id,
           userName: req.user!.name || "Unknown",
           action: "EXPORT",

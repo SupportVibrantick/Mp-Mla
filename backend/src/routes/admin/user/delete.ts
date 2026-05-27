@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * DELETE /api/admin/users/:id
@@ -17,6 +18,7 @@ export async function deleteUser(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const userId = req.params.id as string;
 
     if (!userId) {
@@ -32,8 +34,8 @@ export async function deleteUser(
       throw ApiError.badRequest("You cannot deactivate your own account.");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: { id: userId, tenantId },
       select: {
         id: true,
         name: true,
@@ -71,6 +73,7 @@ export async function deleteUser(
     // Audit log
     createAuditLog({
       userId: req.user.id,
+      tenantId,
       action: "STATUS_CHANGE",
       module: "users",
       recordId: user.id,

@@ -12,7 +12,7 @@ import { env } from "@/lib/env.js";
 import { validatePasswordComplexity } from "../../../lib/authUtils.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 
-/**
+/**  
  * POST /api/admin/users
  * Admin creates a new user (MLA, Staff, or another Admin)a
  * This replaces the old /register route.

@@ -4,15 +4,17 @@ import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import catchAsync from "../../../utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/users
  */
 export const listUsers = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const { page, limit, skip } = parsePagination(req.query);
   const { role, status, search } = req.query as Record<string, string>;
 
-  const where: any = {};
+  const where: any = { tenantId };
   if (role) where.role = role;
   if (status) where.status = status;
   if (search) {
@@ -71,14 +73,15 @@ export const listUsers = catchAsync(async (req: Request, res: Response) => {
  * GET /api/admin/users/:id
  */
 export const getUser = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const userId = req.params.id as string;
 
   if (!userId) {
     throw ApiError.badRequest("User ID required");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const user = await prisma.user.findFirst({
+    where: { id: userId, tenantId },
     select: {
       id: true,
       name: true,

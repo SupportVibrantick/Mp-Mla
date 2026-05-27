@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
 import { normalizeWardStatus, normalizeAreaType } from "../../../utils/enumParser.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * POST /api/admin/wards/bulk
@@ -17,6 +18,7 @@ export async function bulkCreateWards(
     next: NextFunction,
 ): Promise<void> {
     try {
+        const tenantId = requireTenantId(req);
         const rawRows = req.body;
 
         if (!Array.isArray(rawRows) || rawRows.length === 0) {
@@ -55,6 +57,7 @@ export async function bulkCreateWards(
                 const wardNameMatch = rows.find(r => r.wardName)?.wardName;
                 const existingWard = await prisma.ward.findFirst({
                     where: {
+                        tenantId,
                         OR: [
                             { wardNumber },
                             { name: wardNameMatch ? String(wardNameMatch) : undefined }
@@ -110,6 +113,7 @@ export async function bulkCreateWards(
                         if (!wardUpdateData.name) throw new Error("wardName is required for new wards.");
                         currentWard = await tx.ward.create({
                             data: {
+                                tenantId,
                                 wardNumber,
                                 name: wardUpdateData.name,
                                 zone: wardUpdateData.zone,
@@ -290,6 +294,7 @@ export async function bulkCreateWards(
         // Log data activity (fire-and-forget)
         prisma.dataActivity.create({
             data: {
+                tenantId: req.tenantId!,
                 userId: req.user!.id,
                 userName: req.user!.name || "Unknown",
                 action: "IMPORT",

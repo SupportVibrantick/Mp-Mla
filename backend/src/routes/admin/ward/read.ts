@@ -4,6 +4,7 @@ import { ApiError } from "../../../utils/ApiError.js";
 import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import catchAsync from "../../../utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 
 
@@ -12,13 +13,14 @@ import catchAsync from "../../../utils/catchAsync.js";
  * Lists all wards with optional filtering and pagination.
  */
 export const listWards = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const { page, limit, skip } = parsePagination(req.query);
   const { search, zone, status, areaType } = req.query as Record<
     string,
     string
   >;
 
-  const where: any = { isDeleted: false };
+  const where: any = { tenantId, isDeleted: false };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: "insensitive" } },
@@ -95,13 +97,14 @@ export const listWards = catchAsync(async (req: Request, res: Response) => {
  * Gets a single ward by ID with detailed information.
  */
 export const getWard = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const wardId = Array.isArray(req.params.id)
     ? req.params.id[0]
     : req.params.id;
   if (!wardId) throw ApiError.badRequest("Ward ID is required");
 
   const ward = await prisma.ward.findFirst({
-    where: { id: wardId, isDeleted: false },
+    where: { id: wardId, tenantId, isDeleted: false },
     include: {
       areas: { where: { isDeleted: false }, orderBy: { name: "asc" } },
       councillors: { orderBy: { isCurrent: "desc" } },
@@ -123,28 +126,28 @@ export const getWard = catchAsync(async (req: Request, res: Response) => {
   // Fetch aggregated grievance stats for this ward
   const grievanceStats = await prisma.grievance.groupBy({
     by: ["status"],
-    where: { wardId: ward.id, isDeleted: false },
+    where: { wardId: ward.id, tenantId, isDeleted: false },
     _count: true,
   });
 
   // Fetch project stats
   const projectStats = await prisma.project.groupBy({
     by: ["status"],
-    where: { wardId: ward.id, isDeleted: false },
+    where: { wardId: ward.id, tenantId, isDeleted: false },
     _count: true,
   });
 
   // Fetch community groups summary
   const communityGroupStats = await prisma.communityGroup.groupBy({
     by: ["type"],
-    where: { wardId: ward.id, isDeleted: false },
+    where: { wardId: ward.id, tenantId, isDeleted: false },
     _count: true,
     _sum: { memberCount: true },
   });
 
   // Fetch latest demographics (ward-level)
   const demographics = await prisma.demographics.findFirst({
-    where: { wardId: ward.id, wardAreaId: null },
+    where: { wardId: ward.id, tenantId, wardAreaId: null },
     orderBy: { surveyDate: "desc" },
   });
 
@@ -183,7 +186,8 @@ export async function getWardStats(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const wardWhere = { isDeleted: false };
+    const tenantId = requireTenantId(req);
+    const wardWhere = { tenantId, isDeleted: false };
 
     const [totalWards, wardsByZone, wardsByStatus, populationAgg] =
       await Promise.all([
@@ -207,10 +211,10 @@ export async function getWardStats(
         }),
       ]);
 
-    const totalAreas = await prisma.wardArea.count({ where: { isDeleted: false } });
+    const totalAreas = await prisma.wardArea.count({ where: { isDeleted: false, ward: { tenantId } } });
     const areasByType = await prisma.wardArea.groupBy({
       by: ["areaType"],
-      where: { isDeleted: false },
+      where: { isDeleted: false, ward: { tenantId } },
       _count: true,
       _sum: { population: true, households: true },
     });

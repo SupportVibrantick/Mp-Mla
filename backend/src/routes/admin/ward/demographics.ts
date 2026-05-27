@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/ward/:wardId/demographics
@@ -16,17 +17,18 @@ export async function getWardDemographics(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
-    const ward = await prisma.ward.findUnique({ where: { id: wardId } });
+    const ward = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     const wardLevel = await prisma.demographics.findFirst({
-      where: { wardId, wardAreaId: null },
+      where: { tenantId, wardId, wardAreaId: null },
       orderBy: { surveyDate: "desc" },
     });
 
     const areaLevel = await prisma.demographics.findMany({
-      where: { wardId, wardAreaId: { not: null } },
+      where: { tenantId, wardId, wardAreaId: { not: null } },
       include: {
         wardArea: { select: { id: true, name: true, areaType: true } },
       },
@@ -90,8 +92,6 @@ export async function getWardDemographics(
   }
 }
 
-
-
 /**
  * POST /api/admin/ward/:wardId/demographics
  * Creates or updates demographics for a ward.
@@ -102,8 +102,9 @@ export async function upsertWardDemographics(
   next: NextFunction,
 ) {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
-    const ward = await prisma.ward.findUnique({ where: { id: wardId } });
+    const ward = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     const incoming = { ...req.body };
@@ -112,7 +113,7 @@ export async function upsertWardDemographics(
     else incoming.surveyDate = new Date();
 
     const existing = await prisma.demographics.findFirst({
-      where: { wardId, wardAreaId: incoming.wardAreaId || null },
+      where: { tenantId, wardId, wardAreaId: incoming.wardAreaId || null },
       orderBy: { surveyDate: "desc" },
     });
 
@@ -127,6 +128,7 @@ export async function upsertWardDemographics(
         data,
       });
       await createAuditLog({
+        tenantId,
         userId: req.user!.id,
         action: "UPDATE",
         module: "demographics",
@@ -142,9 +144,10 @@ export async function upsertWardDemographics(
       });
     } else {
       const demographics = await prisma.demographics.create({
-        data: { wardId, ...incoming, wardAreaId: incoming.wardAreaId || null },
+        data: { tenantId, wardId, ...incoming, wardAreaId: incoming.wardAreaId || null },
       });
       await createAuditLog({
+        tenantId,
         userId: req.user!.id,
         action: "CREATE",
         module: "demographics",

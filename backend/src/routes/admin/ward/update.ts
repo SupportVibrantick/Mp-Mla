@@ -5,8 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-
-
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * PUT /api/admin/ward/:id
@@ -18,9 +17,10 @@ export async function updateWard(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.id as string;
 
-    const old = await prisma.ward.findUnique({ where: { id: wardId } });
+    const old = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
     if (!old) throw ApiError.notFound("Ward not found");
 
     const updateData: any = { ...req.body };
@@ -38,6 +38,7 @@ export async function updateWard(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "wards",

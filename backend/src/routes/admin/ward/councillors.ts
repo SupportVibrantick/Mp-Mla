@@ -5,9 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-
-
-
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /api/admin/ward/:wardId/councillors
@@ -19,7 +17,14 @@ export async function listCouncillors(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
+
+    const ward = await prisma.ward.findFirst({
+      where: { id: wardId, tenantId },
+    });
+    if (!ward) throw ApiError.notFound("Ward not found");
+
     const councillors = await prisma.wardCouncillor.findMany({
       where: { wardId },
       include: { ward: { select: { id: true, name: true, wardNumber: true } } },
@@ -41,8 +46,11 @@ export async function createCouncillor(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
-    const ward = await prisma.ward.findUnique({ where: { id: wardId } });
+    const ward = await prisma.ward.findFirst({
+      where: { id: wardId, tenantId },
+    });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     // Mark previous councillor as not current
@@ -57,6 +65,7 @@ export async function createCouncillor(
     const councillor = await prisma.wardCouncillor.create({ data });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "wards",
@@ -86,10 +95,14 @@ export async function updateCouncillor(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const councillorId = req.params.councillorId as string;
 
-    const old = await prisma.wardCouncillor.findUnique({
-      where: { id: councillorId },
+    const old = await prisma.wardCouncillor.findFirst({
+      where: {
+        id: councillorId,
+        ward: { tenantId },
+      },
     });
     if (!old) throw ApiError.notFound("Councillor not found");
 
@@ -103,6 +116,7 @@ export async function updateCouncillor(
     });
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "wards",

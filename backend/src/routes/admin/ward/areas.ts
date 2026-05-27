@@ -12,6 +12,7 @@ import {
   recomputeWardDemographics,
   buildDemographicsData,
 } from "./helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 
 
@@ -25,16 +26,17 @@ export async function listAreas(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
 
-    const ward = await prisma.ward.findUnique({
-      where: { id: wardId },
+    const ward = await prisma.ward.findFirst({
+      where: { id: wardId, tenantId },
       select: { id: true, name: true, wardNumber: true },
     });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     const areas = await prisma.wardArea.findMany({
-      where: { wardId, isDeleted: false },
+      where: { wardId, isDeleted: false, ward: { tenantId } },
       include: {
         _count: { select: { demographics: true, communityGroups: true } },
       },
@@ -57,8 +59,9 @@ export async function getArea(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const area = await prisma.wardArea.findUnique({
-      where: { id: req.params.areaId as string },
+    const tenantId = requireTenantId(req);
+    const area = await prisma.wardArea.findFirst({
+      where: { id: req.params.areaId as string, ward: { tenantId } },
       include: {
         ward: { select: { id: true, name: true, wardNumber: true } },
         demographics: { orderBy: { surveyDate: "desc" }, take: 1 },
@@ -85,11 +88,12 @@ export async function createArea(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
     // Separate demographics from the area fields
     const { demographics: demoInput, ...areaData } = req.body;
 
-    const ward = await prisma.ward.findUnique({ where: { id: wardId } });
+    const ward = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     // 1. Create the area record
@@ -100,6 +104,7 @@ export async function createArea(
     // 2. Create area-level demographics (explicit or auto-estimated)
     await prisma.demographics.create({
       data: buildDemographicsData(
+        tenantId,
         wardId,
         area.id,
         area.population,
@@ -118,6 +123,7 @@ export async function createArea(
 
     // 5. Audit log
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "wards",
@@ -151,10 +157,13 @@ export async function updateArea(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const areaId = req.params.areaId as string;
     const { demographics: demoInput, ...areaData } = req.body;
 
-    const old = await prisma.wardArea.findUnique({ where: { id: areaId } });
+    const old = await prisma.wardArea.findFirst({
+      where: { id: areaId, ward: { tenantId } },
+    });
     if (!old) throw ApiError.notFound("Area not found");
 
     // 1. Update area fields (only non-demographics fields)
@@ -166,10 +175,11 @@ export async function updateArea(
     // 2. If demographics provided, update area-level demographics
     if (demoInput && Object.keys(demoInput).length > 0) {
       const existingDemo = await prisma.demographics.findFirst({
-        where: { wardId: area.wardId, wardAreaId: area.id },
+        where: { tenantId, wardId: area.wardId, wardAreaId: area.id },
       });
 
       const demoData = buildDemographicsData(
+        tenantId,
         area.wardId,
         area.id,
         area.population,
@@ -197,11 +207,12 @@ export async function updateArea(
 
       if (popChanged) {
         const existingDemo = await prisma.demographics.findFirst({
-          where: { wardId: area.wardId, wardAreaId: area.id },
+          where: { tenantId, wardId: area.wardId, wardAreaId: area.id },
         });
 
         if (existingDemo && existingDemo.source === "Auto-estimated") {
           const demoData = buildDemographicsData(
+            tenantId,
             area.wardId,
             area.id,
             area.population,
@@ -224,6 +235,7 @@ export async function updateArea(
 
     // 4. Audit
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "UPDATE",
       module: "wards",
@@ -255,20 +267,22 @@ export async function deleteArea(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const areaId = req.params.areaId as string;
 
-    const area = await prisma.wardArea.findUnique({
-      where: { id: areaId },
+    const area = await prisma.wardArea.findFirst({
+      where: { id: areaId, ward: { tenantId } },
       include: { demographics: true },
     });
     if (!area || area.isDeleted) throw ApiError.notFound("Area not found");
 
     const linkedGroups = await prisma.communityGroup.findMany({
-      where: { wardAreaId: areaId, isDeleted: false },
+      where: { tenantId, wardAreaId: areaId, isDeleted: false },
       select: { id: true },
     });
 
     await archiveToRecycleBin({
+      tenantId,
       module: "wards",
       entityType: "ward_area",
       recordId: area.id,
@@ -291,6 +305,7 @@ export async function deleteArea(
 
     // Audit
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "DELETE",
       module: "wards",

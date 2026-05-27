@@ -32,8 +32,15 @@ export async function recomputeWardAggregates(wardId: string) {
  * by aggregating all area-level Demographics records.
  */
 export async function recomputeWardDemographics(wardId: string) {
+  const ward = await prisma.ward.findUnique({
+    where: { id: wardId },
+    select: { tenantId: true },
+  });
+  if (!ward) return;
+  const tenantId = ward.tenantId;
+
   const areaDemos = await prisma.demographics.findMany({
-    where: { wardId, wardAreaId: { not: null } },
+    where: { tenantId, wardId, wardAreaId: { not: null } },
   });
   type Area = Awaited<ReturnType<typeof prisma.wardArea.findMany>>[number];
 
@@ -52,13 +59,13 @@ export async function recomputeWardDemographics(wardId: string) {
       source: "Aggregated from ward areas",
     };
     const existing = await prisma.demographics.findFirst({
-      where: { wardId, wardAreaId: null },
+      where: { tenantId, wardId, wardAreaId: null },
     });
     if (existing)
       await prisma.demographics.update({ where: { id: existing.id }, data });
     else
       await prisma.demographics.create({
-        data: { wardId, wardAreaId: null, ...data },
+        data: { tenantId, wardId, wardAreaId: null, ...data },
       });
     return;
   }
@@ -114,7 +121,7 @@ export async function recomputeWardDemographics(wardId: string) {
   }
 
   const existing = await prisma.demographics.findFirst({
-    where: { wardId, wardAreaId: null },
+    where: { tenantId, wardId, wardAreaId: null },
   });
 
   const data = { ...aggregated, literacyRate, source: "Aggregated from areas" };
@@ -123,7 +130,7 @@ export async function recomputeWardDemographics(wardId: string) {
     await prisma.demographics.update({ where: { id: existing.id }, data });
   } else {
     await prisma.demographics.create({
-      data: { wardId, wardAreaId: null, ...data, surveyDate: new Date() },
+      data: { tenantId, wardId, wardAreaId: null, ...data, surveyDate: new Date() },
     });
   }
 }
@@ -141,6 +148,7 @@ export async function recomputeWardDemographics(wardId: string) {
  */
 
 export function buildDemographicsData(
+  tenantId: string,
   wardId: string,
   wardAreaId: string | null,
   totalPop: number,
@@ -152,6 +160,7 @@ export function buildDemographicsData(
   if (userInput && Object.keys(userInput).length > 0) {
     return {
       wardId,
+      tenantId,
       wardAreaId,
       totalPopulation: totalPop,
       maleCount: totalMale,
@@ -204,6 +213,7 @@ export function buildDemographicsData(
   // Auto-estimate (Indian census 2011 averages)
   return {
     wardId,
+    tenantId,
     wardAreaId,
     totalPopulation: totalPop,
     maleCount: totalMale,

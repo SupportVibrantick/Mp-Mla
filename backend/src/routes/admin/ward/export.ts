@@ -168,6 +168,7 @@ export async function exportWards(
         // Log data activity (fire-and-forget)
         prisma.dataActivity.create({
             data: {
+                tenantId: req.tenantId!,
                 userId: req.user!.id,
                 userName: req.user!.name || "Unknown",
                 action: "EXPORT",

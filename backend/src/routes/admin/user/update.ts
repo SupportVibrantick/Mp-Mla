@@ -7,11 +7,13 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 /**
  * PUT /api/admin/users/:id
  */
 
 export const updateUser = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req);
   const userId = req.params.id as string;
 
   if (!userId) {
@@ -22,8 +24,8 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
     throw ApiError.unauthorized("Authentication required");
   }
 
-  const oldUser = await prisma.user.findUnique({
-    where: { id: userId },
+  const oldUser = await prisma.user.findFirst({
+    where: { id: userId, tenantId },
     select: {
       id: true,
       name: true,
@@ -51,6 +53,27 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
   if (req.body.phone !== undefined) updateData.phone = req.body.phone;
   if (req.body.role !== undefined) updateData.role = req.body.role;
   if (req.body.status !== undefined) updateData.status = req.body.status;
+
+  if (
+    req.body.phone !== undefined &&
+    req.body.phone !== oldUser.phone &&
+    req.body.phone
+  ) {
+    const duplicatePhone = await prisma.user.findFirst({
+      where: {
+        tenantId,
+        phone: req.body.phone,
+        id: { not: userId },
+      },
+      select: { id: true },
+    });
+
+    if (duplicatePhone) {
+      throw ApiError.conflict(
+        "User with this phone number already exists in this organization.",
+      );
+    }
+  }
 
   // If suspending/deactivating, revoke tokens
   if (
@@ -95,6 +118,7 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
   //  Audit log (non-blocking)
   await createAuditLog({
     userId: req.user!.id,
+    tenantId,
     action: auditAction,
     module: "users",
     recordId: user.id,

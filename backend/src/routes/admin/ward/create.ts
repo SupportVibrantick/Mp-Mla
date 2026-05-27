@@ -5,6 +5,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { buildDemographicsData } from "./helpers.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 
 
@@ -18,6 +19,7 @@ export async function createWard(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { areas, councillor, demographics, ...wardData } = req.body;
 
     // Step 1: Compute aggregates
@@ -49,6 +51,7 @@ export async function createWard(
     const ward = await prisma.ward.create({
       data: {
         ...wardData,
+        tenantId,
         establishedDate: wardData.establishedDate
           ? new Date(wardData.establishedDate)
           : undefined,
@@ -83,6 +86,7 @@ export async function createWard(
     // Step 4: Ward-level demographics
     await prisma.demographics.create({
       data: buildDemographicsData(
+        tenantId,
         ward.id,
         null,
         totalPop,
@@ -102,6 +106,7 @@ export async function createWard(
         // Create area-level demo: explicit if provided, auto-estimated otherwise
         await prisma.demographics.create({
           data: buildDemographicsData(
+            tenantId,
             ward.id,
             createdArea.id,
             areaInput.population || 0,
@@ -116,6 +121,7 @@ export async function createWard(
 
     // Step 6: Audit
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "wards",
@@ -130,8 +136,8 @@ export async function createWard(
     });
 
     // Step 7: Return full ward
-    const fullWard = await prisma.ward.findUnique({
-      where: { id: ward.id },
+    const fullWard = await prisma.ward.findFirst({
+      where: { id: ward.id, tenantId },
       include: {
         areas: true,
         councillors: { where: { isCurrent: true } },

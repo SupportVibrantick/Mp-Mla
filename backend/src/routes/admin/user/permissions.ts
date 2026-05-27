@@ -9,6 +9,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { z } from "zod";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 export const updatePermissionsSchema = z.object({
   permissions: z.array(
@@ -25,13 +26,14 @@ export const updatePermissionsSchema = z.object({
  */
 export const getUserPermissions = catchAsync(
   async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const userId = req.params.id as string;
 
     if (!userId) {
       throw ApiError.badRequest("User ID is required");
     }
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: { id: userId, tenantId },
       select: { id: true, name: true, email: true, role: true },
     });
 
@@ -96,6 +98,7 @@ export const getUserPermissions = catchAsync(
  */
 export const updateUserPermissions = catchAsync(
   async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
     const userId = req.params.id as string;
     const { permissions } = req.body;
 
@@ -103,8 +106,8 @@ export const updateUserPermissions = catchAsync(
       throw ApiError.badRequest("User ID is required");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: { id: userId, tenantId },
       select: { id: true, name: true, email: true, role: true },
     });
 
@@ -149,6 +152,7 @@ export const updateUserPermissions = catchAsync(
 
     await createAuditLog({
       userId: req.user!.id,
+      tenantId,
       action: "PERMISSION_CHANGE",
       module: "users",
       recordId: userId,
