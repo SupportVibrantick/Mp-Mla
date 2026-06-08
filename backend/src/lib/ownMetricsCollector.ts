@@ -19,7 +19,7 @@ export interface AutoMetric {
  * These are derived from: Grievance, Project, Fund, Ward, Institution,
  * CommunityGroup, Leader, Meeting, Demographics.
  */
-export async function collectOwnMetrics(): Promise<AutoMetric[]> {
+export async function collectOwnMetrics(tenantId: string): Promise<AutoMetric[]> {
   const metrics: AutoMetric[] = [];
 
   try {
@@ -32,15 +32,15 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
       pendingGrievances,
       inProgressGrievances,
     ] = await Promise.all([
-      prisma.grievance.count({ where: { isDeleted: false } }),
+      prisma.grievance.count({ where: { tenantId, isDeleted: false } }),
       prisma.grievance.count({
-        where: { isDeleted: false, status: "RESOLVED" },
+        where: { tenantId, isDeleted: false, status: "RESOLVED" },
       }),
       prisma.grievance.count({
-        where: { isDeleted: false, status: "OPEN" },
+        where: { tenantId, isDeleted: false, status: "OPEN" },
       }),
       prisma.grievance.count({
-        where: { isDeleted: false, status: "IN_PROGRESS" },
+        where: { tenantId, isDeleted: false, status: "IN_PROGRESS" },
       }),
     ]);
 
@@ -51,7 +51,7 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
 
     // Average resolution time (for resolved grievances)
     const resolvedWithTime = await prisma.grievance.findMany({
-      where: { isDeleted: false, status: "RESOLVED", resolvedAt: { not: null } },
+      where: { tenantId, isDeleted: false, status: "RESOLVED", resolvedAt: { not: null } },
       select: { createdAt: true, resolvedAt: true },
     });
     const avgResolutionDays =
@@ -119,18 +119,18 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
       completedProjects,
       ongoingProjects,
     ] = await Promise.all([
-      prisma.project.count({ where: { isDeleted: false } }),
+      prisma.project.count({ where: { tenantId, isDeleted: false } }),
       prisma.project.count({
-        where: { isDeleted: false, status: "COMPLETED" },
+        where: { tenantId, isDeleted: false, status: "COMPLETED" },
       }),
       prisma.project.count({
-        where: { isDeleted: false, status: "RUNNING" },
+        where: { tenantId, isDeleted: false, status: "RUNNING" },
       }),
     ]);
 
     // Budget data from projects
     const projectBudgets = await prisma.project.aggregate({
-      where: { isDeleted: false },
+      where: { tenantId, isDeleted: false },
       _sum: { budgetSanctioned: true, budgetUsed: true },
     });
     const totalBudget = projectBudgets._sum.budgetSanctioned || 0;
@@ -140,7 +140,7 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
 
     // Fund data
     const funds = await prisma.fund.findMany({
-      where: { isDeleted: false },
+      where: { tenantId, isDeleted: false },
       select: { totalAllocated: true, totalReleased: true, totalUtilized: true },
     });
     const totalFundAllocated = funds.reduce((s, f) => s + f.totalAllocated, 0);
@@ -210,18 +210,19 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
       partyLeaders,
       supporterLeaders,
     ] = await Promise.all([
-      prisma.ward.count({ where: { isDeleted: false } }),
-      prisma.institution.count({ where: { isDeleted: false } }),
+      prisma.ward.count({ where: { tenantId, isDeleted: false } }),
+      prisma.institution.count({ where: { tenantId, isDeleted: false } }),
       prisma.institution.count({
-        where: { isDeleted: false, status: "ACTIVE" },
+        where: { tenantId, isDeleted: false, status: "ACTIVE" },
       }),
-      prisma.communityGroup.count({ where: { isDeleted: false } }),
-      prisma.leader.count({ where: { isDeleted: false, isActive: true } }),
+      prisma.communityGroup.count({ where: { tenantId, isDeleted: false } }),
+      prisma.leader.count({ where: { tenantId, isDeleted: false, isActive: true } }),
       prisma.leader.count({
-        where: { isDeleted: false, isActive: true, category: "PARTY_LEADER" },
+        where: { tenantId, isDeleted: false, isActive: true, category: "PARTY_LEADER" },
       }),
       prisma.leader.count({
         where: {
+          tenantId,
           isDeleted: false,
           isActive: true,
           relation: "Supporter",
@@ -289,12 +290,12 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
       completedMeetings,
       scheduledMeetings,
     ] = await Promise.all([
-      prisma.meeting.count({ where: { isDeleted: false } }),
+      prisma.meeting.count({ where: { tenantId, isDeleted: false } }),
       prisma.meeting.count({
-        where: { isDeleted: false, status: "COMPLETED" },
+        where: { tenantId, isDeleted: false, status: "COMPLETED" },
       }),
       prisma.meeting.count({
-        where: { isDeleted: false, status: "SCHEDULED" },
+        where: { tenantId, isDeleted: false, status: "SCHEDULED" },
       }),
     ]);
 
@@ -326,6 +327,7 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
     // CATEGORY 3: VOTER OUTREACH (from demographics)
     // ═══════════════════════════════════════════════════
     const demographics = await prisma.demographics.findMany({
+      where: { tenantId },
       select: { totalPopulation: true, totalVoters: true },
     });
     const totalPopulation = demographics.reduce(
@@ -339,7 +341,7 @@ export async function collectOwnMetrics(): Promise<AutoMetric[]> {
 
     // Grievances from unique wards (coverage)
     const wardsWithGrievances = await prisma.grievance.findMany({
-      where: { isDeleted: false },
+      where: { tenantId, isDeleted: false },
       select: { wardId: true },
       distinct: ["wardId"],
     });

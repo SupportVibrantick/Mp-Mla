@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { collectOwnMetrics } from "../../../lib/ownMetricsCollector.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /competitor-analysis/dashboard — Overall competitive position summary
@@ -11,9 +12,10 @@ export async function getDashboard(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     // 1. Get all active competitors with their latest analysis
     const competitors = await prisma.competitor.findMany({
-      where: { isDeleted: false, isActive: true },
+      where: { tenantId, isDeleted: false, isActive: true },
       include: {
         analyses: {
           where: { status: "COMPLETED" },
@@ -74,7 +76,7 @@ export async function getDashboard(
     });
 
     // 4. Get own metrics summary
-    const autoMetrics = await collectOwnMetrics();
+    const autoMetrics = await collectOwnMetrics(tenantId);
     const totalAutoMetrics = autoMetrics.length;
 
     // Category-wise summary
@@ -86,7 +88,7 @@ export async function getDashboard(
 
     // 5. Recent analyses
     const recentAnalyses = await prisma.competitorAnalysis.findMany({
-      where: { status: "COMPLETED" },
+      where: { status: "COMPLETED", competitor: { tenantId } },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: {

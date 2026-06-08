@@ -19,6 +19,9 @@ import UserManagement from "@/pages/admin/User";
 import Permissions from "@/pages/admin/Permissions";
 import UserPermissions from "./pages/admin/UserPermissions";
 import TenantsPage from "@/pages/admin/Tenants";
+import SubscriptionsPage from "@/pages/admin/Subscriptions";
+import ModulesPage from "@/pages/admin/Modules";
+import PaymentsPage from "@/pages/admin/Payments";
 
 import SettingsPage from "./pages/settings/SettingsPage";
 import AuditLogsPage from "./pages/auditLogs/AuditLogsPage";
@@ -53,6 +56,24 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/subscriptions">
+        <ProtectedRoute>
+          <SubscriptionsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/modules">
+        <ProtectedRoute>
+          <ModulesPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/payments">
+        <ProtectedRoute>
+          <PaymentsPage />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/users">
         <ProtectedRoute module="users" action="read">
           <UserManagement />
@@ -64,6 +85,7 @@ function Router() {
           <Permissions />
         </ProtectedRoute>
       </Route>
+      
       <Route path="/users/:id/permissions">
         <ProtectedRoute module="users" action="update">
           <UserPermissions />

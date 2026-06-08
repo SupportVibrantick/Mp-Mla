@@ -18,6 +18,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import logger from "../../../utils/logger.js";
 import { z } from "zod";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 const analysisResultSchema = z.object({
   executiveSummary: z.string().min(1),
@@ -57,13 +58,14 @@ export async function triggerAnalysis(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
     const { period } = req.body;
     const targetPeriod = period || getCurrentPeriod();
 
     // 1. Validate competitor exists
     const competitor = await prisma.competitor.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!competitor) throw ApiError.notFound("Competitor not found");
 
@@ -73,9 +75,9 @@ export async function triggerAnalysis(
     });
 
     // 3. Gather own metrics: auto + manual
-    const autoMetrics = await collectOwnMetrics();
+    const autoMetrics = await collectOwnMetrics(tenantId);
     const manualMetrics = await prisma.ownMetricEntry.findMany({
-      where: { period: targetPeriod },
+      where: { tenantId, period: targetPeriod },
     });
 
     // Merge own metrics (manual overrides auto for same key)
@@ -173,6 +175,7 @@ export async function triggerAnalysis(
 
       await createAuditLog({
         userId: req.user!.id,
+        tenantId,
         action: "CREATE",
         module: "competitor_analysis",
         recordId: analysis.id,
@@ -220,6 +223,7 @@ export async function listAnalyses(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
     const { page = "1", limit = "10" } = req.query as Record<string, string>;
 
@@ -227,7 +231,7 @@ export async function listAnalyses(
     const limitNum = Math.min(20, Math.max(1, parseInt(limit)));
 
     const competitor = await prisma.competitor.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!competitor) throw ApiError.notFound("Competitor not found");
 
@@ -278,11 +282,12 @@ export async function getAnalysis(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
     const analysisId = req.params.analysisId as string;
 
     const analysis = await prisma.competitorAnalysis.findFirst({
-      where: { id: analysisId, competitorId: id },
+      where: { id: analysisId, competitorId: id, competitor: { tenantId } },
       include: {
         competitor: {
           select: {
@@ -315,13 +320,14 @@ export async function sendChatMessage(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
     const analysisId = req.params.analysisId as string;
     const { message } = req.body;
 
     // 1. Validate analysis exists and is completed
     const analysis = await prisma.competitorAnalysis.findFirst({
-      where: { id: analysisId, competitorId: id, status: "COMPLETED" },
+      where: { id: analysisId, competitorId: id, status: "COMPLETED", competitor: { tenantId } },
       include: {
         competitor: {
           select: { candidateName: true, partyName: true },
@@ -401,10 +407,11 @@ export async function getChatHistory(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const analysisId = req.params.analysisId as string;
 
     const messages = await prisma.competitorChat.findMany({
-      where: { analysisId },
+      where: { analysisId, analysis: { competitor: { tenantId } } },
       orderBy: { createdAt: "asc" },
     });
 

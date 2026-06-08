@@ -64,7 +64,7 @@ function getMonthlyRecurringRevenue(
   const { billingCycle, plan } = subscription;
 
   if (billingCycle === "YEARLY") return plan.priceYearly / 12;
-  if (billingCycle === "HALF_YEARLY") return plan.priceYearly / 12;
+  if (billingCycle === "HALF_YEARLY") return (plan.priceYearly / 2) / 6;
   if (billingCycle === "QUARTERLY") return plan.priceMonthly * 3 / 3;
 
   return plan.priceMonthly;
@@ -105,6 +105,7 @@ export const createTenant = async (
       adminPhone,
       planId,
       billingCycle,
+      trialDays,
     } = req.body;
 
     // Validate if a tenant with similar core info already exists
@@ -213,15 +214,21 @@ export const createTenant = async (
 
       // 3. Create a subscription if planId is provided
       if (planId) {
+        const subscriptionStatus = trialDays ? "TRIALING" : "ACTIVE";
+        const trialEndsAt = trialDays
+          ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
+          : null;
+
         await tx.tenantSubscription.create({
           data: {
             tenantId: newTenant.id,
             planId,
-            status: "ACTIVE",
+            status: subscriptionStatus,
             billingCycle: billingCycle || "MONTHLY",
             currentPeriodStart: new Date(),
-            currentPeriodEnd: calculatePeriodEnd(billingCycle),
-            nextPaymentDue: calculatePeriodEnd(billingCycle),
+            currentPeriodEnd: trialEndsAt || calculatePeriodEnd(billingCycle),
+            nextPaymentDue: trialEndsAt ? null : calculatePeriodEnd(billingCycle),
+            trialEndsAt,
           },
         });
       }
@@ -633,14 +640,25 @@ export const activateTenant = async (
         },
       });
 
-      if (tenant.subscription && tenant.subscription.status !== "CANCELLED") {
-        await tx.tenantSubscription.update({
-          where: { tenantId: id },
-          data: {
-            status: "ACTIVE",
-            suspendedAt: null,
-          },
-        });
+      if (tenant.subscription && !["CANCELLED", "EXPIRED"].includes(tenant.subscription.status)) {
+        // If trial has expired, don't reactivate — mark as expired instead
+        if (
+          tenant.subscription.trialEndsAt &&
+          new Date() > tenant.subscription.trialEndsAt
+        ) {
+          await tx.tenantSubscription.update({
+            where: { tenantId: id },
+            data: { status: "EXPIRED" },
+          });
+        } else {
+          await tx.tenantSubscription.update({
+            where: { tenantId: id },
+            data: {
+              status: "ACTIVE",
+              suspendedAt: null,
+            },
+          });
+        }
       }
 
       return nextTenant;

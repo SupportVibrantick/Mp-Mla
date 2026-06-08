@@ -375,6 +375,7 @@ model SubscriptionPlan {
   storageMB     Int      @default(1024)
   features      Json     @default("[]")
   isActive      Boolean  @default(true)
+  isPopular     Boolean  @default(false)
   sortOrder     Int      @default(0)
 
   createdAt     DateTime @default(now())

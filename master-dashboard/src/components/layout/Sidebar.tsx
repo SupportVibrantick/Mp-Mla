@@ -21,6 +21,8 @@ import {
   Cake,
   Trash2,
   CalendarDays,
+  CreditCard,
+  Puzzle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -57,7 +59,10 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const adminItems = [
     { label: "Tenant Management", icon: Building2, href: "/tenants" },
-    { label: "User Management", icon: Users, href: "/users", module: "users" },
+    { label: "Subscriptions", icon: CreditCard, href: "/subscriptions" },
+    { label: "Modules & Addons", icon: Puzzle, href: "/modules" },
+    { label: "Payments", icon: IndianRupeeIcon, href: "/payments" },
+    // { label: "User Management", icon: Users, href: "/users", module: "users" },
   ].filter(
     (item) =>
         !item.module || canAny(item.module) || user?.role === "SUPER_ADMIN",

@@ -2,6 +2,7 @@ import { Router } from "express";
 import prisma from "../../../lib/prisma.js";
 import { requirePermission } from "../../../middleware/permission.js";
 import catchAsync from "@/utils/catchAsync.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 const router = Router();
 
@@ -13,12 +14,13 @@ router.get(
     "/",
     requirePermission("settings", "read"),
     catchAsync(async (req, res) => {
+        const tenantId = requireTenantId(req);
         const page = Math.max(1, parseInt(req.query.page as string) || 1);
         const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
         const action = req.query.action as string | undefined;
         const module = req.query.module as string | undefined;
 
-        const where: any = {};
+        const where: any = { tenantId };
         if (action) where.action = action;
         if (module) where.module = module;
 
@@ -55,10 +57,12 @@ router.get(
     "/stats",
     requirePermission("settings", "read"),
     catchAsync(async (req, res) => {
+        const tenantId = requireTenantId(req);
         const [totalExports, totalImports, recentActivity] = await Promise.all([
-            prisma.dataActivity.count({ where: { action: "EXPORT" } }),
-            prisma.dataActivity.count({ where: { action: "IMPORT" } }),
+            prisma.dataActivity.count({ where: { tenantId, action: "EXPORT" } }),
+            prisma.dataActivity.count({ where: { tenantId, action: "IMPORT" } }),
             prisma.dataActivity.findMany({
+                where: { tenantId },
                 orderBy: { createdAt: "desc" },
                 take: 10,
             }),
@@ -67,14 +71,14 @@ router.get(
         // Group by module
         const exportsByModule = await prisma.dataActivity.groupBy({
             by: ["module"],
-            where: { action: "EXPORT" },
+            where: { tenantId, action: "EXPORT" },
             _count: true,
             orderBy: { _count: { module: "desc" } },
         });
 
         const importsByModule = await prisma.dataActivity.groupBy({
             by: ["module"],
-            where: { action: "IMPORT" },
+            where: { tenantId, action: "IMPORT" },
             _count: true,
             orderBy: { _count: { module: "desc" } },
         });

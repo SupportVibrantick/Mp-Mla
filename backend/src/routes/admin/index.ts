@@ -37,7 +37,7 @@ const router = Router();
 router.use("/auth", authRoutes);
 router.use("/settings", settingsRoutes);
 
-// ─── Protected: All routes below require auth ───────────
+// ─── Protected: All routes below require auth and an explicit tenant id ─────
 router.use(authenticate, requireActiveUser);
 
 router.use("/users", userRoutes);

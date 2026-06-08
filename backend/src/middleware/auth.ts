@@ -86,6 +86,13 @@ export async function requireActiveUser(
         tenant: {
           select: {
             status: true,
+            subscription: {
+              select: {
+                status: true,
+                trialEndsAt: true,
+                currentPeriodEnd: true,
+              },
+            },
           },
         },
       },
@@ -107,6 +114,41 @@ export async function requireActiveUser(
       throw ApiError.forbidden(
         `Your organization account is ${user.tenant.status.toLowerCase()}. Contact support.`,
       );
+    }
+
+    // ── Check subscription status ──
+    const subscription = user.tenant.subscription;
+    if (subscription) {
+      // Auto-expire trials that have passed their end date
+      if (
+        subscription.status === "TRIALING" &&
+        subscription.trialEndsAt &&
+        new Date() > new Date(subscription.trialEndsAt)
+      ) {
+        await prisma.tenantSubscription.update({
+          where: { tenantId: user.tenantId },
+          data: { status: "EXPIRED" },
+        });
+        throw ApiError.forbidden(
+          "Your free trial has expired. Please upgrade to continue.",
+        );
+      }
+
+      // Block access for expired, cancelled, or suspended subscriptions
+      const blockedStatuses = ["EXPIRED", "CANCELLED", "SUSPENDED"];
+      if (blockedStatuses.includes(subscription.status)) {
+        const messages: Record<string, string> = {
+          EXPIRED:
+            "Your subscription has expired. Please renew to continue.",
+          CANCELLED:
+            "Your subscription has been cancelled. Contact support.",
+          SUSPENDED:
+            "Your subscription is suspended. Please contact support.",
+        };
+        throw ApiError.forbidden(
+          messages[subscription.status] || "Subscription inactive.",
+        );
+      }
     }
 
     req.tenantId = user.tenantId;

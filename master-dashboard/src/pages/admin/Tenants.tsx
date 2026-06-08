@@ -112,6 +112,7 @@ const createTenantSchema = z.object({
   // Plan
   planId: z.string().optional(),
   billingCycle: z.enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"]).optional().default("MONTHLY"),
+  trialDays: z.preprocess((val) => (val === "" || val === undefined ? undefined : Number(val)), z.number().int().min(1).max(90).optional()),
 });
 
 const updateTenantSchema = z.object({
@@ -176,7 +177,11 @@ function getTenantMrr(tenant: any) {
   }
 
   if (subscription.billingCycle === "HALF_YEARLY") {
-    return subscription.plan.priceYearly / 12;
+    return (subscription.plan.priceYearly / 2) / 6;
+  }
+
+  if (subscription.billingCycle === "QUARTERLY") {
+    return (subscription.plan.priceMonthly * 3) / 3;
   }
 
   return subscription.plan.priceMonthly;
@@ -228,6 +233,7 @@ export default function TenantsPage() {
   const billingFields: Array<keyof CreateForm> = [
     "planId",
     "billingCycle",
+    "trialDays",
     "maxUsers",
     "storageQuotaMB",
     "primaryColor",
@@ -330,6 +336,7 @@ export default function TenantsPage() {
       adminPhone: "",
       planId: "",
       billingCycle: "MONTHLY",
+      trialDays: undefined,
     },
   });
 
@@ -342,6 +349,9 @@ export default function TenantsPage() {
     if (formData.email === "") delete formData.email;
     if (formData.website === "") delete formData.website;
     if (!formData.planId) delete formData.planId;
+    if (formData.trialDays === undefined || isNaN(Number(formData.trialDays)) || formData.trialDays === null) {
+      delete formData.trialDays;
+    }
 
     await createMutation.mutateAsync(formData);
     setCreateOpen(false);
@@ -514,7 +524,7 @@ export default function TenantsPage() {
     const header = ["Tenant", "Constituency", "Plan", "Status", "Users", "Storage", "MRR", "Created"];
     const csv = [
       header.join(","),
-      ...rows.map((row) =>
+      ...rows.map((row: any) =>
         [
           row.name,
           row.constituency,
@@ -704,9 +714,23 @@ export default function TenantsPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div>
-                            <div className="font-semibold text-foreground">{t.subscription?.plan?.name || "No Plan"}</div>
+                            <div className="font-semibold text-foreground flex items-center gap-1.5">
+                              {t.subscription?.plan?.name || "No Plan"}
+                              {t.subscription?.status === "TRIALING" && (
+                                <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-[10px] py-0 px-1.5 h-4">
+                                  Trial
+                                </Badge>
+                              )}
+                              {t.subscription?.status === "EXPIRED" && (
+                                <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 text-[10px] py-0 px-1.5 h-4">
+                                  Expired
+                                </Badge>
+                              )}
+                            </div>
                             <div className="text-xs text-muted-foreground mt-0.5">
-                              {t.subscription?.billingCycle || "No billing cycle"}
+                              {t.subscription?.status === "TRIALING" && t.subscription?.trialEndsAt
+                                ? `Ends ${new Date(t.subscription.trialEndsAt).toLocaleDateString("en-IN")}`
+                                : t.subscription?.billingCycle || "No billing cycle"}
                             </div>
                           </div>
                         </td>
@@ -999,7 +1023,7 @@ export default function TenantsPage() {
 
                 {/* Tab 2: Subscription & Limits */}
                 <TabsContent value="billing" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label>Subscription Plan</Label>
                       <Select
@@ -1039,6 +1063,19 @@ export default function TenantsPage() {
                           <SelectItem value="YEARLY">Yearly</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="t-trial">Trial Days (Optional)</Label>
+                      <Input
+                        id="t-trial"
+                        type="number"
+                        placeholder="e.g., 14"
+                        {...createForm.register("trialDays")}
+                      />
+                      {createForm.formState.errors.trialDays && (
+                        <p className="text-xs text-destructive">{createForm.formState.errors.trialDays.message}</p>
+                      )}
                     </div>
                   </div>
 

@@ -339,3 +339,54 @@ export const tenantsApi = {
   listPlans: () => api.get("/platform/tenants/plans"),
 };
 
+export const subscriptionsApi = {
+  overview: () => api.get("/platform/subscriptions/overview"),
+  listPlans: (params?: any) => api.get("/platform/subscriptions/plans", { params }),
+  createPlan: (data: any) => api.post("/platform/subscriptions/plans", data),
+  updatePlan: (id: string, data: any) => api.patch(`/platform/subscriptions/plans/${id}`, data),
+  listTenantSubscriptions: (params?: any) =>
+    api.get("/platform/subscriptions/tenant-subscriptions", { params }),
+  getTenantSubscription: (tenantId: string) =>
+    api.get(`/platform/subscriptions/tenant-subscriptions/${tenantId}`),
+  upsertTenantSubscription: (tenantId: string, data: any) =>
+    api.put(`/platform/subscriptions/tenant-subscriptions/${tenantId}`, data),
+  upgradeTenantSubscription: (tenantId: string, data: any) =>
+    api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/upgrade`, data),
+  suspendTenantSubscription: (tenantId: string) =>
+    api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/suspend`),
+  activateTenantSubscription: (tenantId: string) =>
+    api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/activate`),
+  cancelTenantSubscription: (tenantId: string) =>
+    api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/cancel`),
+  listInvoices: (params?: any) => api.get("/platform/subscriptions/invoices", { params }),
+};
+
+export const modulesApi = {
+  list: (params?: any) => api.get("/platform/modules", { params }),
+  get: (id: string) => api.get(`/platform/modules/${id}`),
+  create: (data: any) => api.post("/platform/modules", data),
+  update: (id: string, data: any) => api.patch(`/platform/modules/${id}`, data),
+  delete: (id: string) => api.delete(`/platform/modules/${id}`),
+  listTenantAccess: (tenantId: string, params?: any) =>
+    api.get(`/platform/modules/tenant-access/${tenantId}`, { params }),
+  grantTenantAccess: (tenantId: string, data: any) =>
+    api.post(`/platform/modules/tenant-access/${tenantId}`, data),
+  bulkGrantTenantAccess: (tenantId: string, data: any) =>
+    api.post(`/platform/modules/tenant-access/${tenantId}/bulk`, data),
+  updateTenantAccess: (tenantId: string, moduleId: string, data: any) =>
+    api.patch(`/platform/modules/tenant-access/${tenantId}/${moduleId}`, data),
+  revokeTenantAccess: (tenantId: string, moduleId: string) =>
+    api.delete(`/platform/modules/tenant-access/${tenantId}/${moduleId}`),
+};
+
+export const paymentsApi = {
+  list: (params?: any) => api.get("/platform/payments", { params }),
+  get: (id: string) => api.get(`/platform/payments/${id}`),
+  create: (data: any) => api.post("/platform/payments", data),
+  update: (id: string, data: any) => api.patch(`/platform/payments/${id}`, data),
+  updateStatus: (id: string, data: any) => api.patch(`/platform/payments/${id}/status`, data),
+  delete: (id: string) => api.delete(`/platform/payments/${id}`),
+  stats: () => api.get("/platform/payments/stats"),
+};
+
+

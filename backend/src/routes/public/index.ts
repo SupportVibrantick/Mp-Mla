@@ -10,11 +10,39 @@ const router = Router();
 // Upload middleware for institution request documents
 const docUpload = createUploader("institution-requests");
 
+async function resolvePublicTenantId(req: Request): Promise<string | null> {
+  const tenantId =
+    (req.headers["x-tenant-id"] as string | undefined) ||
+    (req.query.tenantId as string | undefined) ||
+    (req.body?.tenantId as string | undefined);
+
+  if (tenantId) {
+    const tenant = await prisma.tenant.findFirst({
+      where: { id: tenantId, status: "ACTIVE" },
+      select: { id: true },
+    });
+    return tenant?.id || null;
+  }
+
+  const tenants = await prisma.tenant.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true },
+    take: 2,
+  });
+  return tenants.length === 1 ? tenants[0].id : null;
+}
+
 // ─── Public: List wards (for registration form dropdown) ─────
-router.get("/wards", async (_req: Request, res: Response) => {
+router.get("/wards", async (req: Request, res: Response) => {
   try {
+    const tenantId = await resolvePublicTenantId(req);
+    if (!tenantId) {
+      res.status(400).json({ success: false, message: "Tenant ID is required" });
+      return;
+    }
+
     const wards = await prisma.ward.findMany({
-      where: { status: "ACTIVE", isDeleted: false },
+      where: { tenantId, status: "ACTIVE", isDeleted: false },
       select: { id: true, name: true, wardNumber: true },
       orderBy: { wardNumber: "asc" },
     });
@@ -35,6 +63,11 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const data = req.body;
+      const tenantId = await resolvePublicTenantId(req);
+      if (!tenantId) {
+        res.status(400).json({ success: false, message: "Tenant ID is required" });
+        return;
+      }
 
       // Validate required fields
       const requiredFields = [
@@ -58,8 +91,8 @@ router.post(
       }
 
       // Verify ward exists
-      const ward = await prisma.ward.findUnique({
-        where: { id: data.wardId },
+      const ward = await prisma.ward.findFirst({
+        where: { id: data.wardId, tenantId },
       });
       if (!ward) {
         res.status(400).json({ success: false, message: "Ward not found" });
@@ -75,6 +108,7 @@ router.post(
           prisma.institutionRequest.findFirst({
             where: {
               headAdharNumber: data.headAdharNumber,
+              tenantId,
               status: "PENDING",
             },
           }),
@@ -138,6 +172,7 @@ router.post(
 
       const request = await prisma.institutionRequest.create({
         data: {
+          tenantId,
           name: data.name,
           category: data.category,
           subcategory: data.subcategory || null,

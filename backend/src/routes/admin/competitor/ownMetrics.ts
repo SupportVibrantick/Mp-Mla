@@ -8,6 +8,7 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /competitor-analysis/own-metrics — Get own metrics (auto + manual combined)
@@ -18,21 +19,22 @@ export async function getOwnMetrics(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { period } = req.query as Record<string, string>;
     const targetPeriod = period || getCurrentPeriod();
 
     // 1. Get auto-computed metrics from DB
-    const autoMetrics = await collectOwnMetrics();
+    const autoMetrics = await collectOwnMetrics(tenantId);
 
     // 2. Get manually entered metrics for this period
     const manualMetrics = await prisma.ownMetricEntry.findMany({
-      where: { period: targetPeriod, isAuto: false },
+      where: { tenantId, period: targetPeriod, isAuto: false },
       orderBy: [{ category: "asc" }, { metricKey: "asc" }],
     });
 
     // 3. Get auto-saved entries from previous auto-collection
     const savedAutoMetrics = await prisma.ownMetricEntry.findMany({
-      where: { period: targetPeriod, isAuto: true },
+      where: { tenantId, period: targetPeriod, isAuto: true },
       orderBy: [{ category: "asc" }, { metricKey: "asc" }],
     });
 
@@ -66,6 +68,7 @@ export async function getOwnMetrics(
 
     // Get all distinct periods with manual data
     const periods = await prisma.ownMetricEntry.findMany({
+      where: { tenantId },
       select: { period: true },
       distinct: ["period"],
       orderBy: { period: "desc" },
@@ -96,19 +99,22 @@ export async function submitOwnMetrics(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { period, metrics } = req.body;
 
     const results = await Promise.all(
       metrics.map((m: any) =>
         prisma.ownMetricEntry.upsert({
           where: {
-            metricKey_period: {
+            tenantId_metricKey_period: {
+              tenantId,
               metricKey: m.metricKey,
               period,
             },
           },
           create: {
             category: m.category,
+            tenantId,
             metricKey: m.metricKey,
             metricLabel: m.metricLabel,
             value: m.value,
@@ -130,6 +136,7 @@ export async function submitOwnMetrics(
     );
 
     await createAuditLog({
+      tenantId,
       userId: req.user!.id,
       action: "CREATE",
       module: "own_metrics",
@@ -157,7 +164,8 @@ export async function getAutoMetrics(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const autoMetrics = await collectOwnMetrics();
+    const tenantId = requireTenantId(req);
+    const autoMetrics = await collectOwnMetrics(tenantId);
 
     // Group by category
     const grouped: Record<string, any[]> = {};

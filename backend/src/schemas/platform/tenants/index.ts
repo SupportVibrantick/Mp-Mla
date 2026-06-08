@@ -35,6 +35,7 @@ export const createTenantSchema = z.object({
   // Subscription plan
   planId: z.string().optional(),
   billingCycle: z.enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"]).optional(),
+  trialDays: z.coerce.number().int().min(1).max(90).optional(),
 });
 
 // ─── Update Tenant ─────────────────────────────────────
