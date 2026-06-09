@@ -31,8 +31,10 @@ interface AuditLogInput {
  */
 export async function createAuditLog(input: AuditLogInput): Promise<void> {
   try {
-    const isEnabled = await getSetting("enable_audit_log");
-    if (isEnabled === "false") return;
+    if (input.tenantId) {
+      const isEnabled = await getSetting("enable_audit_log", input.tenantId);
+      if (isEnabled === "false") return;
+    }
 
     prisma.auditLog
       .create({

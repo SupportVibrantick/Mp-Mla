@@ -2,6 +2,7 @@
 import app from "../src/app.js";
 import http from "http";
 import { startMeetingScheduler } from "../src/utils/meetingScheduler.js";
+import { startSubscriptionScheduler } from "../src/jobs/subscriptionSweep.js";
 
 /**
  * Get port from environment and store in Express.
@@ -23,6 +24,7 @@ server.on("listening", onListening);
 
 // Start background schedulers
 startMeetingScheduler();
+startSubscriptionScheduler();
 
 
 /**

@@ -147,15 +147,16 @@ export const authApi = {
   updateMe: (data: any) => api.patch("/platform/auth/me", data),
 };
 
-export const usersApi = {
-  list: (params?: any) => api.get("/admin/users", { params }),
-  get: (id: string) => api.get(`/admin/users/${id}`),
-  create: (data: any) => api.post("/admin/users", data),
-  update: (id: string, data: any) => api.put(`/admin/users/${id}`, data),
-  delete: (id: string) => api.delete(`/admin/users/${id}`),
-  getPermissions: (id: string) => api.get(`/admin/users/${id}/permissions`),
-  updatePermissions: (id: string, data: any) =>
-    api.put(`/admin/users/${id}/permissions`, data),
+export const platformUsersApi = {
+  list: () => api.get("/platform/users"),
+  create: (data: any) => api.post("/platform/users", data),
+  update: (id: string, data: any) => api.patch(`/platform/users/${id}`, data),
+  delete: (id: string) => api.delete(`/platform/users/${id}`),
+};
+
+export const platformSettingsApi = {
+  list: () => api.get("/platform/settings"),
+  update: (data: any) => api.patch("/platform/settings", data),
 };
 
 export const wardsApi = {

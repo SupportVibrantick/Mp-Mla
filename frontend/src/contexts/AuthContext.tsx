@@ -30,6 +30,7 @@ interface AuthState {
   user: User | null;
   permissions: Permission[];
   permissionsByModule: Record<string, string[]>;
+  enabledModules: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -40,6 +41,7 @@ interface AuthContextType extends AuthState {
   refreshUser: () => Promise<void>;
   can: (module: string, action: string) => boolean;
   canAny: (module: string) => boolean;
+  hasModule: (module: string) => boolean;
   hasRole: (...roles: string[]) => boolean;
 }
 
@@ -49,6 +51,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   permissions: [],
   permissionsByModule: {},
+  enabledModules: [],
   isAuthenticated: false,
   isLoading: true,
   login: async () => { },
@@ -56,6 +59,7 @@ export const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => { },
   can: () => false,
   canAny: () => false,
+  hasModule: () => true,
   hasRole: () => false,
 });
 
@@ -67,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: TokenStorage.getStoredUser(),
     permissions: TokenStorage.getStoredPermissions()?.permissions || [],
     permissionsByModule: TokenStorage.getStoredPermissions()?.permissionsByModule || {},
+    enabledModules: [],
     isAuthenticated: !!TokenStorage.getRefreshToken(),
     isLoading: true,
   });
@@ -74,8 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ─── Load permissions from API ──────────────────────
   const loadPermissions = useCallback(async () => {
     try {
-      const res = await authApi.getMyPermissions();
-      const { permissions, permissionsByModule } = res.data.data;
+      const [permRes, modRes] = await Promise.all([
+        authApi.getMyPermissions(),
+        authApi.getMyModules(),
+      ]);
+      const { permissions, permissionsByModule } = permRes.data.data;
+      const enabledModules: string[] = modRes.data.data?.modules ?? [];
 
       TokenStorage.setStoredPermissions({ permissions, permissionsByModule });
 
@@ -83,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...prev,
         permissions,
         permissionsByModule,
+        enabledModules,
       }));
     } catch (error) {
       console.error("Failed to load permissions:", error);
@@ -231,6 +241,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [state.user]
   );
 
+  const hasModule = useCallback(
+    (module: string): boolean => {
+      if (!state.isAuthenticated) return false;
+      if (state.user?.role === "SYSTEM_ADMIN") return true;
+      if (!state.enabledModules.length) return true;
+      return state.enabledModules.includes(module);
+    },
+    [state.enabledModules, state.isAuthenticated, state.user?.role],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -240,6 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshUser,
         can,
         canAny,
+        hasModule,
         hasRole,
       }}
     >

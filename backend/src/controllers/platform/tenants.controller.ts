@@ -4,6 +4,7 @@ import prisma from "../../lib/prisma.js";
 import { ApiError } from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Prisma } from "@prisma/client";
+import { buildDefaultTenantSettings } from "../../lib/tenantSettingsHelper.js";
 
 function getParamId(req: Request, name = "id"): string {
   const value = req.params[name];
@@ -155,48 +156,7 @@ export const createTenant = async (
       });
 
       await tx.tenantSetting.createMany({
-        data: [
-          {
-            tenantId: newTenant.id,
-            key: "sms_enabled",
-            value: "false",
-            type: "boolean",
-            group: "notifications",
-            description: "Enable SMS notifications",
-          },
-          {
-            tenantId: newTenant.id,
-            key: "email_enabled",
-            value: "true",
-            type: "boolean",
-            group: "notifications",
-            description: "Enable email notifications",
-          },
-          {
-            tenantId: newTenant.id,
-            key: "whatsapp_enabled",
-            value: "false",
-            type: "boolean",
-            group: "notifications",
-            description: "Enable WhatsApp notifications",
-          },
-          {
-            tenantId: newTenant.id,
-            key: "ai_features_enabled",
-            value: "false",
-            type: "boolean",
-            group: "features",
-            description: "Enable AI-assisted features",
-          },
-          {
-            tenantId: newTenant.id,
-            key: "data_retention_days",
-            value: "365",
-            type: "number",
-            group: "security",
-            description: "Tenant data retention window in days",
-          },
-        ],
+        data: buildDefaultTenantSettings(newTenant.id),
       });
 
       // 2. Create the system admin user for this tenant

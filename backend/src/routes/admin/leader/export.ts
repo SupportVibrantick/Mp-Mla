@@ -66,6 +66,7 @@ export const exportLeaders = catchAsync(async (req: Request, res: Response) => {
 
   // Send admin notification (fire-and-forget)
   sendAdminNotification(
+    tenantId,
     `Data Export: leaders by ${req.user!.name || "Unknown"}`,
     buildActivityEmailHtml({
       action: "EXPORT",

@@ -47,6 +47,7 @@ export const exportDepartments = catchAsync(async (req: Request, res: Response) 
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
         `Data Export: departments by ${req.user!.name || "Unknown"}`,
         buildActivityEmailHtml({
             action: "EXPORT",

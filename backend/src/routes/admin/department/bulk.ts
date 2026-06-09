@@ -119,6 +119,7 @@ export const bulkCreateDepartments = catchAsync(
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
       `Data Import: departments by ${req.user!.name || "Unknown"}`,
       buildActivityEmailHtml({
         action: "IMPORT",

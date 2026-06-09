@@ -65,6 +65,7 @@ export const exportFunds = catchAsync(async (req: Request, res: Response) => {
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
         `Data Export: funds by ${req.user!.name || "Unknown"}`,
         buildActivityEmailHtml({
             action: "EXPORT",

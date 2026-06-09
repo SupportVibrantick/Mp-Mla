@@ -78,6 +78,7 @@ export async function sendGreeting(
       }
       const subject = `${type} Greeting from ${req.user!.name || "Admin"}`;
       const emailSent = await sendEmail(
+        tenantId,
         leader.email,
         subject,
         `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">
@@ -172,6 +173,7 @@ export async function sendBulkGreeting(
       if (channel === "EMAIL" && leader.email) {
         const subject = `${type} Greeting`;
         const emailSent = await sendEmail(
+          tenantId,
           leader.email,
           subject,
           `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">

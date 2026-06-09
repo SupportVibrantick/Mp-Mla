@@ -28,8 +28,11 @@ export async function login(
     const meta = getRequestMeta(req);
     const tenantId = getTenantIdFromLoginRequest(req);
 
-    // 0. Check IP Restrictions
-    const allowedIps = await getSetting("allowed_ip_ranges");
+    // 0. Check IP Restrictions (tenant-scoped when tenantId provided)
+    const ipCheckTenantId = tenantId || null;
+    const allowedIps = ipCheckTenantId
+      ? await getSetting("allowed_ip_ranges", ipCheckTenantId)
+      : "";
     if (allowedIps && allowedIps.trim() !== "") {
       const ipList = allowedIps.split(",").map((ip) => ip.trim());
       if (meta.ipAddress && !ipList.includes(meta.ipAddress)) {
@@ -94,9 +97,11 @@ export async function login(
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
-      const maxAttempts = (await getSettingNumber("max_failed_logins")) || 5;
+      const maxAttempts =
+        (await getSettingNumber("max_failed_logins", user.tenantId)) || 5;
       const lockoutMins =
-        (await getSettingNumber("lockout_duration_minutes")) || 30;
+        (await getSettingNumber("lockout_duration_minutes", user.tenantId)) ||
+        30;
 
       const newCount = user.failedLoginCount + 1;
       const shouldLock = newCount >= maxAttempts;
@@ -131,7 +136,10 @@ export async function login(
     }
 
     // 5. Success — reset failed count
-    const hasExpired = await isPasswordExpired(user.id, user.passwordChangedAt);
+    const hasExpired = await isPasswordExpired(
+      user.tenantId,
+      user.passwordChangedAt,
+    );
 
     await prisma.user.update({
       where: { id: user.id },
@@ -145,7 +153,10 @@ export async function login(
     });
 
     // 6. Generate access token
-    const sessionTimeout = await getSettingNumber("session_timeout_minutes");
+    const sessionTimeout = await getSettingNumber(
+      "session_timeout_minutes",
+      user.tenantId,
+    );
     // 0 = unlimited, otherwise minutes. JWT expect string like '1h' or seconds.
     const expiresIn = sessionTimeout === 0 ? "365d" : `${sessionTimeout}m`;
 

@@ -6,6 +6,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { buildDemographicsData } from "./helpers.js";
 import { requireTenantId } from "../../../utils/tenant.js";
+import { assertCanCreateWard } from "../../../lib/quota.js";
 
 
 
@@ -20,6 +21,7 @@ export async function createWard(
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
+    await assertCanCreateWard(tenantId);
     const { areas, councillor, demographics, ...wardData } = req.body;
 
     // Step 1: Compute aggregates

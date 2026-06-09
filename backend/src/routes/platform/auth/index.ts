@@ -14,6 +14,7 @@ import {
   authenticatePlatform,
   requireActivePlatformUser,
 } from "../../../middleware/platformAuth.js";
+import { getPlatformPermissions } from "../../../lib/platformPermissions.js";
 import {
   platformChangePasswordSchema,
   platformLoginSchema,
@@ -217,6 +218,20 @@ router.post(
       }
 
       res.json({ success: true, message: "Logged out successfully" });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.get(
+  "/me/permissions",
+  authenticatePlatform,
+  requireActivePlatformUser,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const data = getPlatformPermissions(req.platformUser!.role);
+      res.json({ success: true, data });
     } catch (error) {
       next(error);
     }

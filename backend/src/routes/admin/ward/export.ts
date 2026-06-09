@@ -180,6 +180,7 @@ export async function exportWards(
 
         // Send admin notification (fire-and-forget)
         sendAdminNotification(
+            tenantId,
             `Data Export: wards by ${req.user!.name || "Unknown"}`,
             buildActivityEmailHtml({
                 action: "EXPORT",

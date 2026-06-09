@@ -174,6 +174,7 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
 
   // Send admin notification
   sendAdminNotification(
+    tenantId,
     `Data Import: grievances by ${req.user!.name || "Unknown"}`,
     buildActivityEmailHtml({
       action: "IMPORT",

@@ -2,6 +2,8 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import type { Request } from "express";
+import { assertStorageQuota, trackStorageDelta } from "./quota.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,8 +31,29 @@ const storage = multer.diskStorage({
     },
 });
 
-// File filter
-const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+async function quotaAwareFileFilter(
+  req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (tenantId) {
+      await assertStorageQuota(tenantId, MAX_FILE_BYTES);
+    }
+    baseFileFilter(req, file, cb);
+  } catch (error) {
+    cb(error as Error);
+  }
+}
+
+const baseFileFilter = (
+  _req: Express.Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
     const allowedTypes = [
         "image/jpeg",
         "image/png",
@@ -53,10 +76,8 @@ const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer
 
 export const upload = multer({
     storage,
-    fileFilter,
-    limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB max
-    },
+    fileFilter: quotaAwareFileFilter,
+    limits: { fileSize: MAX_FILE_BYTES },
 });
 
 // Helper to create category-specific upload
@@ -75,9 +96,27 @@ export function createUploader(subDir: string) {
                 cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
             },
         }),
-        fileFilter,
-        limits: { fileSize: 10 * 1024 * 1024 },
+        fileFilter: quotaAwareFileFilter,
+        limits: { fileSize: MAX_FILE_BYTES },
     });
+}
+
+export async function trackMulterUploads(req: Request): Promise<void> {
+  const tenantId = req.user?.tenantId;
+  if (!tenantId) return;
+
+  const files: Express.Multer.File[] = [];
+  if (req.file) files.push(req.file);
+  if (Array.isArray(req.files)) files.push(...req.files);
+  else if (req.files && typeof req.files === "object") {
+    for (const arr of Object.values(req.files)) {
+      if (Array.isArray(arr)) files.push(...arr);
+    }
+  }
+
+  for (const file of files) {
+    await trackStorageDelta(tenantId, file.size);
+  }
 }
 
 export function getUploadPath(filename: string, subDir: string = "attachments"): string {

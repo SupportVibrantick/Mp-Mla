@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { authenticate, requireActiveUser } from "../../middleware/auth.js";
+import { requireModule } from "../../middleware/requireModule.js";
+import accountRoutes from "./account/index.js";
 
 import authRoutes from "./auth/index.js";
 import userRoutes from "./user/index.js";
@@ -40,30 +42,29 @@ router.use("/settings", settingsRoutes);
 // ─── Protected: All routes below require auth and an explicit tenant id ─────
 router.use(authenticate, requireActiveUser);
 
-router.use("/users", userRoutes);
-router.use("/permissions", permissionRoutes);
-router.use("/wards", wardRoutes);
-router.use("/community-groups", communityGroup);
-router.use("/demographics", demographicsRoutes);
-router.use("/institutions", institutionRoutes);
-router.use("/departments", departmentRoutes);
-// router.use("/incharges", inchargeRoutes);
-router.use("/grievances", grievanceRoutes);
-router.use("/projects", projectRoutes);
-router.use("/funds", fundRoutes);
-
-router.use("/audit-logs", auditLogRoutes);
-router.use("/recycle-bin", recycleBinRoutes);
-router.use("/leaders", leaderRoutes);
-router.use("/reports", reportRoutes);
-router.use("/data-activity", dataActivityRoutes);
-router.use("/meetings", meetingRoutes);
-router.use("/competitor-analysis", competitorRoutes);
+router.use("/account", accountRoutes);
+router.use("/users", requireModule("users"), userRoutes);
+router.use("/permissions", requireModule("users"), permissionRoutes);
+router.use("/wards", requireModule("wards"), wardRoutes);
+router.use("/community-groups", requireModule("community_groups"), communityGroup);
+router.use("/demographics", requireModule("demographics"), demographicsRoutes);
+router.use("/institutions", requireModule("institutions"), institutionRoutes);
+router.use("/departments", requireModule("departments"), departmentRoutes);
+router.use("/grievances", requireModule("grievances"), grievanceRoutes);
+router.use("/projects", requireModule("projects"), projectRoutes);
+router.use("/funds", requireModule("funds"), fundRoutes);
+router.use("/audit-logs", requireModule("audit_logs"), auditLogRoutes);
+router.use("/recycle-bin", requireModule("recycle_bin"), recycleBinRoutes);
+router.use("/leaders", requireModule("leaders"), leaderRoutes);
+router.use("/reports", requireModule("reports"), reportRoutes);
+router.use("/data-activity", requireModule("data_import"), dataActivityRoutes);
+router.use("/meetings", requireModule("meeting"), meetingRoutes);
+router.use("/competitor-analysis", requireModule("competitors"), competitorRoutes);
 // router.use("/schemes", schemeRoutes);
 // router.use("/demographics", demographicsRoutes);
 // router.use("/departments", departmentRoutes);
 // router.use("/tasks", taskRoutes);
-router.use("/dashboard", dashboardRoutes);
+router.use("/dashboard", requireModule("dashboard"), dashboardRoutes);
 // router.use("/audit-logs", auditLogRoutes);
 // router.use("/settings", settingsRoutes);
 // router.use("/notifications", notificationRoutes);

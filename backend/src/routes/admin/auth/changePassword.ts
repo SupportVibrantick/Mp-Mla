@@ -25,7 +25,7 @@ export async function changePassword(
     if (!isValid) throw ApiError.badRequest("Current password is incorrect.");
 
     // Validate complexity
-    await validatePasswordComplexity(newPassword);
+    await validatePasswordComplexity(newPassword, user.tenantId);
 
     // Prevent reusing same password
     const isSame = await bcrypt.compare(newPassword, user.password);

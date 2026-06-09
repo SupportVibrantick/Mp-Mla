@@ -306,6 +306,7 @@ export async function bulkCreateWards(
 
         // Send admin notification (fire-and-forget)
         sendAdminNotification(
+            tenantId,
             `Data Import: wards by ${req.user!.name || "Unknown"}`,
             buildActivityEmailHtml({
                 action: "IMPORT",

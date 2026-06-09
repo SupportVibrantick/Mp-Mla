@@ -11,7 +11,8 @@
         "db:push": "npx prisma db push",
         "db:seed": "tsx prisma/seed.ts",
         "db:studio": "npx prisma studio",
-        "db:generate": "npx prisma generate"
+        "db:generate": "npx prisma generate",
+        "db:migrate-settings": "tsx scripts/migrate-settings-to-tenant.ts"
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",

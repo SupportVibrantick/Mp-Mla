@@ -213,12 +213,12 @@ router.post(
       // ─── Notify Admin (Fire-and-forget) ──────────────────
       (async () => {
         try {
-          const orgEmail = await getSetting("org_email");
-          const orgName = await getSetting("org_name");
+          const orgEmail = await getSetting("org_email", tenantId);
+          const orgName = await getSetting("org_name", tenantId);
           if (orgEmail) {
             const subject = `New Institution Registration Request: ${request.name}`;
             const html = buildInstitutionRequestEmailHtml({ request, orgName });
-            await sendEmail(orgEmail, subject, html);
+            await sendEmail(tenantId, orgEmail, subject, html);
           }
         } catch (err) {
           console.error("Admin notification failed:", err);

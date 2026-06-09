@@ -235,6 +235,7 @@ export const bulkCreateLeaders = catchAsync(
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
       `Data Import: leaders by ${req.user!.name || "Unknown"}`,
       buildActivityEmailHtml({
         action: "IMPORT",

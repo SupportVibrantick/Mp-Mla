@@ -141,10 +141,18 @@ export const authApi = {
 
   getMyPermissions: () => api.get("/admin/auth/me/permissions"),
 
+  getMyModules: () => api.get("/admin/auth/me/modules"),
+
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.post("/admin/auth/change-password", data),
 
   updateMe: (data: any) => api.patch("/admin/auth/me", data),
+};
+
+export const accountApi = {
+  getSubscription: () => api.get("/admin/account/subscription"),
+  getInvoices: () => api.get("/admin/account/invoices"),
+  getUsage: () => api.get("/admin/account/usage"),
 };
 
 export const usersApi = {

@@ -123,6 +123,7 @@ export async function exportInstitutions(
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
       `Data Export: institutions by ${req.user!.name || "Unknown"}`,
       buildActivityEmailHtml({
         action: "EXPORT",

@@ -36,45 +36,85 @@ import {
 } from "../../../controllers/platform/subscriptions.controller.js";
 
 const router = Router();
+const readRoles = [
+  "SUPER_ADMIN",
+  "PLATFORM_ADMIN",
+  "BILLING_MANAGER",
+  "SUPPORT_STAFF",
+] as const;
+const writeRoles = ["SUPER_ADMIN", "PLATFORM_ADMIN", "BILLING_MANAGER"] as const;
+const planWriteRoles = ["SUPER_ADMIN", "PLATFORM_ADMIN"] as const;
 
-router.use(
-  authenticatePlatform,
-  requireActivePlatformUser,
-  authorizePlatform("SUPER_ADMIN", "PLATFORM_ADMIN"),
+router.use(authenticatePlatform, requireActivePlatformUser);
+
+router.get(
+  "/plans",
+  authorizePlatform(...readRoles),
+  validateQuery(listPlansSchema),
+  listSubscriptionPlans,
+);
+router.post(
+  "/plans",
+  authorizePlatform(...planWriteRoles),
+  validate(createPlanSchema),
+  createSubscriptionPlan,
+);
+router.patch(
+  "/plans/:id",
+  authorizePlatform(...planWriteRoles),
+  validateParams(idParamSchema),
+  validate(updatePlanSchema),
+  updateSubscriptionPlan,
 );
 
-router.get("/plans", validateQuery(listPlansSchema), listSubscriptionPlans);
-router.post("/plans", validate(createPlanSchema), createSubscriptionPlan);
-router.patch("/plans/:id", validateParams(idParamSchema), validate(updatePlanSchema), updateSubscriptionPlan);
-
-router.get("/overview", getSubscriptionOverview);
-router.get("/invoices", validateQuery(listInvoicesSchema), listInvoices);
-router.get("/tenant-subscriptions", validateQuery(listTenantSubscriptionsSchema), listTenantSubscriptions);
-router.get("/tenant-subscriptions/:tenantId", validateParams(tenantIdParamSchema), getTenantSubscription);
+router.get("/overview", authorizePlatform(...readRoles), getSubscriptionOverview);
+router.get(
+  "/invoices",
+  authorizePlatform(...readRoles),
+  validateQuery(listInvoicesSchema),
+  listInvoices,
+);
+router.get(
+  "/tenant-subscriptions",
+  authorizePlatform(...readRoles),
+  validateQuery(listTenantSubscriptionsSchema),
+  listTenantSubscriptions,
+);
+router.get(
+  "/tenant-subscriptions/:tenantId",
+  authorizePlatform(...readRoles),
+  validateParams(tenantIdParamSchema),
+  getTenantSubscription,
+);
 router.put(
   "/tenant-subscriptions/:tenantId",
+  authorizePlatform(...writeRoles),
   validateParams(tenantIdParamSchema),
   validate(upsertTenantSubscriptionSchema),
   upsertTenantSubscription,
 );
 router.post(
   "/tenant-subscriptions/:tenantId/upgrade",
+  authorizePlatform(...writeRoles),
   validateParams(tenantIdParamSchema),
   validate(upgradeTenantSubscriptionSchema),
   upgradeTenantSubscription,
 );
 router.post(
   "/tenant-subscriptions/:tenantId/suspend",
+  authorizePlatform(...writeRoles),
   validateParams(tenantIdParamSchema),
   suspendTenantSubscription,
 );
 router.post(
   "/tenant-subscriptions/:tenantId/activate",
+  authorizePlatform(...writeRoles),
   validateParams(tenantIdParamSchema),
   activateTenantSubscription,
 );
 router.post(
   "/tenant-subscriptions/:tenantId/cancel",
+  authorizePlatform(...writeRoles),
   validateParams(tenantIdParamSchema),
   cancelTenantSubscription,
 );

@@ -816,6 +816,53 @@ async function main() {
   });
   console.log(`✅ Platform Admin: ${platformAdmin.email}`);
 
+  const platformSettings = [
+    {
+      key: "platform_name",
+      value: "MP-MLA Platform",
+      type: "text",
+      group: "general",
+      description: "Platform operator name",
+    },
+    {
+      key: "support_email",
+      value: "support@admin.mpmla.in",
+      type: "text",
+      group: "general",
+      description: "Support email shown to tenants",
+    },
+    {
+      key: "default_trial_days",
+      value: "14",
+      type: "number",
+      group: "billing",
+      description: "Default trial period for new tenants",
+    },
+    {
+      key: "allow_tenant_creation",
+      value: "true",
+      type: "boolean",
+      group: "general",
+      description: "Allow operators to create new tenants",
+    },
+    {
+      key: "renewal_reminder_days",
+      value: "7",
+      type: "number",
+      group: "billing",
+      description: "Days before renewal to send reminder",
+    },
+  ];
+
+  for (const setting of platformSettings) {
+    await prisma.platformSetting.upsert({
+      where: { key: setting.key },
+      update: { value: setting.value },
+      create: setting,
+    });
+  }
+  console.log(`✅ ${platformSettings.length} platform settings seeded`);
+
   async function upsertTenantUserByEmail(
     email: string,
     createData: Parameters<typeof prisma.user.create>[0]["data"],

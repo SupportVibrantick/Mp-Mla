@@ -12,21 +12,14 @@ import { GuestRoute } from "./components/auth/GuestRoute";
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
-
 import Login from "@/pages/Login";
 import ChangePassword from "@/pages/ChangePassword";
-import UserManagement from "@/pages/admin/User";
-import Permissions from "@/pages/admin/Permissions";
-import UserPermissions from "./pages/admin/UserPermissions";
 import TenantsPage from "@/pages/admin/Tenants";
 import SubscriptionsPage from "@/pages/admin/Subscriptions";
 import ModulesPage from "@/pages/admin/Modules";
 import PaymentsPage from "@/pages/admin/Payments";
-
-import SettingsPage from "./pages/settings/SettingsPage";
-import AuditLogsPage from "./pages/auditLogs/AuditLogsPage";
-import RecycleBinPage from "./pages/recycleBin/RecycleBinPage";
-
+import PlatformSettingsPage from "@/pages/admin/PlatformSettings";
+import PlatformUsersPage from "@/pages/admin/PlatformUsers";
 import ProfilePage from "./pages/ProfilePage";
 
 function Router() {
@@ -39,62 +32,56 @@ function Router() {
       </Route>
 
       <Route path="/">
-        <ProtectedRoute>
+        <ProtectedRoute module="dashboard" action="read">
           <Dashboard />
         </ProtectedRoute>
       </Route>
 
       <Route path="/dashboard">
-        <ProtectedRoute>
+        <ProtectedRoute module="dashboard" action="read">
           <Dashboard />
         </ProtectedRoute>
       </Route>
 
       <Route path="/tenants">
-        <ProtectedRoute>
+        <ProtectedRoute module="tenants" action="read">
           <TenantsPage />
         </ProtectedRoute>
       </Route>
 
       <Route path="/subscriptions">
-        <ProtectedRoute>
+        <ProtectedRoute module="subscriptions" action="read">
           <SubscriptionsPage />
         </ProtectedRoute>
       </Route>
 
       <Route path="/modules">
-        <ProtectedRoute>
+        <ProtectedRoute module="modules" action="read">
           <ModulesPage />
         </ProtectedRoute>
       </Route>
 
       <Route path="/payments">
-        <ProtectedRoute>
+        <ProtectedRoute module="payments" action="read">
           <PaymentsPage />
         </ProtectedRoute>
       </Route>
 
       <Route path="/users">
         <ProtectedRoute module="users" action="read">
-          <UserManagement />
+          <PlatformUsersPage />
         </ProtectedRoute>
       </Route>
 
-      <Route path="/permissions">
-        <ProtectedRoute module="users" action="read">
-          <Permissions />
-        </ProtectedRoute>
-      </Route>
-      
-      <Route path="/users/:id/permissions">
-        <ProtectedRoute module="users" action="update">
-          <UserPermissions />
+      <Route path="/settings">
+        <ProtectedRoute module="settings" action="read">
+          <PlatformSettingsPage />
         </ProtectedRoute>
       </Route>
 
-      <Route path="/recycle-bin">
-        <ProtectedRoute module="recycle_bin" action="read">
-          <RecycleBinPage />
+      <Route path="/profile">
+        <ProtectedRoute>
+          <ProfilePage />
         </ProtectedRoute>
       </Route>
 

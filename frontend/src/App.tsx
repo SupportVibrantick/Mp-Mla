@@ -55,6 +55,7 @@ import PublicFacilityRequestsPage from "./pages/public-facilities/PublicFacility
 import MeetingListPage from "./pages/meetings/MeetingListPage";
 import MeetingFormPage from "./pages/meetings/MeetingFormPage";
 import ProfilePage from "./pages/ProfilePage";
+import BillingPage from "./pages/account/BillingPage";
 
 import CompetitorListPage from "./pages/competitors/CompetitorListPage";
 import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
@@ -322,6 +323,11 @@ function Router() {
           <SchemeListPage />
         </ProtectedRoute>
       </Route> */}
+      <Route path="/billing">
+        <ProtectedRoute>
+          <BillingPage />
+        </ProtectedRoute>
+      </Route>
       <Route path="/settings">
         <ProtectedRoute module="settings" action="read">
           <SettingsPage />

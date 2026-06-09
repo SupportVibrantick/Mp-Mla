@@ -25,26 +25,53 @@ import {
 } from "../../../controllers/platform/tenants.controller.js";
 
 const router = Router();
+const readRoles = [
+  "SUPER_ADMIN",
+  "PLATFORM_ADMIN",
+  "SUPPORT_STAFF",
+  "BILLING_MANAGER",
+] as const;
+const writeRoles = ["SUPER_ADMIN", "PLATFORM_ADMIN"] as const;
 
-// All platform tenant routes require platform authentication.
-router.use(
-  authenticatePlatform,
-  requireActivePlatformUser,
-  authorizePlatform("SUPER_ADMIN", "PLATFORM_ADMIN"),
+router.use(authenticatePlatform, requireActivePlatformUser);
+
+router.post(
+  "/",
+  authorizePlatform(...writeRoles),
+  validate(createTenantSchema),
+  createTenant,
 );
-
-// ─── Tenant Management ────────────────────────────────────────────────
-router.post("/", validate(createTenantSchema), createTenant);
-router.get("/plans", listPlans);
-router.get("/", validateQuery(listTenantsSchema), listTenants);
-router.get("/:id", getTenantById);
-router.post("/:id/suspend", suspendTenant);
-router.post("/:id/activate", activateTenant);
-router.delete("/:id", deleteTenant);
-router.patch("/:id", validate(updateTenantSchema), updateTenant);
-
-// ─── Tenant Users Management ──────────────────────────────────────────
-router.post("/:id/users", validate(createTenantUserSchema), createTenantUser);
-router.get("/:id/users", listTenantUsers);
+router.get("/plans", authorizePlatform(...readRoles), listPlans);
+router.get(
+  "/",
+  authorizePlatform(...readRoles),
+  validateQuery(listTenantsSchema),
+  listTenants,
+);
+router.get("/:id", authorizePlatform(...readRoles), getTenantById);
+router.post(
+  "/:id/suspend",
+  authorizePlatform(...writeRoles),
+  suspendTenant,
+);
+router.post(
+  "/:id/activate",
+  authorizePlatform(...writeRoles),
+  activateTenant,
+);
+router.delete("/:id", authorizePlatform(...writeRoles), deleteTenant);
+router.patch(
+  "/:id",
+  authorizePlatform(...writeRoles),
+  validate(updateTenantSchema),
+  updateTenant,
+);
+router.post(
+  "/:id/users",
+  authorizePlatform(...writeRoles),
+  validate(createTenantUserSchema),
+  createTenantUser,
+);
+router.get("/:id/users", authorizePlatform(...readRoles), listTenantUsers);
 
 export default router;

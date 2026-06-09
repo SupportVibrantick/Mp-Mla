@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { getUserEffectivePermissions } from "../../../lib/permissions.js";
+import { listEnabledModules } from "../../../middleware/requireModule.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { updateProfileSchema } from "../../../schemas/admin/auth/updateProfileSchema.js";
@@ -65,6 +67,20 @@ export async function getMyPermissions(
         permissionsByModule: grouped,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMyModules(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const modules = await listEnabledModules(tenantId);
+    res.json({ success: true, data: { modules } });
   } catch (error) {
     next(error);
   }

@@ -58,11 +58,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   );
 
   const adminItems = [
-    { label: "Tenant Management", icon: Building2, href: "/tenants" },
-    { label: "Subscriptions", icon: CreditCard, href: "/subscriptions" },
-    { label: "Modules & Addons", icon: Puzzle, href: "/modules" },
-    { label: "Payments", icon: IndianRupeeIcon, href: "/payments" },
-    // { label: "User Management", icon: Users, href: "/users", module: "users" },
+    { label: "Tenant Management", icon: Building2, href: "/tenants", module: "tenants" },
+    { label: "Subscriptions", icon: CreditCard, href: "/subscriptions", module: "subscriptions" },
+    { label: "Modules & Addons", icon: Puzzle, href: "/modules", module: "modules" },
+    { label: "Payments", icon: IndianRupeeIcon, href: "/payments", module: "payments" },
+    { label: "Platform Users", icon: Users, href: "/users", module: "users" },
   ].filter(
     (item) =>
         !item.module || canAny(item.module) || user?.role === "SUPER_ADMIN",
@@ -76,16 +76,9 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       module: "settings",
     },
     {
-      label: "Audit Logs",
-      icon: Shield,
-      href: "/audit-logs",
-      module: "audit_logs",
-    },
-    {
-      label: "Recycle Bin",
-      icon: Trash2,
-      href: "/recycle-bin",
-      module: "recycle_bin",
+      label: "Profile",
+      icon: Users,
+      href: "/profile",
     },
   ].filter(
     (item) =>

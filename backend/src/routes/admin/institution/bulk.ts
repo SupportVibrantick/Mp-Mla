@@ -401,6 +401,7 @@ export async function bulkCreateInstitutions(
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
       `Data Import: institutions by ${req.user!.name || "Unknown"}`,
       buildActivityEmailHtml({
         action: "IMPORT",

@@ -128,6 +128,7 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
         `Data Import: community groups by ${req.user!.name || "Unknown"}`,
         buildActivityEmailHtml({
             action: "IMPORT",

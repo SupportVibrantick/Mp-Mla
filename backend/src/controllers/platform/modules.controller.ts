@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../lib/prisma.js";
 import { ApiError } from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
+import { clearModuleAccessCache } from "../../middleware/requireModule.js";
 
 function getParamId(req: Request, name = "id"): string {
   const value = req.params[name];
@@ -359,6 +360,33 @@ export const grantModuleAccess = async (
       },
     });
 
+    clearModuleAccessCache(tenantId);
+
+    if (module.isAddon && module.addonPrice > 0 && (isEnabled ?? true)) {
+      const subscription = await prisma.tenantSubscription.findUnique({
+        where: { tenantId },
+      });
+      if (subscription) {
+        const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        await prisma.$transaction([
+          prisma.payment.create({
+            data: {
+              subscriptionId: subscription.id,
+              amount: module.addonPrice,
+              status: "PENDING",
+              invoiceNumber: `INV-${date}-${rand}`,
+              notes: `Addon module: ${module.name} (${module.code})`,
+            },
+          }),
+          prisma.tenantSubscription.update({
+            where: { id: subscription.id },
+            data: { amountDue: { increment: module.addonPrice } },
+          }),
+        ]);
+      }
+    }
+
     res
       .status(200)
       .json(
@@ -444,6 +472,8 @@ export const revokeModuleAccess = async (
       },
     });
 
+    clearModuleAccessCache(tenantId);
+
     res
       .status(200)
       .json(ApiResponse.success(null, "Module access revoked successfully"));
@@ -512,6 +542,8 @@ export const bulkGrantModules = async (
         }),
       ),
     );
+
+    clearModuleAccessCache(tenantId);
 
     res
       .status(200)

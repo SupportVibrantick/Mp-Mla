@@ -741,6 +741,7 @@ router.get(
     // Send admin notification (fire-and-forget)
     const now = new Date();
     sendAdminNotification(
+      tenantId,
       `Data Export: ${type} report by ${req.user!.name || "Unknown"}`,
       buildActivityEmailHtml({
         action: "EXPORT",

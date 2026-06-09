@@ -73,6 +73,7 @@ export const exportGrievances = catchAsync(async (req: Request, res: Response) =
 
   // Send admin notification
   sendAdminNotification(
+    tenantId,
     `Data Export: grievances by ${req.user!.name || "Unknown"}`,
     buildActivityEmailHtml({
       action: "EXPORT",

@@ -455,6 +455,8 @@ model Payment {
   id             String        @id @default(cuid())
   subscriptionId String
   amount         Float
+  taxAmount      Float?
+  gstNumber      String?
   currency       String        @default("INR")
   method         String?
   transactionId  String?
@@ -1490,6 +1492,20 @@ model TenantSetting {
   @@index([tenantId])
   @@index([group])
   @@map("tenant_settings")
+}
+
+model PlatformSetting {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  value       String
+  type        String  @default("string")
+  group       String  @default("general")
+  description String?
+
+  updatedAt DateTime @updatedAt
+
+  @@index([group])
+  @@map("platform_settings")
 }
 
 // ════════════════════════════════════════════════════════

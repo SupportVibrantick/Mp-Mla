@@ -102,18 +102,24 @@ export const createMeeting = async (req: Request, res: Response): Promise<void> 
     });
 
     // Send Notification
-    const orgEmail = await getSetting("org_email");
+    const orgEmail = await getSetting("org_email", tenantId);
     const subject = `New Meeting Scheduled: ${meeting.title}`;
     const html = buildMeetingEmailHtml({ meeting, action: "CREATED" });
 
     if (orgEmail) {
-      sendEmail(orgEmail, subject, html).catch(err => console.error("Meeting email failed", err));
+      sendEmail(tenantId, orgEmail, subject, html).catch((err) =>
+        console.error("Meeting email failed", err),
+      );
     }
 
     if (meeting.attendees) {
-      const attendeeEmails = meeting.attendees.split(/[,\s]+/).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()));
-      attendeeEmails.forEach(email => {
-        sendEmail(email.trim(), subject, html).catch(err => console.error("Attendee email failed", err));
+      const attendeeEmails = meeting.attendees
+        .split(/[,\s]+/)
+        .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()));
+      attendeeEmails.forEach((email) => {
+        sendEmail(tenantId, email.trim(), subject, html).catch((err) =>
+          console.error("Attendee email failed", err),
+        );
       });
     }
 
@@ -193,27 +199,33 @@ export const updateMeeting = async (req: Request, res: Response): Promise<void> 
     });
 
     // Send Notification
-    const orgEmail = await getSetting("org_email");
-    let action: any = meeting.status === "CANCELLED" ? "CANCELLED" : "UPDATED";
+    const orgEmail = await getSetting("org_email", tenantId);
+    let action: "CANCELLED" | "UPDATED" =
+      meeting.status === "CANCELLED" ? "CANCELLED" : "UPDATED";
     let subject = `Meeting Updated: ${meeting.title}`;
-    
+
     if (meeting.status === "CANCELLED") {
       subject = `Meeting Cancelled: ${meeting.title}`;
     } else if (meeting.status === "COMPLETED") {
       subject = `Meeting Completed: ${meeting.title}`;
     }
-    
+
     const html = buildMeetingEmailHtml({ meeting, action });
 
-
     if (orgEmail) {
-      sendEmail(orgEmail, subject, html).catch(err => console.error("Meeting email failed", err));
+      sendEmail(tenantId, orgEmail, subject, html).catch((err) =>
+        console.error("Meeting email failed", err),
+      );
     }
 
     if (meeting.attendees) {
-      const attendeeEmails = meeting.attendees.split(/[,\s]+/).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()));
-      attendeeEmails.forEach(email => {
-        sendEmail(email.trim(), subject, html).catch(err => console.error("Attendee email failed", err));
+      const attendeeEmails = meeting.attendees
+        .split(/[,\s]+/)
+        .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim()));
+      attendeeEmails.forEach((email) => {
+        sendEmail(tenantId, email.trim(), subject, html).catch((err) =>
+          console.error("Attendee email failed", err),
+        );
       });
     }
 
@@ -271,10 +283,18 @@ export const deleteMeeting = async (req: Request, res: Response): Promise<void> 
     });
 
     // Send Notification (treating delete as cancelled for email purposes)
-    const orgEmail = await getSetting("org_email");
+    const orgEmail = await getSetting("org_email", tenantId);
     if (orgEmail) {
-      const html = buildMeetingEmailHtml({ meeting: existingMeeting, action: "CANCELLED" });
-      sendEmail(orgEmail, `Meeting Cancelled/Deleted: ${existingMeeting.title}`, html).catch(err => console.error("Meeting email failed", err));
+      const html = buildMeetingEmailHtml({
+        meeting: existingMeeting,
+        action: "CANCELLED",
+      });
+      sendEmail(
+        tenantId,
+        orgEmail,
+        `Meeting Cancelled/Deleted: ${existingMeeting.title}`,
+        html,
+      ).catch((err) => console.error("Meeting email failed", err));
     }
 
     res.json({ success: true, message: "Meeting deleted successfully" });

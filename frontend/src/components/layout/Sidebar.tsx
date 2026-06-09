@@ -21,6 +21,7 @@ import {
   Cake,
   Trash2,
   CalendarDays,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,7 +42,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
-  const { user, logout, canAny } = useAuth();
+  const { user, logout, canAny, hasModule } = useAuth();
   const { settings } = useSystemSettings();
 
   const [location] = useLocation();
@@ -120,7 +121,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const filteredNavItems = navItems.filter(
     (item: any) =>
-      !item.module || canAny(item.module) || user?.role === "SYSTEM_ADMIN",
+      (!item.module || (hasModule(item.module) && canAny(item.module))) ||
+      user?.role === "SYSTEM_ADMIN",
   );
 
   const adminItems = [
@@ -137,6 +139,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   );
 
   const bottomItems = [
+    {
+      label: "Billing",
+      icon: CreditCard,
+      href: "/billing",
+    },
     {
       label: "Settings",
       icon: Settings,
@@ -157,7 +164,9 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     },
   ].filter(
     (item) =>
-      !item.module || canAny(item.module) || user?.role === "SYSTEM_ADMIN",
+      !item.module ||
+      (hasModule(item.module) && canAny(item.module)) ||
+      user?.role === "SYSTEM_ADMIN",
   );
 
   return (

@@ -23,6 +23,8 @@ export const listPaymentsSchema = z.object({
 export const createPaymentSchema = z.object({
   subscriptionId: z.string().min(1, "Subscription ID is required"),
   amount: z.coerce.number().min(0, "Amount must be a positive number"),
+  taxAmount: z.coerce.number().min(0).nullable().optional(),
+  gstNumber: z.string().nullable().optional(),
   currency: z.string().default("INR"),
   method: z.string().nullable().optional(),
   transactionId: z.string().nullable().optional(),

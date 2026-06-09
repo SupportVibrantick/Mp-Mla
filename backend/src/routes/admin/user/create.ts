@@ -11,6 +11,7 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 import { env } from "@/lib/env.js";
 import { validatePasswordComplexity } from "../../../lib/authUtils.js";
 import { requireTenantId } from "../../../utils/tenant.js";
+import { assertCanCreateUser } from "../../../lib/quota.js";
 
 /**  
  * POST /api/admin/users
@@ -46,8 +47,10 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
+  await assertCanCreateUser(tenantId);
+
   // Validate complexity
-  await validatePasswordComplexity(password);
+  await validatePasswordComplexity(password, tenantId);
 
   const hashedPassword = await bcrypt.hash(password, env.BCRYPT_SALT_ROUNDS);
 

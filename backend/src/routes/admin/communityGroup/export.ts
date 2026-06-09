@@ -59,6 +59,7 @@ export const exportCommunityGroups = catchAsync(async (req: Request, res: Respon
 
     // Send admin notification (fire-and-forget)
     sendAdminNotification(
+        tenantId,
         `Data Export: community groups by ${req.user!.name || "Unknown"}`,
         buildActivityEmailHtml({
             action: "EXPORT",

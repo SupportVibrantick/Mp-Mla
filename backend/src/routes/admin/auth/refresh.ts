@@ -48,7 +48,12 @@ export async function refresh(
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: stored.user.tenantId },
-      select: { status: true },
+      select: {
+        status: true,
+        subscription: {
+          select: { status: true, trialEndsAt: true },
+        },
+      },
     });
 
     if (!tenant) {
@@ -59,6 +64,28 @@ export async function refresh(
       throw ApiError.forbidden(
         `Your organization account is ${tenant.status.toLowerCase()}. Contact support.`,
       );
+    }
+
+    const subscription = tenant.subscription;
+    if (subscription) {
+      if (
+        subscription.status === "TRIALING" &&
+        subscription.trialEndsAt &&
+        new Date() > new Date(subscription.trialEndsAt)
+      ) {
+        await prisma.tenantSubscription.update({
+          where: { tenantId: stored.user.tenantId },
+          data: { status: "EXPIRED" },
+        });
+        throw ApiError.forbidden(
+          "Your free trial has expired. Please upgrade to continue.",
+        );
+      }
+      if (["EXPIRED", "CANCELLED", "SUSPENDED"].includes(subscription.status)) {
+        throw ApiError.forbidden(
+          `Your subscription is ${subscription.status.toLowerCase()}. Contact support.`,
+        );
+      }
     }
 
     // 3. Rotate: revoke old token

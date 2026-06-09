@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../lib/prisma.js";
 import { ApiError } from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
+import { advanceSubscriptionPeriod } from "../../jobs/subscriptionSweep.js";
+import { generateInvoicePdf } from "../../lib/invoicePdf.js";
 
 function getParamId(req: Request, name = "id"): string {
   const value = req.params[name];
@@ -284,17 +286,45 @@ export const updatePaymentStatus = async (
 
       // If status changed to SUCCESS and wasn't SUCCESS before, update subscription payment info
       if (status === "SUCCESS" && existingPayment.status !== "SUCCESS") {
+        const newAmountDue = Math.max(
+          0,
+          existingPayment.subscription.amountDue - existingPayment.amount,
+        );
         await tx.tenantSubscription.update({
           where: { id: existingPayment.subscriptionId },
           data: {
             lastPaymentAt: paidAtDate,
-            amountDue: Math.max(0, existingPayment.subscription.amountDue - existingPayment.amount),
+            amountDue: newAmountDue,
+            status:
+              existingPayment.subscription.status === "PAST_DUE" ||
+              existingPayment.subscription.status === "SUSPENDED"
+                ? "ACTIVE"
+                : existingPayment.subscription.status,
           },
         });
+
+        if (newAmountDue === 0) {
+          await advanceSubscriptionPeriod(existingPayment.subscriptionId);
+        }
       }
 
       return updatedPayment;
     });
+
+    if (result.status === "SUCCESS" && !result.invoiceUrl) {
+      try {
+        const pdfUrl = await generateInvoicePdf(result.id);
+        if (pdfUrl) {
+          await prisma.payment.update({
+            where: { id: result.id },
+            data: { invoiceUrl: pdfUrl },
+          });
+          result.invoiceUrl = pdfUrl;
+        }
+      } catch {
+        // PDF generation is best-effort
+      }
+    }
 
     res.status(200).json(ApiResponse.success(result, "Payment status updated successfully"));
   } catch (error) {
