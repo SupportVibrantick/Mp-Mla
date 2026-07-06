@@ -14,7 +14,7 @@ import {
   createUploader,
   deleteFile,
   getUploadPath,
-  trackMulterUploads,
+  enforceStorageAndTrack,
 } from "../../../lib/upload.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 import { testSmtpConnection } from "../../../lib/email.js";
@@ -184,9 +184,9 @@ router.put(
   requireActiveUser,
   requirePermission("settings", "update"),
   settingsUploader.any(),
+  enforceStorageAndTrack,
   catchAsync(async (req, res) => {
     const tenantId = requireTenantId(req);
-    await trackMulterUploads(req);
     const settings = parseIncomingSettings(req);
     if (!settings) {
       throw ApiError.badRequest("Expected body.settings to be an array");

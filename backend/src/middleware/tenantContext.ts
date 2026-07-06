@@ -14,20 +14,30 @@ declare global {
     interface Request {
       tenantId?: string;
       tenantPrisma?: TenantPrismaClient;
+      /**
+       * True when this request was initiated via a platform impersonation token.
+       * Set by injectTenantContext when the JWT contains isImpersonated: true.
+       */
+      isImpersonated?: boolean;
     }
   }
 }
 
 /**
  * Middleware: Injects tenant context into the request.
- * Must be used AFTER the `authenticate` middleware.
+ * Must be used AFTER the `authenticate` + `requireActiveUser` middleware chain.
  *
  * What it does:
- * 1. Extracts tenantId from the authenticated user's JWT payload
- * 2. Validates the tenant exists and is ACTIVE
- * 3. Checks that the subscription is in a usable state (not expired/cancelled/suspended)
- * 4. Creates a tenant-scoped Prisma client (auto-injects tenantId in queries)
+ * 1. Extracts tenantId from the authenticated user's JWT payload (or req.user.tenantId
+ *    already populated by requireActiveUser)
+ * 2. Validates the tenant exists and is ACTIVE (SUSPENDED / DEACTIVATED → HTTP 403)
+ * 3. Checks that the subscription is in a usable state
+ * 4. Creates a tenant-scoped Prisma client (auto-injects tenantId in every query)
  * 5. Attaches both `req.tenantId` and `req.tenantPrisma` to the request
+ *
+ * Exclusions — do NOT apply this middleware to:
+ *   - /api/admin/auth/*          (unauthenticated login flow)
+ *   - /api/admin/settings/public/branding  (public branding endpoint)
  *
  * Usage in routes:
  *   router.use(authenticate, requireActiveUser, injectTenantContext);
@@ -44,15 +54,15 @@ export async function injectTenantContext(
       throw ApiError.unauthorized("Authentication required before tenant context");
     }
 
-    // Get tenantId from the JWT payload
-    const tenantId = (req.user as any).tenantId;
+    // requireActiveUser already sets req.tenantId; fall back to JWT claim
+    const tenantId = req.tenantId || (req.user as any).tenantId;
 
     if (!tenantId) {
-      logger.error(`User ${req.user.id} has no tenantId in JWT`);
+      logger.error(`User ${req.user.id} has no tenantId in JWT or request`);
       throw ApiError.forbidden("No tenant associated with this account");
     }
 
-    // Validate tenant exists and is active
+    // Validate tenant exists and is NOT suspended / deactivated
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
       select: {
@@ -70,14 +80,21 @@ export async function injectTenantContext(
       throw ApiError.forbidden("Tenant not found");
     }
 
+    // AC-7: SUSPENDED or DEACTIVATED → block with a clear message
+    if (tenant.status === "SUSPENDED" || tenant.status === "DEACTIVATED") {
+      logger.warn(
+        `Blocked request: tenant ${tenant.name} (${tenantId}) is ${tenant.status}`,
+      );
+      throw ApiError.forbidden("Organization account is inactive.");
+    }
+
     if (tenant.status !== "ACTIVE") {
-      logger.warn(`Tenant ${tenant.name} (${tenantId}) is ${tenant.status}`);
       throw ApiError.forbidden(
         `Your organization account is ${tenant.status.toLowerCase()}. Contact support.`,
       );
     }
 
-    // ── Block if subscription is not usable ──
+    // Block if subscription is not usable
     if (tenant.subscription) {
       const sub = tenant.subscription;
       if (
@@ -96,9 +113,14 @@ export async function injectTenantContext(
       }
     }
 
-    // Attach tenant context to request
+    // Attach tenant-scoped Prisma to request (AC-2)
     req.tenantId = tenantId;
     req.tenantPrisma = createTenantPrisma(prisma as any, tenantId);
+
+    // Carry isImpersonated flag through if present on JWT
+    if ((req.user as any).isImpersonated) {
+      req.isImpersonated = true;
+    }
 
     runWithTenantContext(tenantId, next);
   } catch (error) {
