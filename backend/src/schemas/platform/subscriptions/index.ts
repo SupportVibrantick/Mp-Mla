@@ -84,3 +84,10 @@ export const upgradeTenantSubscriptionSchema = z.object({
 export const updateTenantSubscriptionStatusSchema = z.object({
   status: subscriptionStatusSchema,
 });
+
+export const listRenewalsSchema = z.object({
+  page: z.string().optional(),
+  limit: z.string().optional(),
+  search: z.string().optional(),
+});
+

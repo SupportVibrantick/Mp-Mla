@@ -993,3 +993,73 @@ export const activateTenantSubscription = async (
     next(error);
   }
 };
+
+export const listUpcomingRenewals = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const search = req.query.search as string;
+
+    const now = new Date();
+    // upcoming renewals: status ACTIVE/TRIALING/PAST_DUE, and nextPaymentDue is not null
+    const where: Prisma.TenantSubscriptionWhereInput = {
+      status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] },
+      nextPaymentDue: { not: null },
+    };
+
+    if (search) {
+      where.tenant = {
+        name: { contains: search, mode: "insensitive" },
+      };
+    }
+
+    const [renewals, total] = await Promise.all([
+      prisma.tenantSubscription.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { nextPaymentDue: "asc" },
+        include: {
+          plan: true,
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              constituencyName: true,
+            },
+          },
+        },
+      }),
+      prisma.tenantSubscription.count({ where }),
+    ]);
+
+    res.status(200).json(
+      ApiResponse.success({
+        renewals: renewals.map((sub) => ({
+          id: sub.id,
+          tenantId: sub.tenant.id,
+          tenantName: sub.tenant.name,
+          constituencyName: sub.tenant.constituencyName,
+          planName: sub.plan.name,
+          billingCycle: sub.billingCycle,
+          nextPaymentDue: sub.nextPaymentDue,
+          amountDue: sub.amountDue || (sub.billingCycle === "YEARLY" ? sub.plan.priceYearly : sub.plan.priceMonthly),
+          status: sub.status,
+        })),
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+

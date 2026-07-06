@@ -30,6 +30,13 @@ export function useInvoices(params?: any) {
   });
 }
 
+export function useUpcomingRenewals(params?: any) {
+  return useQuery({
+    queryKey: ["upcoming-renewals", params],
+    queryFn: () => subscriptionsApi.listRenewals(params),
+  });
+}
+
 function useSubscriptionMutation<TVariables>(
   mutationFn: (variables: TVariables) => Promise<any>,
   successTitle: string,

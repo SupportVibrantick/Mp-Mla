@@ -360,6 +360,7 @@ export const subscriptionsApi = {
   cancelTenantSubscription: (tenantId: string) =>
     api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/cancel`),
   listInvoices: (params?: any) => api.get("/platform/subscriptions/invoices", { params }),
+  listRenewals: (params?: any) => api.get("/platform/subscriptions/renewals", { params }),
 };
 
 export const modulesApi = {

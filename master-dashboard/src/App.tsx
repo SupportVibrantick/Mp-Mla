@@ -16,6 +16,9 @@ import Login from "@/pages/Login";
 import ChangePassword from "@/pages/ChangePassword";
 import TenantsPage from "@/pages/admin/Tenants";
 import SubscriptionsPage from "@/pages/admin/Subscriptions";
+import TenantSubscriptionsPage from "@/pages/admin/TenantSubscriptions";
+import UpcomingRenewalsPage from "@/pages/admin/UpcomingRenewals";
+import InvoicesPage from "@/pages/admin/Invoices";
 import ModulesPage from "@/pages/admin/Modules";
 import PaymentsPage from "@/pages/admin/Payments";
 import PlatformSettingsPage from "@/pages/admin/PlatformSettings";
@@ -52,6 +55,24 @@ function Router() {
       <Route path="/subscriptions">
         <ProtectedRoute module="subscriptions" action="read">
           <SubscriptionsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/subscriptions/tenants">
+        <ProtectedRoute module="subscriptions" action="read">
+          <TenantSubscriptionsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/subscriptions/renewals">
+        <ProtectedRoute module="subscriptions" action="read">
+          <UpcomingRenewalsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/subscriptions/invoices">
+        <ProtectedRoute module="subscriptions" action="read">
+          <InvoicesPage />
         </ProtectedRoute>
       </Route>
 

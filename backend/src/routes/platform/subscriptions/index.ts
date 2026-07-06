@@ -19,6 +19,7 @@ import {
   upgradeTenantSubscriptionSchema,
   updatePlanSchema,
   upsertTenantSubscriptionSchema,
+  listRenewalsSchema,
 } from "../../../schemas/platform/subscriptions/index.js";
 import {
   activateTenantSubscription,
@@ -33,6 +34,7 @@ import {
   suspendTenantSubscription,
   updateSubscriptionPlan,
   upsertTenantSubscription,
+  listUpcomingRenewals,
 } from "../../../controllers/platform/subscriptions.controller.js";
 
 const router = Router();
@@ -75,11 +77,18 @@ router.get(
   listInvoices,
 );
 router.get(
+  "/renewals",
+  authorizePlatform(...readRoles),
+  validateQuery(listRenewalsSchema),
+  listUpcomingRenewals,
+);
+router.get(
   "/tenant-subscriptions",
   authorizePlatform(...readRoles),
   validateQuery(listTenantSubscriptionsSchema),
   listTenantSubscriptions,
 );
+
 router.get(
   "/tenant-subscriptions/:tenantId",
   authorizePlatform(...readRoles),

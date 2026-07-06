@@ -90,7 +90,7 @@ export async function injectTenantContext(
 
     if (tenant.status !== "ACTIVE") {
       throw ApiError.forbidden(
-        `Your organization account is ${tenant.status.toLowerCase()}. Contact support.`,
+        `Your organization account is ${String(tenant.status).toLowerCase()}. Contact support.`,
       );
     }
 
