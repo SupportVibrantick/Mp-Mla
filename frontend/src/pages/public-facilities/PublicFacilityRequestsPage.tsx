@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "wouter";
+import { ArrowLeft } from "lucide-react";
 import {
   usePublicFacilityRequests,
   useApproveRequest,
@@ -115,6 +117,15 @@ export default function PublicFacilityRequestsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
+            <Link href="/public-facilities">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 mb-2 text-muted-foreground hover:text-foreground pl-0"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Public Facilities
+              </Button>
+            </Link>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Building2 className="h-7 w-7 text-primary" />
               Public Facility Requests

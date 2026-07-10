@@ -68,10 +68,18 @@ export function useRejectRequest() {
 
 // ─── Public hooks (no auth) ─────────────────────────────
 
-export function usePublicWards() {
+export function usePublicConstituencies() {
   return useQuery({
-    queryKey: ["public-wards"],
-    queryFn: () => api.get("/public/wards").then((r) => r.data),
+    queryKey: ["public-constituencies"],
+    queryFn: () => api.get("/public/constituencies").then((r) => r.data),
+  });
+}
+
+export function usePublicWards(tenantId?: string) {
+  return useQuery({
+    queryKey: ["public-wards", tenantId],
+    queryFn: () => api.get("/public/wards", { params: { tenantId } }).then((r) => r.data),
+    enabled: !!tenantId,
   });
 }
 

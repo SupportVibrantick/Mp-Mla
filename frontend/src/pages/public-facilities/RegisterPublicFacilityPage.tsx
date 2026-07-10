@@ -1,10 +1,11 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   usePublicWards,
   useSubmitPublicFacilityRequest,
+  usePublicConstituencies,
 } from "@/hooks/usePublicFacilityRequests";
 import { PUBLIC_FACILITY_CATEGORIES } from "@/hooks/usePublicFacilities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import {
   SelectScrollUpButton,
   SelectScrollDownButton,
 } from "@/components/ui/select";
+import { Link } from "wouter";
 import {
   Building2,
   CheckCircle2,
@@ -34,9 +36,12 @@ import {
   Shield,
   FileCheck,
   Home,
+  MapPin,
+  ArrowLeft,
 } from "lucide-react";
 
 const formSchema = z.object({
+  tenantId: z.string().min(1, "Constituency is required"),
   name: z.string().min(1, "Public facility name is required"),
   category: z.string().min(1, "Category is required"),
   subcategory: z.string().optional(),
@@ -150,9 +155,7 @@ export default function RegisterPublicFacilityPage() {
   const [publicFacilityProof, setPublicFacilityProof] = useState<File | null>(null);
   const [identityProof, setIdentityProof] = useState<File | null>(null);
   const [addressProof, setAddressProof] = useState<File | null>(null);
-  const { data: wardsRes } = usePublicWards();
   const submitMut = useSubmitPublicFacilityRequest();
-  const wards = wardsRes?.data || [];
 
   const categoryGroups = useMemo(() => {
     const groups: Record<string, (typeof PUBLIC_FACILITY_CATEGORIES)[number][]> =
@@ -169,9 +172,12 @@ export default function RegisterPublicFacilityPage() {
     handleSubmit,
     formState: { errors },
     control,
+    watch,
+    setValue,
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      tenantId: "",
       name: "",
       category: "",
       address: "",
@@ -184,6 +190,18 @@ export default function RegisterPublicFacilityPage() {
       headAdharNumber: "",
     },
   });
+
+  const selectedTenantId = watch("tenantId");
+  const { data: constituenciesRes } = usePublicConstituencies();
+  const constituencies = constituenciesRes?.data || [];
+  const { data: wardsRes } = usePublicWards(selectedTenantId);
+  const wards = wardsRes?.data || [];
+
+  useEffect(() => {
+    if (constituencies.length === 1 && !selectedTenantId) {
+      setValue("tenantId", constituencies[0].id);
+    }
+  }, [constituencies, selectedTenantId, setValue]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -250,6 +268,15 @@ export default function RegisterPublicFacilityPage() {
       <div className="bg-white dark:bg-card border-b">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col gap-2">
+            <Link href="/login">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 self-start text-muted-foreground hover:text-foreground pl-0 mb-2"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Login
+              </Button>
+            </Link>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
                 <Building2 className="h-6 w-6" />
@@ -271,6 +298,53 @@ export default function RegisterPublicFacilityPage() {
         onSubmit={handleSubmit(onSubmit)}
         className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"
       >
+        {/* Section 0: Select Constituency */}
+        <Card className="shadow-sm border">
+          <CardHeader className="pb-4 border-b bg-muted/20">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-muted-foreground" />
+              Constituency / MLA Office Selection
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            <div className="space-y-2">
+              <Label>
+                Select Constituency <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                control={control}
+                name="tenantId"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => {
+                      field.onChange(val);
+                      // Clear ward selection when constituency changes
+                      setValue("wardId", "");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a constituency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {constituencies.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.constituencyName} ({c.name}) - {c.district}, {c.state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.tenantId && (
+                <p className="text-xs text-destructive">
+                  {errors.tenantId.message}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Section 1: Submitter Info */}
         <Card className="shadow-sm border">
           <CardHeader className="pb-4 border-b bg-muted/20">
@@ -408,8 +482,14 @@ export default function RegisterPublicFacilityPage() {
                       value={field.value}
                       onValueChange={field.onChange}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select ward" />
+                      <SelectTrigger disabled={!selectedTenantId}>
+                        <SelectValue
+                          placeholder={
+                            selectedTenantId
+                              ? "Select ward"
+                              : "Please select a constituency first"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {wards.map((w: any) => (

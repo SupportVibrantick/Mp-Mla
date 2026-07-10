@@ -123,15 +123,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         TokenStorage.setStoredUser(user);
 
+        // Load permissions
+        await loadPermissions();
+
         setState((prev) => ({
           ...prev,
           user,
           isAuthenticated: true,
           isLoading: false,
         }));
-
-        // Load permissions in background
-        await loadPermissions();
       } catch (error) {
         // Refresh failed — clear everything
         TokenStorage.clearAll();
@@ -139,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user: null,
           permissions: [],
           permissionsByModule: {},
+          enabledModules: [],
           isAuthenticated: false,
           isLoading: false,
         });
@@ -191,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: null,
         permissions: [],
         permissionsByModule: {},
+        enabledModules: [],
         isAuthenticated: false,
         isLoading: false,
       });
@@ -244,11 +246,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasModule = useCallback(
     (module: string): boolean => {
       if (!state.isAuthenticated) return false;
-      if (state.user?.role === "SYSTEM_ADMIN") return true;
       if (!state.enabledModules.length) return true;
       return state.enabledModules.includes(module);
     },
-    [state.enabledModules, state.isAuthenticated, state.user?.role],
+    [state.enabledModules, state.isAuthenticated],
   );
 
   return (

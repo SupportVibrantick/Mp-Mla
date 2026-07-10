@@ -121,8 +121,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const filteredNavItems = navItems.filter(
     (item: any) =>
-      (!item.module || (hasModule(item.module) && canAny(item.module))) ||
-      user?.role === "SYSTEM_ADMIN",
+      !item.module ||
+      (hasModule(item.module) && (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
   );
 
   const adminItems = [
@@ -135,7 +135,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     },
   ].filter(
     (item) =>
-      !item.module || canAny(item.module) || user?.role === "SYSTEM_ADMIN",
+      !item.module ||
+      (hasModule(item.module) && (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
   );
 
   const bottomItems = [
@@ -165,8 +166,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   ].filter(
     (item) =>
       !item.module ||
-      (hasModule(item.module) && canAny(item.module)) ||
-      user?.role === "SYSTEM_ADMIN",
+      (hasModule(item.module) && (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
   );
 
   return (

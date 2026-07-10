@@ -32,6 +32,26 @@ async function resolvePublicTenantId(req: Request): Promise<string | null> {
   return tenants.length === 1 ? tenants[0].id : null;
 }
 
+// ─── Public: List active constituencies ──────────────────────
+router.get("/constituencies", async (req: Request, res: Response) => {
+  try {
+    const constituencies = await prisma.tenant.findMany({
+      where: { status: "ACTIVE" },
+      select: {
+        id: true,
+        name: true,
+        constituencyName: true,
+        state: true,
+        district: true,
+      },
+      orderBy: { constituencyName: "asc" },
+    });
+    res.json({ success: true, data: constituencies });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch constituencies" });
+  }
+});
+
 // ─── Public: List wards (for registration form dropdown) ─────
 router.get("/wards", async (req: Request, res: Response) => {
   try {
