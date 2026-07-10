@@ -22,6 +22,8 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useModules } from "@/hooks/useModules";
 import {
   useCreateSubscriptionPlan,
   useSubscriptionOverview,
@@ -42,6 +44,7 @@ const planFormSchema = z.object({
   features: z.string().optional(),
   isPopular: z.boolean().default(false),
   sortOrder: z.preprocess((v) => Number(v), z.number().int().min(0)),
+  moduleIds: z.array(z.string()).default([]),
 });
 
 type PlanForm = z.infer<typeof planFormSchema>;
@@ -107,6 +110,9 @@ export default function SubscriptionsPage() {
   const overviewPlans = overview?.planDistribution || [];
   const plans = plansQuery.data?.data?.data?.plans || [];
 
+  const modulesQuery = useModules({ limit: 100, isActive: "true" });
+  const allModules = modulesQuery.data?.data?.data?.modules || [];
+
   const planForm = useForm<PlanForm>({
     resolver: zodResolver(planFormSchema),
     defaultValues: {
@@ -120,8 +126,11 @@ export default function SubscriptionsPage() {
       storageMB: 1024,
       features: "",
       sortOrder: 0,
+      moduleIds: [],
     },
   });
+
+  const selectedModuleIds = planForm.watch("moduleIds") || [];
 
   const openCreatePlan = () => {
     setSelectedPlan(null);
@@ -137,6 +146,7 @@ export default function SubscriptionsPage() {
       features: "",
       isPopular: false,
       sortOrder: 0,
+      moduleIds: [],
     });
     setShowPlanForm(true);
   };
@@ -155,6 +165,7 @@ export default function SubscriptionsPage() {
       features: parseFeatures(plan.features).join("\n"),
       isPopular: !!plan.isPopular,
       sortOrder: plan.sortOrder || 0,
+      moduleIds: plan.planModules?.map((pm: any) => pm.moduleId) || [],
     });
     setShowPlanForm(true);
   };
@@ -353,6 +364,69 @@ export default function SubscriptionsPage() {
                 </div>
               </Card>
             </div>
+
+            {/* System Modules Card */}
+            <Card className="rounded-[24px] border border-border/60 p-6 shadow-sm space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-3">
+                  Included Modules & Addons
+                </h3>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Select which system modules and features are enabled for tenants subscribed to this plan.
+                </p>
+              </div>
+
+              {modulesQuery.isLoading ? (
+                <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-12 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {allModules.map((mod: any) => {
+                    const isChecked = selectedModuleIds.includes(mod.id);
+                    return (
+                      <div
+                        key={mod.id}
+                        className={`flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer select-none ${
+                          isChecked
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-border hover:border-border/80 hover:bg-muted/30"
+                        }`}
+                        onClick={() => {
+                          if (isChecked) {
+                            planForm.setValue(
+                              "moduleIds",
+                              selectedModuleIds.filter((id) => id !== mod.id)
+                            );
+                          } else {
+                            planForm.setValue("moduleIds", [...selectedModuleIds, mod.id]);
+                          }
+                        }}
+                      >
+                        <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                          isChecked
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground/30"
+                        }`}>
+                          {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="font-semibold text-sm">{mod.name}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">{mod.description || "No description"}</p>
+                          {mod.isAddon && (
+                            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 border-amber-500/30 text-amber-600 bg-amber-500/5">
+                              Addon
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
 
             {/* Form Footer Action Buttons */}
             <div className="flex items-center justify-end gap-3 border-t pt-6">
@@ -572,6 +646,24 @@ export default function SubscriptionsPage() {
                           <span>{feature}</span>
                         </div>
                       ))}
+                      {plan.planModules && plan.planModules.length > 0 && (
+                        <div className="pt-4 border-t border-border/40 mt-4">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                            Included Modules
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {plan.planModules.map((pm: any) => (
+                              <Badge
+                                key={pm.moduleId}
+                                variant="secondary"
+                                className="text-[10px] px-2 py-0 h-5 font-normal"
+                              >
+                                {pm.module?.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 );

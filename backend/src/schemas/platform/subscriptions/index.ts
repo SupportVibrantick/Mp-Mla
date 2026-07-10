@@ -44,6 +44,7 @@ export const createPlanSchema = z.object({
   isActive: z.boolean().optional().default(true),
   isPopular: z.boolean().optional().default(false),
   sortOrder: z.coerce.number().int().optional().default(0),
+  moduleIds: z.array(z.string()).optional(),
 });
 
 export const updatePlanSchema = createPlanSchema.partial();

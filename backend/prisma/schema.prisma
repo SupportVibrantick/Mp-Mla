@@ -382,6 +382,7 @@ model SubscriptionPlan {
   updatedAt     DateTime @updatedAt
 
   subscriptions TenantSubscription[]
+  planModules   PlanModule[]
 
   @@index([isActive])
   @@map("subscription_plans")
@@ -429,6 +430,7 @@ model Module {
   updatedAt   DateTime @updatedAt
 
   tenantAccess TenantModuleAccess[]
+  planModules  PlanModule[]
 
   @@index([isActive])
   @@map("modules")
@@ -449,6 +451,20 @@ model TenantModuleAccess {
   @@index([tenantId])
   @@index([moduleId])
   @@map("tenant_module_access")
+}
+
+model PlanModule {
+  id        String           @id @default(cuid())
+  planId    String
+  moduleId  String
+  
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  module    Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, moduleId])
+  @@index([planId])
+  @@index([moduleId])
+  @@map("plan_modules")
 }
 
 model Payment {

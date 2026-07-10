@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../lib/prisma.js";
 import { ApiError } from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
+import { clearModuleAccessCache } from "../../middleware/requireModule.js";
 
 function getParamId(req: Request, name = "id"): string {
   const value = req.params[name];
@@ -104,6 +105,11 @@ export const getSubscriptionOverview = async (
           _count: {
             select: { subscriptions: true },
           },
+          planModules: {
+            include: {
+              module: true,
+            },
+          },
         },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       }),
@@ -156,6 +162,7 @@ export const getSubscriptionOverview = async (
           features: plan.features,
           description: plan.description,
           isPopular: plan.isPopular,
+          planModules: plan.planModules,
         })),
         recentInvoices: recentPayments.map((payment) => ({
           id: payment.id,
@@ -221,6 +228,66 @@ async function assertTenantCanUsePlan(
   return tenant;
 }
 
+export async function syncTenantModulesToPlan(
+  tenantId: string,
+  planId: string,
+  tx: Prisma.TransactionClient,
+) {
+  // 1. Get modules associated with the plan
+  const planModules = await tx.planModule.findMany({
+    where: { planId },
+    include: { module: true },
+  });
+
+  const planModuleIds = new Set(
+    planModules.filter((pm) => pm.module.isActive).map((pm) => pm.moduleId)
+  );
+
+  // 2. Fetch the tenant's current module access
+  const currentAccess = await tx.tenantModuleAccess.findMany({
+    where: { tenantId },
+    include: { module: true },
+  });
+
+  // 3. Deactivate/Delete modules that are not in the new plan and not marked as active addons
+  const accessToRevoke = currentAccess.filter(
+    (access) => !planModuleIds.has(access.moduleId) && !access.module.isAddon
+  );
+
+  if (accessToRevoke.length > 0) {
+    await tx.tenantModuleAccess.deleteMany({
+      where: {
+        tenantId,
+        moduleId: { in: accessToRevoke.map((a) => a.moduleId) },
+      },
+    });
+  }
+
+  // 4. Grant/Enable modules that are in the plan
+  for (const pm of planModules) {
+    if (!pm.module.isActive) continue;
+    await tx.tenantModuleAccess.upsert({
+      where: {
+        tenantId_moduleId: {
+          tenantId,
+          moduleId: pm.moduleId,
+        },
+      },
+      create: {
+        tenantId,
+        moduleId: pm.moduleId,
+        isEnabled: true,
+      },
+      update: {
+        isEnabled: true,
+      },
+    });
+  }
+
+  // 5. Clear module access cache
+  clearModuleAccessCache(tenantId);
+}
+
 export const listSubscriptionPlans = async (
   req: Request,
   res: Response,
@@ -254,6 +321,11 @@ export const listSubscriptionPlans = async (
         include: {
           _count: {
             select: { subscriptions: true },
+          },
+          planModules: {
+            include: {
+              module: true,
+            },
           },
         },
       }),
@@ -296,10 +368,32 @@ export const createSubscriptionPlan = async (
       );
     }
 
-    const plan = await prisma.subscriptionPlan.create({
-      data: {
-        ...payload,
-      },
+    const { moduleIds, ...planData } = payload;
+
+    const plan = await prisma.$transaction(async (tx) => {
+      const createdPlan = await tx.subscriptionPlan.create({
+        data: planData,
+      });
+
+      if (moduleIds && Array.isArray(moduleIds) && moduleIds.length > 0) {
+        await tx.planModule.createMany({
+          data: moduleIds.map((moduleId: string) => ({
+            planId: createdPlan.id,
+            moduleId,
+          })),
+        });
+      }
+
+      return tx.subscriptionPlan.findUnique({
+        where: { id: createdPlan.id },
+        include: {
+          planModules: {
+            include: {
+              module: true,
+            },
+          },
+        },
+      });
     });
 
     res
@@ -347,9 +441,51 @@ export const updateSubscriptionPlan = async (
       }
     }
 
-    const plan = await prisma.subscriptionPlan.update({
-      where: { id },
-      data: payload,
+    const { moduleIds, ...planData } = payload;
+
+    const plan = await prisma.$transaction(async (tx) => {
+      const updatedPlan = await tx.subscriptionPlan.update({
+        where: { id },
+        data: planData,
+      });
+
+      if (moduleIds && Array.isArray(moduleIds)) {
+        await tx.planModule.deleteMany({
+          where: { planId: id },
+        });
+
+        if (moduleIds.length > 0) {
+          await tx.planModule.createMany({
+            data: moduleIds.map((moduleId: string) => ({
+              planId: id,
+              moduleId,
+            })),
+          });
+        }
+
+        // Propagate changes to all active/trialing tenants on this plan
+        const subscribedTenants = await tx.tenantSubscription.findMany({
+          where: {
+            planId: id,
+            status: { in: ["ACTIVE", "TRIALING"] },
+          },
+        });
+
+        for (const sub of subscribedTenants) {
+          await syncTenantModulesToPlan(sub.tenantId, id, tx);
+        }
+      }
+
+      return tx.subscriptionPlan.findUnique({
+        where: { id },
+        include: {
+          planModules: {
+            include: {
+              module: true,
+            },
+          },
+        },
+      });
     });
 
     res
@@ -673,6 +809,8 @@ export const upsertTenantSubscription = async (
         });
       }
 
+      await syncTenantModulesToPlan(tenantId, planId, tx);
+
       return upserted;
     });
 
@@ -790,6 +928,8 @@ export const upgradeTenantSubscription = async (
         where: { tenantId, status: "SUSPENDED" },
         data: { status: "ACTIVE" },
       });
+
+      await syncTenantModulesToPlan(tenantId, planId, tx);
 
       return updated;
     });

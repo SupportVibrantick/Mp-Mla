@@ -63,11 +63,21 @@ export async function runSubscriptionSweep() {
   });
 
   for (const sub of trials) {
-    await prisma.tenantSubscription.update({
-      where: { id: sub.id },
-      data: { status: "EXPIRED" },
+    await prisma.$transaction(async (tx) => {
+      await tx.tenantSubscription.update({
+        where: { id: sub.id },
+        data: { status: "EXPIRED" },
+      });
+      await tx.tenant.update({
+        where: { id: sub.tenantId },
+        data: { status: "DEACTIVATED" },
+      });
+      await tx.user.updateMany({
+        where: { tenantId: sub.tenantId, status: "ACTIVE" },
+        data: { status: "INACTIVE" },
+      });
     });
-    logger.info(`Trial expired for tenant ${sub.tenantId}`);
+    logger.info(`Trial expired for tenant ${sub.tenantId}. Tenant deactivated, users set to INACTIVE.`);
   }
 
   const dueSubs = await prisma.tenantSubscription.findMany({

@@ -4,6 +4,7 @@ import prisma from "../../lib/prisma.js";
 import { ApiError } from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Prisma } from "@prisma/client";
+import { syncTenantModulesToPlan } from "./subscriptions.controller.js";
 import { buildDefaultTenantSettings } from "../../lib/tenantSettingsHelper.js";
 
 function getParamId(req: Request, name = "id"): string {
@@ -193,19 +194,11 @@ export const createTenant = async (
         });
       }
 
-      const activeModules = await tx.module.findMany({
-        where: { isActive: true },
-        select: { id: true },
-      });
-
-      if (activeModules.length > 0) {
-        await tx.tenantModuleAccess.createMany({
-          data: activeModules.map((module) => ({
-            tenantId: newTenant.id,
-            moduleId: module.id,
-            isEnabled: true,
-          })),
-          skipDuplicates: true,
+      let modulesEnabled = 0;
+      if (planId) {
+        await syncTenantModulesToPlan(newTenant.id, planId, tx);
+        modulesEnabled = await tx.tenantModuleAccess.count({
+          where: { tenantId: newTenant.id, isEnabled: true },
         });
       }
 
@@ -218,7 +211,7 @@ export const createTenant = async (
           role: adminUser.role,
           tenantId: adminUser.tenantId,
         },
-        modulesEnabled: activeModules.length,
+        modulesEnabled,
       };
     });
 
