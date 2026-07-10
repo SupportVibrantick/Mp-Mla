@@ -304,7 +304,7 @@ export const updatePaymentStatus = async (
         });
 
         if (newAmountDue === 0) {
-          await advanceSubscriptionPeriod(existingPayment.subscriptionId);
+          await advanceSubscriptionPeriod(existingPayment.subscriptionId, tx);
         }
       }
 

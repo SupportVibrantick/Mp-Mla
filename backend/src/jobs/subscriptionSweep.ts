@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import logger from "../utils/logger.js";
 import { getPlatformSetting } from "../lib/settings.js";
@@ -24,8 +25,12 @@ function generateInvoiceNumber(): string {
   return `INV-${date}-${rand}`;
 }
 
-async function advanceSubscriptionPeriod(subscriptionId: string) {
-  const sub = await prisma.tenantSubscription.findUnique({
+async function advanceSubscriptionPeriod(
+  subscriptionId: string,
+  tx?: Prisma.TransactionClient,
+) {
+  const client = tx || prisma;
+  const sub = await client.tenantSubscription.findUnique({
     where: { id: subscriptionId },
     include: { plan: true },
   });
@@ -38,7 +43,7 @@ async function advanceSubscriptionPeriod(subscriptionId: string) {
       ? sub.plan.priceYearly
       : sub.plan.priceMonthly;
 
-  await prisma.tenantSubscription.update({
+  await client.tenantSubscription.update({
     where: { id: subscriptionId },
     data: {
       currentPeriodStart: newStart,
