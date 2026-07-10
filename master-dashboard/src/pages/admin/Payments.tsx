@@ -57,6 +57,14 @@ import {
   useUpdatePaymentStatus,
 } from "@/hooks/usePayments";
 import { useTenantSubscriptions } from "@/hooks/useSubscriptions";
+import { API_BASE_URL } from "@/lib/api";
+
+const getInvoiceDownloadUrl = (url?: string) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = API_BASE_URL.replace(/\/api$/, "");
+  return `${base}${url.startsWith("/") ? "" : "/"}${url}`;
+};
 
 const paymentFormSchema = z.object({
   subscriptionId: z.string().min(1, "Subscription/Tenant is required"),
@@ -470,7 +478,7 @@ export default function PaymentsPage() {
                               <SlidersHorizontal className="w-4 h-4" /> Update Status
                             </DropdownMenuItem>
                             {payment.invoiceUrl && (
-                              <DropdownMenuItem className="gap-2" onClick={() => window.open(payment.invoiceUrl, "_blank")}>
+                              <DropdownMenuItem className="gap-2" onClick={() => window.open(getInvoiceDownloadUrl(payment.invoiceUrl), "_blank")}>
                                 <Download className="w-4 h-4" /> Download Invoice
                               </DropdownMenuItem>
                             )}
@@ -839,7 +847,7 @@ export default function PaymentsPage() {
 
                 {selectedPayment.invoiceUrl && (
                   <Button
-                    onClick={() => window.open(selectedPayment.invoiceUrl, "_blank")}
+                    onClick={() => window.open(getInvoiceDownloadUrl(selectedPayment.invoiceUrl), "_blank")}
                     variant="outline"
                     className="w-full gap-2 text-xs"
                   >

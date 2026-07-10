@@ -36,7 +36,7 @@ function getMonthlyRecurringRevenue(
   if (subscription.billingCycle === "YEARLY")
     return subscription.plan.priceYearly / 12;
   if (subscription.billingCycle === "HALF_YEARLY")
-    return (subscription.plan.priceYearly / 2) / 6;
+    return subscription.plan.priceYearly / 2 / 6;
 
   return subscription.plan.priceMonthly;
 }
@@ -240,7 +240,7 @@ export async function syncTenantModulesToPlan(
   });
 
   const planModuleIds = new Set(
-    planModules.filter((pm) => pm.module.isActive).map((pm) => pm.moduleId)
+    planModules.filter((pm) => pm.module.isActive).map((pm) => pm.moduleId),
   );
 
   // 2. Fetch the tenant's current module access
@@ -251,7 +251,7 @@ export async function syncTenantModulesToPlan(
 
   // 3. Deactivate/Delete modules that are not in the new plan and not marked as active addons
   const accessToRevoke = currentAccess.filter(
-    (access) => !planModuleIds.has(access.moduleId) && !access.module.isAddon
+    (access) => !planModuleIds.has(access.moduleId) && !access.module.isAddon,
   );
 
   if (accessToRevoke.length > 0) {
@@ -1182,7 +1182,11 @@ export const listUpcomingRenewals = async (
           planName: sub.plan.name,
           billingCycle: sub.billingCycle,
           nextPaymentDue: sub.nextPaymentDue,
-          amountDue: sub.amountDue || (sub.billingCycle === "YEARLY" ? sub.plan.priceYearly : sub.plan.priceMonthly),
+          amountDue:
+            sub.amountDue ||
+            (sub.billingCycle === "YEARLY"
+              ? sub.plan.priceYearly
+              : sub.plan.priceMonthly),
           status: sub.status,
         })),
         pagination: {
@@ -1197,4 +1201,3 @@ export const listUpcomingRenewals = async (
     next(error);
   }
 };
-
