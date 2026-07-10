@@ -9,6 +9,7 @@ import {
 import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { DEFAULT_SETTING_DEFS } from "../../../lib/settingDefaults.js";
+import { PLATFORM_SETTING_DEFS } from "../../../lib/platformSettingDefaults.js";
 import { clearSettingsCache } from "../../../lib/settings.js";
 import {
   createUploader,
@@ -27,6 +28,14 @@ const DEFAULT_SETTINGS: Record<string, (typeof DEFAULT_SETTING_DEFS)[number]> =
   {};
 DEFAULT_SETTING_DEFS.forEach((d) => {
   DEFAULT_SETTINGS[d.key] = d;
+});
+
+const ALL_DEFAULT_SETTINGS: Record<string, any> = {};
+DEFAULT_SETTING_DEFS.forEach((d) => {
+  ALL_DEFAULT_SETTINGS[d.key] = d;
+});
+PLATFORM_SETTING_DEFS.forEach((d) => {
+  ALL_DEFAULT_SETTINGS[d.key] = d;
 });
 
 const PUBLIC_BRANDING_KEYS = [
@@ -82,42 +91,78 @@ function parseIncomingSettings(req: Request) {
 export const getPublicBranding = catchAsync(async (req, res) => {
   const tenantId = await resolvePublicTenantId(req);
 
+  const platformDbSettings = await prisma.platformSetting.findMany({
+    where: {
+      key: {
+        in: [
+          "brand_primary_color",
+          "brand_secondary_color",
+          "brand_logo_url",
+          "brand_favicon_url",
+          "brand_login_bg",
+          "brand_footer_text",
+        ],
+      },
+    },
+  });
+  const platformMap = new Map(platformDbSettings.map((s) => [s.key, s.value]));
+
   if (tenantId) {
-    const [tenant, dbSettings] = await Promise.all([
+    const [tenant, tenantDbSettings] = await Promise.all([
       prisma.tenant.findUnique({ where: { id: tenantId } }),
       prisma.tenantSetting.findMany({
-        where: { tenantId, key: { in: PUBLIC_BRANDING_KEYS } },
+        where: {
+          tenantId,
+          key: {
+            in: [
+              "org_name",
+              "org_short_name",
+              "constituency_name",
+              "representative_name",
+              "representative_title",
+            ],
+          },
+        },
       }),
     ]);
-    const dbMap = new Map(dbSettings.map((s) => [s.key, s.value]));
+    const tenantMap = new Map(tenantDbSettings.map((s) => [s.key, s.value]));
 
     const data: Record<string, string> = {
-      org_name: dbMap.get("org_name") ?? tenant?.name ?? "",
-      org_short_name: dbMap.get("org_short_name") ?? "",
+      org_name: tenantMap.get("org_name") ?? tenant?.name ?? "",
+      org_short_name: tenantMap.get("org_short_name") ?? "",
       constituency_name:
-        dbMap.get("constituency_name") ?? tenant?.constituencyName ?? "",
+        tenantMap.get("constituency_name") ?? tenant?.constituencyName ?? "",
       representative_name:
-        dbMap.get("representative_name") ?? tenant?.representativeName ?? "",
+        tenantMap.get("representative_name") ?? tenant?.representativeName ?? "",
       representative_title:
-        dbMap.get("representative_title") ?? tenant?.representativeTitle ?? "",
+        tenantMap.get("representative_title") ?? tenant?.representativeTitle ?? "",
       brand_primary_color:
-        dbMap.get("brand_primary_color") ?? tenant?.primaryColor ?? "#1e40af",
+        platformMap.get("brand_primary_color") ?? ALL_DEFAULT_SETTINGS["brand_primary_color"]?.value ?? "#2563eb",
       brand_secondary_color:
-        dbMap.get("brand_secondary_color") ?? tenant?.secondaryColor ?? "#3b82f6",
-      brand_logo_url: dbMap.get("brand_logo_url") ?? tenant?.logoUrl ?? "",
+        platformMap.get("brand_secondary_color") ?? ALL_DEFAULT_SETTINGS["brand_secondary_color"]?.value ?? "#7c3aed",
+      brand_logo_url: platformMap.get("brand_logo_url") ?? "",
       brand_favicon_url:
-        dbMap.get("brand_favicon_url") ?? tenant?.faviconUrl ?? "",
-      brand_login_bg: dbMap.get("brand_login_bg") ?? "",
-      brand_footer_text: dbMap.get("brand_footer_text") ?? "",
+        platformMap.get("brand_favicon_url") ?? "",
+      brand_login_bg: platformMap.get("brand_login_bg") ?? "gradient",
+      brand_footer_text: platformMap.get("brand_footer_text") ?? "Powered by Vibrantick Infotech Solutions",
     };
     res.json({ success: true, data });
     return;
   }
 
-  const data: Record<string, string> = {};
-  PUBLIC_BRANDING_KEYS.forEach((k) => {
-    data[k] = DEFAULT_SETTINGS[k]?.value ?? "";
-  });
+  const data: Record<string, string> = {
+    org_name: "MP-MLA Platform",
+    org_short_name: "Platform",
+    brand_primary_color:
+      platformMap.get("brand_primary_color") ?? ALL_DEFAULT_SETTINGS["brand_primary_color"]?.value ?? "#2563eb",
+    brand_secondary_color:
+      platformMap.get("brand_secondary_color") ?? ALL_DEFAULT_SETTINGS["brand_secondary_color"]?.value ?? "#7c3aed",
+    brand_logo_url: platformMap.get("brand_logo_url") ?? "",
+    brand_favicon_url:
+      platformMap.get("brand_favicon_url") ?? "",
+    brand_login_bg: platformMap.get("brand_login_bg") ?? "gradient",
+    brand_footer_text: platformMap.get("brand_footer_text") ?? "Powered by Vibrantick Infotech Solutions",
+  };
   res.json({ success: true, data });
 });
 

@@ -1013,10 +1013,16 @@ export default function TenantsPage() {
                     <div className="space-y-2">
                       <Label htmlFor="t-email">Tenant Email</Label>
                       <Input id="t-email" placeholder="office@constituency.org" {...createForm.register("email")} />
+                      {createForm.formState.errors.email && (
+                        <p className="text-xs text-destructive">{createForm.formState.errors.email.message}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="t-website">Website URL</Label>
                       <Input id="t-website" placeholder="https://constituency.org" {...createForm.register("website")} />
+                      {createForm.formState.errors.website && (
+                        <p className="text-xs text-destructive">{createForm.formState.errors.website.message}</p>
+                      )}
                     </div>
                   </div>
                 </TabsContent>

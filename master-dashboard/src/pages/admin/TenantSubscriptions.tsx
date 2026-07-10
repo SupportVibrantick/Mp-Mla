@@ -181,10 +181,14 @@ export default function TenantSubscriptionsPage() {
           destructive: false,
         },
         activate: {
-          title: `Activate ${pendingAction.subscription.tenant.name}?`,
+          title: pendingAction.subscription.status === "CANCELLED"
+            ? `Reactivate ${pendingAction.subscription.tenant.name}'s Subscription?`
+            : `Activate ${pendingAction.subscription.tenant.name}?`,
           description:
             "This will restore access and mark the tenant subscription as active.",
-          action: "Activate subscription",
+          action: pendingAction.subscription.status === "CANCELLED"
+            ? "Reactivate subscription"
+            : "Activate subscription",
           destructive: false,
         },
         cancel: {
@@ -366,6 +370,16 @@ export default function TenantSubscriptionsPage() {
                                 >
                                   <RotateCcw className="mr-2 h-4 w-4" />
                                   Resume Subscription
+                                </DropdownMenuItem>
+                              )}
+                              {subscription.status === "CANCELLED" && (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    openActionDialog("activate", subscription)
+                                  }
+                                >
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Reactivate Subscription
                                 </DropdownMenuItem>
                               )}
                               {subscription.status !== "CANCELLED" && (

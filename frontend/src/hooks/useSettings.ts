@@ -5,24 +5,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 
 export const SETTING_GROUPS = [
-  // ... (rest of SETTING_GROUPS)
   {
     id: "general",
     label: "General",
     icon: "⚙️",
     desc: "Organization & locale",
-  },
-  {
-    id: "branding",
-    label: "Branding",
-    icon: "🎨",
-    desc: "Colors, logo & theme",
-  },
-  {
-    id: "security",
-    label: "Security",
-    icon: "🔒",
-    desc: "Passwords, sessions",
   },
   // {
   //   id: "grievance",
@@ -30,26 +17,12 @@ export const SETTING_GROUPS = [
   //   icon: "📋",
   //   desc: "SLA, categories & rules",
   // },
-
-  {
-    id: "email_smtp",
-    label: "Email & SMTP",
-    icon: "📧",
-    desc: "SMTP server & email sender",
-  },
-  {
-    id: "meetings",
-    label: "Meetings",
-    icon: "📅",
-    desc: "Meeting reminders & scheduling",
-  },
   {
     id: "notifications",
     label: "Notifications",
     icon: "🔔",
     desc: "SMS & WhatsApp alerts",
   },
-  { id: "backup", label: "Backup", icon: "💾", desc: "Scheduled backups" },
 ] as const;
 
 export function useSettings() {

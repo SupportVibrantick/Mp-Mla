@@ -1,5 +1,6 @@
 import prisma from "./prisma.js";
 import { DEFAULT_SETTING_DEFS } from "./settingDefaults.js";
+import { PLATFORM_SETTING_DEFS } from "./platformSettingDefaults.js";
 
 const TTL = 60 * 1000;
 
@@ -58,6 +59,10 @@ async function getPlatformSettingsMap(): Promise<Record<string, string>> {
  * Get a tenant-scoped setting value.
  */
 export async function getSetting(key: string, tenantId: string): Promise<string> {
+  const isPlatformKey = PLATFORM_SETTING_DEFS.some((d) => d.key === key);
+  if (isPlatformKey) {
+    return getPlatformSetting(key);
+  }
   const map = await getTenantSettingsMap(tenantId);
   const def = DEFAULT_SETTING_DEFS.find((d) => d.key === key);
   return map[key] ?? def?.value ?? "";
@@ -82,7 +87,9 @@ export async function getSettingNumber(
  */
 export async function getPlatformSetting(key: string): Promise<string> {
   const map = await getPlatformSettingsMap();
-  return map[key] ?? "";
+  if (map[key] !== undefined) return map[key];
+  const def = PLATFORM_SETTING_DEFS.find((d) => d.key === key);
+  return def?.value ?? "";
 }
 
 export async function getPlatformSettingBoolean(key: string): Promise<boolean> {

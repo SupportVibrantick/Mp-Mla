@@ -1,16 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-
 import { useSystemSettings } from "@/contexts/SettingsContext";
 
 export const SETTING_GROUPS = [
-  // ... (rest of SETTING_GROUPS)
   {
     id: "general",
     label: "General",
     icon: "⚙️",
-    desc: "Organization & locale",
+    desc: "Platform settings",
+  },
+  {
+    id: "billing",
+    label: "Billing",
+    icon: "💳",
+    desc: "Trial & subscription defaults",
   },
   {
     id: "branding",
@@ -24,13 +28,6 @@ export const SETTING_GROUPS = [
     icon: "🔒",
     desc: "Passwords, sessions",
   },
-  // {
-  //   id: "grievance",
-  //   label: "Grievance",
-  //   icon: "📋",
-  //   desc: "SLA, categories & rules",
-  // },
-
   {
     id: "email_smtp",
     label: "Email & SMTP",
@@ -44,18 +41,17 @@ export const SETTING_GROUPS = [
     desc: "Meeting reminders & scheduling",
   },
   {
-    id: "notifications",
-    label: "Notifications",
-    icon: "🔔",
-    desc: "SMS & WhatsApp alerts",
+    id: "backup",
+    label: "Backup",
+    icon: "💾",
+    desc: "Scheduled backups",
   },
-  { id: "backup", label: "Backup", icon: "💾", desc: "Scheduled backups" },
 ] as const;
 
 export function useSettings() {
   return useQuery({
-    queryKey: ["settings"],
-    queryFn: () => api.get("/admin/settings").then((r) => r.data),
+    queryKey: ["platform-settings"],
+    queryFn: () => api.get("/platform/settings").then((r) => r.data),
   });
 }
 
@@ -68,16 +64,16 @@ export function useUpdateSettings() {
     mutationFn: (payload: { key: string; value: string }[] | FormData) => {
       if (payload instanceof FormData) {
         return api
-          .put("/admin/settings", payload, {
+          .put("/platform/settings", payload, {
             headers: { "Content-Type": "multipart/form-data" },
           })
           .then((r) => r.data);
       }
-      return api.put("/admin/settings", { settings: payload }).then((r) => r.data);
+      return api.put("/platform/settings", { settings: payload }).then((r) => r.data);
     },
     onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["settings"] });
-      refreshSettings();
+      qc.invalidateQueries({ queryKey: ["platform-settings"] });
+      if (refreshSettings) refreshSettings();
       toast({ title: "Settings Saved", description: res.message });
     },
     onError: (err: any) => {
@@ -97,10 +93,10 @@ export function useResetSettings() {
 
   return useMutation({
     mutationFn: (group: string) =>
-      api.post(`/admin/settings/reset/${group}`).then((r) => r.data),
+      api.post(`/platform/settings/reset/${group}`).then((r) => r.data),
     onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["settings"] });
-      refreshSettings();
+      qc.invalidateQueries({ queryKey: ["platform-settings"] });
+      if (refreshSettings) refreshSettings();
       toast({ title: "Reset", description: res.message });
     },
     onError: (err: any) => {
@@ -118,7 +114,7 @@ export function useTestEmail() {
 
   return useMutation({
     mutationFn: (to: string) =>
-      api.post("/admin/settings/test-email", { to }).then((r) => r.data),
+      api.post("/platform/settings/test-email", { to }).then((r) => r.data),
     onSuccess: (res) => {
       toast({ title: "Success", description: res.message });
     },

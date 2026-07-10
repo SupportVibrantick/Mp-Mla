@@ -371,8 +371,17 @@ export const updateTenant = async (
     const updateData = req.body;
 
     // Convert string dates to Date objects if they exist in payload
-    if (updateData.termStartDate) updateData.termStartDate = new Date(updateData.termStartDate);
-    if (updateData.termEndDate) updateData.termEndDate = new Date(updateData.termEndDate);
+    if (updateData.termStartDate) {
+      updateData.termStartDate = new Date(updateData.termStartDate);
+    } else if (updateData.termStartDate === "") {
+      updateData.termStartDate = null;
+    }
+
+    if (updateData.termEndDate) {
+      updateData.termEndDate = new Date(updateData.termEndDate);
+    } else if (updateData.termEndDate === "") {
+      updateData.termEndDate = null;
+    }
     if (updateData.website === "") updateData.website = null;
 
     const updatedTenant = await prisma.tenant.update({

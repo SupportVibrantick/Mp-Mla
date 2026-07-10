@@ -21,7 +21,7 @@ import UpcomingRenewalsPage from "@/pages/admin/UpcomingRenewals";
 import InvoicesPage from "@/pages/admin/Invoices";
 import ModulesPage from "@/pages/admin/Modules";
 import PaymentsPage from "@/pages/admin/Payments";
-import PlatformSettingsPage from "@/pages/admin/PlatformSettings";
+import SettingsPage from "@/pages/settings/SettingsPage";
 import PlatformUsersPage from "@/pages/admin/PlatformUsers";
 import ProfilePage from "./pages/ProfilePage";
 
@@ -96,7 +96,7 @@ function Router() {
 
       <Route path="/settings">
         <ProtectedRoute module="settings" action="read">
-          <PlatformSettingsPage />
+          <SettingsPage />
         </ProtectedRoute>
       </Route>
 

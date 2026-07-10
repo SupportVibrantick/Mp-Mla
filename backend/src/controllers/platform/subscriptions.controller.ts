@@ -939,12 +939,6 @@ export const activateTenantSubscription = async (
       throw ApiError.notFound("Tenant subscription not found");
     }
 
-    if (existing.status === "CANCELLED") {
-      throw ApiError.conflict(
-        "Cancelled subscriptions cannot be activated directly",
-      );
-    }
-
     // Prevent reactivating an expired trial
     if (
       existing.status === "EXPIRED" ||
@@ -961,6 +955,7 @@ export const activateTenantSubscription = async (
         data: {
           status: "ACTIVE",
           suspendedAt: null,
+          cancelledAt: null,
         },
         include: {
           plan: true,
@@ -974,7 +969,7 @@ export const activateTenantSubscription = async (
       });
 
       await tx.user.updateMany({
-        where: { tenantId, status: "SUSPENDED" },
+        where: { tenantId, status: { in: ["SUSPENDED", "INACTIVE"] } },
         data: { status: "ACTIVE" },
       });
 

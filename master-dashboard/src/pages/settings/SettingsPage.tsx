@@ -66,6 +66,7 @@ import {
   Mail,
   Calendar,
   Upload,
+  CreditCard,
 } from "lucide-react";
 
 // ─── Google Translate Integration ────────────────────────────────────────────
@@ -98,28 +99,21 @@ const GROUP_ICONS: Record<string, any> = {
   profile: User,
   general: Settings,
   language: Globe,
-  location: MapPin,
+  billing: CreditCard,
   branding: Palette,
   security: Shield,
-  grievance: ClipboardList,
-  notifications: Bell,
   email_smtp: Mail,
   backup: Database,
   meetings: Calendar,
 };
 
-// Add profile, language & location to the group list for sidebar rendering
+// Add profile, language to the group list for sidebar rendering
 const EXTENDED_GROUPS = [
   { id: "profile", label: "Profile", desc: "Your personal account details" },
   {
     id: "language",
     label: "Language",
     desc: "Change the display language",
-  },
-  {
-    id: "location",
-    label: "Location",
-    desc: "Manage your location preferences",
   },
   ...SETTING_GROUPS,
 ];
@@ -129,10 +123,6 @@ const EXTENDED_GROUPS = [
 interface ProfileData {
   fullName: string;
   email: string;
-  phone: string;
-  designation: string;
-  department: string;
-  bio: string;
   avatarUrl: string;
 }
 
@@ -141,10 +131,6 @@ function ProfileSection() {
   const [profile, setProfile] = useState<ProfileData>({
     fullName: user?.name || "",
     email: user?.email || "",
-    phone: user?.phone || "",
-    designation: user?.designation || "",
-    department: user?.department || "",
-    bio: user?.bio || "",
     avatarUrl: user?.avatarUrl || "",
   });
   const [saving, setSaving] = useState(false);
@@ -155,10 +141,6 @@ function ProfileSection() {
       setProfile({
         fullName: user.name || "",
         email: user.email || "",
-        phone: user.phone || "",
-        designation: user.designation || "",
-        department: user.department || "",
-        bio: user.bio || "",
         avatarUrl: user.avatarUrl || "",
       });
     }
@@ -184,10 +166,6 @@ function ProfileSection() {
     try {
       await authApi.updateMe({
         name: profile.fullName,
-        phone: profile.phone,
-        designation: profile.designation,
-        department: profile.department,
-        bio: profile.bio,
         avatarUrl: profile.avatarUrl,
       });
       await refreshUser();
@@ -237,8 +215,7 @@ function ProfileSection() {
             {profile.fullName || "Your Name"}
           </p>
           <p className="text-sm text-muted-foreground">
-            {profile.designation || "Designation"} •{" "}
-            {profile.department || "Department"}
+            Platform Administrator
           </p>
         </div>
       </div>
@@ -260,42 +237,9 @@ function ProfileSection() {
           <Input
             type="email"
             value={profile.email}
-            onChange={(e) => update("email", e.target.value)}
+            disabled
+            className="bg-muted"
             placeholder="john@example.com"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm">Phone Number</Label>
-          <Input
-            type="tel"
-            value={profile.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            placeholder="+91 98765 43210"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm">Designation</Label>
-          <Input
-            value={profile.designation}
-            onChange={(e) => update("designation", e.target.value)}
-            placeholder="Senior Manager"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm">Department</Label>
-          <Input
-            value={profile.department}
-            onChange={(e) => update("department", e.target.value)}
-            placeholder="Human Resources"
-          />
-        </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label className="text-sm">Bio</Label>
-          <Textarea
-            value={profile.bio}
-            onChange={(e) => update("bio", e.target.value)}
-            rows={3}
-            placeholder="A short bio about yourself..."
           />
         </div>
       </div>
@@ -661,8 +605,7 @@ export default function SettingsPage() {
 
   const isCustomGroup =
     activeGroup === "profile" ||
-    activeGroup === "language" ||
-    activeGroup === "location";
+    activeGroup === "language";
 
   const renderField = (s: any) => {
     const value = formValues[s.key] ?? "";
@@ -1011,8 +954,7 @@ export default function SettingsPage() {
               {/* Language tab */}
               {activeGroup === "language" && <LanguageSection />}
 
-              {/* Location tab */}
-              {activeGroup === "location" && <LocationSection />}
+              {/* Location tab removed */}
 
               {/* Dynamic server-driven groups */}
               {!isCustomGroup &&
