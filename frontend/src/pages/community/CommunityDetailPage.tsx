@@ -1,4 +1,5 @@
 import { useParams, Link } from "wouter";
+import { cn } from "@/lib/utils";
 import {
   useCommunityGroup,
   useDeleteCommunityGroup,
@@ -99,73 +100,88 @@ export default function CommunityDetailPage() {
     <MainLayout title="Community Group">
       <div className="space-y-6 max-w-4xl mx-auto">
         {/* Header */}
-
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <Link to="/community">
-              <Button variant="ghost" size="icon" className="h-9 w-9 mt-1">
-                <ArrowLeft className="h-4 w-4" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-6">
+          <div className="flex items-start gap-4">
+            <Link href="/community">
+              <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl hover:bg-muted border-border/60 shadow-sm shrink-0">
+                <ArrowLeft className="h-4 w-4 text-muted-foreground" />
               </Button>
             </Link>
 
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Icon className="h-8 w-8 text-primary" />
-                <h1 className="text-2xl font-bold">{group.name}</h1>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center p-1.5 border border-primary/20 shrink-0">
+                  <Icon className="h-7 w-7 text-primary animate-pulse" />
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">{group.name}</h1>
+                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">{info.label}</p>
+                </div>
                 <Badge
-                  className={`text-[10px] ${
+                  className={cn(
+                    "text-[10px] sm:text-xs font-semibold border shadow-none",
                     group.isActive
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
+                      ? "bg-emerald-100/50 text-emerald-700 border-emerald-200/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                      : "bg-muted text-muted-foreground border-border/50"
+                  )}
                 >
                   {group.isActive ? "Active" : "Inactive"}
                 </Badge>
               </div>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
-                <Badge variant="secondary" className="text-xs">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2 flex-wrap font-medium">
+                <Badge variant="secondary" className="text-[10px] font-semibold gap-1.5 px-2 py-0.5 border">
+                  <Icon className="h-3.5 w-3.5" />
                   {info.label}
                 </Badge>
-                <span className="flex items-center gap-1">
-                  <Map className="h-3.5 w-3.5" />#{group.ward.wardNumber}{" "}
-                  {group.ward.name}
+                <span>•</span>
+                <span className="flex items-center gap-1 font-semibold text-primary hover:underline cursor-pointer">
+                  <Map className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Link to={`/wards/${group.ward.id}`}>
+                    <span>Ward #{group.ward.wardNumber} - {group.ward.name}</span>
+                  </Link>
                 </span>
                 {group.wardArea && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {group.wardArea.name}
-                  </span>
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {group.wardArea.name}
+                    </span>
+                  </>
                 )}
                 {group.registrationNo && (
-                  <span className="flex items-center gap-1">
-                    <Hash className="h-3.5 w-3.5" />
-                    {group.registrationNo}
-                  </span>
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-muted-foreground font-mono">
+                      <Hash className="h-3.5 w-3.5" />
+                      {group.registrationNo}
+                    </span>
+                  </>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <PermissionGate module="community_groups" action="update">
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5"
+                className="gap-1.5 h-9 text-xs font-semibold border-border/60 hover:bg-muted shadow-sm"
                 disabled={toggleMut.isPending}
                 onClick={() => toggleMut.mutate(group.id)}
               >
                 {toggleMut.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : group.isActive ? (
-                  <ToggleRight className="h-3.5 w-3.5" />
+                  <ToggleRight className="h-4 w-4 text-emerald-600" />
                 ) : (
-                  <ToggleLeft className="h-3.5 w-3.5" />
+                  <ToggleLeft className="h-4 w-4 text-muted-foreground" />
                 )}
                 {group.isActive ? "Deactivate" : "Activate"}
               </Button>
               <Link to={`/community/${group.id}/edit`}>
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button variant="outline" size="sm" className="gap-1.5 h-9 text-xs font-semibold border-border/60 hover:bg-muted shadow-sm">
                   <Edit className="h-3.5 w-3.5" /> Edit
                 </Button>
               </Link>
@@ -176,29 +192,28 @@ export default function CommunityDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1.5 text-destructive border-destructive/30"
+                    className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 h-9 px-3 shadow-sm"
                   >
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                    <Trash2 className="h-4 w-4" /> Delete
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-2xl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete "{group.name}"?</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="font-extrabold text-foreground">Delete "{group.name}"?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-xs text-muted-foreground">
                       This permanently removes this community group.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogFooter className="gap-2 sm:gap-0">
+                    <AlertDialogCancel className="border-border/60 hover:bg-muted">Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
-                      className="bg-destructive hover:bg-destructive/90"
+                      className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
                     >
                       {deleteMut.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Delete"
-                      )}
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : null}
+                      Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -209,74 +224,89 @@ export default function CommunityDetailPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Users className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-2xl font-bold">
-                {totalMembers.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Total Members</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <span className="text-blue-600 font-bold text-lg block mb-1">
-                M
-              </span>
-              <p className="text-2xl font-bold">
-                {(group.maleMembers || 0).toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Male</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <span className="text-pink-600 font-bold text-lg block mb-1">
-                F
-              </span>
-              <p className="text-2xl font-bold">
-                {(group.femaleMembers || 0).toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Female</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Calendar className="h-5 w-5 text-amber-600 mx-auto mb-1" />
-              <p className="text-lg font-bold">
-                {group.foundedDate
-                  ? format(new Date(group.foundedDate), "yyyy")
-                  : "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">Founded</p>
-            </CardContent>
-          </Card>
+          {[
+            {
+              label: "Total Members",
+              value: totalMembers,
+              Icon: Users,
+              color: "text-indigo-500",
+              bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+              borderColor: "border-indigo-100 dark:border-indigo-950/50",
+            },
+            {
+              label: "Male Members",
+              value: group.maleMembers || 0,
+              textIcon: "M",
+              color: "text-blue-500",
+              bgColor: "bg-blue-50 dark:bg-blue-950/30",
+              borderColor: "border-blue-100 dark:border-blue-950/50",
+            },
+            {
+              label: "Female Members",
+              value: group.femaleMembers || 0,
+              textIcon: "F",
+              color: "text-pink-500",
+              bgColor: "bg-pink-50 dark:bg-pink-950/30",
+              borderColor: "border-pink-100 dark:border-pink-950/50",
+            },
+            {
+              label: "Founded",
+              value: group.foundedDate ? format(new Date(group.foundedDate), "yyyy") : "—",
+              Icon: Calendar,
+              color: "text-amber-500",
+              bgColor: "bg-amber-50 dark:bg-amber-950/30",
+              borderColor: "border-amber-100 dark:border-amber-950/50",
+            },
+          ].map((s, i) => (
+            <Card key={i} className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl">
+              <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
+                    {s.Icon ? (
+                      <s.Icon className={cn("h-4 w-4", s.color)} />
+                    ) : (
+                      <span className={cn("text-sm font-extrabold leading-none", s.color)}>{s.textIcon}</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                    {s.label}
+                  </p>
+                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                    {typeof s.value === "number" ? s.value.toLocaleString() : s.value}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Gender Distribution */}
         {totalMembers > 0 && (
-          <Card>
+          <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Member Distribution</CardTitle>
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Member Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-4 bg-muted rounded-full overflow-hidden flex">
+            <CardContent className="pt-2">
+              <div className="h-4 bg-muted rounded-full overflow-hidden flex shadow-inner">
                 <div
-                  className="h-full bg-blue-500"
+                  className="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-500"
                   style={{ width: `${malePercent}%` }}
                 />
                 <div
-                  className="h-full bg-pink-500"
+                  className="h-full bg-gradient-to-r from-pink-400 to-pink-600 transition-all duration-500"
                   style={{ width: `${femalePercent}%` }}
                 />
               </div>
-              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                <span>
+              <div className="flex justify-between mt-3 text-xs font-semibold text-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
                   Male: {group.maleMembers || 0} ({malePercent.toFixed(1)}%)
                 </span>
-                <span>
-                  Female: {group.femaleMembers || 0} ({femalePercent.toFixed(1)}
-                  %)
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
+                  Female: {group.femaleMembers || 0} ({femalePercent.toFixed(1)}%)
                 </span>
               </div>
             </CardContent>
@@ -284,43 +314,47 @@ export default function CommunityDetailPage() {
         )}
 
         {/* Head Person + Details */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-6">
           {/* Head Person */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+          <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <User className="h-4 w-4 text-primary" /> Head / Contact Person
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               {group.headName ? (
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0 shadow-sm">
                     {group.headName.charAt(0)}
                   </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-foreground">
-                      {group.headName}
-                    </p>
-                    {group.headDesignation && (
-                      <p className="text-xs text-muted-foreground">
-                        {group.headDesignation}
+                  <div className="space-y-2 min-w-0 font-semibold text-xs sm:text-sm">
+                    <div>
+                      <p className="font-extrabold text-foreground truncate text-sm">
+                        {group.headName}
                       </p>
-                    )}
+                      {group.headDesignation && (
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">
+                          {group.headDesignation}
+                        </p>
+                      )}
+                    </div>
                     {group.headPhone && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5" /> {group.headPhone}
+                      <p className="text-muted-foreground flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                        <span className="text-foreground">{group.headPhone}</span>
                       </p>
                     )}
                     {group.headEmail && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                        <Mail className="h-3.5 w-3.5" /> {group.headEmail}
+                      <p className="text-muted-foreground flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                        <span className="text-foreground truncate">{group.headEmail}</span>
                       </p>
                     )}
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">
+                <p className="text-xs text-muted-foreground italic font-normal py-4">
                   No head person assigned.
                 </p>
               )}
@@ -328,54 +362,56 @@ export default function CommunityDetailPage() {
           </Card>
 
           {/* Location + Details */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+          <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" /> Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Ward</span>
-                <Link to={`/wards/${group.ward.id}`}>
-                  <span className="text-primary hover:underline cursor-pointer">
-                    #{group.ward.wardNumber} {group.ward.name}
-                  </span>
-                </Link>
-              </div>
-              {group.wardArea && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Area</span>
-                  <span>
-                    {group.wardArea.name} ({group.wardArea.areaType})
-                  </span>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/30 text-xs sm:text-sm font-semibold">
+                <div className="flex justify-between px-6 py-3.5">
+                  <span className="text-muted-foreground">Ward</span>
+                  <Link to={`/wards/${group.ward.id}`}>
+                    <span className="text-primary hover:underline cursor-pointer">
+                      #{group.ward.wardNumber} {group.ward.name}
+                    </span>
+                  </Link>
                 </div>
-              )}
-              {group.address && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Address</span>
-                  <span className="text-right max-w-[200px]">
-                    {group.address}
-                  </span>
+                {group.wardArea && (
+                  <div className="flex justify-between px-6 py-3.5">
+                    <span className="text-muted-foreground">Area</span>
+                    <span className="text-foreground">
+                      {group.wardArea.name} ({group.wardArea.areaType})
+                    </span>
+                  </div>
+                )}
+                {group.address && (
+                  <div className="flex justify-between px-6 py-3.5">
+                    <span className="text-muted-foreground">Address</span>
+                    <span className="text-right max-w-[200px] text-foreground">
+                      {group.address}
+                    </span>
+                  </div>
+                )}
+                {group.foundedDate && (
+                  <div className="flex justify-between px-6 py-3.5">
+                    <span className="text-muted-foreground">Founded</span>
+                    <span className="text-foreground">
+                      {format(new Date(group.foundedDate), "dd MMM yyyy")}
+                    </span>
+                  </div>
+                )}
+                {group.registrationNo && (
+                  <div className="flex justify-between px-6 py-3.5">
+                    <span className="text-muted-foreground">Registration #</span>
+                    <span className="font-mono text-foreground font-bold">{group.registrationNo}</span>
+                  </div>
+                )}
+                <div className="flex justify-between px-6 py-3.5">
+                  <span className="text-muted-foreground">Created</span>
+                  <span className="text-foreground">{format(new Date(group.createdAt), "dd MMM yyyy")}</span>
                 </div>
-              )}
-              {group.foundedDate && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Founded</span>
-                  <span>
-                    {format(new Date(group.foundedDate), "dd MMM yyyy")}
-                  </span>
-                </div>
-              )}
-              {group.registrationNo && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Registration #</span>
-                  <span className="font-mono">{group.registrationNo}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Created</span>
-                <span>{format(new Date(group.createdAt), "dd MMM yyyy")}</span>
               </div>
             </CardContent>
           </Card>
@@ -383,12 +419,12 @@ export default function CommunityDetailPage() {
 
         {/* Description */}
         {group.description && (
-          <Card>
+          <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Description</CardTitle>
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              <p className="text-xs sm:text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap font-medium">
                 {group.description}
               </p>
             </CardContent>
@@ -397,13 +433,13 @@ export default function CommunityDetailPage() {
 
         {/* Related Groups in Same Ward */}
         {group.relatedGroups && group.relatedGroups.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">
+          <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Other Groups in {group.ward.name}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="flex flex-wrap gap-2">
                 {group.relatedGroups.map((rg: any) => {
                   const rgInfo = getTypeInfo(rg.type);
@@ -413,12 +449,12 @@ export default function CommunityDetailPage() {
                     <Link key={rg.id} to={`/community/${rg.id}`}>
                       <Badge
                         variant="outline"
-                        className="cursor-pointer hover:bg-muted gap-1 py-1.5 flex items-center"
+                        className="cursor-pointer hover:bg-muted gap-1.5 py-1.5 px-3 border-border/70 hover:border-primary/25 rounded-lg shadow-sm"
                       >
-                        <RgIcon className="h-3 w-3" />
-                        {rg.name}
+                        <RgIcon className="h-4 w-4" />
+                        <span className="font-semibold text-xs text-foreground">{rg.name}</span>
                         {rg.memberCount > 0 && (
-                          <span className="text-muted-foreground ml-1">
+                          <span className="text-muted-foreground ml-1 font-normal font-mono text-[10px]">
                             ({rg.memberCount})
                           </span>
                         )}

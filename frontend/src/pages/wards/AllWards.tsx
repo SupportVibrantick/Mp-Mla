@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 import * as xlsx from "xlsx";
 import ExcelJS from "exceljs";
 import { toast } from "sonner";
@@ -350,11 +351,11 @@ export default function WardsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <Map className="h-7 w-7 text-primary" />
               Wards
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
               Manage constituency wards, areas, demographics and councillors
             </p>
           </div>
@@ -362,7 +363,7 @@ export default function WardsPage() {
             <PermissionGate module="wards" action="read">
               <Button
                 variant="outline"
-                className="gap-2 w-full sm:w-auto justify-center"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60 justify-center"
                 onClick={handleExport}
                 disabled={isExporting}
               >
@@ -374,7 +375,7 @@ export default function WardsPage() {
             <PermissionGate module="wards" action="create">
               <Button
                 variant="outline"
-                className="gap-2 w-full sm:w-auto justify-center"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60 justify-center"
                 onClick={() => setIsBulkImportOpen(true)}
               >
                 <FileUp className="h-4 w-4" />
@@ -384,7 +385,7 @@ export default function WardsPage() {
 
             <PermissionGate module="wards" action="create">
               <Link to="/wards/new" className="w-full sm:w-auto">
-                <Button className="gap-2 w-full sm:w-auto justify-center">
+                <Button className="gap-2 w-full sm:w-auto justify-center bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 text-white font-semibold shadow-md hover:shadow-lg transition-all h-9 text-xs px-4 border-none">
                   <Plus className="h-4 w-4" />
                   Add New Ward
                 </Button>
@@ -397,17 +398,17 @@ export default function WardsPage() {
           open={!!wardToDelete}
           onOpenChange={(open) => !open && setWardToDelete(null)}
         >
-          <AlertDialogContent>
+          <AlertDialogContent className="rounded-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Ward</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="font-extrabold text-foreground">Delete Ward</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
                 Are you sure you want to completely delete {wardToDelete?.name}?
                 This will permanently delete all its dependent Demographics,
                 Areas, and Councillors.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel className="border-border/60 hover:bg-muted" disabled={isDeleting}>
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
@@ -419,7 +420,7 @@ export default function WardsPage() {
                     setWardToDelete(null);
                   }
                 }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
@@ -428,77 +429,73 @@ export default function WardsPage() {
         </AlertDialog>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-20" />
+              <Skeleton key={i} className="h-24 rounded-2xl" />
             ))
           ) : (
             <>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <Map className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalWards || 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Total Wards</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gray-500/15 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-gray200" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalAreas || 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Total Areas</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500/15 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalPopulation
-                        ? `${(stats.totalPopulation / 1000).toFixed(0)}K`
-                        : "0"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Population</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-destructive/15 flex items-center justify-center">
-                    <Home className="h-5 w-5 text-destructive" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalHouseholds
-                        ? `${(stats.totalHouseholds / 1000).toFixed(1)}K`
-                        : "0"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Households</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {[
+                {
+                  label: "Total Wards",
+                  value: stats?.totalWards || 0,
+                  Icon: Map,
+                  color: "text-indigo-500",
+                  bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+                  borderColor: "border-indigo-100 dark:border-indigo-950/50",
+                },
+                {
+                  label: "Total Areas",
+                  value: stats?.totalAreas || 0,
+                  Icon: MapPin,
+                  color: "text-slate-500",
+                  bgColor: "bg-slate-50 dark:bg-slate-950/30",
+                  borderColor: "border-slate-100 dark:border-slate-950/50",
+                },
+                {
+                  label: "Population",
+                  value: stats?.totalPopulation ? `${(stats.totalPopulation / 1000).toFixed(0)}K` : "0",
+                  Icon: Users,
+                  color: "text-orange-500",
+                  bgColor: "bg-orange-50 dark:bg-orange-950/30",
+                  borderColor: "border-orange-100 dark:border-orange-950/50",
+                },
+                {
+                  label: "Households",
+                  value: stats?.totalHouseholds ? `${(stats.totalHouseholds / 1000).toFixed(1)}K` : "0",
+                  Icon: Home,
+                  color: "text-rose-500",
+                  bgColor: "bg-rose-50 dark:bg-rose-950/30",
+                  borderColor: "border-rose-100 dark:border-rose-950/50",
+                },
+              ].map((s, i) => (
+                <Card key={i} className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl">
+                  <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
+                        <s.Icon className={cn("h-4 w-4", s.color)} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                        {s.label}
+                      </p>
+                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                        {s.value}
+                      </h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </>
           )}
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -508,10 +505,10 @@ export default function WardsPage() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9"
+                  className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20"
                 />
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2.5 flex-wrap w-full lg:w-auto">
                 <Select
                   value={zone}
                   onValueChange={(v) => {
@@ -519,7 +516,7 @@ export default function WardsPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-36 h-10 border-border/60 bg-muted/10">
                     <Filter className="h-3.5 w-3.5 mr-1.5" />
                     <SelectValue placeholder="Zone" />
                   </SelectTrigger>
@@ -539,7 +536,7 @@ export default function WardsPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full sm:w-40 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Area Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -556,7 +553,7 @@ export default function WardsPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-36 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -571,62 +568,56 @@ export default function WardsPage() {
                   zone !== "all" ||
                   areaType !== "all" ||
                   status !== "all") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={reset}
-                    className="text-xs"
-                  >
-                    Clear
-                  </Button>
-                )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={reset}
+                      className="text-xs h-10 px-3 text-muted-foreground hover:text-foreground"
+                    >
+                      Clear
+                    </Button>
+                  )}
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Wards Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-primary" />
-              Wards Directory ({pagination?.total || wards.length})
-            </CardTitle>
-          </CardHeader>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-14">#</TableHead>
-                    <TableHead>Ward Name</TableHead>
-                    <TableHead>Zone</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Population</TableHead>
-                    <TableHead className="text-right">Households</TableHead>
-                    <TableHead className="text-right">Areas</TableHead>
-                    <TableHead>Councillor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Stats</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="w-14 h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">#</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward Name</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Zone</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Population</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Households</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Areas</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Councillor</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                    <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Stats</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className="border-b border-border/40">
                         {Array.from({ length: 11 }).map((_, j) => (
-                          <TableCell key={j}>
+                          <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : wards.length === 0 ? (
-                    <TableRow>
+                    <TableRow className="hover:bg-transparent">
                       <TableCell
                         colSpan={11}
-                        className="text-center py-8 text-muted-foreground"
+                        className="text-center py-16 text-muted-foreground text-xs font-semibold"
                       >
                         No wards found matching your filters.
                       </TableCell>
@@ -634,94 +625,91 @@ export default function WardsPage() {
                   ) : (
                     wards.map((ward: any) => {
                       const councillor = ward.councillors?.[0];
-                      const openGrievances = ward._count?.grievances || 0;
                       return (
-                        <TableRow key={ward.id} className="hover:bg-muted/50">
-                          <TableCell className="font-mono text-muted-foreground">
+                        <TableRow key={ward.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                          <TableCell className="font-mono text-muted-foreground py-4 px-4 font-semibold text-xs">
                             {ward.wardNumber}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Link to={`/wards/${ward.id}`}>
-                              <span className="font-medium text-primary hover:underline cursor-pointer">
+                              <span className="font-semibold text-primary hover:underline cursor-pointer text-sm">
                                 {ward.name}
                               </span>
                             </Link>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             {ward.zone ? (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-[10px] font-bold border-border/80 px-2 py-0.5">
                                 {ward.zone}
                               </Badge>
                             ) : (
                               "—"
                             )}
                           </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs">
+                          <TableCell className="py-4 px-4 align-middle">
+                            <Badge variant="secondary" className="text-[10px] font-semibold px-2 py-0.5 border">
                               {ward.areaType}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="py-4 px-4 align-middle text-right font-mono text-xs font-bold text-foreground">
                             {ward.totalPopulation.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="py-4 px-4 align-middle text-right font-mono text-xs font-bold text-foreground">
                             {ward.totalHouseholds.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="py-4 px-4 align-middle text-right font-mono text-xs font-bold text-foreground">
                             {ward.totalAreas}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-foreground">
                             {councillor ? (
-                              <div>
-                                <p className="text-sm">{councillor.name}</p>
-                                <p className="text-xs text-muted-foreground">
+                              <div className="space-y-0.5">
+                                <p className="text-xs font-semibold text-foreground">{councillor.name}</p>
+                                <p className="text-[10px] text-muted-foreground font-medium">
                                   {councillor.phone}
                                 </p>
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground italic">
-                                Not assigned
-                              </span>
+                              <span className="text-xs text-muted-foreground font-normal italic">Not assigned</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
-                              className={`text-[10px] ${STATUS_COLORS[ward.status] || ""}`}
+                              className={cn("text-[9px] sm:text-[10px] font-semibold border shadow-none", STATUS_COLORS[ward.status] || "")}
                             >
                               {ward.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="py-4 px-4 align-middle text-center">
                             <div className="flex items-center justify-center gap-3">
                               <div
-                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 group cursor-help"
+                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold cursor-help"
                                 title="Active Public Requests"
                               >
-                                <MessageSquare className="h-3 w-3" />
-                                <span className="text-xs font-mono font-bold">
+                                <MessageSquare className="h-3.5 w-3.5" />
+                                <span className="text-[10px] font-mono font-bold">
                                   {ward._count?.grievances || 0}
                                 </span>
                               </div>
                               <div
-                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 group cursor-help"
+                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold cursor-help"
                                 title="Ongoing Projects"
                               >
-                                <Briefcase className="h-3 w-3" />
-                                <span className="text-xs font-mono font-bold">
+                                <Briefcase className="h-3.5 w-3.5" />
+                                <span className="text-[10px] font-mono font-bold">
                                   {ward._count?.projects || 0}
                                 </span>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="py-4 px-4 align-middle text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Link to={`/wards/${ward.id}`}>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 rounded-lg hover:bg-muted"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                 </Button>
                               </Link>
                               <PermissionGate module="wards" action="update">
@@ -729,9 +717,9 @@ export default function WardsPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 rounded-lg hover:bg-muted"
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                   </Button>
                                 </Link>
                               </PermissionGate>
@@ -739,7 +727,7 @@ export default function WardsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                                   onClick={() =>
                                     setWardToDelete({
                                       id: ward.id,
@@ -762,16 +750,15 @@ export default function WardsPage() {
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <p className="text-xs text-muted-foreground">
-                  Page {pagination.page} of {pagination.totalPages} (
-                  {pagination.total} total)
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-1.5">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasPrevPage}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -780,7 +767,7 @@ export default function WardsPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >
@@ -796,21 +783,21 @@ export default function WardsPage() {
         {stats?.byZone && stats.byZone.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.byZone.map((z: any) => (
-              <Card key={z.zone}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary" />
+              <Card key={z.zone} className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                     {z.zone}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between text-xs">
+                <CardContent className="space-y-3 pt-4 font-semibold text-xs sm:text-sm">
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Wards</span>
-                    <span className="font-medium">{z.count}</span>
+                    <span className="text-foreground">{z.count}</span>
                   </div>
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Population</span>
-                    <span className="font-medium">
+                    <span className="text-foreground font-mono font-bold">
                       {z.population.toLocaleString()}
                     </span>
                   </div>
@@ -818,7 +805,7 @@ export default function WardsPage() {
                     value={(z.population / (stats.totalPopulation || 1)) * 100}
                     className="h-1.5"
                   />
-                  <p className="text-[10px] text-muted-foreground text-right">
+                  <p className="text-[10px] text-muted-foreground text-right font-medium">
                     {(
                       (z.population / (stats.totalPopulation || 1)) *
                       100
@@ -839,7 +826,7 @@ export default function WardsPage() {
         title="Import Wards"
         description={
           <div>
-            <p>
+            <p className="text-xs text-muted-foreground">
               Upload an Excel or CSV file to import multiple wards. The file
               uses a flat schema where areas are grouped by wardNumber.
             </p>

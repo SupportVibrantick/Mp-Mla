@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 import {
   useProjects,
   useProjectStats,
@@ -246,21 +247,22 @@ export default function ProjectListPage() {
   return (
     <MainLayout title="Projects">
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <FolderKanban className="h-7 w-7 text-primary" />
               Projects
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Development works & budget tracking
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
+              Constituency development works & budget tracking
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end">
+          <div className="flex flex-wrap gap-2.5 sm:flex-nowrap sm:justify-end">
             <PermissionGate module="projects" action="read">
               <Button
                 variant="outline"
-                className="gap-2 w-full sm:w-auto"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60"
                 onClick={handleExport}
                 disabled={isExporting}
               >
@@ -272,7 +274,7 @@ export default function ProjectListPage() {
             <PermissionGate module="projects" action="create">
               <Button
                 variant="outline"
-                className="gap-2 w-full sm:w-auto"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60"
                 onClick={() => setIsBulkImportOpen(true)}
               >
                 <FileUp className="h-4 w-4" />
@@ -282,7 +284,7 @@ export default function ProjectListPage() {
 
             <PermissionGate module="projects" action="create">
               <Link to="/projects/new" className="w-full sm:w-auto">
-                <Button className="gap-2 w-full sm:w-auto">
+                <Button className="gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 text-white font-semibold shadow-md hover:shadow-lg transition-all h-9 text-xs px-4 border-none">
                   <Plus className="h-4 w-4" />
                   New Project
                 </Button>
@@ -298,7 +300,7 @@ export default function ProjectListPage() {
           title="Import Projects"
           description={
             <div>
-              <p>
+              <p className="text-xs text-muted-foreground">
                 Upload an Excel or CSV file to import multiple projects. Records
                 are upserted by Project Code or Name.
               </p>
@@ -309,52 +311,63 @@ export default function ProjectListPage() {
 
         {/* Stats Summary Cards */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
               {
                 label: "Total Projects",
                 value: stats.total,
                 Icon: FolderKanban,
-                color: "#6366f1",
+                color: "text-indigo-500",
+                bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+                borderColor: "border-indigo-100 dark:border-indigo-950/50",
               },
               {
                 label: "Running",
                 value: stats.running,
                 Icon: TrendingUp,
-                color: "#f59e0b",
+                color: "text-amber-500",
+                bgColor: "bg-amber-50 dark:bg-amber-950/30",
+                borderColor: "border-amber-100 dark:border-amber-950/50",
               },
               {
                 label: "Pending",
                 value: stats.pending,
                 Icon: Clock,
-                color: "#3b82f6",
+                color: "text-blue-500",
+                bgColor: "bg-blue-50 dark:bg-blue-950/30",
+                borderColor: "border-blue-100 dark:border-blue-950/50",
               },
               {
                 label: "Completed",
                 value: stats.completed,
                 Icon: CheckCircle2,
-                color: "#22c55e",
+                color: "text-emerald-500",
+                bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+                borderColor: "border-emerald-100 dark:border-emerald-950/50",
               },
               {
                 label: "On Hold",
                 value: stats.onHold,
                 Icon: PauseCircle,
-                color: "#ef4444",
+                color: "text-rose-500",
+                bgColor: "bg-rose-50 dark:bg-rose-950/30",
+                borderColor: "border-rose-100 dark:border-rose-950/50",
               },
             ].map((s, i) => (
-              <Card key={i}>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${s.color}15` }}
-                  >
-                    <s.Icon className="h-5 w-5" style={{ color: s.color }} />
+              <Card key={i} className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20">
+                <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
+                      <s.Icon className={cn("h-4 w-4", s.color)} />
+                    </div>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold leading-none">{s.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
                       {s.label}
                     </p>
+                    <h3 className="text-2xl font-bold tracking-tight text-foreground mt-1">
+                      {s.value}
+                    </h3>
                   </div>
                 </CardContent>
               </Card>
@@ -366,10 +379,10 @@ export default function ProjectListPage() {
         {stats && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Category Performance Matrix */}
-            <Card className="lg:col-span-1 border-none shadow-sm">
+            <Card className="lg:col-span-1 border border-border/50 bg-card shadow-sm rounded-2xl">
               <CardHeader className="pb-4">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center border border-indigo-500/10">
                     <TrendingUp className="h-4 w-4 text-indigo-500" />
                   </div>
                   Category Performance
@@ -378,50 +391,61 @@ export default function ProjectListPage() {
               <CardContent>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ReBarChart data={stats.byCategory}>
+                    <ReBarChart data={stats.byCategory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid
                         strokeDasharray="3 3"
                         vertical={false}
-                        opacity={0.05}
+                        stroke="hsl(var(--border))"
+                        opacity={0.4}
                       />
                       <XAxis
                         dataKey="category"
-                        fontSize={10}
+                        fontSize={9}
+                        fontWeight={500}
                         tickLine={false}
                         axisLine={false}
                         tick={{ fill: "hsl(var(--muted-foreground))" }}
+                        dy={5}
                       />
                       <YAxis
                         fontSize={10}
+                        fontWeight={500}
                         tickLine={false}
                         axisLine={false}
                         tick={{ fill: "hsl(var(--muted-foreground))" }}
+                        dx={-5}
                       />
                       <ReTooltip
-                        cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                        cursor={{ fill: "hsl(var(--muted)/0.15)" }}
                         contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
                           borderRadius: "12px",
-                          border: "none",
-                          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+                          boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)",
+                          fontSize: "11px",
                         }}
                       />
                       <Legend
                         iconType="circle"
-                        wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                        iconSize={6}
+                        verticalAlign="top"
+                        height={32}
+                        align="right"
+                        wrapperStyle={{ fontSize: "11px", paddingBottom: "10px" }}
                       />
                       <ReBar
                         dataKey="total"
                         name="Total"
                         fill="#6366f1"
                         radius={[4, 4, 0, 0]}
-                        barSize={20}
+                        maxBarSize={16}
                       />
                       <ReBar
                         dataKey="completed"
                         name="Done"
                         fill="#10b981"
                         radius={[4, 4, 0, 0]}
-                        barSize={20}
+                        maxBarSize={16}
                       />
                     </ReBarChart>
                   </ResponsiveContainer>
@@ -430,26 +454,26 @@ export default function ProjectListPage() {
             </Card>
 
             {/* Financial Health (Funds Pie) */}
-            <Card className="lg:col-span-1 border-none shadow-sm">
+            <Card className="lg:col-span-1 border border-border/50 bg-card shadow-sm rounded-2xl">
               <CardHeader className="pb-4">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center border border-emerald-500/10">
                     <IndianRupee className="h-4 w-4 text-emerald-500" />
                   </div>
                   Fund Utilisation
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[250px] relative">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                <div className="h-[250px] relative flex items-center justify-center">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-4">
+                    <span className="text-2xl font-extrabold tracking-tight text-foreground">
                       {Math.round(
                         (stats.totalUsed / stats.totalSanctioned) * 100,
                       ) || 0}
                       %
                     </span>
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">
-                      Utilized
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mt-0.5">
+                      Utilised
                     </span>
                   </div>
                   <ResponsiveContainer width="100%" height="100%">
@@ -459,7 +483,7 @@ export default function ProjectListPage() {
                           {
                             name: "Available",
                             value: stats.totalSanctioned - stats.totalUsed,
-                            color: "#e2e8f0",
+                            color: "hsl(var(--muted))",
                           },
                           {
                             name: "Released",
@@ -474,33 +498,42 @@ export default function ProjectListPage() {
                         ]}
                         cx="50%"
                         cy="50%"
-                        innerRadius={65}
-                        outerRadius={85}
-                        paddingAngle={8}
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={4}
                         dataKey="value"
                         stroke="none"
                       >
                         {[
-                          { color: "hsl(var(--muted))" },
+                          { color: "hsl(var(--muted)/0.4)" },
                           { color: "#f59e0b" },
                           { color: "#22c55e" },
                         ].map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </RePie>
-                      <ReTooltip formatter={(v: any) => formatBudget(v)} />
+                      <ReTooltip 
+                        formatter={(v: any) => formatBudget(v)}
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "12px",
+                          boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)",
+                          fontSize: "11px",
+                        }}
+                      />
                     </RePieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="grid grid-cols-3 gap-1 mt-2 text-[10px] text-center font-bold">
-                  <div className="text-slate-500">
-                    Sanctioned: {formatBudget(stats.totalSanctioned)}
+                <div className="grid grid-cols-3 gap-2 mt-4 text-[10px] text-center font-bold">
+                  <div className="text-muted-foreground bg-muted/40 py-1.5 rounded border border-border/30">
+                    Sanctioned: <span className="font-mono">{formatBudget(stats.totalSanctioned)}</span>
                   </div>
-                  <div className="text-amber-600">
-                    Released: {formatBudget(stats.totalReleased)}
+                  <div className="text-amber-700 bg-amber-50/50 py-1.5 rounded border border-amber-100/50 dark:text-amber-400 dark:bg-amber-950/20 dark:border-amber-900/30">
+                    Released: <span className="font-mono">{formatBudget(stats.totalReleased)}</span>
                   </div>
-                  <div className="text-emerald-600">
-                    Used: {formatBudget(stats.totalUsed)}
+                  <div className="text-emerald-700 bg-emerald-50/50 py-1.5 rounded border border-emerald-100/50 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30">
+                    Used: <span className="font-mono">{formatBudget(stats.totalUsed)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -508,77 +541,74 @@ export default function ProjectListPage() {
 
             {/* Health Alerts & Delay Metrics (Expanded) */}
             {!isAlertDismissed && stats.delayedCount > 0 && (
-              <Card className="lg:col-span-1 border-2 border-red-500/20 bg-red-50 dark:bg-red-950/20 shadow-lg shadow-red-500/5 relative overflow-hidden">
+              <Card className="lg:col-span-1 border border-rose-200 bg-rose-50/30 dark:border-rose-900/30 dark:bg-rose-950/10 shadow-lg shadow-rose-500/5 relative overflow-hidden flex flex-col justify-between rounded-2xl">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-2 right-2 h-6 w-6 text-red-400 hover:text-red-600 hover:bg-transparent"
+                  className="absolute top-2.5 right-2.5 h-6 w-6 text-rose-400 hover:text-rose-600 hover:bg-transparent"
                   onClick={() => setIsAlertDismissed(true)}
                 >
                   <X className="h-4 w-4" />
                 </Button>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-black uppercase text-red-600 flex items-center justify-between">
+                  <CardTitle className="text-xs font-black uppercase text-rose-750 dark:text-rose-400 flex items-center justify-between font-bold">
                     <span className="flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 animate-bounce" />
+                      <AlertTriangle className="h-4 w-4 text-rose-600 animate-bounce" />
                       Critical Delay Alerts
                     </span>
                     <Badge
                       variant="destructive"
-                      className="h-5 px-1.5 font-bold"
+                      className="h-5 px-1.5 font-bold bg-rose-600 hover:bg-rose-700"
                     >
                       {stats.delayedCount} OVERDUE
                     </Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="rounded-lg bg-red-100/50 dark:bg-red-900/10 p-2.5 border border-red-200/50 dark:border-red-800/20">
-                      <p className="text-[10px] text-red-700 dark:text-red-400 font-bold leading-tight flex items-center gap-1">
-                        <UserCheck className="h-3 w-3" />
-                        WHO NEEDS ATTENTION?
-                      </p>
-                      <div className="mt-2 space-y-2 max-h-[160px] overflow-y-auto pr-1 thin-scrollbar">
-                        {stats.delayedProjects?.map((p: any) => (
-                          <Link key={p.id} to={`/projects/${p.id}`}>
-                            <div className="p-2 rounded bg-white dark:bg-slate-900 shadow-sm border border-red-100 dark:border-red-900/50 hover:border-red-300 transition-colors flex justify-between items-center group cursor-pointer mt-1 first:mt-0">
-                              <div className="min-w-0">
-                                <p className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-red-600">
-                                  {p.name}
-                                </p>
-                                <p className="text-[9px] text-muted-foreground">
-                                  Status: {p.status} • {p.daysOverdue} days late
-                                </p>
-                              </div>
-                              <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                <CardContent className="flex-1 flex flex-col justify-between space-y-4">
+                  <div className="rounded-xl bg-background/50 dark:bg-background/25 p-3 border border-rose-100 dark:border-rose-900/20 flex-1">
+                    <p className="text-[10px] text-rose-800 dark:text-rose-400 font-bold leading-none flex items-center gap-1.5">
+                      <UserCheck className="h-3 w-3" />
+                      PROJECTS REQUIRING ATTENTION
+                    </p>
+                    <div className="mt-3 space-y-2 max-h-[160px] overflow-y-auto pr-1 thin-scrollbar">
+                      {stats.delayedProjects?.map((p: any) => (
+                        <Link key={p.id} to={`/projects/${p.id}`}>
+                          <div className="p-2.5 rounded-xl bg-card hover:bg-muted/40 border border-rose-100/50 dark:border-rose-900/30 hover:border-rose-300 transition-all duration-200 flex justify-between items-center group cursor-pointer mt-2 first:mt-0 shadow-sm">
+                            <div className="min-w-0 pr-2">
+                              <p className="text-xs font-bold text-foreground truncate group-hover:text-primary">
+                                {p.name}
+                              </p>
+                              <p className="text-[9px] text-muted-foreground mt-0.5 font-semibold">
+                                Status: {p.status} • <span className="text-rose-600">{p.daysOverdue} days late</span>
+                              </p>
                             </div>
-                          </Link>
-                        ))}
-                      </div>
+                            <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                          </div>
+                        </Link>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* If alert dismissed or no delays, show a nice summary or empty state placeholder to maintain layout balance */}
+            {/* If alert dismissed or no delays, show a nice summary */}
             {(isAlertDismissed || stats.delayedCount === 0) && (
-              <Card className="lg:col-span-1 border-none shadow-sm bg-gradient-to-br from-indigo-50 to-white dark:from-slate-950 dark:to-slate-900 flex flex-col justify-center items-center p-8 text-center">
-                <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center mb-4 text-indigo-600">
+              <Card className="lg:col-span-1 border border-border/50 shadow-sm bg-gradient-to-br from-indigo-50/50 to-white dark:from-slate-950 dark:to-slate-900/50 flex flex-col justify-center items-center p-8 text-center min-h-[250px] rounded-2xl">
+                <div className="h-12 w-12 rounded-full bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center mb-4 text-indigo-600 border border-indigo-100/40">
                   <FolderKanban className="h-6 w-6" />
                 </div>
-                <h3 className="font-bold text-indigo-900 dark:text-indigo-400">
+                <h3 className="font-bold text-indigo-900 dark:text-indigo-400 text-sm">
                   Status Clearance
                 </h3>
-                <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">
-                  No critical delays detected or notifications have been
-                  acknowledged.
+                <p className="text-[11px] text-muted-foreground mt-2 max-w-[200px] leading-relaxed">
+                  No critical delays detected or notifications have been acknowledged.
                 </p>
                 {isAlertDismissed && (
                   <Button
                     variant="link"
                     size="sm"
-                    className="mt-4 text-[10px] text-indigo-600"
+                    className="mt-4 text-[10px] text-indigo-600 hover:text-indigo-800 p-0"
                     onClick={() => setIsAlertDismissed(false)}
                   >
                     Restore Delay Alerts
@@ -590,9 +620,9 @@ export default function ProjectListPage() {
         )}
 
         {/* Filters */}
-        <Card>
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -602,10 +632,10 @@ export default function ProjectListPage() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9"
+                  className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20"
                 />
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2.5 flex-wrap w-full lg:w-auto">
                 <Select
                   value={statusFilter}
                   onValueChange={(v) => {
@@ -613,7 +643,7 @@ export default function ProjectListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-32 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -632,7 +662,7 @@ export default function ProjectListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full sm:w-36 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -651,7 +681,7 @@ export default function ProjectListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full sm:w-36 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Dept" />
                   </SelectTrigger>
                   <SelectContent>
@@ -670,7 +700,7 @@ export default function ProjectListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full sm:w-36 h-10 border-border/60 bg-muted/10">
                     <Filter className="h-3.5 w-3.5 mr-1" />
                     <SelectValue placeholder="Ward" />
                   </SelectTrigger>
@@ -692,7 +722,7 @@ export default function ProjectListPage() {
                       variant="ghost"
                       size="sm"
                       onClick={reset}
-                      className="text-xs"
+                      className="text-xs h-10 px-3 text-muted-foreground hover:text-foreground"
                     >
                       Clear
                     </Button>
@@ -703,41 +733,41 @@ export default function ProjectListPage() {
         </Card>
 
         {/* Table */}
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Ward</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead className="text-right">Budget</TableHead>
-                    <TableHead className="text-center">Progress</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Project</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Category</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Department</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Budget</TableHead>
+                    <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Progress</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className="border-b border-border/40">
                         {Array.from({ length: 8 }).map((_, j) => (
-                          <TableCell key={j}>
+                          <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : projects.length === 0 ? (
-                    <TableRow>
+                    <TableRow className="hover:bg-transparent">
                       <TableCell
                         colSpan={8}
-                        className="text-center py-12 text-muted-foreground"
+                        className="text-center py-16 text-muted-foreground text-xs"
                       >
-                        <FolderKanban className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p>No projects found.</p>
+                        <FolderKanban className="h-10 w-10 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                        <p className="font-medium text-sm">No projects found.</p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -745,70 +775,73 @@ export default function ProjectListPage() {
                       const sI = getStatusInfo(p.status);
                       const cI = getCategoryInfo(p.category);
                       return (
-                        <TableRow key={p.id} className="hover:bg-muted/50">
-                          <TableCell>
+                        <TableRow key={p.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                          <TableCell className="py-4 px-4 align-middle">
                             <Link to={`/projects/${p.id}`}>
-                              <span className="font-medium text-primary hover:underline cursor-pointer">
+                              <span className="font-semibold text-primary hover:underline cursor-pointer text-sm">
                                 {p.name}
                               </span>
                             </Link>
-                            <p className="text-[10px] text-muted-foreground font-mono">
-                              {p.projectCode}
+                            <p className="text-[10px] text-muted-foreground font-mono mt-1 flex items-center gap-1.5">
+                              <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-semibold text-muted-foreground border">
+                                {p.projectCode}
+                              </span>
+                              {p.contractor && (
+                                <span className="truncate">🏗️ {p.contractor}</span>
+                              )}
                             </p>
-                            {p.contractor && (
-                              <p className="text-[10px] text-muted-foreground">
-                                🏗️ {p.contractor}
-                              </p>
-                            )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
                               variant="secondary"
-                              className="text-[10px] gap-1"
+                              className="text-[9px] sm:text-[10px] font-semibold gap-1 px-2 py-0.5 border"
                             >
                               <span>{cI.icon}</span>
                               {cI.label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">
-                            #{p.ward?.wardNumber} {p.ward?.name}
+                          <TableCell className="py-4 px-4 align-middle text-xs sm:text-sm font-semibold text-foreground">
+                            Ward {p.ward?.wardNumber}
+                            <p className="text-[10px] text-muted-foreground font-normal mt-0.5">{p.ward?.name}</p>
                           </TableCell>
-                          <TableCell className="text-xs">
+                          <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">
                             {p.departmentInfo?.name || "—"}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <p className="font-mono text-sm font-medium">
+                          <TableCell className="py-4 px-4 align-middle text-right">
+                            <p className="font-mono text-xs sm:text-sm font-bold text-foreground">
                               {formatBudget(p.budgetSanctioned)}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-[9px] text-muted-foreground font-semibold mt-0.5">
                               Used: {formatBudget(p.budgetUsed)}
                             </p>
                           </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center gap-2 justify-center">
-                              <Progress
-                                value={p.completionPercent}
-                                className="h-1.5 w-16"
-                              />
-                              <span className="font-mono text-xs">
-                                {p.completionPercent}%
-                              </span>
+                          <TableCell className="py-4 px-4 align-middle">
+                            <div className="flex flex-col items-center gap-1.5 justify-center">
+                              <div className="flex items-center gap-2">
+                                <Progress
+                                  value={p.completionPercent}
+                                  className="h-1.5 w-16"
+                                />
+                                <span className="font-mono text-[10px] sm:text-xs font-bold text-foreground">
+                                  {p.completionPercent}%
+                                </span>
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <Badge className={`text-[10px] ${sI.color}`}>
+                          <TableCell className="py-4 px-4 align-middle">
+                            <Badge className={cn("text-[9px] sm:text-[10px] font-semibold border shadow-none", sI.color)}>
                               {sI.label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="py-4 px-4 align-middle text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Link to={`/projects/${p.id}`}>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 rounded-lg hover:bg-muted"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                 </Button>
                               </Link>
                               <PermissionGate module="projects" action="update">
@@ -816,9 +849,9 @@ export default function ProjectListPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 rounded-lg hover:bg-muted"
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                   </Button>
                                 </Link>
                               </PermissionGate>
@@ -832,15 +865,15 @@ export default function ProjectListPage() {
               </Table>
             </div>
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <p className="text-xs text-muted-foreground">
-                  Page {pagination.page}/{pagination.totalPages}
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Page {pagination.page} of {pagination.totalPages}
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-1.5">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasPrevPage}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -849,7 +882,7 @@ export default function ProjectListPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >

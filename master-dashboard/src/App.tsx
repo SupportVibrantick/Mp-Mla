@@ -18,6 +18,7 @@ import TenantsPage from "@/pages/admin/Tenants";
 import SubscriptionsPage from "@/pages/admin/Subscriptions";
 import TenantSubscriptionsPage from "@/pages/admin/TenantSubscriptions";
 import UpcomingRenewalsPage from "@/pages/admin/UpcomingRenewals";
+import UpgradeRequestsPage from "@/pages/admin/UpgradeRequests";
 import InvoicesPage from "@/pages/admin/Invoices";
 import ModulesPage from "@/pages/admin/Modules";
 import PaymentsPage from "@/pages/admin/Payments";
@@ -67,6 +68,12 @@ function Router() {
       <Route path="/subscriptions/renewals">
         <ProtectedRoute module="subscriptions" action="read">
           <UpcomingRenewalsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/subscriptions/upgrade-requests">
+        <ProtectedRoute module="subscriptions" action="read">
+          <UpgradeRequestsPage />
         </ProtectedRoute>
       </Route>
 

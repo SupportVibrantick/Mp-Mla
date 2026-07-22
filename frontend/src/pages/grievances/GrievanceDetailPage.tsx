@@ -207,30 +207,31 @@ export default function GrievanceDetailPage() {
   };
 
   return (
-    <MainLayout title="Grievance">
+    <MainLayout title="Request Details">
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <Link to="/public-requests">
-              <Button variant="ghost" size="icon" className="h-9 w-9 mt-1">
+            <Link href="/public-requests">
+              <Button variant="outline" size="icon" className="h-9 w-9 mt-1 border-border/60 bg-card rounded-lg flex-shrink-0">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-bold font-mono">
+                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight font-mono text-foreground">
                   {g.ticketNumber}
                 </h1>
-                <Badge className={`text-[10px] ${pI.color}`}>
+                <Badge className={`text-[10px] font-bold border-none ${pI.color}`}>
                   {pI.icon} {pI.label}
                 </Badge>
-                <Badge className={`text-[10px] ${sI.color}`}>{sI.label}</Badge>
+                <Badge className={`text-[10px] font-bold border-none ${sI.color}`}>{sI.label}</Badge>
               </div>
-              <h2 className="text-lg font-semibold mt-1">{g.subject}</h2>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                <span>
-                  {cI.icon} {cI.label}
+              <h2 className="text-base sm:text-lg font-bold text-foreground mt-1.5">{g.subject}</h2>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5 flex-wrap font-medium">
+                <span className="flex items-center gap-1">
+                  <span>{cI.icon}</span>
+                  {cI.label}
                   {g.subcategory ? ` / ${g.subcategory}` : ""}
                 </span>
                 <span>
@@ -241,7 +242,7 @@ export default function GrievanceDetailPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <PermissionGate module="grievances" action="update">
               {nextStatuses.map((ns) => {
                 const nsI = getStatusInfo(ns);
@@ -250,7 +251,7 @@ export default function GrievanceDetailPage() {
                     key={ns}
                     variant="outline"
                     size="sm"
-                    className="gap-1 text-xs"
+                    className="gap-1 text-xs border-border/60 bg-card font-bold"
                     onClick={() => openStatus(ns)}
                   >
                     <div className={`w-2 h-2 rounded-full ${nsI.dot}`} />
@@ -261,7 +262,7 @@ export default function GrievanceDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1 text-xs"
+                className="gap-1 text-xs border-border/60 bg-card font-bold"
                 onClick={() => {
                   setAf({
                     assignedToId: g.assignedToId || "",
@@ -274,9 +275,9 @@ export default function GrievanceDetailPage() {
                 <UserPlus className="h-3.5 w-3.5" />
                 Assign
               </Button>
-              <Link to="/public-requests/edit" state={{ id: g.id }}>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Edit className="h-3.5 w-3.5" />
+              <Link href="/public-requests/edit" state={{ id: g.id }}>
+                <Button variant="outline" size="sm" className="gap-1 border-border/60 bg-card font-bold">
+                  <Edit className="h-3.5 w-3.5 text-blue-600" />
                   Edit
                 </Button>
               </Link>
@@ -287,7 +288,7 @@ export default function GrievanceDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1 text-destructive border-destructive/30"
+                    className="gap-1 text-destructive border-destructive/30 hover:bg-destructive/10 font-bold"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -304,7 +305,7 @@ export default function GrievanceDetailPage() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      className="bg-destructive"
+                      className="bg-destructive text-white hover:bg-destructive/90"
                       onClick={async () => {
                         await deleteMut.mutateAsync(g.id);
                         navigate("/public-requests");
@@ -321,65 +322,65 @@ export default function GrievanceDetailPage() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left: Description + Timeline */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Description</CardTitle>
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-5 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Request Description</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-wrap">{g.description}</p>
+              <CardContent className="p-5">
+                <p className="text-xs sm:text-sm text-foreground whitespace-pre-wrap leading-relaxed font-medium">{g.description}</p>
               </CardContent>
             </Card>
 
             {g.resolutionNotes && (
-              <Card className="border-green-200 dark:border-green-900">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-green-700 dark:text-green-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Resolution
+              <Card className="border-green-500/30 bg-green-500/5 dark:bg-green-950/10 rounded-2xl overflow-hidden shadow-sm">
+                <CardHeader className="pb-3 px-5 border-b border-green-500/20">
+                  <CardTitle className="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    Resolution Summary
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{g.resolutionNotes}</p>
+                <CardContent className="p-5">
+                  <p className="text-xs sm:text-sm text-green-800 dark:text-green-300 font-medium leading-relaxed">{g.resolutionNotes}</p>
                 </CardContent>
               </Card>
             )}
             {g.rejectionReason && (
-              <Card className="border-red-200 dark:border-red-900">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-red-700 dark:text-red-400">
+              <Card className="border-destructive/30 bg-destructive/5 dark:bg-destructive/10 rounded-2xl overflow-hidden shadow-sm">
+                <CardHeader className="pb-3 px-5 border-b border-destructive/20">
+                  <CardTitle className="text-xs font-bold text-destructive uppercase tracking-wider flex items-center gap-2">
                     <XCircle className="h-4 w-4" />
-                    Rejection
+                    Rejection Reason
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{g.rejectionReason}</p>
+                <CardContent className="p-5">
+                  <p className="text-xs sm:text-sm text-destructive dark:text-red-400 font-medium leading-relaxed">{g.rejectionReason}</p>
                 </CardContent>
               </Card>
             )}
             {g.escalationReason && (
-              <Card className="border-orange-200 dark:border-orange-900">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                    <AlertTriangle className="h-4 w-4" />
-                    Escalation Reason
+              <Card className="border-orange-500/30 bg-orange-500/5 dark:bg-orange-950/10 rounded-2xl overflow-hidden shadow-sm">
+                <CardHeader className="pb-3 px-5 border-b border-orange-500/20">
+                  <CardTitle className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    Escalation Notes
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{g.escalationReason}</p>
+                <CardContent className="p-5">
+                  <p className="text-xs sm:text-sm text-orange-800 dark:text-orange-300 font-medium leading-relaxed">{g.escalationReason}</p>
                 </CardContent>
               </Card>
             )}
 
             {/* Add Comment */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Add Comment</CardTitle>
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-5 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Add Update / Comment</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 mb-2">
+              <CardContent className="p-5 space-y-3">
+                <div className="flex gap-2">
                   <Select value={cmtType} onValueChange={setCmtType}>
-                    <SelectTrigger className="w-44 h-8 text-xs">
+                    <SelectTrigger className="w-44 h-9 text-xs rounded-xl bg-background/50 border-muted-foreground/20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -391,19 +392,19 @@ export default function GrievanceDetailPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Textarea
                     value={cmtText}
                     onChange={(e) => setCmtText(e.target.value)}
-                    placeholder="Type comment..."
+                    placeholder="Provide detailed description of the latest update..."
                     rows={2}
-                    className="flex-1 text-sm"
+                    className="flex-1 text-xs sm:text-sm bg-background/50 border-muted-foreground/20 rounded-xl"
                   />
                   <Button
                     size="sm"
                     disabled={!cmtText.trim() || tlMut.isPending}
                     onClick={submitComment}
-                    className="self-end gap-1"
+                    className="sm:self-end gap-1.5 text-xs font-bold h-9 sm:h-auto rounded-xl px-4"
                   >
                     {tlMut.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -417,61 +418,61 @@ export default function GrievanceDetailPage() {
             </Card>
 
             {/* Timeline */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-5 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                   <Clock className="h-4 w-4 text-primary" />
-                  Timeline ({g.timeline?.length || 0})
+                  Timeline Log ({g.timeline?.length || 0})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-5 sm:p-6">
                 <div className="relative">
-                  <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
-                  <div className="space-y-4">
+                  <div className="absolute left-4 top-1 bottom-1 w-px bg-border" />
+                  <div className="space-y-6">
                     {(g.timeline || []).map((e: any) => {
                       const Icon = TL_ICONS[e.action] || MessageSquare;
                       const dotCol = TL_COLORS[e.action] || "bg-gray-500";
                       return (
                         <div key={e.id} className="relative flex gap-4 pl-1">
                           <div
-                            className={`w-8 h-8 rounded-full ${dotCol} flex items-center justify-center z-10 flex-shrink-0`}
+                            className={`w-7 h-7 rounded-full ${dotCol} flex items-center justify-center z-10 flex-shrink-0 shadow-sm border border-card`}
                           >
                             <Icon className="h-3.5 w-3.5 text-white" />
                           </div>
-                          <div className="flex-1 min-w-0 pb-4">
+                          <div className="flex-1 min-w-0 pb-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="outline" className="text-[9px]">
+                              <Badge variant="outline" className="text-[9px] font-bold py-0 h-5">
                                 {e.action.replace("_", " ")}
                               </Badge>
                               {e.fromStatus && e.toStatus && (
-                                <span className="text-[10px]">
+                                <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
                                   <Badge
-                                    className={`text-[8px] ${getStatusInfo(e.fromStatus).color}`}
+                                    className={`text-[8px] font-bold border-none ${getStatusInfo(e.fromStatus).color}`}
                                   >
                                     {e.fromStatus}
                                   </Badge>
-                                  <span className="mx-1">→</span>
+                                  <span>→</span>
                                   <Badge
-                                    className={`text-[8px] ${getStatusInfo(e.toStatus).color}`}
+                                    className={`text-[8px] font-bold border-none ${getStatusInfo(e.toStatus).color}`}
                                   >
                                     {e.toStatus}
                                   </Badge>
                                 </span>
                               )}
-                              <span className="text-[10px] text-muted-foreground ml-auto">
+                              <span className="text-[10px] text-muted-foreground font-semibold ml-auto">
                                 {format(
                                   new Date(e.createdAt),
-                                  "dd MMM, hh:mm a",
+                                  "dd MMM yyyy, hh:mm a",
                                 )}
                               </span>
                             </div>
                             {e.comment && (
-                              <p className="text-sm mt-1 text-foreground/80">
+                              <p className="text-xs sm:text-sm mt-1.5 text-foreground/80 font-medium leading-relaxed">
                                 {e.comment}
                               </p>
                             )}
                             {e.changedBy && (
-                              <p className="text-[10px] text-muted-foreground mt-1">
+                              <p className="text-[10px] text-muted-foreground font-bold mt-1.5">
                                 — {e.changedBy}
                               </p>
                             )}
@@ -486,106 +487,106 @@ export default function GrievanceDetailPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Requestor</CardTitle>
+          <div className="space-y-6">
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-5 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Complainant / Citizen</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold">
-                    {(g.complainantName || "?").charAt(0)}
+              <CardContent className="space-y-4 pt-4 px-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-extrabold border border-primary/20">
+                    {(g.complainantName || "?").charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-medium">
-                      {g.complainantName || "Unknown"}
+                    <p className="text-sm font-bold text-foreground">
+                      {g.complainantName || "Unknown Citizen"}
                     </p>
                     {g.complainantPhone && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <a href={`tel:${g.complainantPhone}`} className="text-xs font-bold text-primary hover:underline flex items-center gap-1 mt-0.5">
                         <Phone className="h-3 w-3" />
                         {g.complainantPhone}
-                      </p>
+                      </a>
                     )}
                   </div>
                 </div>
                 {g.complainantEmail && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    {g.complainantEmail}
-                  </p>
+                  <div className="flex items-start gap-2.5 text-xs font-semibold text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <a href={`mailto:${g.complainantEmail}`} className="text-primary hover:underline">{g.complainantEmail}</a>
+                  </div>
                 )}
                 {g.complainantAddress && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {g.complainantAddress}
-                  </p>
+                  <div className="flex items-start gap-2.5 text-xs font-semibold text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <span className="text-foreground/90">{g.complainantAddress}</span>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Assignment</CardTitle>
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-5 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Assignment Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Department</span>
-                  <span className="font-medium">
-                    {g.departmentName || g.assignedDept || "—"}
-                  </span>
+              <CardContent className="space-y-3 pt-4 px-5 text-xs font-bold">
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Department</span>
+                  <Badge variant="secondary" className="text-[10px] font-bold">
+                    {g.departmentName || g.assignedDept || "Unassigned"}
+                  </Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Assigned To</span>
-                  <span className="font-medium">
+                <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                  <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Assigned To</span>
+                  <span className="text-foreground">
                     {g.assignedTo?.name || "—"}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created By</span>
-                  <span>{g.createdBy?.name || "—"}</span>
+                <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                  <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Created By</span>
+                  <span className="text-foreground">{g.createdBy?.name || "—"}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Source</span>
-                  <span>{(g.source || "OFFICE").replace("_", " ")}</span>
+                <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                  <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Source Channel</span>
+                  <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                    {(g.source || "OFFICE").replace("_", " ")}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Dates</CardTitle>
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-5 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Timestamps</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created</span>
-                  <span>{format(new Date(g.createdAt), "dd MMM yyyy")}</span>
+              <CardContent className="space-y-3 pt-4 px-5 text-xs font-bold">
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Registered</span>
+                  <span className="text-foreground">{format(new Date(g.createdAt), "dd MMM yyyy")}</span>
                 </div>
                 {g.resolvedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Resolved</span>
-                    <span className="text-green-600">
+                  <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                    <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Resolved Date</span>
+                    <span className="text-green-500">
                       {format(new Date(g.resolvedAt), "dd MMM yyyy")}
                     </span>
                   </div>
                 )}
                 {g.closedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Closed</span>
-                    <span>{format(new Date(g.closedAt), "dd MMM yyyy")}</span>
+                  <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                    <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Closed Date</span>
+                    <span className="text-foreground">{format(new Date(g.closedAt), "dd MMM yyyy")}</span>
                   </div>
                 )}
                 {g.resolutionDays !== null &&
                   g.resolutionDays !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Resolution Time
-                      </span>
+                    <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                      <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Resolution Period</span>
                       <span className="font-mono">{g.resolutionDays} days</span>
                     </div>
                   )}
                 {g.satisfactionRating && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Rating</span>
+                  <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                    <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Satisfaction Rating</span>
                     <div className="flex gap-0.5">
                       {[1, 2, 3, 4, 5].map((i) => (
                         <Star
@@ -599,23 +600,23 @@ export default function GrievanceDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Location</CardTitle>
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-5 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Target Location</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ward</span>
-                  <Link to={`/wards/${g.ward?.id}`}>
-                    <span className="text-primary hover:underline cursor-pointer">
+              <CardContent className="space-y-3 pt-4 px-5 text-xs font-bold">
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Constituency Ward</span>
+                  <Link href={`/wards/${g.ward?.id}`}>
+                    <span className="text-primary hover:underline cursor-pointer font-bold">
                       #{g.ward?.wardNumber} {g.ward?.name}
                     </span>
                   </Link>
                 </div>
                 {g.locationAddress && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Address</span>
-                    <span className="text-right max-w-[140px]">
+                  <div className="flex flex-col gap-1 py-0.5 border-t border-border/30 pt-2.5">
+                    <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Incident Address</span>
+                    <span className="text-foreground leading-relaxed mt-0.5">
                       {g.locationAddress}
                     </span>
                   </div>

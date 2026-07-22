@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 import {
   usePublicFacilities,
   usePublicFacilityStats,
@@ -27,7 +28,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../../components/ui/select";
 import {
   Table,
   TableBody,
@@ -79,7 +80,8 @@ export default function PublicFacilityListPage() {
     wardFilter !== "all" ? wardFilter : undefined,
   );
   const { data: wardsRes } = useWards({ limit: 100 });
-  const { mutateAsync: bulkCreatePublicFacilities } = useBulkCreatePublicFacilities();
+  const { mutateAsync: bulkCreatePublicFacilities } =
+    useBulkCreatePublicFacilities();
 
   const institutions = instRes?.data || [];
   const pagination = instRes?.pagination;
@@ -87,9 +89,11 @@ export default function PublicFacilityListPage() {
   const wards = wardsRes?.data?.wards || [];
 
   const categoryGroups = useMemo(() => {
-    const groups: Record<string, (typeof PUBLIC_FACILITY_CATEGORIES)[number][]> =
-      {};
-    PUBLIC_FACILITY_CATEGORIES.forEach((c) => {
+    const groups: Record<
+      string,
+      (typeof PUBLIC_FACILITY_CATEGORIES)[number][]
+    > = {};
+    PUBLIC_FACILITY_CATEGORIES.forEach((c: any) => {
       if (!groups[c.group]) groups[c.group] = [];
       groups[c.group].push(c);
     });
@@ -236,15 +240,21 @@ export default function PublicFacilityListPage() {
     });
 
     // Data validations
-    const categoryValues = PUBLIC_FACILITY_CATEGORIES.map((c) => c.value).join(",");
-    const statusValues = PUBLIC_FACILITY_STATUSES.map((s) => s.value).join(",");
+    const categoryValues = PUBLIC_FACILITY_CATEGORIES.map(
+      (c: any) => c.value,
+    ).join(",");
+    const statusValues = PUBLIC_FACILITY_STATUSES.map((s: any) => s.value).join(
+      ",",
+    );
     const maxRows = 500;
 
     // Create a hidden sheet for dropdown lists to bypass Excel's 255-character limit for data validation
-    const dropdownSheet = workbook.addWorksheet("DropdownData", { state: "hidden" });
-    const catList = PUBLIC_FACILITY_CATEGORIES.map((c) => c.value);
-    const statusList = PUBLIC_FACILITY_STATUSES.map((s) => s.value);
-    
+    const dropdownSheet = workbook.addWorksheet("DropdownData", {
+      state: "hidden",
+    });
+    const catList = PUBLIC_FACILITY_CATEGORIES.map((c: any) => c.value);
+    const statusList = PUBLIC_FACILITY_STATUSES.map((s: any) => s.value);
+
     dropdownSheet.getColumn(1).values = ["Categories", ...catList];
     dropdownSheet.getColumn(2).values = ["Statuses", ...statusList];
 
@@ -264,7 +274,7 @@ export default function PublicFacilityListPage() {
         allowBlank: true,
         formulae: ['"TRUE,FALSE"'],
       };
-    }
+    } 
 
     // Header styling
     worksheet.getRow(1).font = { bold: true };
@@ -387,19 +397,19 @@ export default function PublicFacilityListPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <Building2 className="h-7 w-7 text-primary" />
               Public Facilities
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Schools, hospitals, temples, govt offices & more
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
+              Schools, hospitals, temples, government offices & more
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2.5 flex-wrap sm:flex-nowrap sm:justify-end">
             <PermissionGate module="institutions" action="read">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60"
                 onClick={handleExport}
                 disabled={isExporting}
               >
@@ -414,18 +424,21 @@ export default function PublicFacilityListPage() {
             <PermissionGate module="institutions" action="create">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60"
                 onClick={() => setIsBulkImportOpen(true)}
               >
                 <FileUp className="h-4 w-4" /> Bulk Upload
               </Button>
               <Link to="/public-facilities/requests">
-                <Button variant="outline" className="gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60"
+                >
                   <Clock className="h-4 w-4" /> Review Requests
                 </Button>
               </Link>
               <Link to="/public-facilities/new">
-                <Button className="gap-2">
+                <Button className="gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 text-white font-semibold shadow-md hover:shadow-lg transition-all h-9 text-xs px-4 border-none">
                   <Plus className="h-4 w-4" /> Add Facility
                 </Button>
               </Link>
@@ -441,11 +454,11 @@ export default function PublicFacilityListPage() {
           title="Import Public Facilities"
           description={
             <div>
-              <p>
+              <p className="text-xs text-muted-foreground">
                 Upload an Excel or CSV file to import public facilities with
                 incharges. Records are upserted by Name + Ward Number.
               </p>
-              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border">
+              <div className="mt-2 text-[10px] space-y-1 bg-muted p-2 rounded border border-border/50">
                 <p>
                   <strong>Required:</strong> name, category, address, wardNumber
                 </p>
@@ -456,97 +469,108 @@ export default function PublicFacilityListPage() {
         />
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-20" />
+              <Skeleton key={i} className="h-24 rounded-2xl" />
             ))
           ) : (
             <>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.total || 0}</p>
-                    <p className="text-xs text-muted-foreground">Total</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/15 flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.active || 0}</p>
-                    <p className="text-xs text-muted-foreground">Active</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-red-500/15 flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.inactive || 0}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Inactive/Closed
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalIncharges || 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Incharges</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-500/15 flex items-center justify-center">
-                    <User className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {(stats?.totalCapacity || 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Total Capacity
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              {[
+                {
+                  label: "Total Facilities",
+                  value: stats?.total || 0,
+                  Icon: Building2,
+                  color: "text-indigo-500",
+                  bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+                  borderColor: "border-indigo-100 dark:border-indigo-950/50",
+                },
+                {
+                  label: "Active Facilities",
+                  value: stats?.active || 0,
+                  Icon: Building2,
+                  color: "text-emerald-500",
+                  bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+                  borderColor: "border-emerald-100 dark:border-emerald-950/50",
+                },
+                {
+                  label: "Inactive / Closed",
+                  value: stats?.inactive || 0,
+                  Icon: Building2,
+                  color: "text-rose-500",
+                  bgColor: "bg-rose-50 dark:bg-rose-950/30",
+                  borderColor: "border-rose-100 dark:border-rose-950/50",
+                },
+                {
+                  label: "Total Incharges",
+                  value: stats?.totalIncharges || 0,
+                  Icon: Users,
+                  color: "text-blue-500",
+                  bgColor: "bg-blue-50 dark:bg-blue-950/30",
+                  borderColor: "border-blue-100 dark:border-blue-950/50",
+                },
+                {
+                  label: "Total Capacity",
+                  value: (stats?.totalCapacity || 0).toLocaleString(),
+                  Icon: User,
+                  color: "text-amber-500",
+                  bgColor: "bg-amber-50 dark:bg-amber-950/30",
+                  borderColor: "border-amber-100 dark:border-amber-950/50",
+                },
+              ].map((s, i) => (
+                <Card
+                  key={i}
+                  className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl"
+                >
+                  <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div
+                        className={cn(
+                          "p-2 rounded-xl border",
+                          s.bgColor,
+                          s.borderColor,
+                        )}
+                      >
+                        <s.Icon className={cn("h-4 w-4", s.color)} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                        {s.label}
+                      </p>
+                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                        {s.value}
+                      </h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </>
           )}
         </div>
 
         {/* Category Distribution */}
         {stats?.byCategory && stats.byCategory.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Category Distribution</CardTitle>
+          <Card className="border border-border/50 bg-card shadow-sm rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Category Distribution
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 {stats.byCategory.map((c: any) => {
                   const info = getCategoryInfo(c.category);
+                  const isActive = categoryFilter === c.category;
                   return (
                     <div
                       key={c.category}
-                      className={`text-center p-3 rounded-lg border transition-colors cursor-pointer ${categoryFilter === c.category
-                          ? "border-primary bg-primary/5"
-                          : "hover:bg-muted/50"
-                        }`}
+                      className={cn(
+                        "text-center p-3 rounded-xl border transition-all duration-200 cursor-pointer shadow-sm flex flex-col items-center justify-between min-h-[110px]",
+                        isActive
+                          ? "border-primary bg-primary/5 shadow-md -translate-y-0.5"
+                          : "hover:bg-muted/40 border-border/50 hover:-translate-y-0.5",
+                      )}
                       onClick={() => {
                         setCategoryFilter(
                           categoryFilter === c.category ? "all" : c.category,
@@ -554,15 +578,21 @@ export default function PublicFacilityListPage() {
                         setPage(1);
                       }}
                     >
-                      <img
-                        src={info.icon}
-                        alt={info.label}
-                        className="h-8 w-8 object-contain"
-                      />
-                      <p className="text-lg font-bold mt-1">{c.count}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight truncate">
-                        {info.label}
-                      </p>
+                      <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center border p-1 shadow-inner">
+                        <img
+                          src={info.icon}
+                          alt={info.label}
+                          className="h-8 w-8 object-contain"
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <p className="text-lg font-extrabold text-foreground tracking-tight leading-none">
+                          {c.count}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-1 truncate max-w-[80px]">
+                          {info.label}
+                        </p>
+                      </div>
                     </div>
                   );
                 })}
@@ -572,30 +602,30 @@ export default function PublicFacilityListPage() {
         )}
 
         {/* Filters */}
-        <Card>
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search name, address, contact..."
                   value={search}
-                  onChange={(e) => {
+                  onChange={(e : any ) => {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9"
+                  className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20"
                 />
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2.5 flex-wrap w-full lg:w-auto">
                 <Select
                   value={wardFilter}
-                  onValueChange={(v) => {
+                  onValueChange={(v : any) => {
                     setWardFilter(v);
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40 h-10 border-border/60 bg-muted/10">
                     <Filter className="h-3.5 w-3.5 mr-1.5" />
                     <SelectValue placeholder="Ward" />
                   </SelectTrigger>
@@ -611,12 +641,12 @@ export default function PublicFacilityListPage() {
 
                 <Select
                   value={categoryFilter}
-                  onValueChange={(v) => {
+                  onValueChange={(v : any ) => {
                     setCategoryFilter(v);
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-44">
+                  <SelectTrigger className="w-full sm:w-44 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -645,17 +675,17 @@ export default function PublicFacilityListPage() {
 
                 <Select
                   value={statusFilter}
-                  onValueChange={(v) => {
+                  onValueChange={(v : any ) => {
                     setStatusFilter(v);
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full sm:w-36 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    {PUBLIC_FACILITY_STATUSES.map((s) => (
+                    {PUBLIC_FACILITY_STATUSES.map((s : any ) => (
                       <SelectItem key={s.value} value={s.value}>
                         {s.label}
                       </SelectItem>
@@ -667,55 +697,71 @@ export default function PublicFacilityListPage() {
                   wardFilter !== "all" ||
                   statusFilter !== "all" ||
                   categoryFilter !== "all") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={reset}
-                      className="text-xs"
-                    >
-                      Clear
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="text-xs h-10 px-3 text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Table */}
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Public Facility</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Ward</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead className="text-center">Incharges</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
+                      Public Facility
+                    </TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
+                      Category
+                    </TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
+                      Ward
+                    </TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
+                      Contact
+                    </TableHead>
+                    <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
+                      Incharges
+                    </TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
+                      Status
+                    </TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className="border-b border-border/40">
                         {Array.from({ length: 7 }).map((_, j) => (
-                          <TableCell key={j}>
+                          <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : institutions.length === 0 ? (
-                    <TableRow>
+                    <TableRow className="hover:bg-transparent">
                       <TableCell
                         colSpan={7}
-                        className="text-center py-12 text-muted-foreground"
+                        className="text-center py-16 text-muted-foreground text-xs"
                       >
-                        <Building2 className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p>No public facilities found.</p>
+                        <Building2 className="h-10 w-10 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                        <p className="font-medium text-sm">
+                          No public facilities found.
+                        </p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -724,27 +770,29 @@ export default function PublicFacilityListPage() {
                       const statusInfo = getStatusInfo(inst.status);
                       const primaryIncharge = inst.incharges?.[0];
                       return (
-                        <TableRow key={inst.id} className="hover:bg-muted/50">
-                          <TableCell>
+                        <TableRow
+                          key={inst.id}
+                          className="hover:bg-muted/10 transition-colors border-b border-border/40"
+                        >
+                          <TableCell className="py-4 px-4 align-middle">
                             <Link to={`/public-facilities/${inst.id}`}>
-                              <div className="cursor-pointer">
-                                <p className="font-medium text-primary hover:underline">
+                              <div className="cursor-pointer space-y-1">
+                                <p className="font-semibold text-primary hover:underline text-sm">
                                   {inst.name}
                                 </p>
-                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                  <MapPin className="h-3 w-3" />
-                                  {inst.address?.slice(0, 40)}
-                                  {(inst.address?.length || 0) > 40
-                                    ? "..."
-                                    : ""}
+                                <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-semibold">
+                                  <MapPin className="h-3 w-3 shrink-0 text-muted-foreground/75" />
+                                  <span className="truncate max-w-[250px]">
+                                    {inst.address}
+                                  </span>
                                 </p>
                               </div>
                             </Link>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
                               variant="secondary"
-                              className="text-xs gap-1.5"
+                              className="text-[10px] font-semibold gap-1.5 px-2 py-0.5 border"
                             >
                               <img
                                 src={catInfo.icon}
@@ -754,63 +802,66 @@ export default function PublicFacilityListPage() {
                               {catInfo.label}
                             </Badge>
                             {inst.subcategory && (
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                              <p className="text-[9px] text-muted-foreground font-semibold mt-0.5">
                                 {inst.subcategory}
                               </p>
                             )}
                           </TableCell>
-                          <TableCell>
-                            <Link to={`/wards/${inst.ward?.id}`}>
-                              <span className="text-sm text-primary hover:underline cursor-pointer">
-                                #{inst.ward?.wardNumber} {inst.ward?.name}
-                              </span>
-                            </Link>
+                          <TableCell className="py-4 px-4 align-middle text-xs sm:text-sm font-semibold text-foreground">
+                            Ward #{inst.ward?.wardNumber}
+                            <p className="text-[10px] text-muted-foreground font-normal mt-0.5">
+                              {inst.ward?.name}
+                            </p>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-foreground">
                             {inst.contactNo ? (
-                              <div className="flex items-center gap-1 text-sm">
-                                <Phone className="h-3 w-3 text-muted-foreground" />
-                                {inst.contactNo}
+                              <div className="flex items-center gap-1">
+                                <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                <span>{inst.contactNo}</span>
                               </div>
                             ) : primaryIncharge ? (
-                              <div className="text-sm">
-                                <p className="text-xs">
+                              <div className="space-y-0.5">
+                                <p className="text-xs font-semibold text-foreground">
                                   {primaryIncharge.name}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-0.5">
+                                  <Phone className="h-3 w-3 text-muted-foreground/60 shrink-0" />
                                   {primaryIncharge.contactNo}
                                 </p>
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground italic">
+                              <span className="text-xs text-muted-foreground font-normal italic">
                                 —
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="py-4 px-4 align-middle text-center">
                             <Badge
                               variant="outline"
-                              className="text-xs font-mono"
+                              className="text-[10px] font-bold font-mono px-2 py-0.5 border-border/80"
                             >
                               {inst._count?.incharges || 0}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
-                              className={`text-[10px] ${statusInfo.color}`}
+                              className={cn(
+                                "text-[9px] sm:text-[10px] font-semibold border shadow-none",
+                                statusInfo.color,
+                              )}
                             >
                               {statusInfo.label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="py-4 px-4 align-middle text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Link to={`/public-facilities/${inst.id}`}>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 rounded-lg hover:bg-muted"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                 </Button>
                               </Link>
                               <PermissionGate
@@ -821,9 +872,9 @@ export default function PublicFacilityListPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 rounded-lg hover:bg-muted"
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                   </Button>
                                 </Link>
                               </PermissionGate>
@@ -838,16 +889,16 @@ export default function PublicFacilityListPage() {
             </div>
 
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <p className="text-xs text-muted-foreground">
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
+                <p className="text-xs text-muted-foreground font-semibold">
                   Page {pagination.page} of {pagination.totalPages} (
                   {pagination.total} total)
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-1.5">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasPrevPage}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -856,7 +907,7 @@ export default function PublicFacilityListPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >

@@ -138,7 +138,11 @@ export default function BirthdaysPage() {
     return (
       <div
         key={l.id}
-        className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${l.isBirthdayToday || l.isToday ? "bg-gradient-to-r from-pink-50 to-yellow-50 dark:from-pink-950/20 dark:to-yellow-950/10 border-pink-200 dark:border-pink-800/40" : "bg-card hover:bg-muted/30"}`}
+        className={`flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300 ${
+          l.isBirthdayToday || l.isToday
+            ? "bg-gradient-to-r from-pink-500/5 to-yellow-500/5 border-pink-200 dark:border-pink-800/40 hover:border-pink-300"
+            : "bg-card border-border/50 hover:border-primary/25 hover:shadow-sm"
+        }`}
       >
         {showGreet && l.isBirthdayToday && (
           <Checkbox
@@ -152,41 +156,41 @@ export default function BirthdaysPage() {
             <img
               src={l.photoUrl}
               alt={l.name}
-              className="w-11 h-11 rounded-full object-cover"
+              className="w-11 h-11 rounded-full object-cover border border-border/40 shadow-sm"
             />
           ) : (
-            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20">
               {l.name.charAt(0)}
             </div>
           )}
           {(l.isBirthdayToday || l.isToday) && (
-            <span className="absolute -top-1 -right-1 text-base">🎂</span>
+            <span className="absolute -top-1 -right-1 text-xs">🎂</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <Link to={`/leaders/${l.id}`}>
-            <p className="font-semibold text-sm hover:text-primary cursor-pointer truncate">
+            <p className="font-bold text-xs sm:text-sm hover:text-primary cursor-pointer truncate text-foreground">
               {l.name}
             </p>
           </Link>
-          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-semibold truncate mt-0.5">
             <Icon className="h-3 w-3" />
             {cInfo.label}
             {l.designation ? ` • ${l.designation}` : ""}
             {l.organization ? ` • ${l.organization}` : ""}
           </p>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
             {format(new Date(l.dateOfBirth), "dd MMM yyyy")} •{" "}
-            {l.turningAge || l.age} years
+            {l.turningAge || l.age} years old
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           {l.daysUntil !== undefined && l.daysUntil > 0 ? (
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className="text-[10px] font-bold">
               {l.daysUntil === 1 ? "Tomorrow" : `${l.daysUntil} days`}
             </Badge>
           ) : l.isPast ? (
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="secondary" className="text-[10px] font-bold bg-muted/50">
               {l.day}{" "}
               {format(
                 new Date(
@@ -201,13 +205,13 @@ export default function BirthdaysPage() {
           {(l.isBirthdayToday || l.isToday) &&
             showGreet &&
             (l.greeted ? (
-              <Badge className="text-[10px] bg-green-100 text-green-700">
+              <Badge className="text-[10px] font-bold bg-green-500/10 text-green-500 border-none">
                 ✓ Greeted
               </Badge>
             ) : (
               <Button
                 size="sm"
-                className="h-7 text-[10px] gap-1 bg-pink-600 hover:bg-pink-700"
+                className="h-7 text-[10px] gap-1 bg-pink-600 hover:bg-pink-700 font-bold border-none"
                 onClick={() => openGreet(l)}
               >
                 <Gift className="h-3 w-3" />
@@ -215,7 +219,7 @@ export default function BirthdaysPage() {
               </Button>
             ))}
           {l.ward && (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[10px] text-muted-foreground font-semibold">
               #{l.ward.wardNumber} {l.ward.name}
             </span>
           )}
@@ -229,41 +233,41 @@ export default function BirthdaysPage() {
       <div className="space-y-6 max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <Cake className="h-7 w-7 text-pink-500" />
               Birthday Reminders
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
               Never miss a local representative's birthday
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             {selectedIds.length > 0 && (
               <Button
-                className="gap-1.5 bg-pink-600 hover:bg-pink-700"
+                className="gap-1.5 text-xs bg-pink-600 hover:bg-pink-700 font-bold border-none"
                 onClick={openBulk}
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3.5 w-3.5" />
                 Greet {selectedIds.length} Selected
               </Button>
             )}
             <Link to="/leaders">
-              <Button variant="outline">All Local Representatives</Button>
+              <Button variant="outline" className="text-xs border-border/60 bg-card font-bold">All Representatives</Button>
             </Link>
           </div>
         </div>
 
         <Tabs defaultValue="today">
-          <TabsList className="flex w-full overflow-x-auto gap-1 sm:grid sm:grid-cols-3">
-            <TabsTrigger value="today" className="gap-1.5">
+          <TabsList className="flex w-full overflow-x-auto gap-1 sm:grid sm:grid-cols-3 bg-muted/50 p-1 rounded-xl">
+            <TabsTrigger value="today" className="gap-1.5 text-xs font-bold rounded-lg">
               <PartyPopper className="h-3.5 w-3.5" />
               Today ({todayList.length})
             </TabsTrigger>
-            <TabsTrigger value="upcoming" className="gap-1.5">
+            <TabsTrigger value="upcoming" className="gap-1.5 text-xs font-bold rounded-lg">
               <Calendar className="h-3.5 w-3.5" />
               Upcoming 30 Days
             </TabsTrigger>
-            <TabsTrigger value="month" className="gap-1.5">
+            <TabsTrigger value="month" className="gap-1.5 text-xs font-bold rounded-lg">
               <Cake className="h-3.5 w-3.5" />
               This Month
             </TabsTrigger>
@@ -271,24 +275,24 @@ export default function BirthdaysPage() {
 
           <TabsContent value="today" className="mt-4 space-y-3">
             {todayList.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
+              <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                <CardContent className="py-16 text-center">
                   <Cake className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-                  <p className="text-muted-foreground">No birthdays today</p>
+                  <p className="text-muted-foreground text-xs font-semibold">No birthdays today</p>
                 </CardContent>
               </Card>
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-pink-600 flex items-center gap-2">
-                    <PartyPopper className="h-4 w-4" />
+                  <p className="text-xs font-bold text-pink-600 flex items-center gap-2">
+                    <PartyPopper className="h-4 w-4 animate-bounce" />
                     {todayList.length} birthday{todayList.length > 1 ? "s" : ""}{" "}
                     today!
                   </p>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs"
+                    className="text-xs font-bold"
                     onClick={selectAll}
                   >
                     Select All Ungreeted
@@ -301,10 +305,10 @@ export default function BirthdaysPage() {
 
           <TabsContent value="upcoming" className="mt-4 space-y-2">
             {upcomingList.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
+              <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                <CardContent className="py-16 text-center">
                   <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-xs font-semibold">
                     No upcoming birthdays in next 30 days
                   </p>
                 </CardContent>
@@ -316,10 +320,10 @@ export default function BirthdaysPage() {
 
           <TabsContent value="month" className="mt-4 space-y-2">
             {monthList.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
+              <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                <CardContent className="py-16 text-center">
                   <Cake className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-xs font-semibold">
                     No birthdays this month
                   </p>
                 </CardContent>
@@ -393,9 +397,6 @@ export default function BirthdaysPage() {
                 }
                 rows={4}
               />
-              {/* <p className="text-[10px] text-muted-foreground">
-                Use {"{name}"}, {"{age}"}, {"{designation}"} as placeholders
-              </p> */}
             </div>
           </div>
           <DialogFooter>
@@ -405,7 +406,7 @@ export default function BirthdaysPage() {
             <Button
               disabled={greetMut.isPending || !gf.message}
               onClick={sendSingle}
-              className="gap-1.5 bg-pink-600 hover:bg-pink-700"
+              className="gap-1.5 bg-pink-600 hover:bg-pink-700 text-white font-bold border-none"
             >
               {greetMut.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -482,7 +483,7 @@ export default function BirthdaysPage() {
             <Button
               disabled={bulkMut.isPending}
               onClick={sendBulk}
-              className="gap-1.5 bg-pink-600 hover:bg-pink-700"
+              className="gap-1.5 bg-pink-600 hover:bg-pink-700 text-white font-bold border-none"
             >
               {bulkMut.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

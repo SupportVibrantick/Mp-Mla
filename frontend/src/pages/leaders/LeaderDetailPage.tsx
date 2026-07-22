@@ -210,160 +210,132 @@ export default function LeaderDetailPage() {
   };
 
   return (
-    <MainLayout title="Local Representative">
+    <MainLayout title="Representative Profile">
       <div className="space-y-6 max-w-4xl mx-auto">
-        {/* ─── Header ──────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <Link to="/leaders">
-              <Button variant="ghost" size="icon" className="h-9 w-9 mt-1">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-4">
-              {l.photoUrl ? (
-                <img
-                  src={l.photoUrl}
-                  alt={l.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold border-2 border-primary/20">
-                  {l.name
-                    .split(" ")
-                    .map((n: string) => n[0])
-                    .join("")
-                    .slice(0, 2)}
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
+        {/* Header/Cover Card */}
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+          <div className="h-32 bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950/90 relative" />
+          <div className="px-6 pb-6 relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-10">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
+              <div className="relative">
+                {l.photoUrl ? (
+                  <img
+                    src={l.photoUrl}
+                    alt={l.name}
+                    className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-md"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-4 border-card shadow-md">
+                    {l.name
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .slice(0, 2)}
+                  </div>
+                )}
+                {l.isBirthdayToday && (
+                  <span className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm border border-pink-200 dark:border-pink-700 animate-bounce">
+                    <Cake className="h-4 w-4 text-pink-500" />
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center justify-center sm:justify-start gap-2">
                   {l.name}
-                  {l.isBirthdayToday && (
-                    <span className="inline-flex items-center justify-center bg-pink-100 dark:bg-pink-900/40 rounded-full p-1">
-                      <Cake className="h-4 w-4 text-pink-500" />
-                    </span>
-                  )}
                 </h1>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {(() => {
-                    const CatIcon = cInfo.icon;
-                    return (
-                      <Badge variant="secondary" className="text-xs gap-1">
-                        <CatIcon className="h-3.5 w-3.5" /> {cInfo.label}
-                      </Badge>
-                    );
-                  })()}
-                  {l.relation && (
-                    <Badge
-                      className={`text-[10px] ${RELATION_STYLES[l.relation] || ""}`}
-                    >
-                      {l.relation}
-                    </Badge>
-                  )}
-                  {/* {infDisplay && (
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] font-mono ${infDisplay.color}`}
-                    >
-                      {infDisplay.dots} {l.influence}
-                    </Badge>
-                  )} */}
-                  {!l.isActive && (
-
-                    <Badge variant="destructive" className="text-[10px]">
-                      Inactive
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground font-semibold">
                   {[l.designation, l.organization, l.partyName]
                     .filter(Boolean)
-                    .join(" • ") || "No designation"}
+                    .join(" • ") || "No designation specified"}
                 </p>
               </div>
             </div>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <PermissionGate module="leaders" action="update">
-              <Link to={`/leaders/${l.id}/edit`}>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Edit className="h-3.5 w-3.5" /> Edit
+            <div className="flex gap-2 justify-center sm:justify-end">
+              <Link to="/leaders">
+                <Button variant="outline" size="sm" className="gap-1 border-border/60 text-xs font-bold">
+                  <ArrowLeft className="h-3.5 w-3.5" /> Back
                 </Button>
               </Link>
-            </PermissionGate>
-            <PermissionGate module="leaders" action="delete">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive border-destructive/30"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
+              <PermissionGate module="leaders" action="update">
+                <Link to={`/leaders/${l.id}/edit`}>
+                  <Button variant="outline" size="sm" className="gap-1 border-border/60 text-xs font-bold">
+                    <Edit className="h-3.5 w-3.5 text-blue-600" /> Edit
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Remove &quot;{l.name}&quot;?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will delete all associated greeting history.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive"
-                      onClick={async () => {
-                        await deleteMut.mutateAsync(l.id);
-                        navigate("/leaders");
-                      }}
+                </Link>
+              </PermissionGate>
+              <PermissionGate module="leaders" action="delete">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs font-bold"
                     >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </PermissionGate>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Remove &quot;{l.name}&quot;?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will delete all associated greeting history.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive"
+                        onClick={async () => {
+                          await deleteMut.mutateAsync(l.id);
+                          navigate("/leaders");
+                        }}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </PermissionGate>
+            </div>
           </div>
-        </div>
+        </Card>
 
         {/* ─── Birthday Card ───────────────────────────── */}
         <Card
-          className={`border-2 ${
+          className={`border bg-card rounded-2xl overflow-hidden shadow-sm transition-all duration-300 ${
             l.isBirthdayToday
-              ? "border-pink-300 dark:border-pink-700 bg-gradient-to-r from-pink-50 via-yellow-50 to-pink-50 dark:from-pink-950/30 dark:via-yellow-950/20 dark:to-pink-950/30"
+              ? "border-pink-300 dark:border-pink-700/80 bg-gradient-to-r from-pink-500/5 via-yellow-500/5 to-pink-500/5 hover:border-pink-400"
               : l.daysUntilBirthday <= 7
                 ? "border-amber-200 dark:border-amber-800"
-                : ""
+                : "border-border/50"
           }`}
         >
           <CardContent className="p-5">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${
+                  className={`w-12 h-12 rounded-full flex items-center justify-center text-xl border ${
                     l.isBirthdayToday
-                      ? "bg-pink-100 dark:bg-pink-900/40"
-                      : "bg-muted"
+                      ? "bg-pink-100 border-pink-200 dark:bg-pink-900/40 dark:border-pink-800"
+                      : "bg-muted border-border"
                   }`}
                 >
                   {l.isBirthdayToday ? (
-                    <PartyPopper className="h-7 w-7 text-pink-500" />
+                    <PartyPopper className="h-6 w-6 text-pink-500" />
                   ) : (
-                    <Cake className="h-7 w-7 text-muted-foreground" />
+                    <Cake className="h-6 w-6 text-muted-foreground" />
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">
+                  <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
                     Date of Birth
                   </p>
-                  <p className="text-xl font-bold">
+                  <p className="text-lg font-extrabold text-foreground mt-0.5">
                     {format(dob, "dd MMMM yyyy")}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground font-semibold">
                     {l.age} years old
                   </p>
                 </div>
@@ -372,13 +344,12 @@ export default function LeaderDetailPage() {
               <div className="flex flex-col items-end gap-2">
                 {l.isBirthdayToday ? (
                   <>
-                    <Badge className="bg-pink-600 text-white text-sm px-3 py-1 gap-1.5">
-                      <PartyPopper className="h-4 w-4" />
-                      <Cake className="h-4 w-4" /> Birthday TODAY!
+                    <Badge className="bg-pink-600 hover:bg-pink-700 text-white text-xs px-3 py-1 gap-1.5 border-none font-bold">
+                      <PartyPopper className="h-3.5 w-3.5" /> Birthday TODAY!
                     </Badge>
                     {l.birthdayGreetedThisYear ? (
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs gap-1">
-                        <Check className="h-3 w-3" /> Already greeted this year
+                      <Badge className="bg-green-500/10 text-green-600 text-[10px] font-bold gap-1 border-none">
+                        <Check className="h-3 w-3" /> Greeted this year
                       </Badge>
                     ) : (
                       <div className="flex gap-2">
@@ -391,7 +362,7 @@ export default function LeaderDetailPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="gap-1.5 text-green-600 border-green-300"
+                              className="gap-1.5 text-xs text-green-600 border-green-200 bg-green-500/5 hover:bg-green-500/10 font-bold"
                             >
                               <MessageCircle className="h-3.5 w-3.5" />
                               WhatsApp
@@ -400,7 +371,7 @@ export default function LeaderDetailPage() {
                         )}
                         <Button
                           size="sm"
-                          className="gap-1.5 bg-pink-600 hover:bg-pink-700"
+                          className="gap-1.5 text-xs bg-pink-600 hover:bg-pink-700 font-bold border-none"
                           onClick={openGreet}
                         >
                           <Gift className="h-3.5 w-3.5" /> Send Greeting
@@ -410,15 +381,15 @@ export default function LeaderDetailPage() {
                   </>
                 ) : (
                   <div className="text-right">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
                       Next birthday
                     </p>
-                    <p className="text-lg font-bold">
+                    <p className="text-base font-extrabold text-foreground mt-0.5">
                       {l.daysUntilBirthday === 1
                         ? "Tomorrow!"
                         : `In ${l.daysUntilBirthday} days`}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground font-semibold">
                       {format(new Date(l.nextBirthday), "EEEE, dd MMM yyyy")}
                       {" — "}Turning {l.age + 1}
                     </p>
@@ -431,13 +402,13 @@ export default function LeaderDetailPage() {
 
         {/* ─── Contact + Classification ────────────────── */}
         <div className="grid md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary" /> Contact
+          <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+            <CardHeader className="pb-3 px-5 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <Phone className="h-4 w-4 text-primary" /> Contact Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4 pt-4 px-5">
               {[
                 {
                   icon: Phone,
@@ -469,9 +440,11 @@ export default function LeaderDetailPage() {
                 .filter((c) => c.value)
                 .map((c) => (
                   <div key={c.label} className="flex items-start gap-3 text-sm">
-                    <c.icon className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div className="p-1.5 bg-muted rounded-lg flex-shrink-0 border">
+                      <c.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
                     <div>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground font-semibold">
                         {c.label}
                       </p>
                       {c.href ? (
@@ -480,12 +453,12 @@ export default function LeaderDetailPage() {
                           {...(c.external
                             ? { target: "_blank", rel: "noopener noreferrer" }
                             : {})}
-                          className="text-primary hover:underline"
+                          className="text-xs font-bold text-primary hover:underline mt-0.5 block"
                         >
                           {c.value}
                         </a>
                       ) : (
-                        <p>{c.value}</p>
+                        <p className="text-xs font-bold text-foreground mt-0.5">{c.value}</p>
                       )}
                     </div>
                   </div>
@@ -493,11 +466,13 @@ export default function LeaderDetailPage() {
 
               {l.ward && (
                 <div className="flex items-start gap-3 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="p-1.5 bg-muted rounded-lg flex-shrink-0 border">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground">Ward</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold">Ward</p>
                     <Link to={`/wards/${l.ward.id}`}>
-                      <p className="text-primary hover:underline cursor-pointer">
+                      <p className="text-xs font-bold text-primary hover:underline cursor-pointer mt-0.5">
                         #{l.ward.wardNumber} {l.ward.name}
                       </p>
                     </Link>
@@ -507,62 +482,65 @@ export default function LeaderDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
+          <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+            <CardHeader className="pb-3 px-5 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" /> Classification
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4 px-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[10px] text-muted-foreground">Category</p>
-                  {(() => {
-                    const CatIcon = cInfo.icon;
-                    return (
-                      <Badge variant="secondary" className="text-xs gap-1">
-                        <CatIcon className="h-3.5 w-3.5" /> {cInfo.label}
-                      </Badge>
-                    );
-                  })()}
+                  <p className="text-[10px] text-muted-foreground font-semibold">Category</p>
+                  <div className="mt-1">
+                    {(() => {
+                      const CatIcon = cInfo.icon;
+                      return (
+                        <Badge variant="secondary" className="text-[10px] font-bold gap-1">
+                          <CatIcon className="h-3.5 w-3.5" /> {cInfo.label}
+                        </Badge>
+                      );
+                    })()}
+                  </div>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground">Gender</p>
-                  <p className="text-sm font-medium mt-1">{l.gender || "—"}</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold">Gender</p>
+                  <p className="text-xs font-bold mt-1.5 text-foreground">{l.gender || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground">Relation</p>
-                  {l.relation ? (
-                    <Badge
-                      className={`mt-1 text-xs ${RELATION_STYLES[l.relation] || ""}`}
-                    >
-                      {l.relation}
-                    </Badge>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mt-1">—</p>
-                  )}
-                </div>
-                {/* <div>
-                  <p className="text-[10px] text-muted-foreground">Influence</p>
-                  {infDisplay ? (
-                    <div className="flex items-center gap-2 mt-1">
-                      <span
-                        className={`font-mono text-lg tracking-widest ${infDisplay.color}`}
+                  <p className="text-[10px] text-muted-foreground font-semibold">Relation</p>
+                  <div className="mt-1">
+                    {l.relation ? (
+                      <Badge
+                        className={`text-[10px] font-bold border-none ${RELATION_STYLES[l.relation] || ""}`}
                       >
-                        {infDisplay.dots}
-                      </span>
-                      <span className="text-sm font-medium">{l.influence}</span>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mt-1">—</p>
-                  )}
-                </div> */}
+                        {l.relation}
+                      </Badge>
+                    ) : (
+                      <p className="text-xs font-bold text-muted-foreground">—</p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-semibold">Status</p>
+                  <div className="mt-1">
+                    {l.isActive ? (
+                      <Badge className="text-[10px] font-bold bg-green-500/10 text-green-500 border-none">
+                        Active Account
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive" className="text-[10px] font-bold border-none">
+                        Inactive Account
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Social Links */}
               {(l.facebookUrl || l.twitterUrl || l.instagramUrl) && (
-                <div className="pt-3 border-t">
-                  <p className="text-[10px] text-muted-foreground mb-2">
+                <div className="pt-4 border-t border-border/30">
+                  <p className="text-[10px] text-muted-foreground font-semibold mb-2">
                     Social Profiles
                   </p>
                   <div className="flex gap-2">
@@ -575,7 +553,7 @@ export default function LeaderDetailPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-8 w-8 rounded-lg border-border/60 bg-card hover:bg-muted"
                         >
                           <Facebook className="h-4 w-4 text-blue-600" />
                         </Button>
@@ -590,7 +568,7 @@ export default function LeaderDetailPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-8 w-8 rounded-lg border-border/60 bg-card hover:bg-muted"
                         >
                           <Twitter className="h-4 w-4 text-sky-500" />
                         </Button>
@@ -605,7 +583,7 @@ export default function LeaderDetailPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-9 w-9"
+                          className="h-8 w-8 rounded-lg border-border/60 bg-card hover:bg-muted"
                         >
                           <Instagram className="h-4 w-4 text-pink-500" />
                         </Button>
@@ -617,11 +595,11 @@ export default function LeaderDetailPage() {
 
               {/* Tags */}
               {l.tags && l.tags.length > 0 && (
-                <div className="pt-3 border-t">
-                  <p className="text-[10px] text-muted-foreground mb-2">Tags</p>
+                <div className="pt-4 border-t border-border/30">
+                  <p className="text-[10px] text-muted-foreground font-semibold mb-2">Tags</p>
                   <div className="flex flex-wrap gap-1.5">
                     {l.tags.map((t: string) => (
-                      <Badge key={t} variant="outline" className="text-[10px]">
+                      <Badge key={t} variant="outline" className="text-[10px] font-bold">
                         {t}
                       </Badge>
                     ))}
@@ -634,26 +612,26 @@ export default function LeaderDetailPage() {
 
         {/* ─── Notes ───────────────────────────────────── */}
         {l.notes && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Notes</CardTitle>
+          <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+            <CardHeader className="pb-3 px-5 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Internal Notes</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{l.notes}</p>
+            <CardContent className="p-4 sm:p-5">
+              <p className="text-xs sm:text-sm text-foreground whitespace-pre-wrap leading-relaxed font-medium">{l.notes}</p>
             </CardContent>
           </Card>
         )}
 
         {/* ─── Greeting History ─────────────────────────── */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 sm:px-6 border-b border-border/30">
+            <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <Gift className="h-4 w-4 text-pink-500" /> Greeting History
             </CardTitle>
             <PermissionGate module="leaders" action="update">
               <Button
                 size="sm"
-                className="gap-1.5 bg-pink-600 hover:bg-pink-700"
+                className="gap-1.5 text-xs bg-pink-600 hover:bg-pink-700 font-bold border-none"
                 onClick={openGreet}
               >
                 <Gift className="h-3.5 w-3.5" /> Send Greeting
@@ -663,24 +641,24 @@ export default function LeaderDetailPage() {
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Channel</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Sent By</TableHead>
+                <TableRow className="hover:bg-transparent border-b border-border/50">
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Date</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Channel</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Message</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Sent By</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(l.greetings || []).length === 0 ? (
-                  <TableRow>
+                  <TableRow className="hover:bg-transparent">
                     <TableCell
                       colSpan={6}
-                      className="text-center py-8 text-muted-foreground"
+                      className="text-center py-16 text-muted-foreground text-xs font-semibold"
                     >
-                      <Gift className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No greetings sent yet</p>
+                      <Gift className="h-8 w-8 mx-auto mb-2 opacity-30 text-pink-500" />
+                      <p className="text-sm font-bold text-foreground">No greetings sent yet</p>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -691,34 +669,34 @@ export default function LeaderDetailPage() {
                     const channelInfo =
                       CHANNEL_ICONS[g.channel] || CHANNEL_ICONS.IN_APP || CHANNEL_ICONS.EMAIL;
                     return (
-                      <TableRow key={g.id}>
-                        <TableCell className="text-sm whitespace-nowrap">
+                      <TableRow key={g.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                        <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground whitespace-nowrap">
                           {format(new Date(g.createdAt), "dd MMM yyyy")}
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
                             {format(new Date(g.createdAt), "hh:mm a")}
                           </p>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-4 align-middle">
                           <Badge
                             variant="outline"
-                            className="text-[10px] gap-0.5"
+                            className="text-[10px] font-bold gap-0.5"
                           >
                             {g.type === "BIRTHDAY" && (
                               <Cake className="h-2.5 w-2.5 text-pink-500" />
                             )}
                             {g.type}
                           </Badge>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                          <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">
                             Year {g.year}
                           </p>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-4 align-middle">
                           {(() => {
                             const ChIcon = channelInfo.icon;
                             return (
                               <Badge
                                 variant="secondary"
-                                className="text-[10px] gap-0.5"
+                                className="text-[10px] font-bold gap-0.5"
                               >
                                 <ChIcon className="h-2.5 w-2.5" />{" "}
                                 {channelInfo.label}
@@ -726,25 +704,25 @@ export default function LeaderDetailPage() {
                             );
                           })()}
                         </TableCell>
-                        <TableCell className="max-w-[250px]">
-                          <p className="text-sm truncate">{g.message}</p>
+                        <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground max-w-[250px] truncate">
+                          {g.message}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-4 align-middle">
                           <div
                             className={`flex items-center gap-1.5 ${statusInfo.color}`}
                           >
                             <statusInfo.Icon className="h-3.5 w-3.5" />
-                            <span className="text-xs font-medium">
+                            <span className="text-xs font-bold">
                               {statusInfo.label}
                             </span>
                           </div>
                           {g.sentAt && (
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">
                               {format(new Date(g.sentAt), "dd MMM, hh:mm a")}
                             </p>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                           {g.sentBy || "—"}
                         </TableCell>
                       </TableRow>
@@ -757,7 +735,7 @@ export default function LeaderDetailPage() {
         </Card>
 
         {/* Metadata */}
-        <div className="text-xs text-muted-foreground text-center pb-4">
+        <div className="text-[10px] font-bold text-muted-foreground text-center pb-4">
           Added {format(new Date(l.createdAt), "dd MMM yyyy")} • Last updated{" "}
           {format(new Date(l.updatedAt), "dd MMM yyyy, hh:mm a")}
         </div>

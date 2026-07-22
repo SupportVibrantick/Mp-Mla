@@ -310,66 +310,66 @@ export default function ReportsPage() {
 
         {/* Data Activity Stats */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
-            <Card className="border-blue-200 dark:border-blue-900">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 no-print">
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1.5 mb-1">
                   <ArrowUpRight className="h-4 w-4 text-blue-500" />
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
                     Total Exports
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <p className="text-2xl font-extrabold text-blue-600 dark:text-blue-400 font-mono mt-0.5">
                   {stats.totalExports}
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-green-200 dark:border-green-900">
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1.5 mb-1">
                   <ArrowDownRight className="h-4 w-4 text-green-500" />
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
                     Total Imports
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <p className="text-2xl font-extrabold text-green-600 dark:text-green-400 font-mono mt-0.5">
                   {stats.totalImports}
                 </p>
               </CardContent>
             </Card>
-            <Card className="col-span-2">
+            <Card className="col-span-2 border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-4">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-muted-foreground">
+                <div className="flex items-center gap-1.5 mb-2 border-b border-border/30 pb-1.5">
+                  <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-[10px] tracking-wider uppercase font-bold text-muted-foreground">
                     Recent Activity
                   </span>
                 </div>
                 <div className="space-y-1.5 max-h-[80px] overflow-y-auto">
                   {stats.recentActivity.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground font-semibold">
                       No activity yet
                     </p>
                   ) : (
                     stats.recentActivity.slice(0, 4).map((a) => (
                       <div
                         key={a.id}
-                        className="flex items-center justify-between text-xs"
+                        className="flex items-center justify-between text-xs py-0.5 font-semibold text-foreground/80"
                       >
                         <span className="flex items-center gap-1.5">
                           <Badge
                             variant={
                               a.action === "EXPORT" ? "default" : "secondary"
                             }
-                            className="text-[9px] px-1.5 py-0"
+                            className="text-[8px] font-bold px-1.5 py-0 border-none"
                           >
                             {a.action}
                           </Badge>
-                          <span className="text-muted-foreground capitalize">
+                          <span className="text-muted-foreground capitalize font-bold text-[11px]">
                             {getActivityModuleLabel(a.module)}
                           </span>
                         </span>
-                        <span className="text-muted-foreground">
+                        <span className="text-muted-foreground text-[11px]">
                           {a.userName} • {a.recordCount} records
                         </span>
                       </div>
@@ -391,14 +391,14 @@ export default function ReportsPage() {
                 key={r.id}
                 onClick={() => setActive(r.id)}
                 className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all duration-200",
+                  "flex flex-col items-center gap-2.5 p-4 rounded-2xl border text-center transition-all duration-300",
                   isAct
-                    ? "bg-primary/10 border-primary/40 text-primary shadow-sm"
-                    : "bg-card border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-primary/10 border-primary/40 text-primary shadow-sm scale-[1.02]"
+                    : "bg-card border-border/50 text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                 )}
               >
                 <Icon className="h-5 w-5" />
-                <span className="text-[10px] font-semibold leading-tight">
+                <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
                   {r.label}
                 </span>
               </button>
@@ -407,18 +407,18 @@ export default function ReportsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="no-print">
+        <Card className="no-print border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Filter className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <Filter className="h-4 w-4 opacity-75" />
                 Filters
               </div>
               <Select
                 value={dateRange}
                 onValueChange={(v) => setDateRange(v as DateRange)}
               >
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-40 bg-background/50 border-muted-foreground/20 rounded-xl text-xs h-9">
                   <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
@@ -434,7 +434,7 @@ export default function ReportsPage() {
                 <div className="flex gap-2">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-xs">
+                      <Button variant="outline" size="sm" className="text-xs rounded-xl border-border/60 bg-card h-9">
                         {customFrom
                           ? format(customFrom, "dd MMM yyyy")
                           : "From"}
@@ -450,7 +450,7 @@ export default function ReportsPage() {
                   </Popover>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-xs">
+                      <Button variant="outline" size="sm" className="text-xs rounded-xl border-border/60 bg-card h-9">
                         {customTo ? format(customTo, "dd MMM yyyy") : "To"}
                       </Button>
                     </PopoverTrigger>
@@ -465,7 +465,7 @@ export default function ReportsPage() {
                 </div>
               )}
               <Select value={wardFilter} onValueChange={setWardFilter}>
-                <SelectTrigger className="w-44">
+                <SelectTrigger className="w-44 bg-background/50 border-muted-foreground/20 rounded-xl text-xs h-9">
                   <Map className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
@@ -478,7 +478,7 @@ export default function ReportsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="ml-auto text-xs text-muted-foreground">
+              <span className="ml-auto text-xs font-bold text-muted-foreground">
                 {format(interval.start, "dd MMM yyyy")} —{" "}
                 {format(interval.end, "dd MMM yyyy")}
               </span>
@@ -669,49 +669,49 @@ export default function ReportsPage() {
                     </CardContent>
                   </Card>
                 )}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">
+                <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                  <CardHeader className="pb-3 px-5 border-b border-border/30">
+                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       Public Request Details ({d.rows.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Ticket</TableHead>
-                          <TableHead>Subject</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Ward</TableHead>
-                          <TableHead>Priority</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
+                        <TableRow className="hover:bg-transparent border-b border-border/50">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ticket</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Subject</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Category</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Priority</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Date</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {d.rows.slice(0, 100).map((g: any) => (
-                          <TableRow key={g.id}>
-                            <TableCell className="font-mono text-xs">
+                          <TableRow key={g.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="font-mono text-xs py-4 px-4 font-bold text-primary">
                               {g.ticketNumber}
                             </TableCell>
-                            <TableCell className="max-w-[180px] truncate text-sm">
+                            <TableCell className="max-w-[180px] truncate text-xs sm:text-sm py-4 px-4 font-bold text-foreground">
                               {g.subject || g.category}
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {g.category}
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-foreground">
                               #{g.ward?.wardNumber} {g.ward?.name}
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-[10px]">
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Badge variant="outline" className="text-[10px] font-bold">
                                 {g.priority}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <Badge className="text-[10px]">{g.status}</Badge>
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Badge className="text-[10px] font-bold">{g.status}</Badge>
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {format(new Date(g.createdAt), "dd MMM yyyy")}
                             </TableCell>
                           </TableRow>
@@ -823,58 +823,58 @@ export default function ReportsPage() {
                     </CardContent>
                   </Card>
                 </div>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">
+                <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                  <CardHeader className="pb-3 px-5 border-b border-border/30">
+                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       Projects ({d.rows.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Code</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Ward</TableHead>
-                          <TableHead>Dept</TableHead>
-                          <TableHead className="text-right">Budget</TableHead>
-                          <TableHead className="text-center">
+                        <TableRow className="hover:bg-transparent border-b border-border/50">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Code</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Name</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Dept</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Budget</TableHead>
+                          <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Progress
                           </TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {d.rows.slice(0, 100).map((p: any) => (
-                          <TableRow key={p.id}>
-                            <TableCell className="font-mono text-xs">
+                          <TableRow key={p.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="font-mono text-xs py-4 px-4 font-bold text-primary">
                               {p.projectCode}
                             </TableCell>
-                            <TableCell className="max-w-[180px] truncate">
+                            <TableCell className="max-w-[180px] truncate text-xs sm:text-sm py-4 px-4 font-bold text-foreground">
                               {p.name}
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-foreground">
                               #{p.ward?.wardNumber} {p.ward?.name}
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {p.departmentName}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-xs">
+                            <TableCell className="text-right font-mono text-xs py-4 px-4 font-bold">
                               {fmt(p.budgetSanctioned)}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center py-4 px-4 align-middle">
                               <div className="flex items-center gap-2 justify-center">
                                 <Progress
                                   value={p.completionPercent}
                                   className="h-1.5 w-14"
                                 />
-                                <span className="text-xs">
+                                <span className="text-xs font-bold">
                                   {p.completionPercent}%
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <Badge className="text-[10px]">{p.status}</Badge>
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Badge className="text-[10px] font-bold">{p.status}</Badge>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -928,77 +928,77 @@ export default function ReportsPage() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
                   <CardContent className="p-0">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Ward</TableHead>
-                          <TableHead className="text-right">
+                        <TableRow className="hover:bg-transparent border-b border-border/50">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Population
                           </TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead className="text-center">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                          <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Public Requests
                           </TableHead>
-                          <TableHead className="text-center">
+                          <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Projects
                           </TableHead>
-                          <TableHead className="text-center">
+                          <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Public Facilities
                           </TableHead>
-                          <TableHead className="text-right">
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Project Budget
                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {d.wards.map((w: any) => (
-                          <TableRow key={w.id}>
-                            <TableCell className="font-medium">
+                          <TableRow key={w.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="font-bold text-xs sm:text-sm py-4 px-4 text-foreground">
                               #{w.wardNumber} {w.name}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-xs">
+                            <TableCell className="text-right font-mono text-xs py-4 px-4 font-semibold text-foreground/80">
                               {w.totalPopulation.toLocaleString()}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-4 px-4 align-middle">
                               <Badge
                                 variant="secondary"
-                                className="text-[10px]"
+                                className="text-[10px] font-bold"
                               >
                                 {w.areaType}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center font-bold text-xs text-foreground/80 py-4 px-4">
                               {w.grievances}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center font-bold text-xs text-foreground/80 py-4 px-4">
                               {w.projects}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center font-bold text-xs text-foreground/80 py-4 px-4">
                               {w.institutions}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-xs">
+                            <TableCell className="text-right font-mono text-xs py-4 px-4 font-bold text-foreground">
                               {fmt(w.projectBudget)}
                             </TableCell>
                           </TableRow>
                         ))}
-                        <TableRow className="bg-muted/50 font-semibold">
-                          <TableCell>Total ({d.wards.length} wards)</TableCell>
-                          <TableCell className="text-right font-mono text-xs">
+                        <TableRow className="bg-muted/30 font-bold hover:bg-muted/30 border-t border-border/50">
+                          <TableCell className="py-4 px-4 text-xs sm:text-sm text-foreground">Total ({d.wards.length} wards)</TableCell>
+                          <TableCell className="text-right font-mono text-xs py-4 px-4 text-foreground">
                             {d.totals.population.toLocaleString()}
                           </TableCell>
-                          <TableCell />
-                          <TableCell className="text-center">
+                          <TableCell className="py-4 px-4" />
+                          <TableCell className="text-center py-4 px-4 text-foreground">
                             {d.totals.grievances}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center py-4 px-4 text-foreground">
                             {d.totals.projects}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center py-4 px-4 text-foreground">
                             {d.totals.institutions}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs">
+                          <TableCell className="text-right font-mono text-xs py-4 px-4 text-foreground">
                             {fmt(d.totals.budget)}
                           </TableCell>
                         </TableRow>
@@ -1199,35 +1199,35 @@ export default function ReportsPage() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
                   <CardContent className="p-0">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Ward</TableHead>
-                          <TableHead>Contact</TableHead>
-                          <TableHead>Status</TableHead>
+                        <TableRow className="hover:bg-transparent border-b border-border/50">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Name</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Category</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Contact</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {d.rows.map((i: any) => (
-                          <TableRow key={i.id}>
-                            <TableCell className="font-medium">
+                          <TableRow key={i.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="font-bold text-xs sm:text-sm py-4 px-4 text-foreground">
                               {i.name}
                             </TableCell>
-                            <TableCell className="text-xs capitalize">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground capitalize">
                               {i.category.replace(/_/g, " ")}
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-foreground">
                               #{i.ward?.wardNumber} {i.ward?.name}
                             </TableCell>
-                            <TableCell className="font-mono text-xs">
+                            <TableCell className="font-mono text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {i.contactNo || "—"}
                             </TableCell>
-                            <TableCell>
-                              <Badge className="text-[10px]">{i.status}</Badge>
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Badge className="text-[10px] font-bold">{i.status}</Badge>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1304,51 +1304,52 @@ export default function ReportsPage() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
                   <CardContent className="p-0">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Ward</TableHead>
-                          <TableHead className="text-right">
+                        <TableRow className="hover:bg-transparent border-b border-border/50">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Population
                           </TableHead>
-                          <TableHead className="text-right">Male</TableHead>
-                          <TableHead className="text-right">Female</TableHead>
-                          <TableHead className="text-right">
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Male</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Female</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                             Households
                           </TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Zone</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Zone</TableHead>
                         </TableRow>
                       </TableHeader>
+                      <TableHeader />
                       <TableBody>
                         {d.wards.map((w: any) => (
-                          <TableRow key={w.id}>
-                            <TableCell className="font-medium">
+                          <TableRow key={w.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="font-bold text-xs sm:text-sm py-4 px-4 text-foreground">
                               #{w.wardNumber} {w.name}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-xs">
+                            <TableCell className="text-right font-mono text-xs py-4 px-4 font-semibold text-foreground/80">
                               {w.totalPopulation.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-xs">
+                            <TableCell className="text-right font-mono text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {w.totalMale.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-xs">
+                            <TableCell className="text-right font-mono text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {w.totalFemale.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-xs">
+                            <TableCell className="text-right font-mono text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {w.totalHouseholds.toLocaleString()}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-4 px-4 align-middle">
                               <Badge
                                 variant="secondary"
-                                className="text-[10px]"
+                                className="text-[10px] font-bold"
                               >
                                 {w.areaType}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {w.zone || "—"}
                             </TableCell>
                           </TableRow>

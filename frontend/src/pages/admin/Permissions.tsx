@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { cn } from "@/lib/utils";
 
 const ROLE_META: Record<
   string,
@@ -171,24 +172,23 @@ export default function PermissionsOverview() {
         {/* ─── Header ────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              Roles & Permissions
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2.5 text-foreground">
+              <Shield className="h-7 w-7 text-primary" /> Roles & Permissions
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Configure the default permission matrix for each role.
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
+              Configure the default baseline permission matrix for each user role
             </p>
           </div>
           {isDirty[activeTab] && activeTab !== "comparison" && (
             <Button
               onClick={() => handleSave(activeTab)}
               disabled={updateMutation.isPending}
-              className="shadow-lg animate-in fade-in slide-in-from-right-4"
+              className="shadow-md rounded-xl text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 font-bold h-9 animate-in fade-in slide-in-from-right-4"
             >
               {updateMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 h-3.5 w-3.5" />
               )}
               Save {ROLE_META[activeTab]?.label} Defaults
             </Button>
@@ -200,19 +200,25 @@ export default function PermissionsOverview() {
           {summary.map((s: any) => {
             const meta = ROLE_META[s.role];
             if (!meta) return null;
+            const isSelected = activeTab === s.role;
             return (
               <Card
                 key={s.role}
-                className={`p-5 cursor-pointer transition-all ${activeTab === s.role ? "ring-2 ring-primary bg-primary/5" : "hover:bg-muted/50"}`}
+                className={cn(
+                  "p-5 cursor-pointer transition-all duration-300 border bg-card rounded-2xl shadow-sm hover:shadow-md",
+                  isSelected
+                    ? "border-primary/50 bg-primary/5 scale-[1.01]"
+                    : "border-border/50 hover:bg-muted/30"
+                )}
                 onClick={() => setActiveTab(s.role)}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className={`font-bold ${meta.color}`}>{meta.label}</h3>
-                  <Badge variant="outline" className="text-xs">
-                    {s.totalPermissions} perms
+                  <h3 className={`font-extrabold text-sm sm:text-base ${meta.color}`}>{meta.label}</h3>
+                  <Badge variant="secondary" className="text-[10px] font-bold border-none px-2 py-0.5">
+                    {s.totalPermissions} permissions
                   </Badge>
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
                   {meta.description}
                 </p>
               </Card>
@@ -223,19 +229,19 @@ export default function PermissionsOverview() {
         {/* ─── Permission Matrix ─────────────────────── */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
-            <TabsList>
+            <TabsList className="bg-muted/40 p-1 rounded-xl border border-border/50">
               {Object.entries(ROLE_META).map(([role, meta]) => (
-                <TabsTrigger key={role} value={role} className="px-4">
+                <TabsTrigger key={role} value={role} className="px-4 py-1.5 rounded-lg text-xs font-bold transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   {meta.label}
                 </TabsTrigger>
               ))}
-              <TabsTrigger value="comparison" className="px-4">
-                <Users className="h-3.5 w-3.5 mr-1.5" /> Comparison
+              <TabsTrigger value="comparison" className="px-4 py-1.5 rounded-lg text-xs font-bold transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Users className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Comparison
               </TabsTrigger>
             </TabsList>
 
             {isDirty[activeTab] && (
-              <div className="flex items-center gap-2 text-xs text-amber-600 font-medium bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
+              <div className="flex items-center gap-2 text-xs text-amber-600 font-bold bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
                 <AlertCircle className="h-3.5 w-3.5" />
                 Unsaved changes for {ROLE_META[activeTab]?.label}
               </div>
@@ -246,17 +252,15 @@ export default function PermissionsOverview() {
           {Object.entries(ROLE_META).map(([role, meta]) => (
             <TabsContent key={role} value={role}>
               {role === "SYSTEM_ADMIN" && (
-                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm flex items-start gap-3">
-                  <Info className="h-5 w-5 shrink-0 mt-0.5" />
-                  <p>
-                    <strong>Note:</strong> System Admins typically have all
-                    permissions granted by default to ensure no administrative
-                    lockouts occur.
-                  </p>
+                <div className="mb-5 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-blue-700 dark:text-blue-300 text-xs sm:text-sm flex items-start gap-3">
+                  <Info className="h-5 w-5 shrink-0 mt-0.5 text-blue-500" />
+                  <div>
+                    <span className="font-bold">Administrative Note:</span> System Admins have full access and default override privileges to prevent accidental lockouts from core backend models.
+                  </div>
                 </div>
               )}
 
-              <div className="grid gap-4">
+              <div className="grid gap-6">
                 {Object.entries(groupedPerms).map(([module, perms]) => {
                   const roleSet = rolePermissions[role] || new Set();
                   const grantedInModule = perms.filter((p) =>
@@ -265,14 +269,14 @@ export default function PermissionsOverview() {
                   const allGranted = grantedInModule === perms.length;
 
                   return (
-                    <Card key={module} className="overflow-hidden">
-                      <div className="bg-muted/40 px-5 py-3 border-b flex items-center justify-between">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                    <Card key={module} className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+                      <div className="bg-muted/20 px-5 py-3.5 border-b border-border/50 flex items-center justify-between">
+                        <h3 className="font-bold text-xs sm:text-sm text-foreground flex items-center gap-2">
                           <Shield className="h-4 w-4 text-primary" />
                           {MODULE_LABELS[module] || module}
                         </h3>
                         <div className="flex items-center gap-4">
-                          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                          <span className="text-[10px] text-muted-foreground uppercase font-extrabold tracking-wider">
                             {grantedInModule} / {perms.length} Granted
                           </span>
                           <Switch
@@ -293,24 +297,27 @@ export default function PermissionsOverview() {
                         </div>
                       </div>
                       <CardContent className="p-0">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 divide-border/30">
                           {perms.map((perm) => {
                             const isGranted = roleSet.has(perm.id);
                             return (
                               <div
                                 key={perm.id}
-                                className={`flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-muted/20 ${isGranted ? "" : "bg-muted/5 opacity-80"}`}
+                                className={cn(
+                                  "flex items-center justify-between px-5 py-4 transition-colors hover:bg-muted/10 border-b border-border/30",
+                                  isGranted ? "" : "bg-muted/5 opacity-80"
+                                )}
                               >
-                                <div className="flex items-center gap-3 min-w-0">
+                                <div className="flex items-center gap-3 min-w-0 mr-4">
                                   <span className="text-sm shrink-0">
                                     {ACTION_ICONS[perm.action] || "🔧"}
                                   </span>
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium capitalize truncate">
+                                    <p className="text-xs sm:text-sm font-bold text-foreground capitalize truncate">
                                       {perm.action}
                                     </p>
                                     {perm.description && (
-                                      <p className="text-[10px] text-muted-foreground truncate">
+                                      <p className="text-[10px] font-semibold text-muted-foreground truncate leading-normal mt-0.5">
                                         {perm.description}
                                       </p>
                                     )}
@@ -337,43 +344,45 @@ export default function PermissionsOverview() {
 
           {/* ─── Comparison Tab ──────────────────────── */}
           <TabsContent value="comparison">
-            <Card className="overflow-hidden">
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-muted/40">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground sticky left-0 bg-muted/40 z-10 w-48">
+                    <tr className="hover:bg-transparent border-b border-border/50">
+                      <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 sticky left-0 z-10 w-48">
                         Module / Action
                       </th>
                       {Object.entries(ROLE_META).map(([role, meta]) => (
                         <th
                           key={role}
-                          className={`px-4 py-3 text-center font-medium ${meta.color}`}
+                          className={`h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold py-4 bg-muted/20 ${meta.color}`}
                         >
                           {meta.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border/40">
                     {Object.entries(groupedPerms).map(([module, perms]) =>
                       perms.map((perm, idx) => (
                         <tr
                           key={perm.id}
-                          className={`border-b hover:bg-muted/20 ${idx === 0 ? "border-t-2 border-primary/10" : ""}`}
+                          className={cn(
+                            "hover:bg-muted/10 transition-colors border-b border-border/30",
+                            idx === 0 ? "border-t border-border/50" : ""
+                          )}
                         >
-                          <td className="px-4 py-2.5 sticky left-0 bg-background z-10">
+                          <td className="px-4 py-3 sticky left-0 bg-background z-10 border-r border-border/30 font-semibold text-xs text-muted-foreground">
                             <div className="flex items-center gap-2">
                               {idx === 0 && (
                                 <Badge
-                                  variant="secondary"
-                                  className="text-[9px] px-1.5 py-0 shrink-0 bg-primary/10 text-primary border-none"
+                                  className="text-[9px] font-bold px-1.5 py-0 bg-primary/10 text-primary border-none"
                                 >
                                   {MODULE_LABELS[module] || module}
                                 </Badge>
                               )}
                               {idx > 0 && <div className="w-[70px]" />}
-                              <span className="text-xs font-medium capitalize text-muted-foreground">
+                              <span className="text-[11px] font-bold capitalize text-foreground/80">
                                 {perm.action}
                               </span>
                             </div>
@@ -383,12 +392,12 @@ export default function PermissionsOverview() {
                             return (
                               <td
                                 key={role}
-                                className="px-4 py-2.5 text-center"
+                                className="px-4 py-3 text-center align-middle"
                               >
                                 {has ? (
-                                  <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500 mx-auto" />
                                 ) : (
-                                  <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                                  <XCircle className="h-4.5 w-4.5 text-muted-foreground/30 mx-auto" />
                                 )}
                               </td>
                             );
@@ -404,14 +413,14 @@ export default function PermissionsOverview() {
         </Tabs>
 
         {/* ─── Info ──────────────────────────────────── */}
-        <Card className="p-4 border-dashed border-primary/30 bg-primary/5">
+        <Card className="p-5 border border-primary/20 bg-primary/5 rounded-2xl shadow-sm">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div className="text-sm">
-              <p className="font-semibold text-primary mb-1">
+            <div className="text-xs sm:text-sm">
+              <p className="font-extrabold text-primary mb-1">
                 About Role Default Permissions
               </p>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground font-semibold leading-relaxed">
                 Changes made here affect <strong>all users</strong> with the
                 selected role, unless they have specific permission overrides.
                 Use this matrix to define the baseline access for MLA/MPs and

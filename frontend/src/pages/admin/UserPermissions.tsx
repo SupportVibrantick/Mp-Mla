@@ -280,26 +280,26 @@ export default function UserPermissions() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9 rounded-full"
               onClick={() => setLocation("/admin/users")}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary" />
-                Permissions
+              <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2.5 text-foreground">
+                <Shield className="h-7 w-7 text-primary" /> User Override Rules
               </h1>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <div className="flex items-center gap-2 mt-1 flex-wrap font-semibold text-xs sm:text-sm">
                 <User className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-foreground/90">
                   {user.name}
                 </span>
                 <span className="text-muted-foreground">•</span>
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="secondary" className="text-[10px] font-bold border-none px-2 py-0.5 bg-blue-500/10 text-blue-500">
                   {ROLE_LABELS[user.role] || user.role}
                 </Badge>
                 <span className="text-muted-foreground">•</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground font-mono">
                   {user.email}
                 </span>
               </div>
@@ -311,23 +311,25 @@ export default function UserPermissions() {
               variant="outline"
               onClick={resetAll}
               disabled={overrideCount === 0}
+              className="rounded-xl text-xs font-bold h-9 border-border/60"
             >
-              <RotateCcw className="mr-2 h-4 w-4" />
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
               Reset All ({overrideCount})
             </Button>
             <Button
               onClick={handleSave}
               disabled={!hasChanges || updateMutation.isPending}
+              className="rounded-xl text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 font-bold h-9 shadow-sm"
             >
               {updateMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Permissions
+                  <Save className="mr-1.5 h-3.5 w-3.5" />
+                  Save Override Rules
                 </>
               )}
             </Button>
@@ -335,39 +337,40 @@ export default function UserPermissions() {
         </div>
 
         {/* ─── Legend ───────────────────────────────── */}
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Info className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">How Permissions Work</span>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Each permission starts with the <strong>role default</strong> (what{" "}
-            {ROLE_LABELS[user.role] || user.role} gets automatically). You can{" "}
-            <strong>override</strong> individual permissions for this specific
-            user. Overrides are highlighted in amber.
-          </p>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-green-500" />
-              Override: Granted
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-red-500" />
-              Override: Revoked
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-green-500/30 border border-green-500/50" />
-              Role Default (granted)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-muted border border-border" />
-              Not granted
-            </span>
-          </div>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="h-4.5 w-4.5 text-primary opacity-80" />
+              <span className="text-xs sm:text-sm font-bold text-foreground">Rule Override Policy Guide</span>
+            </div>
+            <p className="text-xs text-muted-foreground font-semibold mb-4 leading-relaxed">
+              Baseline permission rules are inherited from the <strong>{ROLE_LABELS[user.role] || user.role}</strong> role defaults.
+              You may toggle individual module switches to explicitly grant or revoke permissions for this specific user.
+              Override rules will be highlighted with amber background fills.
+            </p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold">
+              <span className="flex items-center gap-1.5 text-emerald-600">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-sm" />
+                Override: Explicitly Granted
+              </span>
+              <span className="flex items-center gap-1.5 text-rose-500">
+                <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shadow-sm" />
+                Override: Explicitly Revoked
+              </span>
+              <span className="flex items-center gap-1.5 text-foreground/80">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+                Default (Granted)
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="h-2.5 w-2.5 rounded-full bg-muted border border-border/60" />
+                Default (Denied)
+              </span>
+            </div>
+          </CardContent>
         </Card>
 
         {/* ─── Permission Modules ──────────────────── */}
-        <div className="grid gap-4">
+        <div className="grid gap-6">
           {Object.entries(groupedPermissions).map(([module, perms]) => {
             // Count how many are effectively granted in this module
             const grantedCount = perms.filter((p) => {
@@ -376,22 +379,22 @@ export default function UserPermissions() {
             }).length;
 
             return (
-              <Card key={module} className="overflow-hidden">
+              <Card key={module} className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
                 {/* Module Header */}
-                <div className="bg-muted/40 px-5 py-3 border-b flex items-center justify-between">
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
+                <div className="bg-muted/20 px-5 py-3.5 border-b border-border/50 flex items-center justify-between">
+                  <h3 className="font-bold text-xs sm:text-sm text-foreground flex items-center gap-2">
                     <Shield className="h-4 w-4 text-primary" />
                     {MODULE_LABELS[module] || module}
                   </h3>
                   <Badge
-                    variant="outline"
-                    className={`text-[10px] ${
+                    className={cn(
+                      "text-[9px] font-bold border-none px-2 py-0.5",
                       grantedCount === perms.length
-                        ? "border-green-300 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-400 dark:bg-green-950/20"
+                        ? "text-emerald-700 bg-emerald-500/10 dark:text-emerald-400"
                         : grantedCount === 0
-                          ? "text-muted-foreground"
-                          : "border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:bg-amber-950/20"
-                    }`}
+                          ? "text-muted-foreground bg-muted/50"
+                          : "text-amber-700 bg-amber-500/10 dark:text-amber-400"
+                    )}
                   >
                     {grantedCount} / {perms.length} granted
                   </Badge>
@@ -399,7 +402,7 @@ export default function UserPermissions() {
 
                 {/* Permission Rows */}
                 <CardContent className="p-0">
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/30">
                     {perms.map((perm) => (
                       <PermissionRow
                         key={perm.permissionId}
@@ -417,29 +420,29 @@ export default function UserPermissions() {
 
         {/* ─── Sticky Save Bar ─────────────────────── */}
         {hasChanges && (
-          <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-4 z-50">
+          <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border/50 p-4 z-50 shadow-lg animate-in fade-in slide-in-from-bottom-4">
             <div className="max-w-5xl mx-auto flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                You have <strong>{overrideCount}</strong> permission
-                override(s). Don't forget to save.
+              <p className="text-xs sm:text-sm font-semibold text-foreground/80">
+                You have changed <strong>{overrideCount}</strong> permission rules. Remember to save your overrides.
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={resetAll}>
+                <Button variant="outline" onClick={resetAll} className="rounded-xl text-xs font-bold border-border/60">
                   Reset
                 </Button>
                 <Button
                   onClick={handleSave}
                   disabled={updateMutation.isPending}
+                  className="rounded-xl text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 font-bold h-9 shadow-sm"
                 >
                   {updateMutation.isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Permissions
+                      <Save className="mr-1.5 h-3.5 w-3.5" />
+                      Save Overrides
                     </>
                   )}
                 </Button>
@@ -473,25 +476,25 @@ function PermissionRow({ perm, state, onToggle }: PermissionRowProps) {
 
   return (
     <div
-      className={`flex items-center justify-between px-5 py-3 transition-colors ${
-        isOverride ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/20"
-      }`}
+      className={cn(
+        "flex items-center justify-between px-5 py-4 transition-colors",
+        isOverride ? "bg-amber-500/5 dark:bg-amber-950/10" : "hover:bg-muted/10"
+      )}
     >
       {/* Left: icon + label + badges */}
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-base shrink-0">
+      <div className="flex items-center gap-3 min-w-0 mr-4">
+        <span className="text-sm shrink-0">
           {ACTION_ICONS[perm.action] || "🔧"}
         </span>
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium capitalize">
+            <span className="text-xs sm:text-sm font-bold text-foreground capitalize">
               {perm.action}
             </span>
 
             {state === "granted" && (
               <Badge
-                variant="outline"
-                className="text-[9px] px-1.5 py-0 border-green-300 text-green-700 bg-green-50 dark:border-green-700 dark:text-green-400 dark:bg-green-950/30"
+                className="text-[9px] font-bold px-1.5 py-0 border-none bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
               >
                 OVERRIDE: GRANTED
               </Badge>
@@ -499,8 +502,7 @@ function PermissionRow({ perm, state, onToggle }: PermissionRowProps) {
 
             {state === "denied" && (
               <Badge
-                variant="outline"
-                className="text-[9px] px-1.5 py-0 border-red-300 text-red-700 bg-red-50 dark:border-red-700 dark:text-red-400 dark:bg-red-950/30"
+                className="text-[9px] font-bold px-1.5 py-0 border-none bg-rose-500/10 text-rose-600 dark:text-rose-400"
               >
                 OVERRIDE: REVOKED
               </Badge>
@@ -508,8 +510,7 @@ function PermissionRow({ perm, state, onToggle }: PermissionRowProps) {
 
             {state === "default-granted" && (
               <Badge
-                variant="outline"
-                className="text-[9px] px-1.5 py-0 text-muted-foreground"
+                className="text-[9px] font-bold px-1.5 py-0 border-none bg-muted text-muted-foreground"
               >
                 ROLE DEFAULT
               </Badge>
@@ -517,7 +518,7 @@ function PermissionRow({ perm, state, onToggle }: PermissionRowProps) {
           </div>
 
           {perm.description && (
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-[10px] font-semibold text-muted-foreground mt-0.5 leading-normal">
               {perm.description}
             </p>
           )}
@@ -527,14 +528,14 @@ function PermissionRow({ perm, state, onToggle }: PermissionRowProps) {
       {/* Right: indicator dot + switch */}
       <div className="flex items-center gap-3 shrink-0">
         <div
-          className={`h-2.5 w-2.5 rounded-full transition-colors ${
+          className={`h-2 w-2 rounded-full transition-colors ${
             state === "granted"
-              ? "bg-green-500"
+              ? "bg-emerald-500"
               : state === "denied"
-                ? "bg-red-500"
+                ? "bg-rose-500"
                 : state === "default-granted"
-                  ? "bg-green-500/30 border border-green-500/50"
-                  : "bg-muted border border-border"
+                  ? "bg-emerald-500/30 border border-emerald-500/50"
+                  : "bg-muted border border-border/60"
           }`}
         />
         <Switch checked={isEffectivelyGranted} onCheckedChange={onToggle} />

@@ -361,6 +361,12 @@ export const subscriptionsApi = {
     api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/cancel`),
   listInvoices: (params?: any) => api.get("/platform/subscriptions/invoices", { params }),
   listRenewals: (params?: any) => api.get("/platform/subscriptions/renewals", { params }),
+  listUpgradeRequests: (params?: any) =>
+    api.get("/platform/subscriptions/upgrade-requests", { params }),
+  approveUpgradeRequest: (id: string, data?: any) =>
+    api.post(`/platform/subscriptions/upgrade-requests/${id}/approve`, data || {}),
+  rejectUpgradeRequest: (id: string, data?: any) =>
+    api.post(`/platform/subscriptions/upgrade-requests/${id}/reject`, data || {}),
 };
 
 export const modulesApi = {

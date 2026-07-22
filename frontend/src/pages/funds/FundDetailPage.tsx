@@ -175,22 +175,22 @@ export default function FundDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
             <Link to="/funds">
-              <Button variant="ghost" size="icon" className="h-9 w-9 mt-1">
+              <Button variant="ghost" size="icon" className="h-9 w-9 mt-1 rounded-full border border-border/40 hover:bg-muted/80">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div
                   className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: info.color }}
                 />
-                <h1 className="text-2xl font-bold">{info.label}</h1>
-                <Badge variant="outline" className="text-xs">
+                <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{info.label}</h1>
+                <Badge variant="outline" className="text-xs font-bold bg-muted/30 border-border/60">
                   FY {f.financialYear}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
                 {info.desc} • {f.transactions?.length || 0} transactions
               </p>
             </div>
@@ -200,7 +200,7 @@ export default function FundDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1 text-blue-600"
+                className="gap-1 text-xs text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 border-blue-200/50"
                 onClick={() => openTxn("ALLOCATION")}
               >
                 📥 Add Allocation
@@ -208,7 +208,7 @@ export default function FundDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1 text-amber-600"
+                className="gap-1 text-xs text-amber-600 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 border-amber-200/50"
                 onClick={() => openTxn("RELEASE")}
               >
                 💰 Add Release
@@ -216,20 +216,11 @@ export default function FundDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1 text-green-600"
+                className="gap-1 text-xs text-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/10 border-green-200/50"
                 onClick={() => openTxn("UTILIZATION")}
               >
                 📤 Add Utilization
               </Button>
-              {/* <Button
-                variant="outline"
-                size="sm"
-                className="gap-1"
-                onClick={openEdit}
-              >
-                <Edit className="h-3.5 w-3.5" />
-                Edit Totals
-              </Button> */}
             </PermissionGate>
             <PermissionGate module="funds" action="delete">
               <AlertDialog>
@@ -237,9 +228,9 @@ export default function FundDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-destructive border-destructive/30"
+                    className="text-destructive border-destructive/30 hover:bg-destructive/10 h-9 px-3 rounded-lg"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -268,8 +259,8 @@ export default function FundDetailPage() {
         </div>
 
         {/* Budget Flow */}
-        <Card>
-          <CardContent className="p-5">
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+          <CardContent className="p-6">
             <div className="grid md:grid-cols-3 gap-6">
               {[
                 {
@@ -291,37 +282,37 @@ export default function FundDetailPage() {
                   pct: f.utilizationPct,
                 },
               ].map((b) => (
-                <div key={b.label} className="text-center">
-                  <p className="text-xs text-muted-foreground mb-1">
+                <div key={b.label} className="text-center space-y-1.5">
+                  <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
                     {b.label}
                   </p>
                   <p
-                    className="text-3xl font-bold max-w-full break-all leading-tight"
+                    className="text-2xl font-extrabold max-w-full break-all leading-tight font-mono"
                     style={{ color: b.color }}
                   >
                     {formatCurrency(b.value)}
                   </p>
-                  <Progress value={b.pct} className="h-2 mt-2" />
-                  <p className="text-[10px] text-muted-foreground mt-1">
+                  <Progress value={b.pct} className="h-1.5" />
+                  <p className="text-[10px] text-muted-foreground font-medium">
                     {b.pct}% of allocated
                   </p>
                 </div>
               ))}
             </div>
-            <div className="flex justify-center gap-6 mt-4 pt-4 border-t">
+            <div className="flex justify-center gap-8 mt-6 pt-5 border-t border-border/30">
               <div className="text-center">
-                <p className="text-muted-foreground text-xs">Unreleased</p>
-                <p className="font-mono font-bold text-red-600">
+                <p className="text-muted-foreground text-[10px] tracking-wider uppercase font-semibold">Unreleased</p>
+                <p className="font-mono text-base font-bold text-red-600 mt-0.5">
                   {formatCurrency(
                     Math.max(0, f.totalAllocated - f.totalReleased),
                   )}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-[10px] tracking-wider uppercase font-semibold">
                   Available to Spend
                 </p>
-                <p className="font-mono font-bold text-purple-600">
+                <p className="font-mono text-base font-bold text-purple-600 mt-0.5">
                   {formatCurrency(f.unusedAmount)}
                 </p>
               </div>
@@ -331,22 +322,27 @@ export default function FundDetailPage() {
 
         {/* Monthly Chart */}
         {f.monthlyBreakdown?.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Monthly Breakdown</CardTitle>
+          <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+            <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Monthly Breakdown</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pt-4">
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={f.monthlyBreakdown}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="month" fontSize={10} />
+                    <XAxis dataKey="month" fontSize={10} tickLine={false} />
                     <YAxis
                       fontSize={10}
-                      tickFormatter={(v) => formatCurrency(v)}
+                      tickLine={false}
+                      width={45}
+                      tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`}
                     />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Legend />
+                    <Tooltip
+                      formatter={(v: number) => formatCurrency(v)}
+                      contentStyle={{ borderRadius: "12px", border: "none" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px" }} iconSize={10} />
                     <Bar
                       dataKey="allocation"
                       fill="#3b82f6"
@@ -377,9 +373,9 @@ export default function FundDetailPage() {
 
         {/* Project Usage */}
         {f.projectUsage?.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+          <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+            <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <FolderKanban className="h-4 w-4 text-primary" />
                 Project-wise Utilization
               </CardTitle>
@@ -387,39 +383,39 @@ export default function FundDetailPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead className="text-right">Amount Used</TableHead>
-                    <TableHead className="text-center">
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Project</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Amount Used</TableHead>
+                    <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                       % of Total Utilized
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {f.projectUsage.map((pu: any) => (
-                    <TableRow key={pu.project?.id || "unknown"}>
-                      <TableCell>
+                    <TableRow key={pu.project?.id || "unknown"} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                      <TableCell className="py-4 px-4 align-middle">
                         {pu.project ? (
                           <Link to={`/projects/${pu.project.id}`}>
                             <div className="cursor-pointer">
-                              <p className="font-medium text-primary hover:underline">
+                              <p className="font-bold text-xs sm:text-sm text-primary hover:underline">
                                 {pu.project.name}
                               </p>
-                              <p className="text-[10px] text-muted-foreground font-mono">
+                              <p className="text-[10px] text-muted-foreground font-mono font-semibold">
                                 {pu.project.projectCode}
                               </p>
                             </div>
                           </Link>
                         ) : (
-                          <span className="text-muted-foreground italic">
+                          <span className="text-muted-foreground italic text-xs">
                             Unknown project
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-mono font-semibold">
+                      <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
                         {formatCurrency(pu.total)}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="py-4 px-4 align-middle">
                         <div className="flex items-center justify-center gap-2">
                           <Progress
                             value={
@@ -427,9 +423,9 @@ export default function FundDetailPage() {
                                 ? (pu.total / f.totalUtilized) * 100
                                 : 0
                             }
-                            className="h-1.5 w-16 [&>div]:bg-green-500"
+                            className="h-1.5 w-16"
                           />
-                          <span className="text-xs font-mono">
+                          <span className="text-xs font-mono font-bold text-muted-foreground">
                             {f.totalUtilized > 0
                               ? Math.round((pu.total / f.totalUtilized) * 100)
                               : 0}
@@ -446,30 +442,30 @@ export default function FundDetailPage() {
         )}
 
         {/* All Transactions */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+          <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+            <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               All Transactions ({f.transactions?.length || 0})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="hover:bg-transparent border-b border-border/50">
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Date</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                  <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Amount</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Description</TableHead>
+                  <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Project</TableHead>
+                  <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(f.transactions || []).length === 0 ? (
-                  <TableRow>
+                  <TableRow className="hover:bg-transparent">
                     <TableCell
                       colSpan={6}
-                      className="text-center py-8 text-muted-foreground"
+                      className="text-center py-16 text-muted-foreground text-xs font-semibold"
                     >
                       No transactions. Use the buttons above to record
                       allocations, releases, or utilizations.
@@ -479,27 +475,27 @@ export default function FundDetailPage() {
                   f.transactions.map((t: any) => {
                     const tInfo = getTxnTypeInfo(t.type);
                     return (
-                      <TableRow key={t.id}>
-                        <TableCell className="text-sm whitespace-nowrap">
+                      <TableRow key={t.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                        <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground whitespace-nowrap">
                           {format(new Date(t.date), "dd MMM yyyy")}
                         </TableCell>
-                        <TableCell>
-                          <Badge className={`text-[10px] ${tInfo.bg}`}>
+                        <TableCell className="py-4 px-4 align-middle">
+                          <Badge className={`text-[10px] font-bold border-none ${tInfo.bg}`}>
                             {tInfo.icon} {tInfo.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono font-semibold">
+                        <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
                           {formatCurrency(t.amount)}
                         </TableCell>
-                        <TableCell className="text-sm max-w-[250px]">
+                        <TableCell className="text-xs py-4 px-4 text-muted-foreground max-w-[250px]">
                           {t.description}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-4 align-middle">
                           {t.project ? (
                             <Link to={`/projects/${t.project.id}`}>
                               <Badge
                                 variant="outline"
-                                className="text-[10px] cursor-pointer hover:bg-muted"
+                                className="text-[10px] font-bold cursor-pointer hover:bg-muted"
                               >
                                 {t.project.projectCode} — {t.project.name}
                               </Badge>
@@ -510,14 +506,14 @@ export default function FundDetailPage() {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right py-4 px-4 align-middle">
                           <PermissionGate module="funds" action="delete">
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7 text-destructive"
+                                  className="h-7 w-7 text-destructive rounded-full hover:bg-destructive/10"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>

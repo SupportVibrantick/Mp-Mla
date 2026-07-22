@@ -25,6 +25,7 @@ import {
   Puzzle,
   Layers,
   Receipt,
+  ArrowUpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -64,6 +65,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     { label: "Plans & Tiers", icon: Layers, href: "/subscriptions", module: "subscriptions" },
     { label: "Tenant Subscriptions", icon: Users, href: "/subscriptions/tenants", module: "subscriptions" },
     { label: "Upcoming Renewals", icon: CalendarDays, href: "/subscriptions/renewals", module: "subscriptions" },
+    { label: "Upgrade Requests", icon: ArrowUpCircle, href: "/subscriptions/upgrade-requests", module: "subscriptions" },
     { label: "Invoices", icon: Receipt, href: "/subscriptions/invoices", module: "subscriptions" },
     { label: "Modules & Addons", icon: Puzzle, href: "/modules", module: "modules" },
     { label: "Payments", icon: IndianRupeeIcon, href: "/payments", module: "payments" },

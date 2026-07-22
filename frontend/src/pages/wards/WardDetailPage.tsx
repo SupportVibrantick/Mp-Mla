@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, Link, useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 import * as xlsx from "xlsx";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -152,27 +153,28 @@ export default function WardDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link to="/wards">
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <ArrowLeft className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-muted border border-border/40">
+                <ArrowLeft className="h-4 w-4 text-muted-foreground" />
               </Button>
             </Link>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-bold">{ward.name}</h1>
-                <Badge variant="outline" className="text-xs">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">{ward.name}</h1>
+                <Badge variant="outline" className="text-[10px] font-bold border-border/80 px-2 py-0.5">
                   Ward #{ward.wardNumber}
                 </Badge>
                 <Badge
-                  className={`text-[10px] ${
+                  className={cn(
+                    "text-[9px] sm:text-[10px] font-semibold border shadow-none",
                     ward.status === "ACTIVE"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
+                      ? "bg-emerald-100/50 text-emerald-700 border-emerald-200/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                      : "bg-muted text-muted-foreground border-border/50"
+                  )}
                 >
                   {ward.status}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
                 {ward.zone && `Zone ${ward.zone} • `}
                 {ward.areaType}
                 {ward.establishedDate &&
@@ -184,7 +186,7 @@ export default function WardDetailPage() {
             <PermissionGate module="wards" action="read">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 h-9 text-xs font-semibold hover:bg-muted border-border/60 justify-center"
                 onClick={handleExport}
                 disabled={isExporting}
               >
@@ -193,7 +195,7 @@ export default function WardDetailPage() {
             </PermissionGate>
             <PermissionGate module="wards" action="update">
               <Link to={`/wards/${ward.id}/edit`}>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 h-9 text-xs font-semibold hover:bg-muted border-border/60 justify-center">
                   <Edit className="h-4 w-4" /> Edit Ward
                 </Button>
               </Link>
@@ -203,26 +205,26 @@ export default function WardDetailPage() {
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="destructive"
-                    className="gap-2"
+                    className="gap-2 h-9 text-xs font-semibold justify-center hover:bg-destructive/95"
                     disabled={isDeleting}
                   >
                     <Trash2 className="h-4 w-4" /> Delete
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-2xl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Ward</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="font-extrabold text-foreground">Delete Ward</AlertDialogTitle>
+                    <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
                       Are you sure you want to completely delete {ward.name}?
                       This will permanently delete all its dependent
                       Demographics, Areas, and Councillors.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogFooter className="gap-2 sm:gap-0">
+                    <AlertDialogCancel className="border-border/60 hover:bg-muted">Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
                     >
                       Delete
                     </AlertDialogAction>
@@ -235,105 +237,118 @@ export default function WardDetailPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Users className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-xl font-bold">
-                {ward.totalPopulation.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Population</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                <Home className="h-5 w-5" />
-              </div>
-              <p className="text-xl font-bold">
-                {ward.totalHouseholds.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Households</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <MapPin className="h-5 w-5 text-orange-500 mx-auto mb-1" />
-              <p className="text-xl font-bold">{ward.totalAreas}</p>
-              <p className="text-xs text-muted-foreground">Areas</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-1" />
-              <p className="text-xl font-bold">
-                {ward._count?.grievances || 0}
-              </p>
-              <p className="text-xs text-muted-foreground">Public Requests</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <ClipboardList className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-xl font-bold">{ward._count?.projects || 0}</p>
-              <p className="text-xs text-muted-foreground">Projects</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                <Building2 className="h-5 w-5" />
-              </div>
-              <p className="text-xl font-bold">
-                {ward._count?.institutions || 0}
-              </p>
-              <p className="text-xs text-muted-foreground">Public Facility</p>
-            </CardContent>
-          </Card>
+          {[
+            {
+              label: "Population",
+              value: ward.totalPopulation.toLocaleString(),
+              Icon: Users,
+              color: "text-indigo-500",
+              bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+              borderColor: "border-indigo-100 dark:border-indigo-950/50",
+            },
+            {
+              label: "Households",
+              value: ward.totalHouseholds.toLocaleString(),
+              Icon: Home,
+              color: "text-emerald-500",
+              bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+              borderColor: "border-emerald-100 dark:border-emerald-950/50",
+            },
+            {
+              label: "Areas count",
+              value: ward.totalAreas,
+              Icon: MapPin,
+              color: "text-orange-500",
+              bgColor: "bg-orange-50 dark:bg-orange-950/30",
+              borderColor: "border-orange-100 dark:border-orange-950/50",
+            },
+            {
+              label: "Public Requests",
+              value: ward._count?.grievances || 0,
+              Icon: AlertTriangle,
+              color: "text-rose-500",
+              bgColor: "bg-rose-50 dark:bg-rose-950/30",
+              borderColor: "border-rose-100 dark:border-rose-950/50",
+            },
+            {
+              label: "Total Projects",
+              value: ward._count?.projects || 0,
+              Icon: ClipboardList,
+              color: "text-blue-500",
+              bgColor: "bg-blue-50 dark:bg-blue-950/30",
+              borderColor: "border-blue-100 dark:border-blue-950/50",
+            },
+            {
+              label: "Public Facilities",
+              value: ward._count?.institutions || 0,
+              Icon: Building2,
+              color: "text-amber-500",
+              bgColor: "bg-amber-50 dark:bg-amber-950/30",
+              borderColor: "border-amber-100 dark:border-amber-950/50",
+            },
+          ].map((s, i) => (
+            <Card key={i} className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl">
+              <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
+                    <s.Icon className={cn("h-4 w-4", s.color)} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                    {s.label}
+                  </p>
+                  <h3 className="text-lg sm:text-xl font-bold tracking-tight text-foreground mt-0.5">
+                    {s.value}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Councillor Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" /> Ward Councillor
+        <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 border-b border-border/30">
+            <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" /> Ward Councillor Details
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4 space-y-4">
             {councillor ? (
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold text-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-900 to-indigo-950 text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0">
                   {councillor.name.charAt(0)}
                 </div>
-                <div className="flex-1">
-                  <p className="font-semibold">{councillor.name}</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-0.5 flex-wrap">
+                <div className="flex-1 space-y-1">
+                  <p className="font-bold text-base text-foreground">{councillor.name}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap font-medium">
                     {councillor.phone && (
                       <span className="flex items-center gap-1">
-                        <Phone className="h-3.5 w-3.5" /> {councillor.phone}
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground/60" /> {councillor.phone}
                       </span>
                     )}
                     {councillor.partyName && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-[10px] font-bold border-border/80 px-2 py-0.5">
                         {councillor.partyName}
                       </Badge>
                     )}
                     {councillor.sinceDate && (
                       <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        Since{" "}
-                        {format(new Date(councillor.sinceDate), "yyyy-MM-dd")}
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
+                        Since {format(new Date(councillor.sinceDate), "yyyy-MM-dd")}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground italic">
+              <p className="text-xs text-muted-foreground italic font-medium">
                 No councillor assigned.
               </p>
             )}
             {ward.description && (
-              <p className="text-sm text-muted-foreground mt-3 border-t pt-3">
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-3 border-t border-border/30 pt-3 leading-relaxed">
                 {ward.description}
               </p>
             )}
@@ -341,70 +356,71 @@ export default function WardDetailPage() {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="areas" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="areas" className="gap-1.5">
-              <MapPin className="h-3.5 w-3.5" /> Areas (
-              {ward.areas?.length || 0})
+        <Tabs defaultValue="areas" className="w-full space-y-4">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/20 border border-border/40 rounded-xl p-1 h-11 max-w-md">
+            <TabsTrigger value="areas" className="gap-1.5 text-xs font-semibold rounded-lg data-[state=active]:shadow-sm">
+              <MapPin className="h-3.5 w-3.5 shrink-0" /> Areas ({ward.areas?.length || 0})
             </TabsTrigger>
-            <TabsTrigger value="demographics" className="gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5" /> Demographics
+            <TabsTrigger value="demographics" className="gap-1.5 text-xs font-semibold rounded-lg data-[state=active]:shadow-sm">
+              <BarChart3 className="h-3.5 w-3.5 shrink-0" /> Demographics
             </TabsTrigger>
-            <TabsTrigger value="community" className="gap-1.5">
-              <Users className="h-3.5 w-3.5" /> Community (
-              {ward._count?.communityGroups || 0})
+            <TabsTrigger value="community" className="gap-1.5 text-xs font-semibold rounded-lg data-[state=active]:shadow-sm">
+              <Users className="h-3.5 w-3.5 shrink-0" /> Community ({ward._count?.communityGroups || 0})
             </TabsTrigger>
           </TabsList>
 
           {/* Areas Tab */}
-          <TabsContent value="areas" className="space-y-4">
+          <TabsContent value="areas" className="space-y-6 outline-none">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {ward.areas?.map((area: any) => (
                 <Card
                   key={area.id}
-                  className="hover:shadow-md transition-shadow"
+                  className="hover:shadow-md transition-all duration-300 border border-border/50 bg-card rounded-2xl hover:border-primary/20"
                 >
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">{area.name}</h3>
+                      <div className="space-y-0.5">
+                        <h3 className="font-semibold text-sm text-foreground">{area.name}</h3>
                         {area.pincode && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <p className="text-[10px] text-muted-foreground font-mono">
                             PIN: {area.pincode}
                           </p>
                         )}
                       </div>
                       <Badge
-                        className={`text-[10px] ${AREA_TYPE_COLORS[area.areaType] || AREA_TYPE_COLORS.OTHER}`}
+                        className={cn(
+                          "text-[9px] font-bold border shadow-none",
+                          AREA_TYPE_COLORS[area.areaType] || "bg-muted text-muted-foreground border-border"
+                        )}
                       >
                         {area.areaType.replace("_", " ")}
                       </Badge>
                     </div>
                     {area.landmark && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {area.landmark}
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" /> {area.landmark}
                       </p>
                     )}
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
                       <div className="text-center">
-                        <p className="text-lg font-bold">
+                        <p className="text-sm font-bold font-mono text-foreground">
                           {area.population.toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-[9px] text-muted-foreground uppercase font-semibold">
                           Population
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-lg font-bold">
+                        <p className="text-sm font-bold font-mono text-foreground">
                           {area.households.toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-[9px] text-muted-foreground uppercase font-semibold">
                           Households
                         </p>
                       </div>
                     </div>
                     {area.maleCount > 0 && (
-                      <div className="flex gap-2 text-xs">
+                      <div className="flex gap-3 text-[10px] font-bold justify-center">
                         <span className="text-blue-600">
                           M: {area.maleCount.toLocaleString()}
                         </span>
@@ -419,7 +435,7 @@ export default function WardDetailPage() {
                       }
                       className="h-1.5"
                     />
-                    <p className="text-[10px] text-muted-foreground text-right">
+                    <p className="text-[9px] text-muted-foreground text-right font-medium">
                       {(
                         (area.population / (ward.totalPopulation || 1)) *
                         100
@@ -433,272 +449,125 @@ export default function WardDetailPage() {
 
             {/* Area Summary Table */}
             {ward.areas?.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Area Summary</CardTitle>
+              <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                <CardHeader className="pb-3 border-b border-border/30">
+                  <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    Area Summary Directory
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead className="text-right">Population</TableHead>
-                        <TableHead className="text-right">Male</TableHead>
-                        <TableHead className="text-right">Female</TableHead>
-                        <TableHead className="text-right">Households</TableHead>
-                        <TableHead className="text-right">% of Ward</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ward.areas.map((a: any) => (
-                        <TableRow key={a.id}>
-                          <TableCell className="font-medium">
-                            {a.name}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/20">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Name</TableHead>
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Population</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Male</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Female</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Households</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">% of Ward</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ward.areas.map((a: any) => (
+                          <TableRow key={a.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="font-semibold py-4 px-4 text-sm text-foreground">
+                              {a.name}
+                            </TableCell>
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Badge variant="secondary" className="text-[10px] font-semibold px-2 py-0.5 border">
+                                {a.areaType.replace("_", " ")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
+                              {a.population.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-blue-600">
+                              {a.maleCount.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-pink-600">
+                              {a.femaleCount.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
+                              {a.households.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-muted-foreground">
+                              {(
+                                (a.population / (ward.totalPopulation || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="font-bold bg-muted/20 border-t hover:bg-muted/25">
+                          <TableCell className="py-4 px-4 text-sm">Total</TableCell>
+                          <TableCell className="py-4 px-4" />
+                          <TableCell className="text-right font-mono py-4 px-4 text-xs font-extrabold text-foreground">
+                            {ward.totalPopulation.toLocaleString()}
                           </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs">
-                              {a.areaType.replace("_", " ")}
-                            </Badge>
+                          <TableCell className="text-right font-mono py-4 px-4 text-xs font-extrabold text-blue-600">
+                            {ward.totalMale.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {a.population.toLocaleString()}
+                          <TableCell className="text-right font-mono py-4 px-4 text-xs font-extrabold text-pink-600">
+                            {ward.totalFemale.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-blue-600">
-                            {a.maleCount.toLocaleString()}
+                          <TableCell className="text-right font-mono py-4 px-4 text-xs font-extrabold text-foreground">
+                            {ward.totalHouseholds.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-pink-600">
-                            {a.femaleCount.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {a.households.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {(
-                              (a.population / (ward.totalPopulation || 1)) *
-                              100
-                            ).toFixed(1)}
-                            %
+                          <TableCell className="text-right font-mono py-4 px-4 text-xs font-extrabold text-foreground">
+                            100%
                           </TableCell>
                         </TableRow>
-                      ))}
-                      <TableRow className="font-semibold bg-muted/50">
-                        <TableCell>Total</TableCell>
-                        <TableCell />
-                        <TableCell className="text-right font-mono">
-                          {ward.totalPopulation.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-blue-600">
-                          {ward.totalMale.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-pink-600">
-                          {ward.totalFemale.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {ward.totalHouseholds.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          100%
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
           {/* Demographics Tab */}
-          {/* <TabsContent value="demographics">
-            {demographics?.wardLevel ? (
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">
-                      Gender Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-blue-600 font-medium">
-                          Male
-                        </span>
-                        <span className="font-mono text-sm">
-                          {demographics.wardLevel.maleCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <Progress
-                        value={
-                          (demographics.wardLevel.maleCount /
-                            (demographics.wardLevel.totalPopulation || 1)) *
-                          100
-                        }
-                        className="h-2 [&>div]:bg-blue-500"
-                      />
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-pink-600 font-medium">
-                          Female
-                        </span>
-                        <span className="font-mono text-sm">
-                          {demographics.wardLevel.femaleCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <Progress
-                        value={
-                          (demographics.wardLevel.femaleCount /
-                            (demographics.wardLevel.totalPopulation || 1)) *
-                          100
-                        }
-                        className="h-2 [&>div]:bg-pink-500"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Age Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {demographics.charts?.ageDistribution?.map((age: any) => (
-                      <div
-                        key={age.label}
-                        className="flex items-center gap-3 py-1.5"
-                      >
-                        <span className="text-xs text-muted-foreground w-12">
-                          {age.label}
-                        </span>
-                        <Progress
-                          value={
-                            (age.value /
-                              (demographics.wardLevel.totalPopulation || 1)) *
-                            100
-                          }
-                          className="h-2 flex-1"
-                        />
-                        <span className="font-mono text-xs w-16 text-right">
-                          {age.value.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Social Categories</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {demographics.charts?.categoryDistribution?.map(
-                      (cat: any) => (
-                        <div
-                          key={cat.label}
-                          className="flex items-center gap-3 py-1.5"
-                        >
-                          <span className="text-xs w-16">{cat.label}</span>
-                          <Progress
-                            value={
-                              (cat.value /
-                                (demographics.wardLevel.totalPopulation || 1)) *
-                              100
-                            }
-                            className="h-2 flex-1"
-                          />
-                          <span className="font-mono text-xs w-16 text-right">
-                            {cat.value.toLocaleString()}
-                          </span>
-                        </div>
-                      ),
-                    )}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">
-                      Economic & Literacy
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        BPL Households
-                      </span>
-                      <span className="font-mono">
-                        {demographics.wardLevel.bplHouseholds.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        APL Households
-                      </span>
-                      <span className="font-mono">
-                        {demographics.wardLevel.aplHouseholds.toLocaleString()}
-                      </span>
-                    </div>
-                    {demographics.wardLevel.literacyRate && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Literacy Rate
-                        </span>
-                        <span className="font-mono">
-                          {demographics.wardLevel.literacyRate.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Total Voters
-                      </span>
-                      <span className="font-mono">
-                        {demographics.wardLevel.totalVoters.toLocaleString()}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                No demographic data available for this ward.
-              </Card>
-            )}
-          </TabsContent> */}
-          {/* Inside TabsContent value="demographics" */}
-          <TabsContent value="demographics">
+          <TabsContent value="demographics" className="space-y-4 outline-none">
             {demographics?.wardLevel ? (
               <div className="space-y-4">
                 {/* Row 1: Gender + Age */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">
+                  <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Gender Distribution
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-4 pt-4">
                       {[
                         {
                           label: "Male",
                           value: demographics.wardLevel.maleCount,
-                          color: "bg-blue-500",
+                          color: "bg-gradient-to-r from-blue-500 to-indigo-600",
                           total: demographics.wardLevel.totalPopulation,
+                          textColor: "text-blue-600",
                         },
                         {
                           label: "Female",
                           value: demographics.wardLevel.femaleCount,
-                          color: "bg-pink-500",
+                          color: "bg-gradient-to-r from-pink-500 to-rose-600",
                           total: demographics.wardLevel.totalPopulation,
+                          textColor: "text-pink-600",
                         },
                       ].map((g) => (
-                        <div key={g.label}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="font-medium">{g.label}</span>
-                            <span className="font-mono">
+                        <div key={g.label} className="space-y-1">
+                          <div className="flex justify-between text-xs sm:text-sm font-semibold">
+                            <span className="text-foreground">{g.label}</span>
+                            <span className={cn("font-mono font-bold", g.textColor)}>
                               {g.value.toLocaleString()} (
                               {((g.value / (g.total || 1)) * 100).toFixed(1)}%)
                             </span>
                           </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="h-3 bg-muted rounded-full overflow-hidden">
                             <div
-                              className={`h-full ${g.color} rounded-full`}
+                              className={cn("h-full rounded-full transition-all duration-500", g.color)}
                               style={{
                                 width: `${(g.value / (g.total || 1)) * 100}%`,
                               }}
@@ -709,31 +578,31 @@ export default function WardDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">
+                  <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Age Distribution
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-3 pt-4 font-semibold text-xs sm:text-sm">
                       {(demographics.charts?.ageDistribution || []).map(
                         (age: any) => (
                           <div
                             key={age.label}
                             className="flex items-center gap-3"
                           >
-                            <span className="text-xs w-12 text-muted-foreground">
+                            <span className="text-xs w-12 text-muted-foreground font-semibold">
                               {age.label}
                             </span>
                             <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-primary rounded-full"
+                                className="h-full bg-gradient-to-r from-slate-900 to-indigo-950 rounded-full"
                                 style={{
                                   width: `${(age.value / (demographics.wardLevel.totalPopulation || 1)) * 100}%`,
                                 }}
                               />
                             </div>
-                            <span className="font-mono text-xs w-16 text-right">
+                            <span className="font-mono text-xs w-16 text-right font-bold text-foreground">
                               {age.value.toLocaleString()}
                             </span>
                           </div>
@@ -745,13 +614,13 @@ export default function WardDetailPage() {
 
                 {/* Row 2: Religion + Caste */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">
+                  <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Religion Distribution
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-3 pt-4 font-semibold text-xs sm:text-sm">
                       {(() => {
                         const religionData = [
                           {
@@ -762,22 +631,22 @@ export default function WardDetailPage() {
                           {
                             label: "Muslim ☪️",
                             value: demographics.wardLevel.muslimCount || 0,
-                            color: "bg-green-600",
+                            color: "bg-emerald-600",
                           },
                           {
                             label: "Sikh 🙏",
                             value: demographics.wardLevel.sikhCount || 0,
-                            color: "bg-blue-600",
+                            color: "bg-indigo-600",
                           },
                           {
                             label: "Christian ✝️",
                             value: demographics.wardLevel.christianCount || 0,
-                            color: "bg-red-500",
+                            color: "bg-rose-500",
                           },
                           {
                             label: "Buddhist ☸️",
                             value: demographics.wardLevel.buddhistCount || 0,
-                            color: "bg-yellow-600",
+                            color: "bg-amber-600",
                           },
                           {
                             label: "Jain",
@@ -788,7 +657,7 @@ export default function WardDetailPage() {
                             label: "Other",
                             value:
                               demographics.wardLevel.otherReligionCount || 0,
-                            color: "bg-gray-500",
+                            color: "bg-slate-500",
                           },
                         ].filter((r) => r.value > 0);
 
@@ -801,16 +670,16 @@ export default function WardDetailPage() {
                             key={r.label}
                             className="flex items-center gap-3"
                           >
-                            <span className="text-xs w-24">{r.label}</span>
+                            <span className="text-xs w-24 text-foreground">{r.label}</span>
                             <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                               <div
-                                className={`h-full ${r.color} rounded-full`}
+                                className={cn("h-full rounded-full", r.color)}
                                 style={{
                                   width: `${(r.value / totalReligion) * 100}%`,
                                 }}
                               />
                             </div>
-                            <span className="font-mono text-xs w-20 text-right">
+                            <span className="font-mono text-xs w-20 text-right font-bold text-foreground">
                               {r.value.toLocaleString()} (
                               {((r.value / totalReligion) * 100).toFixed(1)}%)
                             </span>
@@ -820,13 +689,13 @@ export default function WardDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">
+                  <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Social Category (Caste)
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-3 pt-4 font-semibold text-xs sm:text-sm">
                       {(() => {
                         const casteData = [
                           {
@@ -864,16 +733,16 @@ export default function WardDetailPage() {
                             key={c.label}
                             className="flex items-center gap-3"
                           >
-                            <span className="text-xs w-16">{c.label}</span>
+                            <span className="text-xs w-16 text-foreground">{c.label}</span>
                             <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                               <div
-                                className={`h-full ${c.color} rounded-full`}
+                                className={cn("h-full rounded-full", c.color)}
                                 style={{
                                   width: `${(c.value / totalCaste) * 100}%`,
                                 }}
                               />
                             </div>
-                            <span className="font-mono text-xs w-20 text-right">
+                            <span className="font-mono text-xs w-20 text-right font-bold text-foreground">
                               {c.value.toLocaleString()} (
                               {((c.value / totalCaste) * 100).toFixed(1)}%)
                             </span>
@@ -886,11 +755,11 @@ export default function WardDetailPage() {
 
                 {/* Row 3: Economic + Literacy + Voters */}
                 <div className="grid md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Economic</CardTitle>
+                  <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Economic</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-3 pt-4 font-semibold text-xs sm:text-sm">
                       {(() => {
                         const bpl = demographics.wardLevel.bplHouseholds || 0;
                         const apl = demographics.wardLevel.aplHouseholds || 0;
@@ -898,39 +767,37 @@ export default function WardDetailPage() {
 
                         return (
                           <>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-xs sm:text-sm">
                               <span className="text-muted-foreground">
                                 BPL Households
                               </span>
-                              <span className="font-mono font-medium">
+                              <span className="font-mono font-bold text-foreground">
                                 {bpl.toLocaleString()}
                               </span>
                             </div>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-xs sm:text-sm">
                               <span className="text-muted-foreground">
                                 APL Households
                               </span>
-                              <span className="font-mono font-medium">
+                              <span className="font-mono font-bold text-foreground">
                                 {apl.toLocaleString()}
                               </span>
                             </div>
                             <div className="h-3 bg-muted rounded-full overflow-hidden flex">
                               <div
-                                className="h-full bg-red-400"
+                                className="h-full bg-rose-400"
                                 style={{
                                   width: `${(bpl / totalHouseholds) * 100}%`,
                                 }}
                               />
-                              <div className="h-full bg-green-400 flex-1" />
+                              <div className="h-full bg-emerald-400 flex-1" />
                             </div>
-                            <div className="flex justify-between text-[10px] text-muted-foreground">
+                            <div className="flex justify-between text-[10px] text-muted-foreground font-semibold">
                               <span>
-                                BPL {((bpl / totalHouseholds) * 100).toFixed(1)}
-                                %
+                                BPL {((bpl / totalHouseholds) * 100).toFixed(1)}%
                               </span>
                               <span>
-                                APL {((apl / totalHouseholds) * 100).toFixed(1)}
-                                %
+                                APL {((apl / totalHouseholds) * 100).toFixed(1)}%
                               </span>
                             </div>
                           </>
@@ -939,11 +806,11 @@ export default function WardDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Literacy</CardTitle>
+                  <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Literacy</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-3.5 pt-4 font-semibold text-xs sm:text-sm">
                       {[
                         {
                           label: "Overall",
@@ -958,12 +825,12 @@ export default function WardDetailPage() {
                           value: demographics.wardLevel.femaleLiteracyRate,
                         },
                       ].map((l) => (
-                        <div key={l.label}>
-                          <div className="flex justify-between text-sm mb-1">
+                        <div key={l.label} className="space-y-1">
+                          <div className="flex justify-between text-xs sm:text-sm">
                             <span className="text-muted-foreground">
                               {l.label}
                             </span>
-                            <span className="font-mono">
+                            <span className="font-mono font-bold text-foreground">
                               {l.value ? `${l.value.toFixed(1)}%` : "N/A"}
                             </span>
                           </div>
@@ -980,29 +847,29 @@ export default function WardDetailPage() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">
+                  <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Voters & Vital Stats
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pt-4 font-semibold text-xs sm:text-sm">
                       {/* Voters Summary */}
-                      <div className="flex items-center justify-around text-center pb-2 border-b">
+                      <div className="flex items-center justify-around text-center pb-2 border-b border-border/30">
                         <div>
-                          <p className="text-xl font-bold">
+                          <p className="text-lg font-bold font-mono text-foreground">
                             {demographics.wardLevel.totalVoters.toLocaleString()}
                           </p>
-                          <p className="text-[10px] text-muted-foreground uppercase">
+                          <p className="text-[9px] text-muted-foreground uppercase font-bold">
                             Total Voters
                           </p>
                         </div>
-                        <div className="w-px h-8 bg-muted" />
+                        <div className="w-px h-8 bg-border/40" />
                         <div>
-                          <p className="text-xl font-bold text-blue-600">
+                          <p className="text-lg font-bold font-mono text-blue-600">
                             {demographics.wardLevel.newVotersCount.toLocaleString()}
                           </p>
-                          <p className="text-[10px] text-muted-foreground uppercase">
+                          <p className="text-[9px] text-muted-foreground uppercase font-bold">
                             New Voters
                           </p>
                         </div>
@@ -1010,19 +877,19 @@ export default function WardDetailPage() {
 
                       {/* Vital Stats */}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-2 rounded bg-green-50 dark:bg-green-900/20 text-center border border-green-100 dark:border-green-800/30">
-                          <p className="text-lg font-bold text-green-600">
+                        <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-center border border-emerald-100/30 dark:border-emerald-800/20">
+                          <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
                             {demographics.wardLevel.totalBirths.toLocaleString()}
                           </p>
-                          <p className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+                          <p className="text-[8px] text-muted-foreground uppercase font-bold">
                             Births
                           </p>
                         </div>
-                        <div className="p-2 rounded bg-red-50 dark:bg-red-900/20 text-center border border-red-100 dark:border-red-800/30">
-                          <p className="text-lg font-bold text-red-600">
+                        <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-center border border-rose-100/30 dark:border-rose-800/20">
+                          <p className="text-base font-extrabold text-rose-600 dark:text-rose-400 font-mono">
                             {demographics.wardLevel.totalDeaths.toLocaleString()}
                           </p>
-                          <p className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+                          <p className="text-[8px] text-muted-foreground uppercase font-bold">
                             Deaths
                           </p>
                         </div>
@@ -1030,7 +897,7 @@ export default function WardDetailPage() {
 
                       {/* Gender Split (Voters) */}
                       <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-medium">
+                        <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-bold">
                           <span>Voter Gender Split</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden flex">
@@ -1047,20 +914,18 @@ export default function WardDetailPage() {
                             }}
                           />
                         </div>
-                        <div className="flex justify-between text-[10px] font-mono">
+                        <div className="flex justify-between text-[10px] font-mono font-bold">
                           <span className="text-blue-600">
-                            M:{" "}
-                            {demographics.wardLevel.maleVoters.toLocaleString()}
+                            M: {demographics.wardLevel.maleVoters.toLocaleString()}
                           </span>
                           <span className="text-pink-600">
-                            F:{" "}
-                            {demographics.wardLevel.femaleVoters.toLocaleString()}
+                            F: {demographics.wardLevel.femaleVoters.toLocaleString()}
                           </span>
                         </div>
                       </div>
 
                       {demographics.wardLevel.source && (
-                        <p className="text-[9px] text-muted-foreground text-center pt-2">
+                        <p className="text-[9px] text-muted-foreground text-center font-medium pt-1">
                           Source: {demographics.wardLevel.source}
                         </p>
                       )}
@@ -1069,53 +934,52 @@ export default function WardDetailPage() {
                 </div>
               </div>
             ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                No demographic data available. Edit this ward to add
-                demographics.
+              <Card className="p-12 text-center text-muted-foreground font-semibold text-sm border border-border/50 bg-card rounded-2xl">
+                No demographic data available. Edit this ward to add demographics.
               </Card>
             )}
           </TabsContent>
 
           {/* Community Tab */}
-          <TabsContent value="community">
+          <TabsContent value="community" className="space-y-4 outline-none">
             {ward.communityGroupStats?.length > 0 ? (
-              <Card>
+              <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Type</TableHead>
-                        <TableHead className="text-right">Groups</TableHead>
-                        <TableHead className="text-right">
-                          Total Members
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ward.communityGroupStats.map((cg: any) => (
-                        <TableRow key={cg.type}>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className="text-xs capitalize"
-                            >
-                              {cg.type.replace("_", " ")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {cg.count}
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {cg.totalMembers.toLocaleString()}
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b border-border/50 bg-muted/20">
+                          <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Groups</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Total Members</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {ward.communityGroupStats.map((cg: any) => (
+                          <TableRow key={cg.type} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-bold border-border/80 px-2.5 py-0.5 capitalize shadow-none"
+                              >
+                                {cg.type.replace("_", " ")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
+                              {cg.count}
+                            </TableCell>
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
+                              {cg.totalMembers.toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
-              <Card className="p-8 text-center text-muted-foreground">
+              <Card className="p-12 text-center text-muted-foreground font-semibold text-sm border border-border/50 bg-card rounded-2xl">
                 No community groups in this ward.
               </Card>
             )}

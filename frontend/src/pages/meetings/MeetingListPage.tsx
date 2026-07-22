@@ -86,23 +86,20 @@ export default function MeetingListPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-2xl shadow-inner">
-                <CalendarDays className="h-7 w-7 text-primary" />
-              </div>
-              Meetings & Events
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2.5 text-foreground">
+              <CalendarDays className="h-7 w-7 text-primary" /> Meetings & Events
             </h1>
-            <p className="text-muted-foreground mt-1.5 ml-1">
-              Organize, track, and manage your constituency engagements.
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
+              Organize, track, and manage your constituency engagements
             </p>
           </div>
           
-          <div className="flex gap-2">
-            <div className="inline-flex rounded-lg border p-1 bg-muted/50">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+            <div className="inline-flex rounded-xl border border-border/60 p-1 bg-muted/30">
               <Button 
                 variant={viewMode === "grid" ? "secondary" : "ghost"} 
                 size="sm" 
-                className="h-8 px-3 rounded-md shadow-sm transition-all"
+                className="h-8 px-3 rounded-lg text-xs font-bold transition-all"
                 onClick={() => setViewMode("grid")}
               >
                 Grid
@@ -110,7 +107,7 @@ export default function MeetingListPage() {
               <Button 
                 variant={viewMode === "table" ? "secondary" : "ghost"} 
                 size="sm" 
-                className="h-8 px-3 rounded-md shadow-sm transition-all"
+                className="h-8 px-3 rounded-lg text-xs font-bold transition-all"
                 onClick={() => setViewMode("table")}
               >
                 Table
@@ -118,8 +115,8 @@ export default function MeetingListPage() {
             </div>
             <PermissionGate module="meeting" action="create">
               <Link href="/meetings/new">
-                <Button className="gap-2 shadow-xl shadow-primary/20 hover:translate-y-[-1px] transition-all">
-                  <Plus className="h-4 w-4" />
+                <Button className="gap-2 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 font-bold">
+                  <Plus className="h-3.5 w-3.5" />
                   New Meeting
                 </Button>
               </Link>
@@ -128,68 +125,72 @@ export default function MeetingListPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { 
               label: "Total Meetings", 
               value: stats.total, 
               icon: Layers, 
-              color: "bg-indigo-500", 
-              bg: "bg-indigo-50 dark:bg-indigo-900/10" 
+              color: "#6366f1", 
             },
             { 
               label: "Scheduled", 
               value: stats.scheduled, 
               icon: Calendar, 
-              color: "bg-blue-500", 
-              bg: "bg-blue-50 dark:bg-blue-900/10" 
+              color: "#3b82f6", 
             },
             { 
               label: "Completed", 
               value: stats.completed, 
               icon: CheckCircle2, 
-              color: "bg-emerald-500", 
-              bg: "bg-emerald-50 dark:bg-emerald-900/10" 
+              color: "#22c55e", 
             },
             { 
               label: "Cancelled", 
               value: stats.cancelled, 
               icon: AlertCircle, 
-              color: "bg-rose-500", 
-              bg: "bg-rose-50 dark:bg-rose-900/10" 
+              color: "#f43f5e", 
             },
           ].map((s, i) => (
-            <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow group overflow-hidden">
-              <CardContent className="p-5 flex items-center gap-4 relative">
-                <div className={`w-12 h-12 rounded-2xl ${s.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                  <s.icon className={`h-6 w-6 text-foreground opacity-80`} style={{ color: s.color.replace('bg-', '') }} />
+            <Card key={i} className="transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-border/50 bg-card hover:border-primary/25 rounded-2xl">
+              <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
+                <div className="flex justify-between items-center">
+                  <div
+                    className="p-2.5 rounded-xl border flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${s.color}15`, borderColor: `${s.color}25` }}
+                  >
+                    <s.icon className="h-4 w-4" style={{ color: s.color }} />
+                  </div>
                 </div>
                 <div>
-                  <p className="text-2xl font-black">{s.value}</p>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</p>
+                  <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                    {s.label}
+                  </p>
+                  <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground mt-1 font-mono">
+                    {s.value}
+                  </h3>
                 </div>
-                <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 rounded-full ${s.color}`}></div>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Filters */}
-        <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm border border-white/20">
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4 items-center">
-              <div className="relative flex-1 w-full group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search meetings by title, description, location..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 bg-background/50 border-muted-foreground/20 focus:border-primary/50 transition-all rounded-xl"
+                  className="pl-9 bg-background/50 border-muted-foreground/20 rounded-xl"
                 />
               </div>
               <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px] bg-background/50 border-muted-foreground/20 rounded-xl shrink-0">
+                  <SelectTrigger className="w-[140px] bg-background/50 border-muted-foreground/20 rounded-xl shrink-0 text-xs h-9">
                     <Filter className="h-3.5 w-3.5 mr-2 opacity-50" />
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -204,7 +205,7 @@ export default function MeetingListPage() {
                 </Select>
                 
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-[140px] bg-background/50 border-muted-foreground/20 rounded-xl shrink-0">
+                  <SelectTrigger className="w-[140px] bg-background/50 border-muted-foreground/20 rounded-xl shrink-0 text-xs h-9">
                     <Video className="h-3.5 w-3.5 mr-2 opacity-50" />
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
@@ -216,7 +217,7 @@ export default function MeetingListPage() {
                 </Select>
 
                 {(search || statusFilter !== "all" || typeFilter !== "all") && (
-                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs h-9 rounded-xl hover:bg-destructive/10 hover:text-destructive">
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs h-9 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                     Reset
                   </Button>
                 )}
@@ -230,37 +231,37 @@ export default function MeetingListPage() {
           viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <Card key={i} className="rounded-2xl border-none shadow-sm p-6 space-y-4">
+                <Card key={i} className="rounded-2xl border border-border/50 shadow-sm p-5 space-y-4">
                   <div className="flex justify-between">
                     <Skeleton className="h-5 w-20 rounded-full" />
                     <Skeleton className="h-8 w-8 rounded-full" />
                   </div>
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-6 w-full rounded" />
+                  <Skeleton className="h-12 w-full rounded" />
                   <div className="space-y-2 pt-2">
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-1/2 rounded" />
+                    <Skeleton className="h-4 w-2/3 rounded" />
                   </div>
                 </Card>
               ))}
             </div>
           ) : (
-            <Card className="border-none shadow-sm">
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
               <div className="p-8 space-y-4">
-                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
               </div>
             </Card>
           )
         ) : meetings.length === 0 ? (
           <Card className="border-dashed border-2 py-20 flex flex-col items-center justify-center bg-transparent rounded-3xl">
-            <div className="h-24 w-24 bg-primary/5 rounded-full flex items-center justify-center mb-6">
-              <CalendarDays className="h-12 w-12 text-primary/30" />
+            <div className="h-20 w-20 bg-primary/5 rounded-full flex items-center justify-center mb-6">
+              <CalendarDays className="h-10 w-10 text-primary/30" />
             </div>
-            <h3 className="text-2xl font-bold mb-2 tracking-tight">No meetings found</h3>
-            <p className="text-muted-foreground max-w-sm text-center mb-8 px-6">
+            <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">No meetings found</h3>
+            <p className="text-xs text-muted-foreground max-w-sm text-center mb-6 px-6 font-medium leading-relaxed">
               We couldn't find any meetings matching your current filters. Try searching with different terms.
             </p>
-            <Button variant="outline" onClick={resetFilters} className="rounded-xl px-8">
+            <Button variant="outline" onClick={resetFilters} className="rounded-xl px-6 text-xs font-bold border-border/60">
               Clear All Filters
             </Button>
           </Card>
@@ -273,7 +274,7 @@ export default function MeetingListPage() {
               return (
                 <Card 
                   key={meeting.id} 
-                  className="rounded-xl border shadow-sm hover:shadow-md transition-shadow flex flex-col h-full overflow-hidden"
+                  className="rounded-2xl border border-border/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col h-full overflow-hidden bg-card"
                 >
                   <div className={`h-1.5 w-full ${isOnline ? 'bg-blue-500' : 'bg-emerald-500'}`} />
                   
@@ -292,39 +293,39 @@ export default function MeetingListPage() {
                         <DropdownMenuContent align="end">
                           <PermissionGate module="meeting" action="update">
                             <Link href={`/meetings/${meeting.id}/edit`}>
-                              <DropdownMenuItem className="cursor-pointer">
-                                <Edit className="h-4 w-4 mr-2" /> Edit
+                              <DropdownMenuItem className="cursor-pointer font-semibold text-xs">
+                                <Edit className="h-4 w-4 mr-2 text-blue-600" /> Edit Meeting
                               </DropdownMenuItem>
                             </Link>
                           </PermissionGate>
                           <PermissionGate module="meeting" action="delete">
                             <DropdownMenuItem 
-                              className="text-red-600 cursor-pointer"
+                              className="text-red-600 cursor-pointer font-semibold text-xs"
                               onClick={() => {
                                 if (window.confirm("Delete meeting?")) deleteMeeting(meeting.id);
                               }}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete Meeting
                             </DropdownMenuItem>
                           </PermissionGate>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
 
-                    <h3 className="font-bold text-lg mb-2 line-clamp-1">
+                    <h3 className="font-bold text-sm sm:text-base text-foreground mb-2 line-clamp-1">
                       {meeting.title}
                     </h3>
                     
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px] font-semibold leading-relaxed">
                       {meeting.description || "No description provided."}
                     </p>
 
-                    <div className="space-y-3 mt-auto pt-4 border-t border-border/50">
+                    <div className="space-y-3 mt-auto pt-4 border-t border-border/30">
                       <div className="flex items-center gap-2 text-xs">
                         <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="font-medium text-foreground/80">{format(new Date(meeting.date), "MMM d, yyyy")}</span>
+                        <span className="font-bold text-foreground/80">{format(new Date(meeting.date), "MMM d, yyyy")}</span>
                         {meeting.time && (
-                          <span className="text-muted-foreground ml-auto flex items-center gap-1 font-medium">
+                          <span className="text-muted-foreground ml-auto flex items-center gap-1 font-bold">
                             <Clock className="h-3 w-3" /> {meeting.time}
                           </span>
                         )}
@@ -336,8 +337,8 @@ export default function MeetingListPage() {
                         ) : (
                           <MapPin className="h-3.5 w-3.5 text-emerald-500" />
                         )}
-                        <span className="truncate flex-1 font-medium text-foreground/80">
-                          {meeting.location || (isOnline ? "Online" : "Main Office")}
+                        <span className="truncate flex-1 font-bold text-foreground/80">
+                          {meeting.location || (isOnline ? "Online Meeting" : "Constituency Office")}
                         </span>
                       </div>
                     </div>
@@ -345,15 +346,15 @@ export default function MeetingListPage() {
                     <div className="mt-5">
                       {isOnline && meeting.meetingLink ? (
                         <Button 
-                          className="w-full gap-2 rounded-lg" 
+                          className="w-full gap-2 rounded-xl text-xs font-bold" 
                           onClick={() => window.open(meeting.meetingLink, "_blank")}
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <ExternalLink className="h-3.5 w-3.5" />
                           Join Meeting
                         </Button>
                       ) : (
                         <Link href={`/meetings/${meeting.id}/edit`}>
-                          <Button className="w-full rounded-lg" variant="secondary">
+                          <Button className="w-full rounded-xl text-xs font-bold" variant="secondary">
                             View Details
                           </Button>
                         </Link>
@@ -365,18 +366,18 @@ export default function MeetingListPage() {
             })}
           </div>
         ) : (
-          <Card className="border-none shadow-sm overflow-hidden rounded-2xl">
+          <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead className="font-bold">Title</TableHead>
-                    <TableHead className="font-bold">Date</TableHead>
-                    <TableHead className="font-bold">Time</TableHead>
-                    <TableHead className="font-bold">Type</TableHead>
-                    <TableHead className="font-bold">Location / Link</TableHead>
-                    <TableHead className="font-bold">Status</TableHead>
-                    <TableHead className="text-right font-bold">Actions</TableHead>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Title</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Date</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Time</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Location / Link</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -384,17 +385,17 @@ export default function MeetingListPage() {
                     const statusInfo = getStatusInfo(meeting.status);
                     const isOnline = meeting.type === "ONLINE";
                     return (
-                      <TableRow key={meeting.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-bold text-sm">{meeting.title}</TableCell>
-                        <TableCell className="text-sm">{format(new Date(meeting.date), "dd MMM yyyy")}</TableCell>
-                        <TableCell className="text-sm font-mono text-muted-foreground">{meeting.time || "--:--"}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="rounded-lg gap-1.5 font-medium py-1">
-                            {isOnline ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                      <TableRow key={meeting.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                        <TableCell className="font-bold text-xs sm:text-sm py-4 px-4">{meeting.title}</TableCell>
+                        <TableCell className="text-xs sm:text-sm py-4 px-4 font-semibold text-muted-foreground">{format(new Date(meeting.date), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs sm:text-sm py-4 px-4 font-mono font-bold text-foreground/80">{meeting.time || "--:--"}</TableCell>
+                        <TableCell className="py-4 px-4">
+                          <Badge variant="secondary" className="rounded-lg gap-1.5 font-bold py-1 text-[10px]">
+                            {isOnline ? <Video className="h-3 w-3 text-blue-500" /> : <MapPin className="h-3 w-3 text-emerald-500" />}
                             {meeting.type}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-xs sm:text-sm py-4 px-4 font-semibold">
                           {isOnline ? (
                             meeting.meetingLink ? (
                               <a href={meeting.meetingLink} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1.5 truncate max-w-[200px]">
@@ -405,12 +406,12 @@ export default function MeetingListPage() {
                             <span className="truncate max-w-[200px] block">{meeting.location || "---"}</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-4">
                           <Badge className={`${statusInfo.color} rounded-full border-none px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight`}>
                             {statusInfo.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right py-4 px-4">
                           <div className="flex justify-end gap-1">
                             <PermissionGate module="meeting" action="update">
                               <Link href={`/meetings/${meeting.id}/edit`}>

@@ -92,3 +92,18 @@ export const listRenewalsSchema = z.object({
   search: z.string().optional(),
 });
 
+export const listPlanUpgradeRequestsSchema = z.object({
+  page: z.string().optional(),
+  limit: z.string().optional(),
+  search: z.string().optional(),
+  status: z
+    .enum(["PENDING", "APPROVED", "REJECTED", "CANCELLED"])
+    .optional(),
+});
+
+export const reviewPlanUpgradeRequestSchema = z.object({
+  adminNote: z.string().max(1000).optional(),
+  prorateImmediately: z.boolean().optional().default(true),
+  syncTenantLimits: z.boolean().optional().default(true),
+});
+

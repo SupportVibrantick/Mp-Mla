@@ -175,18 +175,18 @@ export default function FundsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <IndianRupee className="h-7 w-7 text-primary" />
               Fund Management
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
               Track MPLAD, MLALAD & other fund allocations
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             {o?.financialYears && (
               <Select value={fy || o.financialYear} onValueChange={setFy}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-32 bg-muted/20 border-border/60 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,18 +201,17 @@ export default function FundsPage() {
             <PermissionGate module="funds" action="read">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 text-xs border-border/60 bg-card"
                 onClick={handleExport}
                 disabled={isExporting}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-3.5 w-3.5" />
                 Export All
               </Button>
             </PermissionGate>
             <PermissionGate module="funds" action="create">
-
               <Button
-                className="gap-2"
+                className="gap-2 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90"
                 onClick={() => {
                   setFundForm({
                     fundType: "MPLAD",
@@ -222,7 +221,7 @@ export default function FundsPage() {
                   setFundDlg(true);
                 }}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 Add Fund
               </Button>
             </PermissionGate>
@@ -230,15 +229,15 @@ export default function FundsPage() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
+              <Skeleton key={i} className="h-24 rounded-2xl" />
             ))}
           </div>
         ) : (
           o && (
             <>
-              {/* Summary */}
+              {/* Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   {
@@ -269,25 +268,29 @@ export default function FundsPage() {
                     sub: `${100 - o.releasePct}% pending`,
                   },
                 ].map((s, i) => (
-                  <Card key={i}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <s.icon
-                          className="h-4 w-4"
-                          style={{ color: s.color }}
-                        />
-                        <span className="text-xs text-muted-foreground">
-                          {s.label}
-                        </span>
+                  <Card key={i} className="transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-border/50 bg-card hover:border-primary/25 rounded-2xl">
+                    <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div
+                          className="p-2 rounded-xl border flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${s.color}15`, borderColor: `${s.color}25` }}
+                        >
+                          <s.icon className="h-4 w-4" style={{ color: s.color }} />
+                        </div>
                       </div>
-                      <p className="text-2xl font-bold">
-                        {formatCurrency(s.value)}
-                      </p>
-                      {s.sub && (
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {s.sub}
+                      <div>
+                        <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                          {s.label}
                         </p>
-                      )}
+                        <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground mt-0.5 font-mono">
+                          {formatCurrency(s.value)}
+                        </h3>
+                        {s.sub && (
+                          <p className="text-[10px] text-muted-foreground mt-1 font-medium truncate">
+                            {s.sub}
+                          </p>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -296,13 +299,13 @@ export default function FundsPage() {
               {/* Charts */}
               <div className="grid md:grid-cols-2 gap-4">
                 {piData.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">
+                  <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                    <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Allocation by Fund Type
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-3 sm:px-6 pt-4">
                       <div className="h-56">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
@@ -310,8 +313,8 @@ export default function FundsPage() {
                               data={piData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={50}
-                              outerRadius={80}
+                              innerRadius={45}
+                              outerRadius={75}
                               paddingAngle={3}
                               dataKey="value"
                               nameKey="name"
@@ -322,8 +325,9 @@ export default function FundsPage() {
                             </Pie>
                             <Tooltip
                               formatter={(v: number) => formatCurrency(v)}
+                              contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}
                             />
-                            <Legend />
+                            <Legend wrapperStyle={{ fontSize: "11px" }} iconSize={10} />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
@@ -331,27 +335,27 @@ export default function FundsPage() {
                   </Card>
                 )}
                 {o.byType?.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">
+                  <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                    <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+                      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         Utilization by Fund Type
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-3 sm:px-6 pt-4">
                       <div className="h-56">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={o.byType}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              opacity={0.1}
-                            />
-                            <XAxis dataKey="fundType" fontSize={10} />
+                            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                            <XAxis dataKey="fundType" fontSize={10} tickLine={false} />
                             <YAxis
                               fontSize={10}
-                              tickFormatter={(v) => formatCurrency(v)}
+                              tickLine={false}
+                              width={45}
+                              tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`}
                             />
                             <Tooltip
                               formatter={(v: number) => formatCurrency(v)}
+                              contentStyle={{ borderRadius: "12px", border: "none" }}
                             />
                             <Bar
                               dataKey="allocated"
@@ -374,80 +378,70 @@ export default function FundsPage() {
               </div>
 
               {/* Fund-wise breakdown */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">
+              <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+                  <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Fund-wise Breakdown ({o.financialYear})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Fund Type</TableHead>
-                        <TableHead className="text-right">Allocated</TableHead>
-                        <TableHead className="text-right">Released</TableHead>
-                        <TableHead className="text-right">Utilized</TableHead>
-                        <TableHead className="text-center">
-                          Utilization
-                        </TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                      <TableRow className="hover:bg-transparent border-b border-border/50">
+                        <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Fund Type</TableHead>
+                        <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Allocated</TableHead>
+                        <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Released</TableHead>
+                        <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Utilized</TableHead>
+                        <TableHead className="h-12 px-4 text-center text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Utilization</TableHead>
+                        <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {o.byType?.map((f: any) => {
                         const info = getFundTypeInfo(f.fundType);
-                        const matchingFund = (
-                          res?.data as any
-                        )?.recentTransactions?.find(
-                          (t: any) => t.fund?.fundType === f.fundType,
-                        );
                         return (
-                          <TableRow key={f.fundType}>
-                            <TableCell>
+                          <TableRow key={f.fundType} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="py-4 px-4 align-middle">
                               <div className="flex items-center gap-2">
                                 <div
                                   className="w-3 h-3 rounded-full"
                                   style={{ backgroundColor: info.color }}
                                 />
                                 <div>
-                                  <p className="font-medium">{info.label}</p>
-                                  <p className="text-[10px] text-muted-foreground">
+                                  <p className="font-bold text-xs sm:text-sm text-foreground">{info.label}</p>
+                                  <p className="text-[10px] text-muted-foreground font-semibold">
                                     {info.desc}
                                   </p>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right font-mono">
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
                               {formatCurrency(f.allocated)}
                             </TableCell>
-                            <TableCell className="text-right font-mono">
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
                               {formatCurrency(f.released)}
                             </TableCell>
-                            <TableCell className="text-right font-mono">
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
                               {formatCurrency(f.utilized)}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="py-4 px-4 align-middle">
                               <div className="flex items-center justify-center gap-2">
                                 <Progress
                                   value={f.utilizationPct}
                                   className="h-1.5 w-16"
                                 />
-                                <span className="text-xs font-mono">
+                                <span className="text-xs font-mono font-bold text-muted-foreground">
                                   {f.utilizationPct}%
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right py-4 px-4 align-middle">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-xs gap-1"
+                                className="text-xs gap-1 h-8 rounded-lg font-bold"
                                 onClick={() => {
-                                  // Find the fund ID for this type and year
-                                  const allFunds = res?.data?.byType;
-                                  // We need the fund ID — fetch from the funds list
-                                  // For simplicity, navigate to fund detail
+                                  // detail link or fallback
                                 }}
                               >
                                 <Eye className="h-3.5 w-3.5" />
@@ -463,21 +457,21 @@ export default function FundsPage() {
               </Card>
 
               {/* Recent Transactions */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">
+              <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+                <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+                  <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Recent Transactions
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Fund</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Description</TableHead>
+                      <TableRow className="hover:bg-transparent border-b border-border/50">
+                        <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Date</TableHead>
+                        <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Fund</TableHead>
+                        <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                        <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Amount</TableHead>
+                        <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Description</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -486,30 +480,30 @@ export default function FundsPage() {
                           (x) => x.value === t.type,
                         );
                         return (
-                          <TableRow key={t.id}>
-                            <TableCell className="text-sm">
+                          <TableRow key={t.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {format(new Date(t.date), "dd MMM yyyy")}
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-[10px]">
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Badge variant="outline" className="text-[10px] font-bold">
                                 {t.fund?.fundType}
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-4 px-4 align-middle">
                               <Badge
-                                className="text-[10px]"
+                                className="text-[10px] font-bold border-none"
                                 style={{
-                                  backgroundColor: `${txnInfo?.color}20`,
+                                  backgroundColor: `${txnInfo?.color}15`,
                                   color: txnInfo?.color,
                                 }}
                               >
                                 {txnInfo?.icon} {txnInfo?.label}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-mono font-medium">
+                            <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
                               {formatCurrency(t.amount)}
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            <TableCell className="text-xs py-4 px-4 text-muted-foreground max-w-[200px] truncate">
                               {t.description || "—"}
                             </TableCell>
                           </TableRow>
@@ -517,10 +511,10 @@ export default function FundsPage() {
                       })}
                       {(!o.recentTransactions ||
                         o.recentTransactions.length === 0) && (
-                          <TableRow>
+                          <TableRow className="hover:bg-transparent">
                             <TableCell
                               colSpan={5}
-                              className="text-center py-8 text-muted-foreground"
+                              className="text-center py-16 text-muted-foreground text-xs font-semibold"
                             >
                               No transactions yet
                             </TableCell>

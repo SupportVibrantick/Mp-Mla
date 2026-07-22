@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Layers, Users, Calendar, Receipt } from "lucide-react";
+import { Layers, Users, Calendar, Receipt, ArrowUpCircle } from "lucide-react";
 
 export function SubscriptionsNav() {
   const [location] = useLocation();
@@ -20,6 +20,11 @@ export function SubscriptionsNav() {
       label: "Upcoming Renewals",
       href: "/subscriptions/renewals",
       icon: Calendar,
+    },
+    {
+      label: "Upgrade Requests",
+      href: "/subscriptions/upgrade-requests",
+      icon: ArrowUpCircle,
     },
     {
       label: "Invoices",

@@ -20,14 +20,18 @@ import {
   updatePlanSchema,
   upsertTenantSubscriptionSchema,
   listRenewalsSchema,
+  listPlanUpgradeRequestsSchema,
+  reviewPlanUpgradeRequestSchema,
 } from "../../../schemas/platform/subscriptions/index.js";
 import {
   activateTenantSubscription,
+  approvePlanUpgradeRequest,
   cancelTenantSubscription,
   createSubscriptionPlan,
   getSubscriptionOverview,
   getTenantSubscription,
   upgradeTenantSubscription,
+  listPlanUpgradeRequests,
   listInvoices,
   listSubscriptionPlans,
   listTenantSubscriptions,
@@ -35,6 +39,7 @@ import {
   updateSubscriptionPlan,
   upsertTenantSubscription,
   listUpcomingRenewals,
+  rejectPlanUpgradeRequest,
 } from "../../../controllers/platform/subscriptions.controller.js";
 
 const router = Router();
@@ -81,6 +86,26 @@ router.get(
   authorizePlatform(...readRoles),
   validateQuery(listRenewalsSchema),
   listUpcomingRenewals,
+);
+router.get(
+  "/upgrade-requests",
+  authorizePlatform(...readRoles),
+  validateQuery(listPlanUpgradeRequestsSchema),
+  listPlanUpgradeRequests,
+);
+router.post(
+  "/upgrade-requests/:id/approve",
+  authorizePlatform(...writeRoles),
+  validateParams(idParamSchema),
+  validate(reviewPlanUpgradeRequestSchema),
+  approvePlanUpgradeRequest,
+);
+router.post(
+  "/upgrade-requests/:id/reject",
+  authorizePlatform(...writeRoles),
+  validateParams(idParamSchema),
+  validate(reviewPlanUpgradeRequestSchema.pick({ adminNote: true })),
+  rejectPlanUpgradeRequest,
 );
 router.get(
   "/tenant-subscriptions",

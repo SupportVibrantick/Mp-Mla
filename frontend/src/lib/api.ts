@@ -153,6 +153,8 @@ export const accountApi = {
   getSubscription: () => api.get("/admin/account/subscription"),
   getInvoices: () => api.get("/admin/account/invoices"),
   getUsage: () => api.get("/admin/account/usage"),
+  getPlans: () => api.get("/admin/account/plans"),
+  requestUpgrade: (data: any) => api.post("/admin/account/upgrade-requests", data),
 };
 
 export const usersApi = {

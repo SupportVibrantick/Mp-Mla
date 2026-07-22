@@ -174,10 +174,10 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 80 : 280 }}
-        className="h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-xl"
+        className="h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 text-white border-r border-indigo-950/50 flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-2xl"
       >
       {/* Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border/50">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-indigo-950/50">
         {!collapsed && (
           <div className="flex items-center gap-2 overflow-hidden">
             {settings.brand_logo_url ? (
@@ -234,7 +234,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+      <div className="flex-1 overflow-y-auto sidebar-scroll py-4 px-2 space-y-1">
         {filteredNavItems.map((item) => {
           const isActive = location === item.href;
           const content = (
@@ -242,14 +242,14 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
                 isActive
-                  ? "bg-primary text-primary-foreground font-medium shadow-md"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  ? "bg-indigo-600/35 text-white font-bold border-l-2 border-indigo-400 rounded-none rounded-r-lg shadow-sm"
+                  : "text-white/70 hover:bg-white/5 hover:text-white",
               )}
             >
               <item.icon
                 className={cn(
                   "h-5 w-5 min-w-5",
-                  isActive ? "text-white" : "group-hover:text-primary",
+                  isActive ? "text-white" : "group-hover:text-white",
                 )}
               />
               {!collapsed && <span className="truncate">{item.label}</span>}
@@ -284,7 +284,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                   Administration
                 </p>
               ) : (
-                <div className="border-t border-sidebar-border/50 mx-2" />
+                <div className="border-t border-indigo-950/50 mx-2" />
               )}
             </div>
 
@@ -295,14 +295,14 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
                     isActive
-                      ? "bg-primary/20 text-primary font-medium"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                      ? "bg-indigo-600/35 text-white font-bold border-l-2 border-indigo-400 rounded-none rounded-r-lg shadow-sm"
+                      : "text-white/70 hover:bg-white/5 hover:text-white",
                   )}
                 >
                   <item.icon
                     className={cn(
                       "h-5 w-5 min-w-5",
-                      isActive ? "text-primary" : "group-hover:text-primary",
+                      isActive ? "text-white" : "group-hover:text-white",
                     )}
                   />
                   {!collapsed && (
@@ -333,16 +333,17 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           </>
         )}
 
-        <div className="my-4 border-t border-sidebar-border/50 mx-2" />
+        <div className="my-4 border-t border-indigo-950/50 mx-2" />
 
         {bottomItems.map((item) => {
+          const isActive = location === item.href;
           const content = (
             <div
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
-                location === item.href
-                  ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                isActive
+                  ? "bg-indigo-600/35 text-white font-bold border-l-2 border-indigo-400 rounded-none rounded-r-lg shadow-sm"
+                  : "text-white/70 hover:bg-white/5 hover:text-white",
               )}
             >
               <item.icon className="h-5 w-5 min-w-5" />
@@ -373,11 +374,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
       {/* Expand Button (when collapsed) */}
       {collapsed && (
-        <div className="p-2 flex justify-center">
+        <div className="p-2 flex justify-center border-t border-indigo-950/50">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(false)}
+            className="text-white hover:bg-white/5"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -385,23 +387,23 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       )}
 
       {/* User Profile */}
-      <div className="p-4 border-t border-sidebar-border/50 bg-sidebar-accent/10">
+      <div className="p-4 border-t border-indigo-950/50 bg-white/5">
         <div
           className={cn(
             "flex items-center gap-3",
             collapsed ? "justify-center" : "",
           )}
         >
-          <Avatar className="h-9 w-9 border border-sidebar-border shadow-sm">
+          <Avatar className="h-9 w-9 border border-indigo-900/50 shadow-sm">
             <AvatarImage src={user?.avatarUrl || ""} />
-            <AvatarFallback className="bg-primary/10 text-primary">
+            <AvatarFallback className="bg-primary/20 text-primary-foreground">
               {user?.name?.substring(0, 2).toUpperCase() || "CN"}
             </AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-sm font-medium truncate text-white">{user?.name}</p>
+              <p className="text-xs text-indigo-300 truncate">
                 {user?.role}
               </p>
             </div>
@@ -410,7 +412,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              className="h-8 w-8 text-indigo-200 hover:bg-rose-500/10 hover:text-rose-400"
               onClick={() => logout()}
             >
               <LogOut className="h-4 w-4" />

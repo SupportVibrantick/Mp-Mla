@@ -10,7 +10,7 @@ import {
   useDeleteUser,
 } from "@/hooks/useUsers";
 import { PermissionGate } from "@/components/auth/PermissionGate";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -217,17 +217,16 @@ export default function UserManagement() {
   };
 
   return (
-    <MainLayout title="User Management ">
+    <MainLayout title="User Management">
       <div className="space-y-6">
         {/* ─── Page Header ───────────────────────────── */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              User Management
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2.5 text-foreground">
+              <Users className="h-7 w-7 text-primary" /> User Directory
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Create and manage user accounts, roles, and permissions
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
+              Create and manage user accounts, system roles, and detailed override policies
             </p>
           </div>
 
@@ -238,119 +237,121 @@ export default function UserManagement() {
                 setShowPassword(false);
                 setCreateOpen(true);
               }}
-              className="gap-2"
+              className="gap-2 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 font-bold rounded-xl h-9"
             >
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="h-3.5 w-3.5" />
               Add User
             </Button>
           </PermissionGate>
         </div>
 
         {/* ─── Filters ───────────────────────────────── */}
-        <Card className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, or phone..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, email, or phone..."
+                  className="pl-9 bg-background/50 border-muted-foreground/20 rounded-xl h-9 text-xs"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+              <Select
+                value={roleFilter}
+                onValueChange={(v) => {
+                  setRoleFilter(v);
                   setPage(1);
                 }}
-              />
+              >
+                <SelectTrigger className="w-full sm:w-[160px] bg-background/50 border-muted-foreground/20 rounded-xl text-xs h-9">
+                  <SelectValue placeholder="All Roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="SYSTEM_ADMIN">System Admin</SelectItem>
+                  <SelectItem value="MLA_MP">MLA / MP</SelectItem>
+                  <SelectItem value="OFFICE_STAFF">Office Staff</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[150px] bg-background/50 border-muted-foreground/20 rounded-xl text-xs h-9">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="INACTIVE">Inactive</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select
-              value={roleFilter}
-              onValueChange={(v) => {
-                setRoleFilter(v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="All Roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="SYSTEM_ADMIN">System Admin</SelectItem>
-                <SelectItem value="MLA_MP">MLA / MP</SelectItem>
-                <SelectItem value="OFFICE_STAFF">Office Staff</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => {
-                setStatusFilter(v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="SUSPENDED">Suspended</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          </CardContent>
         </Card>
 
         {/* ─── Users Table ───────────────────────────── */}
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                <tr className="hover:bg-transparent border-b border-border/50">
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                     User
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                     Role
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 hidden md:table-cell">
                     Last Login
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 hidden lg:table-cell">
                     Created By
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                  <th className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-border/40">
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-4 py-3">
+                    <tr key={i} className="border-b border-border/30">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <Skeleton className="h-9 w-9 rounded-full" />
                           <div>
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-48 mt-1" />
+                            <Skeleton className="h-4 w-32 rounded" />
+                            <Skeleton className="h-3 w-48 mt-1.5 rounded" />
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <Skeleton className="h-5 w-20" />
+                      <td className="px-4 py-4">
+                        <Skeleton className="h-5 w-20 rounded-full" />
                       </td>
-                      <td className="px-4 py-3">
-                        <Skeleton className="h-5 w-16" />
+                      <td className="px-4 py-4">
+                        <Skeleton className="h-5 w-16 rounded-full" />
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        <Skeleton className="h-4 w-24" />
+                      <td className="px-4 py-4 hidden md:table-cell">
+                        <Skeleton className="h-4 w-24 rounded" />
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        <Skeleton className="h-4 w-20" />
+                      <td className="px-4 py-4 hidden lg:table-cell">
+                        <Skeleton className="h-4 w-20 rounded" />
                       </td>
-                      <td className="px-4 py-3">
-                        <Skeleton className="h-8 w-8 ml-auto" />
+                      <td className="px-4 py-4">
+                        <Skeleton className="h-8 w-8 ml-auto rounded-full" />
                       </td>
                     </tr>
                   ))
@@ -358,7 +359,7 @@ export default function UserManagement() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 py-16 text-center text-muted-foreground"
+                      className="px-4 py-16 text-center text-xs sm:text-sm font-semibold text-muted-foreground leading-relaxed"
                     >
                       No users found matching your filters.
                     </td>
@@ -370,39 +371,42 @@ export default function UserManagement() {
                     const StatusIcon = statusCfg.icon;
                     const isCurrentUser = u.id === currentUser?.id;
 
+                    let roleBadgeColor = "bg-slate-500/10 text-slate-500";
+                    if (u.role === "SYSTEM_ADMIN") roleBadgeColor = "bg-slate-500/10 text-slate-700 dark:text-slate-300";
+                    else if (u.role === "MLA_MP") roleBadgeColor = "bg-blue-500/10 text-blue-500";
+                    else if (u.role === "OFFICE_STAFF") roleBadgeColor = "bg-emerald-500/10 text-emerald-500";
+
                     return (
                       <tr
                         key={u.id}
-                        className="hover:bg-muted/30 transition-colors"
+                        className="hover:bg-muted/10 transition-colors border-b border-border/40"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-extrabold text-sm shrink-0 border border-primary/20">
                               {u.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium truncate">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-foreground text-xs sm:text-sm">
                                   {u.name}
                                 </span>
                                 {isCurrentUser && (
                                   <Badge
-                                    variant="outline"
-                                    className="text-[10px] px-1.5 py-0"
+                                    className="text-[9px] font-bold px-1.5 py-0 bg-primary/10 text-primary border-none"
                                   >
                                     You
                                   </Badge>
                                 )}
                                 {u.forcePasswordChange && (
                                   <Badge
-                                    variant="outline"
-                                    className="text-[10px] px-1.5 py-0 border-orange-300 text-orange-600"
+                                    className="text-[9px] font-bold px-1.5 py-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-none"
                                   >
-                                    Password Reset
+                                    Reset Required
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 font-semibold">
                                 <span className="truncate">{u.email}</span>
                                 {u.phone && (
                                   <span className="hidden sm:inline">
@@ -413,48 +417,48 @@ export default function UserManagement() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3.5 align-middle">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[u.role] || ""}`}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${roleBadgeColor}`}
                           >
                             <Shield className="h-3 w-3" />
                             {ROLE_LABELS[u.role] || u.role}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3.5 align-middle">
                           <span
-                            className={`inline-flex items-center gap-1.5 text-xs font-medium ${statusCfg.color}`}
+                            className={`inline-flex items-center gap-1 text-xs font-bold ${statusCfg.color}`}
                           >
-                            <StatusIcon className="h-3.5 w-3.5" />
+                            <StatusIcon className="h-3.5 w-3.5 opacity-80" />
                             {statusCfg.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 hidden md:table-cell">
+                        <td className="px-4 py-3.5 hidden md:table-cell align-middle">
                           {u.lastLoginAt ? (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground/95 flex items-center gap-1 font-semibold">
                               <Clock className="h-3 w-3" />
                               {formatDistanceToNow(new Date(u.lastLoginAt), {
                                 addSuffix: true,
                               })}
                             </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground italic">
+                            <span className="text-xs text-muted-foreground italic font-medium">
                               Never
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <span className="text-xs text-muted-foreground">
+                        <td className="px-4 py-3.5 hidden lg:table-cell align-middle">
+                          <span className="text-xs text-muted-foreground font-semibold">
                             {u.createdByAdmin?.name || "—"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3.5 text-right align-middle">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 rounded-full"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -463,9 +467,9 @@ export default function UserManagement() {
                               <PermissionGate module="users" action="update">
                                 <DropdownMenuItem
                                   onClick={() => openEdit(u)}
-                                  className="cursor-pointer"
+                                  className="cursor-pointer font-semibold text-xs"
                                 >
-                                  <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
+                                  <Pencil className="mr-2 h-3.5 w-3.5 text-blue-600" /> Edit
                                   User
                                 </DropdownMenuItem>
                               </PermissionGate>
@@ -474,9 +478,9 @@ export default function UserManagement() {
                                   onClick={() =>
                                     setLocation(`/users/${u.id}/permissions`)
                                   }
-                                  className="cursor-pointer"
+                                  className="cursor-pointer font-semibold text-xs"
                                 >
-                                  <KeyRound className="mr-2 h-3.5 w-3.5" />{" "}
+                                  <KeyRound className="mr-2 h-3.5 w-3.5 text-indigo-600" />{" "}
                                   Manage Permissions
                                 </DropdownMenuItem>
                               </PermissionGate>
@@ -489,7 +493,7 @@ export default function UserManagement() {
                                         setSelectedUser(u);
                                         setDeleteOpen(true);
                                       }}
-                                      className="cursor-pointer text-destructive focus:text-destructive"
+                                      className="cursor-pointer text-destructive focus:text-destructive font-semibold text-xs"
                                     >
                                       <UserX className="mr-2 h-3.5 w-3.5" />{" "}
                                       Deactivate
@@ -510,8 +514,8 @@ export default function UserManagement() {
 
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t">
-              <p className="text-xs text-muted-foreground">
+            <div className="flex items-center justify-between px-5 py-4 border-t border-border/30">
+              <p className="text-xs font-semibold text-muted-foreground">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–
                 {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
                 of {pagination.total}
@@ -520,7 +524,7 @@ export default function UserManagement() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 rounded-xl border-border/60"
                   disabled={!pagination.hasPrevPage}
                   onClick={() => setPage((p) => p - 1)}
                 >
@@ -537,7 +541,7 @@ export default function UserManagement() {
                           pageNum === pagination.page ? "default" : "outline"
                         }
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 rounded-xl font-bold text-xs"
                         onClick={() => setPage(pageNum)}
                       >
                         {pageNum}
@@ -548,7 +552,7 @@ export default function UserManagement() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 rounded-xl border-border/60"
                   disabled={!pagination.hasNextPage}
                   onClick={() => setPage((p) => p + 1)}
                 >

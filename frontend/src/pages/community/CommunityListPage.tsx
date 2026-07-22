@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 import {
   useCommunityGroups,
   useCommunityGroupStats,
@@ -51,6 +52,7 @@ import {
   TrendingUp,
   FileDown,
   FileUp,
+  Phone,
 } from "lucide-react";
 
 export default function CommunityListPage() {
@@ -194,11 +196,11 @@ export default function CommunityListPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <Users className="h-7 w-7 text-primary" />
               Community Groups
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
               Manage RWAs, clubs, associations, and community organizations
             </p>
           </div>
@@ -206,7 +208,7 @@ export default function CommunityListPage() {
             <PermissionGate module="community_groups" action="read">
               <Button
                 variant="outline"
-                className="gap-2 w-full sm:w-auto justify-center"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60 justify-center"
                 onClick={handleExport}
                 disabled={isExporting}
               >
@@ -218,7 +220,7 @@ export default function CommunityListPage() {
             <PermissionGate module="community_groups" action="create">
               <Button
                 variant="outline"
-                className="gap-2 w-full sm:w-auto justify-center"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60 justify-center"
                 onClick={() => setIsBulkImportOpen(true)}
               >
                 <FileUp className="h-4 w-4" />
@@ -228,7 +230,7 @@ export default function CommunityListPage() {
 
             <PermissionGate module="community_groups" action="create">
               <Link to="/community/new" className="w-full sm:w-auto">
-                <Button className="gap-2 w-full sm:w-auto justify-center">
+                <Button className="gap-2 w-full sm:w-auto justify-center bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 text-white font-semibold shadow-md hover:shadow-lg transition-all h-9 text-xs px-4 border-none">
                   <Plus className="h-4 w-4" />
                   Add Group
                 </Button>
@@ -244,7 +246,7 @@ export default function CommunityListPage() {
           title="Import Community Groups"
           description={
             <div>
-              <p>
+              <p className="text-xs text-muted-foreground">
                 Upload an Excel or CSV file to import multiple community groups.
                 Records are upserted by Name and Ward.
               </p>
@@ -254,184 +256,184 @@ export default function CommunityListPage() {
         />
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-20" />
+              <Skeleton key={i} className="h-24 rounded-2xl" />
             ))
           ) : (
             <>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.total || 0}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Active Groups
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/15 flex items-center justify-center">
-                    <UserCheck className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalMembers?.toLocaleString() || 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Total Members
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                    <span className="text-blue-600 font-bold text-sm">M</span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalMale?.toLocaleString() || 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Male Members
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-pink-500/15 flex items-center justify-center">
-                    <span className="text-pink-600 font-bold text-sm">F</span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {stats?.totalFemale?.toLocaleString() || 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Female Members
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-500/15 flex items-center justify-center">
-                    <UserX className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.inactive || 0}</p>
-                    <p className="text-xs text-muted-foreground">Inactive</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {[
+                {
+                  label: "Active Groups",
+                  value: stats?.total || 0,
+                  Icon: Users,
+                  color: "text-indigo-500",
+                  bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+                  borderColor: "border-indigo-100 dark:border-indigo-950/50",
+                },
+                {
+                  label: "Total Members",
+                  value: stats?.totalMembers || 0,
+                  Icon: UserCheck,
+                  color: "text-emerald-500",
+                  bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+                  borderColor: "border-emerald-100 dark:border-emerald-950/50",
+                },
+                {
+                  label: "Male Members",
+                  value: stats?.totalMale || 0,
+                  textIcon: "M",
+                  color: "text-blue-500",
+                  bgColor: "bg-blue-50 dark:bg-blue-950/30",
+                  borderColor: "border-blue-100 dark:border-blue-950/50",
+                },
+                {
+                  label: "Female Members",
+                  value: stats?.totalFemale || 0,
+                  textIcon: "F",
+                  color: "text-pink-500",
+                  bgColor: "bg-pink-50 dark:bg-pink-950/30",
+                  borderColor: "border-pink-100 dark:border-pink-950/50",
+                },
+                {
+                  label: "Inactive Groups",
+                  value: stats?.inactive || 0,
+                  Icon: UserX,
+                  color: "text-rose-500",
+                  bgColor: "bg-rose-50 dark:bg-rose-950/30",
+                  borderColor: "border-rose-100 dark:border-rose-950/50",
+                },
+              ].map((s, i) => (
+                <Card key={i} className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl">
+                  <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
+                        {s.Icon ? (
+                          <s.Icon className={cn("h-4 w-4", s.color)} />
+                        ) : (
+                          <span className={cn("text-sm font-extrabold leading-none", s.color)}>{s.textIcon}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                        {s.label}
+                      </p>
+                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                        {s.value.toLocaleString()}
+                      </h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </>
           )}
         </div>
 
         {/* Type-wise Distribution */}
         {stats?.byType && stats.byType.length > 0 && (
-          <Card className="overflow-hidden border-none bg-transparent shadow-none">
-            <CardHeader className="px-0 pb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary/10 rounded-md">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-base font-bold">
-                    Community Distribution
-                  </CardTitle>
-                  <p className="text-[11px] text-muted-foreground">
-                    Statistical breakdown by organization category
-                  </p>
-                </div>
-              </div>
+          <Card className="border border-border/50 bg-card shadow-sm rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Community Distribution
+              </CardTitle>
             </CardHeader>
-            <CardContent className="px-0">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 {stats.byType.map((t: any) => {
                   const info = getTypeInfo(t.type);
                   const Icon = info.icon;
+                  const isActive = typeFilter === t.type;
 
-                  // Dynamic color mapping
                   const colors: Record<
                     string,
-                    { bg: string; text: string; light: string }
+                    { bg: string; text: string; light: string; border: string }
                   > = {
                     MARKET: {
                       bg: "bg-blue-500",
                       text: "text-blue-600",
-                      light: "bg-blue-50",
+                      light: "bg-blue-50 dark:bg-blue-950/20",
+                      border: "border-blue-100 dark:border-blue-950/40",
                     },
                     SLUM: {
                       bg: "bg-amber-500",
                       text: "text-amber-600",
-                      light: "bg-amber-50",
+                      light: "bg-amber-50 dark:bg-amber-950/20",
+                      border: "border-amber-100 dark:border-amber-950/40",
                     },
                     SPORTS_TEAM: {
                       bg: "bg-orange-500",
                       text: "text-orange-600",
-                      light: "bg-orange-50",
+                      light: "bg-orange-50 dark:bg-orange-950/20",
+                      border: "border-orange-100 dark:border-orange-950/40",
                     },
                     CLUB: {
                       bg: "bg-indigo-500",
                       text: "text-indigo-600",
-                      light: "bg-indigo-50",
+                      light: "bg-indigo-50 dark:bg-indigo-950/20",
+                      border: "border-indigo-100 dark:border-indigo-950/40",
                     },
                     RWA: {
                       bg: "bg-violet-500",
                       text: "text-violet-600",
-                      light: "bg-violet-50",
+                      light: "bg-violet-50 dark:bg-violet-950/20",
+                      border: "border-violet-100 dark:border-violet-950/40",
                     },
                     SENIOR_CITIZEN: {
                       bg: "bg-emerald-500",
                       text: "text-emerald-600",
-                      light: "bg-emerald-50",
+                      light: "bg-emerald-50 dark:bg-emerald-950/20",
+                      border: "border-emerald-100 dark:border-emerald-950/40",
                     },
                     BUDDHIJEEVI: {
                       bg: "bg-sky-500",
                       text: "text-sky-600",
-                      light: "bg-sky-50",
+                      light: "bg-sky-50 dark:bg-sky-950/20",
+                      border: "border-sky-100 dark:border-sky-950/40",
                     },
                     WOMEN_GROUP: {
                       bg: "bg-pink-500",
                       text: "text-pink-600",
-                      light: "bg-pink-50",
+                      light: "bg-pink-50 dark:bg-pink-950/20",
+                      border: "border-pink-100 dark:border-pink-950/40",
                     },
                     YOUTH_GROUP: {
                       bg: "bg-cyan-500",
                       text: "text-cyan-600",
-                      light: "bg-cyan-50",
+                      light: "bg-cyan-50 dark:bg-cyan-950/20",
+                      border: "border-cyan-100 dark:border-cyan-950/40",
                     },
                     CULTURAL_ORG: {
                       bg: "bg-rose-500",
                       text: "text-rose-600",
-                      light: "bg-rose-50",
+                      light: "bg-rose-50 dark:bg-rose-950/20",
+                      border: "border-rose-100 dark:border-rose-950/40",
                     },
                     NGO: {
                       bg: "bg-teal-500",
                       text: "text-teal-600",
-                      light: "bg-teal-50",
+                      light: "bg-teal-50 dark:bg-teal-950/20",
+                      border: "border-teal-100 dark:border-teal-950/40",
                     },
                     FESTIVAL_COMMITTEE: {
                       bg: "bg-yellow-500",
                       text: "text-yellow-600",
-                      light: "bg-yellow-50",
+                      light: "bg-yellow-50 dark:bg-yellow-950/20",
+                      border: "border-yellow-100 dark:border-yellow-950/40",
                     },
                     TRADE_UNION: {
                       bg: "bg-slate-500",
                       text: "text-slate-600",
-                      light: "bg-slate-50",
+                      light: "bg-slate-50 dark:bg-slate-950/20",
+                      border: "border-slate-100 dark:border-slate-950/40",
                     },
                     OTHER: {
                       bg: "bg-gray-400",
                       text: "text-gray-500",
-                      light: "bg-gray-50",
+                      light: "bg-gray-50 dark:bg-gray-950/20",
+                      border: "border-gray-100 dark:border-gray-950/40",
                     },
                   };
 
@@ -440,57 +442,26 @@ export default function CommunityListPage() {
                   return (
                     <div
                       key={t.type}
-                      className="group relative flex flex-col p-4 rounded-xl border bg-card hover:shadow-md hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden"
+                      className={cn(
+                        "text-center p-3 rounded-xl border transition-all duration-200 cursor-pointer shadow-sm flex flex-col items-center justify-between min-h-[110px]",
+                        isActive
+                          ? "border-primary bg-primary/5 shadow-md -translate-y-0.5"
+                          : "hover:bg-muted/40 border-border/50 hover:-translate-y-0.5"
+                      )}
                       onClick={() => {
-                        setTypeFilter(t.type);
+                        setTypeFilter(isActive ? "all" : t.type);
                         setPage(1);
-                        window.scrollTo({ top: 400, behavior: "smooth" });
                       }}
                     >
-                      {/* Decorative Background Blob */}
-                      <div
-                        className={`absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-5 group-hover:opacity-10 transition-opacity ${theme.bg}`}
-                      />
-
-                      <div className="flex items-start justify-between mb-3">
-                        <div
-                          className={`p-2.5 rounded-lg ${theme.light} ${theme.text} group-hover:scale-110 transition-transform`}
-                        >
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-black tracking-tight">
-                            {t.count}
-                          </p>
-                          <p className="text-[9px] font-medium uppercase text-muted-foreground">
-                            Groups
-                          </p>
-                        </div>
+                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center border shadow-inner shrink-0", theme.light, theme.border)}>
+                        <Icon className={cn("h-5 w-5", theme.text)} />
                       </div>
-
-                      <div className="mt-auto">
-                        <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">
+                      <div className="mt-2 w-full">
+                        <p className="text-lg font-extrabold text-foreground tracking-tight leading-none">{t.count}</p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-1 truncate w-full px-1">
                           {info.label}
                         </p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <div className="flex -space-x-1">
-                            <div className="w-3.5 h-3.5 rounded-full border border-background bg-muted flex items-center justify-center">
-                              <Users className="w-2 h-2 text-muted-foreground" />
-                            </div>
-                          </div>
-                          <p className="text-[10px] font-semibold text-muted-foreground">
-                            {t.members.toLocaleString()}{" "}
-                            <span className="font-normal opacity-70">
-                              people
-                            </span>
-                          </p>
-                        </div>
                       </div>
-
-                      {/* Active Indicator Bar (only visible on hover or if filtered) */}
-                      <div
-                        className={`absolute bottom-0 left-0 h-0.5 transition-all duration-300 ${typeFilter === t.type ? "w-full " + theme.bg : "w-0 group-hover:w-full " + theme.bg}`}
-                      />
                     </div>
                   );
                 })}
@@ -500,9 +471,9 @@ export default function CommunityListPage() {
         )}
 
         {/* Filters */}
-        <Card>
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -512,10 +483,10 @@ export default function CommunityListPage() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9"
+                  className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20"
                 />
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2.5 flex-wrap w-full lg:w-auto">
                 <Select
                   value={wardFilter}
                   onValueChange={(v) => {
@@ -523,7 +494,7 @@ export default function CommunityListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40 h-10 border-border/60 bg-muted/10">
                     <Filter className="h-3.5 w-3.5 mr-1.5" />
                     <SelectValue placeholder="Ward" />
                   </SelectTrigger>
@@ -544,7 +515,7 @@ export default function CommunityListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-44">
+                  <SelectTrigger className="w-full sm:w-44 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -570,11 +541,11 @@ export default function CommunityListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-32 h-10 border-border/60 bg-muted/10">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="true">Active</SelectItem>
                     <SelectItem value="false">Inactive</SelectItem>
                   </SelectContent>
@@ -583,61 +554,55 @@ export default function CommunityListPage() {
                   wardFilter !== "all" ||
                   typeFilter !== "all" ||
                   activeFilter !== "all") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={reset}
-                    className="text-xs"
-                  >
-                    Clear
-                  </Button>
-                )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={reset}
+                      className="text-xs h-10 px-3 text-muted-foreground hover:text-foreground"
+                    >
+                      Clear
+                    </Button>
+                  )}
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              Groups ({pagination?.total || groups.length})
-            </CardTitle>
-          </CardHeader>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Group Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Ward / Area</TableHead>
-                    <TableHead className="text-right">Members</TableHead>
-                    <TableHead>Head Person</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Group Name</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward / Area</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Members</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Head Person</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className="border-b border-border/40">
                         {Array.from({ length: 7 }).map((_, j) => (
-                          <TableCell key={j}>
+                          <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : groups.length === 0 ? (
-                    <TableRow>
+                    <TableRow className="hover:bg-transparent">
                       <TableCell
                         colSpan={7}
-                        className="text-center py-12 text-muted-foreground"
+                        className="text-center py-16 text-muted-foreground text-xs"
                       >
-                        <Users className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p>No community groups found.</p>
+                        <Users className="h-10 w-10 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                        <p className="font-medium text-sm">No community groups found.</p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -645,96 +610,88 @@ export default function CommunityListPage() {
                       const info = getTypeInfo(g.type);
                       const Icon = info.icon;
                       return (
-                        <TableRow key={g.id} className="hover:bg-muted/50">
-                          <TableCell>
+                        <TableRow key={g.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                          <TableCell className="py-4 px-4 align-middle">
                             <Link to={`/community/${g.id}`}>
-                              <span className="font-medium text-primary hover:underline cursor-pointer">
-                                {g.name}
-                              </span>
+                              <div className="cursor-pointer space-y-1">
+                                <p className="font-semibold text-primary hover:underline text-sm">
+                                  {g.name}
+                                </p>
+                                {g.registrationNo && (
+                                  <p className="text-[10px] text-muted-foreground font-semibold">
+                                    Reg: {g.registrationNo}
+                                  </p>
+                                )}
+                              </div>
                             </Link>
-                            {g.registrationNo && (
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Reg: {g.registrationNo}
-                              </p>
-                            )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
                               variant="secondary"
-                              className="text-xs gap-1"
+                              className="text-[10px] font-semibold gap-1.5 px-2 py-0.5 border"
                             >
-                              <Icon className="h-3 w-3" />
-
+                              <Icon className="h-3.5 w-3.5" />
                               {info.label}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <p className="font-medium">
-                                #{g.ward.wardNumber} {g.ward.name}
+                          <TableCell className="py-4 px-4 align-middle text-xs sm:text-sm font-semibold text-foreground">
+                            Ward #{g.ward?.wardNumber}
+                            <p className="text-[10px] text-muted-foreground font-normal mt-0.5">{g.ward?.name}</p>
+                            {g.wardArea && (
+                              <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-0.5 mt-0.5">
+                                <MapPin className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                                {g.wardArea.name}
                               </p>
-                              {g.wardArea && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {g.wardArea.name}
-                                </p>
-                              )}
-                            </div>
+                            )}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div>
-                              <p className="font-mono font-medium">
-                                {(g.memberCount || 0).toLocaleString()}
-                              </p>
+                          <TableCell className="py-4 px-4 align-middle text-right text-xs sm:text-sm font-semibold text-foreground">
+                            <div className="flex flex-col items-end">
+                              <span className="font-mono font-bold">{g.memberCount?.toLocaleString() || 0}</span>
                               {(g.maleMembers > 0 || g.femaleMembers > 0) && (
-                                <p className="text-[10px]">
-                                  <span className="text-blue-600">
-                                    M:{g.maleMembers || 0}
-                                  </span>
+                                <p className="text-[9px] font-medium mt-0.5">
+                                  <span className="text-blue-500">M: {g.maleMembers}</span>
                                   {" / "}
-                                  <span className="text-pink-600">
-                                    F:{g.femaleMembers || 0}
-                                  </span>
+                                  <span className="text-pink-500">F: {g.femaleMembers}</span>
                                 </p>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-foreground">
                             {g.headName ? (
-                              <div>
-                                <p className="text-sm">{g.headName}</p>
+                              <div className="space-y-0.5">
+                                <p className="text-xs font-semibold text-foreground">{g.headName}</p>
                                 {g.headPhone && (
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-0.5">
+                                    <Phone className="h-3 w-3 text-muted-foreground/60 shrink-0" />
                                     {g.headPhone}
                                   </p>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground italic">
-                                Not assigned
-                              </span>
+                              <span className="text-xs text-muted-foreground font-normal italic">—</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
-                              className={`text-[10px] ${
+                              className={cn(
+                                "text-[9px] sm:text-[10px] font-semibold border shadow-none",
                                 g.isActive
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                              }`}
+                                  ? "bg-emerald-100/50 text-emerald-700 border-emerald-200/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                                  : "bg-muted text-muted-foreground border-border/50"
+                              )}
                             >
                               {g.isActive ? "Active" : "Inactive"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="py-4 px-4 align-middle text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Link to={`/community/${g.id}`}>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 rounded-lg hover:bg-muted"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                 </Button>
                               </Link>
                               <PermissionGate
@@ -745,9 +702,9 @@ export default function CommunityListPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 rounded-lg hover:bg-muted"
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                   </Button>
                                 </Link>
                               </PermissionGate>
@@ -762,16 +719,15 @@ export default function CommunityListPage() {
             </div>
 
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <p className="text-xs text-muted-foreground">
-                  Page {pagination.page} of {pagination.totalPages} (
-                  {pagination.total} total)
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-1.5">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasPrevPage}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -780,7 +736,7 @@ export default function CommunityListPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >
@@ -794,30 +750,30 @@ export default function CommunityListPage() {
 
         {/* Ward-wise Distribution */}
         {stats?.byWard && stats.byWard.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Ward-wise Distribution</CardTitle>
+          <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Ward-wise Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {stats.byWard.map((w: any) => (
-                  <div key={w.wardId} className="flex items-center gap-3">
-                    <span className="text-xs w-32 truncate">
-                      #{w.wardNumber} {w.wardName}
-                    </span>
+            <CardContent className="pt-4 space-y-4">
+              {stats.byWard.map((w: any) => (
+                <div key={w.wardId} className="flex items-center gap-4 text-xs sm:text-sm font-semibold">
+                  <span className="w-32 truncate text-foreground">
+                    #{w.wardNumber} {w.wardName}
+                  </span>
+                  <div className="flex-1">
                     <Progress
                       value={(w.count / (stats.total || 1)) * 100}
-                      className="h-2 flex-1"
+                      className="h-2"
                     />
-                    <span className="font-mono text-xs w-20 text-right">
-                      {w.count} groups
-                    </span>
-                    <span className="font-mono text-xs w-24 text-right text-muted-foreground">
-                      {w.members.toLocaleString()} members
-                    </span>
                   </div>
-                ))}
-              </div>
+                  <span className="font-mono text-xs w-20 text-right text-muted-foreground">
+                    {w.count} groups
+                  </span>
+                  <span className="font-mono text-xs w-24 text-right text-foreground font-bold">
+                    {w.members.toLocaleString()} members
+                  </span>
+                </div>
+              ))}
             </CardContent>
           </Card>
         )}

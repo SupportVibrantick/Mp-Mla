@@ -37,6 +37,13 @@ export function useUpcomingRenewals(params?: any) {
   });
 }
 
+export function usePlanUpgradeRequests(params?: any) {
+  return useQuery({
+    queryKey: ["plan-upgrade-requests", params],
+    queryFn: () => subscriptionsApi.listUpgradeRequests(params),
+  });
+}
+
 function useSubscriptionMutation<TVariables>(
   mutationFn: (variables: TVariables) => Promise<any>,
   successTitle: string,
@@ -51,6 +58,7 @@ function useSubscriptionMutation<TVariables>(
       queryClient.invalidateQueries({ queryKey: ["subscription-overview"] });
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
       queryClient.invalidateQueries({ queryKey: ["tenant-subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["plan-upgrade-requests"] });
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
       queryClient.invalidateQueries({ queryKey: ["subscription-invoices"] });
       toast({
@@ -114,5 +122,23 @@ export function useCancelTenantSubscription() {
     (tenantId: string) => subscriptionsApi.cancelTenantSubscription(tenantId),
     "Subscription Cancelled",
     "Tenant subscription cancelled successfully.",
+  );
+}
+
+export function useApprovePlanUpgradeRequest() {
+  return useSubscriptionMutation(
+    ({ id, data }: { id: string; data?: any }) =>
+      subscriptionsApi.approveUpgradeRequest(id, data),
+    "Upgrade Approved",
+    "Plan upgrade request approved successfully.",
+  );
+}
+
+export function useRejectPlanUpgradeRequest() {
+  return useSubscriptionMutation(
+    ({ id, data }: { id: string; data?: any }) =>
+      subscriptionsApi.rejectUpgradeRequest(id, data),
+    "Upgrade Rejected",
+    "Plan upgrade request rejected.",
   );
 }

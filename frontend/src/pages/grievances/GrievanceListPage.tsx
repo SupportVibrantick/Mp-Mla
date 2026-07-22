@@ -296,61 +296,60 @@ export default function GrievanceListPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <MessageSquare className="h-7 w-7 text-primary" /> Public Requests
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
               Track and resolve citizen requests
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <PermissionGate module="grievances" action="create">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 text-xs border-border/60 bg-card"
                 onClick={() => setIsBulkOpen(true)}
               >
-                <FileUp className="h-4 w-4" /> Bulk Import
+                <FileUp className="h-3.5 w-3.5" /> Bulk Import
               </Button>
             </PermissionGate>
 
             <Button
               variant="outline"
-              className="gap-2"
+              className="gap-2 text-xs border-border/60 bg-card"
               onClick={handleExport}
               disabled={isExporting}
             >
               {isExporting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Download className="h-4 w-4" />
+                <Download className="h-3.5 w-3.5" />
               )}
               {isExporting ? "Exporting..." : "Export All"}
             </Button>
 
             <PermissionGate module="grievances" action="create">
-              <Link to="/public-requests/new">
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" /> New Request
+              <Link href="/public-requests/new">
+                <Button className="gap-2 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90">
+                  <Plus className="h-3.5 w-3.5" /> New Request
                 </Button>
               </Link>
             </PermissionGate>
           </div>
-
         </div>
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
             {[
               {
-                label: "Total",
+                label: "Total Requests",
                 value: stats.total,
                 Icon: MessageSquare,
                 color: "#6366f1",
               },
               {
-                label: "Open",
+                label: "Open Requests",
                 value: stats.open,
                 Icon: Clock,
                 color: "#3b82f6",
@@ -361,42 +360,34 @@ export default function GrievanceListPage() {
                 Icon: TrendingUp,
                 color: "#f59e0b",
               },
-              // {
-              //   label: "Escalated",
-              //   value: stats.escalated,
-              //   Icon: AlertTriangle,
-              //   color: "#ef4444",
-              // },
               {
-                label: "Resolved",
+                label: "Resolved Cases",
                 value: stats.resolved,
                 Icon: CheckCircle2,
                 color: "#22c55e",
               },
-              // {
-              //   label: "Overdue",
-              //   value: stats.overdue,
-              //   Icon: XCircle,
-              //   color: "#dc2626",
-              // },
               {
-                label: "Resolution",
+                label: "Resolution Rate",
                 value: `${stats.resolutionRate}%`,
                 Icon: TrendingUp,
                 color: "#10b981",
               },
             ].map((s, i) => (
-              <Card key={i}>
-                <CardContent className="p-3 flex items-center gap-2.5">
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${s.color}20` }}
-                  >
-                    <s.Icon className="h-4 w-4" style={{ color: s.color }} />
+              <Card key={i} className="transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-border/50 bg-card hover:border-primary/25 rounded-2xl">
+                <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div
+                      className="p-2 rounded-xl border flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${s.color}15`, borderColor: `${s.color}25` }}
+                    >
+                      <s.Icon className="h-4 w-4" style={{ color: s.color }} />
+                    </div>
                   </div>
                   <div>
-                    <p className="text-lg font-bold leading-none">{s.value}</p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground font-mono">
+                      {s.value}
+                    </h3>
+                    <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground mt-0.5">
                       {s.label}
                     </p>
                   </div>
@@ -409,24 +400,25 @@ export default function GrievanceListPage() {
         {/* Charts */}
         <div className="grid md:grid-cols-2 gap-4">
           {trend.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Monthly Trend</CardTitle>
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Monthly Request Trend</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 sm:px-6 pt-4">
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trend}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis dataKey="month" fontSize={10} />
-                      <YAxis fontSize={10} />
-                      <Tooltip />
+                      <XAxis dataKey="month" fontSize={10} tickLine={false} />
+                      <YAxis fontSize={10} tickLine={false} />
+                      <Tooltip contentStyle={{ borderRadius: "12px", border: "none" }} />
                       <Line
                         type="monotone"
                         dataKey="created"
                         stroke="#3b82f6"
                         strokeWidth={2}
                         name="Created"
+                        dot={{ r: 3 }}
                       />
                       <Line
                         type="monotone"
@@ -434,6 +426,7 @@ export default function GrievanceListPage() {
                         stroke="#22c55e"
                         strokeWidth={2}
                         name="Resolved"
+                        dot={{ r: 3 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -442,11 +435,11 @@ export default function GrievanceListPage() {
             </Card>
           )}
           {stats?.byCategory && stats.byCategory.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">By Category</CardTitle>
+            <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+              <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Requests by Category</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 sm:px-6 pt-4">
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -454,14 +447,15 @@ export default function GrievanceListPage() {
                       layout="vertical"
                     >
                       <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis type="number" fontSize={10} />
+                      <XAxis type="number" fontSize={10} tickLine={false} />
                       <YAxis
                         dataKey="category"
                         type="category"
                         width={85}
                         fontSize={10}
+                        tickLine={false}
                       />
-                      <Tooltip />
+                      <Tooltip contentStyle={{ borderRadius: "12px", border: "none" }} />
                       <Bar
                         dataKey="count"
                         fill="#6366f1"
@@ -476,7 +470,7 @@ export default function GrievanceListPage() {
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3 items-center">
               <div className="relative flex-1 w-full">
@@ -488,7 +482,7 @@ export default function GrievanceListPage() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9"
+                  className="pl-9 bg-background/50 border-muted-foreground/20 rounded-xl"
                 />
               </div>
               <div className="flex gap-2 flex-wrap">
@@ -499,7 +493,7 @@ export default function GrievanceListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-36 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -518,7 +512,7 @@ export default function GrievanceListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
                     <SelectValue placeholder="Priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -537,7 +531,7 @@ export default function GrievanceListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -556,8 +550,8 @@ export default function GrievanceListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
-                    <Filter className="h-3.5 w-3.5 mr-1" />
+                  <SelectTrigger className="w-36 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
+                    <Filter className="h-3.5 w-3.5 mr-1 opacity-50" />
                     <SelectValue placeholder="Ward" />
                   </SelectTrigger>
                   <SelectContent>
@@ -578,9 +572,9 @@ export default function GrievanceListPage() {
                     variant="ghost"
                     size="sm"
                     onClick={reset}
-                    className="text-xs"
+                    className="text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-xl h-9"
                   >
-                    Clear
+                    Reset
                   </Button>
                 )}
               </div>
@@ -589,31 +583,31 @@ export default function GrievanceListPage() {
         </Card>
 
         {/* Table */}
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-32">Ticket</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Complainant</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Ward</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 w-32">Ticket</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Subject</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Complainant</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Category</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Department</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Priority</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Created At</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className="border-b border-border/40">
                         {Array.from({ length: 10 }).map((_, j) => (
-                          <TableCell key={j}>
-                            <Skeleton className="h-4 w-full" />
+                          <TableCell key={j} className="py-4 px-4">
+                            <Skeleton className="h-4 w-full rounded" />
                           </TableCell>
                         ))}
                       </TableRow>
@@ -622,10 +616,11 @@ export default function GrievanceListPage() {
                     <TableRow>
                       <TableCell
                         colSpan={10}
-                        className="text-center py-12 text-muted-foreground"
+                        className="text-center py-20 text-muted-foreground text-xs font-semibold"
                       >
-                        <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p>No requests found.</p>
+                        <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30 text-primary" />
+                        <p className="font-bold text-sm text-foreground">No requests found</p>
+                        <p className="text-xs text-muted-foreground mt-1">Adjust filters or create a new request</p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -636,77 +631,77 @@ export default function GrievanceListPage() {
                       return (
                         <TableRow
                           key={g.id}
-                          className="hover:bg-muted/50"
+                          className="hover:bg-muted/10 transition-colors border-b border-border/40"
                         >
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <span
                               onClick={() =>
                                 navigate("/public-requests/detail", {
                                   state: { id: g.id },
                                 })
                               }
-                              className="font-mono text-xs text-primary hover:underline cursor-pointer font-semibold"
+                              className="font-mono text-xs text-primary hover:underline cursor-pointer font-bold"
                             >
                               {g.ticketNumber}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <p
                               onClick={() =>
                                 navigate("/public-requests/detail", {
                                   state: { id: g.id },
                                 })
                               }
-                              className="font-medium text-sm hover:underline cursor-pointer max-w-[180px] truncate"
+                              className="font-bold text-xs sm:text-sm hover:underline cursor-pointer max-w-[180px] truncate text-foreground"
                             >
                               {g.subject}
                             </p>
                           </TableCell>
-                          <TableCell>
-                            <p className="text-sm">
+                          <TableCell className="py-4 px-4 align-middle">
+                            <p className="text-xs font-bold text-foreground">
                               {g.complainantName || "Unknown"}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">
                               {g.complainantPhone}
                             </p>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
                               variant="secondary"
-                              className="text-[10px] gap-1"
+                              className="text-[10px] font-bold gap-1"
                             >
                               <span>{cI.icon}</span>
                               {cI.label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="text-xs font-semibold text-foreground py-4 px-4 align-middle">
                             #{g.ward?.wardNumber} {g.ward?.name}
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
+                          <TableCell className="text-[10px] font-bold text-muted-foreground py-4 px-4 align-middle">
                             {g.assignedDept
                               ? deptMap[g.assignedDept] || g.assignedDept
                               : "—"}
                           </TableCell>
-                          <TableCell>
-                            <Badge className={`text-[10px] ${pI.color}`}>
+                          <TableCell className="py-4 px-4 align-middle">
+                            <Badge className={`text-[10px] font-bold border-none ${pI.color}`}>
                               {pI.icon} {pI.label}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <Badge className={`text-[10px] ${sI.color}`}>
+                          <TableCell className="py-4 px-4 align-middle">
+                            <Badge className={`text-[10px] font-bold border-none ${sI.color}`}>
                               {sI.label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          <TableCell className="text-[10px] font-semibold text-muted-foreground whitespace-nowrap py-4 px-4 align-middle">
                             {formatDistanceToNow(new Date(g.createdAt), {
                               addSuffix: false,
-                            })}
+                            })} ago
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right py-4 px-4 align-middle">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 rounded-full"
                               onClick={() =>
                                 navigate("/public-requests/detail", {
                                   state: { id: g.id },
@@ -724,16 +719,15 @@ export default function GrievanceListPage() {
               </Table>
             </div>
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <p className="text-xs text-muted-foreground">
-                  Page {pagination.page} of {pagination.totalPages} (
-                  {pagination.total})
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border/50">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.total})
                 </p>
                 <div className="flex gap-1">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 bg-card"
                     disabled={!pagination.hasPrevPage}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -742,7 +736,7 @@ export default function GrievanceListPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 bg-card"
                     disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >

@@ -53,6 +53,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PlanUpgradeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -329,6 +336,7 @@ model Tenant {
   auditLogs           AuditLog[]
   settings            TenantSetting[]
   ownMetrics          OwnMetricEntry[]
+  planUpgradeRequests PlanUpgradeRequest[]
 
   @@index([status])
   @@map("tenants")
@@ -353,6 +361,7 @@ model PlatformUser {
   updatedAt   DateTime     @updatedAt
 
   refreshTokens RefreshToken[]
+  reviewedPlanUpgradeRequests PlanUpgradeRequest[] @relation("PlanUpgradeRequestReviewedBy")
 
   @@index([role])
   @@index([isActive])
@@ -383,6 +392,8 @@ model SubscriptionPlan {
 
   subscriptions TenantSubscription[]
   planModules   PlanModule[]
+  currentUpgradeRequests PlanUpgradeRequest[] @relation("PlanUpgradeRequestCurrentPlan")
+  requestedUpgradeRequests PlanUpgradeRequest[] @relation("PlanUpgradeRequestRequestedPlan")
 
   @@index([isActive])
   @@map("subscription_plans")
@@ -491,6 +502,36 @@ model Payment {
   @@index([status])
   @@index([createdAt])
   @@map("payments")
+}
+
+model PlanUpgradeRequest {
+  id                    String                   @id @default(cuid())
+  tenantId              String
+  currentPlanId         String?
+  requestedPlanId       String
+  requestedBillingCycle BillingCycle?
+  status                PlanUpgradeRequestStatus @default(PENDING)
+  requesterName         String?
+  requesterEmail        String?
+  requesterPhone        String?
+  tenantNote            String?
+  adminNote             String?
+  reviewedById          String?
+  reviewedAt            DateTime?
+
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  tenant                Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  currentPlan           SubscriptionPlan?        @relation("PlanUpgradeRequestCurrentPlan", fields: [currentPlanId], references: [id])
+  requestedPlan         SubscriptionPlan         @relation("PlanUpgradeRequestRequestedPlan", fields: [requestedPlanId], references: [id])
+  reviewedBy            PlatformUser?            @relation("PlanUpgradeRequestReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([requestedPlanId])
+  @@index([createdAt])
+  @@map("plan_upgrade_requests")
 }
 
 // ════════════════════════════════════════════════════════

@@ -363,34 +363,34 @@ export default function LeaderListPage() {
         {/* ─── Header ──────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <Users className="h-7 w-7 text-primary" /> Local Representatives
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
               Constituency local representatives, VIPs & key persons with birthday tracking
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <PermissionGate module="leaders" action="read">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 text-xs border-border/60 bg-card"
                 onClick={handleExport}
                 disabled={isExporting}
               >
                 {isExporting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Download className="h-4 w-4" />
+                  <Download className="h-3.5 w-3.5" />
                 )}
                 Export
               </Button>
             </PermissionGate>
             <Link to="/leaders/birthdays">
-              <Button variant="outline" className="gap-2">
-                <Cake className="h-4 w-4 text-pink-500" /> Birthdays
+              <Button variant="outline" className="gap-2 text-xs border-border/60 bg-card hover:bg-pink-50/10 hover:text-pink-600 transition-colors">
+                <Cake className="h-3.5 w-3.5 text-pink-500" /> Birthdays
                 {stats?.todayBirthdays ? (
-                  <Badge className="ml-1 bg-pink-600 text-white text-[10px] h-5 min-w-5 flex items-center justify-center">
+                  <Badge className="ml-1 bg-pink-600 text-white text-[10px] h-5 min-w-5 flex items-center justify-center font-bold">
                     {stats.todayBirthdays}
                   </Badge>
                 ) : null}
@@ -399,14 +399,14 @@ export default function LeaderListPage() {
             <PermissionGate module="leaders" action="create">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 text-xs border-border/60 bg-card"
                 onClick={() => setIsBulkImportOpen(true)}
               >
-                <FileUp className="h-4 w-4" /> Bulk Upload
+                <FileUp className="h-3.5 w-3.5" /> Bulk Upload
               </Button>
               <Link to="/leaders/new">
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" /> Add Local Representative
+                <Button className="gap-2 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90">
+                  <Plus className="h-3.5 w-3.5" /> Add Representative
                 </Button>
               </Link>
             </PermissionGate>
@@ -421,7 +421,7 @@ export default function LeaderListPage() {
           title="Import Local Representatives"
           description={
             <div>
-              <p>
+              <p className="text-xs text-muted-foreground">
                 Upload an Excel or CSV file to import multiple local representatives. Records
                 are upserted by Name+Phone or Email.
               </p>
@@ -432,16 +432,16 @@ export default function LeaderListPage() {
 
         {/* ─── Stats Row ───────────────────────────────── */}
         {stats && (
-          <div className=" md:grid-cols-3  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
-                label: "Total Local Representatives",
+                label: "Total Representatives",
                 value: stats.total,
                 Icon: Users,
                 color: "#6366f1",
               },
               {
-                label: "Active",
+                label: "Active Accounts",
                 value: stats.active,
                 Icon: UserCheck,
                 color: "#22c55e",
@@ -454,44 +454,38 @@ export default function LeaderListPage() {
                 highlight: stats.todayBirthdays > 0,
               },
               {
-                label: "Supporters",
+                label: "Key Supporters",
                 value:
                   stats.byRelation?.find((r: any) => r.relation === "Supporter")
                     ?.count || 0,
                 Icon: Shield,
                 color: "#3b82f6",
               },
-
-              /* {
-                label: "High Influence",
-                value:
-                  stats.byInfluence?.find((i: any) => i.influence === "High")
-                    ?.count || 0,
-                Icon: Star,
-                color: "#ef4444",
-              }, */
             ].map((s, i) => (
-
               <Card
                 key={i}
-                className={
+                className={`transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border bg-card rounded-2xl ${
                   s.highlight
-                    ? "border-pink-300 dark:border-pink-800 bg-pink-50/50 dark:bg-pink-950/20"
-                    : ""
-                }
+                    ? "border-pink-300 dark:border-pink-800/80 bg-pink-500/5 hover:border-pink-400"
+                    : "border-border/50 hover:border-primary/25"
+                }`}
               >
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${s.color}18` }}
-                  >
-                    <s.Icon className="h-5 w-5" style={{ color: s.color }} />
+                <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div
+                      className="p-2.5 rounded-xl border flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${s.color}15`, borderColor: `${s.color}25` }}
+                    >
+                      <s.Icon className="h-4 w-4" style={{ color: s.color }} />
+                    </div>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold leading-none">{s.value}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                    <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
                       {s.label}
                     </p>
+                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground mt-1 font-mono">
+                      {s.value}
+                    </h3>
                   </div>
                 </CardContent>
               </Card>
@@ -501,42 +495,45 @@ export default function LeaderListPage() {
 
         {/* ─── Category Breakdown ──────────────────────── */}
         {topCategories.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">By Category</CardTitle>
+          <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+            <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Representative Breakdown</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {topCategories.map((c: any) => {
                   const info = getCategoryInfo(c.category);
                   const CategoryIcon = info.icon;
                   const pct = Math.round((c.count / maxCatCount) * 100);
+                  const isSelected = categoryFilter === c.category;
                   return (
                     <button
                       key={c.category}
                       onClick={() => {
                         setCategoryFilter(
-                          categoryFilter === c.category ? "all" : c.category,
+                          isSelected ? "all" : c.category,
                         );
                         setPage(1);
                       }}
-                      className={`flex items-center gap-3 p-2.5 rounded-lg border text-left transition-all ${
-                        categoryFilter === c.category
-                          ? "border-primary bg-primary/5"
-                          : "hover:bg-muted/50"
+                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-inner"
+                          : "border-border/50 hover:border-primary/30"
                       }`}
                     >
-                      <CategoryIcon className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                        <CategoryIcon className="h-4 w-4 text-primary" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium truncate">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-bold text-foreground truncate">
                             {info.label}
                           </span>
-                          <span className="text-xs font-bold ml-2">
+                          <span className="text-xs font-extrabold text-foreground ml-2">
                             {c.count}
                           </span>
                         </div>
-                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-1 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all duration-500"
                             style={{ width: `${pct}%` }}
@@ -552,7 +549,7 @@ export default function LeaderListPage() {
         )}
 
         {/* ─── Filters ─────────────────────────────────── */}
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3 items-center">
               <div className="relative flex-1 w-full">
@@ -564,7 +561,7 @@ export default function LeaderListPage() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9"
+                  className="pl-9 bg-background/50 border-muted-foreground/20 rounded-xl"
                 />
               </div>
               <div className="flex gap-2 flex-wrap">
@@ -575,7 +572,7 @@ export default function LeaderListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -599,8 +596,8 @@ export default function LeaderListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-36">
-                    <Filter className="h-3.5 w-3.5 mr-1" />
+                  <SelectTrigger className="w-36 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
+                    <Filter className="h-3.5 w-3.5 mr-1 opacity-50" />
                     <SelectValue placeholder="Ward" />
                   </SelectTrigger>
                   <SelectContent>
@@ -619,7 +616,7 @@ export default function LeaderListPage() {
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
                     <SelectValue placeholder="Relation" />
                   </SelectTrigger>
                   <SelectContent>
@@ -631,29 +628,9 @@ export default function LeaderListPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {/* <Select
-                  value={influenceFilter}
-                  onValueChange={(v) => {
-                    setInfluenceFilter(v);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Influence" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Levels</SelectItem>
-                    {INFLUENCES.map((i) => (
-                      <SelectItem key={i} value={i}>
-                        {i}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select> */}
                 {(categoryFilter !== "all" ||
                   wardFilter !== "all" ||
                   relationFilter !== "all" ||
-                  // influenceFilter !== "all" ||
                   search) && (
                   <Button
                     variant="ghost"
@@ -663,13 +640,11 @@ export default function LeaderListPage() {
                       setCategoryFilter("all");
                       setWardFilter("all");
                       setRelationFilter("all");
-                      // setInfluenceFilter("all");
                       setPage(1);
-
                     }}
-                    className="text-xs text-muted-foreground"
+                    className="text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-xl h-9"
                   >
-                    Clear
+                    Reset
                   </Button>
                 )}
               </div>
@@ -678,29 +653,27 @@ export default function LeaderListPage() {
         </Card>
 
         {/* ─── Table ───────────────────────────────────── */}
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[280px]">Local Representative</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Ward</TableHead>
-                    <TableHead>Relation</TableHead>
-                    {/* <TableHead className="text-center">Influence</TableHead> */}
-                    <TableHead>Birthday</TableHead>
-
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 w-[280px]">Local Representative</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Category</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Relation</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Birthday</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
-                      <TableRow key={i}>
-                        {Array.from({ length: 7 }).map((_, j) => (
-                          <TableCell key={j}>
-                            <Skeleton className="h-4 w-full" />
+                      <TableRow key={i} className="border-b border-border/40">
+                        {Array.from({ length: 6 }).map((_, j) => (
+                          <TableCell key={j} className="py-4 px-4">
+                            <Skeleton className="h-4 w-full rounded" />
                           </TableCell>
                         ))}
                       </TableRow>
@@ -708,12 +681,12 @@ export default function LeaderListPage() {
                   ) : leaders.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
-                        className="text-center py-16 text-muted-foreground"
+                        colSpan={6}
+                        className="text-center py-20 text-muted-foreground text-xs font-semibold"
                       >
                         <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p className="font-medium">No local representatives found</p>
-                        <p className="text-xs mt-1">
+                        <p className="font-bold text-sm">No local representatives found</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           Adjust filters or add a new local representative
                         </p>
                       </TableCell>
@@ -722,30 +695,28 @@ export default function LeaderListPage() {
                     leaders.map((l: any) => {
                       const cInfo = getCategoryInfo(l.category);
                       const CategoryIcon = cInfo.icon;
-
-                      // const infDots = INFLUENCE_DOTS[l.influence] || null;
                       const relColor =
                         RELATION_COLORS[l.relation] || RELATION_COLORS.Other;
                       return (
                         <TableRow
                           key={l.id}
-                          className={`hover:bg-muted/50 transition-colors ${
+                          className={`hover:bg-muted/10 transition-colors border-b border-border/40 ${
                             l.isBirthdayToday
-                              ? "bg-pink-50/50 dark:bg-pink-950/10"
+                              ? "bg-pink-500/5 dark:bg-pink-500/5"
                               : ""
                           } ${!l.isActive ? "opacity-50" : ""}`}
                         >
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <div className="flex items-center gap-3">
                               <div className="relative flex-shrink-0">
                                 {l.photoUrl ? (
                                   <img
                                     src={l.photoUrl}
                                     alt={l.name}
-                                    className="w-10 h-10 rounded-full object-cover"
+                                    className="w-10 h-10 rounded-full object-cover border border-border/40 shadow-sm"
                                   />
                                 ) : (
-                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold border border-primary/20">
                                     {l.name
                                       .split(" ")
                                       .map((n: string) => n[0])
@@ -761,17 +732,17 @@ export default function LeaderListPage() {
                               </div>
                               <div className="min-w-0">
                                 <Link to={`/leaders/${l.id}`}>
-                                  <p className="font-semibold text-sm hover:text-primary cursor-pointer truncate">
+                                  <p className="font-bold text-xs sm:text-sm text-foreground hover:text-primary cursor-pointer truncate">
                                     {l.name}
                                   </p>
                                 </Link>
-                                <p className="text-[10px] text-muted-foreground truncate">
+                                <p className="text-[10px] text-muted-foreground font-semibold truncate mt-0.5">
                                   {[l.designation, l.organization, l.partyName]
                                     .filter(Boolean)
                                     .join(" • ") || "—"}
                                 </p>
                                 {l.phone && (
-                                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
                                     <Phone className="h-2.5 w-2.5" />
                                     {l.phone}
                                   </p>
@@ -780,31 +751,31 @@ export default function LeaderListPage() {
                             </div>
                           </TableCell>
 
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <Badge
                               variant="secondary"
-                              className="text-[10px] gap-1"
+                              className="text-[10px] font-bold gap-1"
                             >
                               <CategoryIcon className="h-3 w-3" />
                               {cInfo.label}
                             </Badge>
                           </TableCell>
 
-                          <TableCell className="text-sm">
+                          <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-foreground">
                             {l.ward ? (
                               <span>
                                 #{l.ward.wardNumber} {l.ward.name}
                               </span>
                             ) : (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-[10px] text-muted-foreground">
                                 —
                               </span>
                             )}
                           </TableCell>
 
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             {l.relation ? (
-                              <Badge className={`text-[10px] ${relColor}`}>
+                              <Badge className={`text-[10px] font-bold border-none ${relColor}`}>
                                 {l.relation}
                               </Badge>
                             ) : (
@@ -814,45 +785,22 @@ export default function LeaderListPage() {
                             )}
                           </TableCell>
 
-                          {/* <TableCell className="text-center">
-                            {infDots ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <span
-                                      className={`font-mono text-sm tracking-widest ${infDots.color}`}
-                                    >
-                                      {infDots.label}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {l.influence} Influence
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                —
-                              </span>
-                            )}
-                          </TableCell> */}
-
-                          <TableCell>
+                          <TableCell className="py-4 px-4 align-middle">
                             <div>
-                              <p className="text-xs">
+                              <p className="text-xs font-bold text-foreground">
                                 {format(new Date(l.dateOfBirth), "dd MMM yyyy")}
                               </p>
-                              <p className="text-[10px] text-muted-foreground">
+                              <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
                                 Age {l.age}
                               </p>
                               {l.isBirthdayToday ? (
-                                <Badge className="text-[9px] bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 mt-0.5 gap-0.5">
+                                <Badge className="text-[9px] font-bold border-none bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 mt-1 gap-0.5">
                                   <Cake className="h-2.5 w-2.5" /> Today!
                                 </Badge>
                               ) : l.daysUntilBirthday <= 7 ? (
                                 <Badge
                                   variant="outline"
-                                  className="text-[9px] mt-0.5"
+                                  className="text-[9px] font-bold mt-1"
                                 >
                                   {l.daysUntilBirthday === 1
                                     ? "Tomorrow"
@@ -862,7 +810,7 @@ export default function LeaderListPage() {
                             </div>
                           </TableCell>
 
-                          <TableCell className="text-right">
+                          <TableCell className="text-right py-4 px-4 align-middle">
                             <div className="flex items-center justify-end gap-1">
                               {l.whatsapp && (
                                 <a
@@ -873,7 +821,7 @@ export default function LeaderListPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-green-600"
+                                    className="h-8 w-8 text-green-600 rounded-full hover:bg-green-500/10"
                                   >
                                     <MessageCircle className="h-4 w-4" />
                                   </Button>
@@ -883,7 +831,7 @@ export default function LeaderListPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
+                                  className="h-8 w-8 rounded-full"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -893,7 +841,7 @@ export default function LeaderListPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 rounded-full"
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
@@ -905,7 +853,7 @@ export default function LeaderListPage() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 text-destructive"
+                                      className="h-8 w-8 text-destructive rounded-full hover:bg-destructive/10"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -945,16 +893,16 @@ export default function LeaderListPage() {
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <p className="text-xs text-muted-foreground">
-                  {pagination.total} local representatives • Page {pagination.page}/
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border/50">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {pagination.total} representatives • Page {pagination.page}/
                   {pagination.totalPages}
                 </p>
                 <div className="flex gap-1">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 bg-card"
                     disabled={!pagination.hasPrevPage}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -963,7 +911,7 @@ export default function LeaderListPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 bg-card"
                     disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >

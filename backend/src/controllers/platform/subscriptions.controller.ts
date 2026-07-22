@@ -1201,3 +1201,247 @@ export const listUpcomingRenewals = async (
     next(error);
   }
 };
+
+export const listPlanUpgradeRequests = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const search = req.query.search as string;
+    const status = req.query.status as string;
+
+    const where: Prisma.PlanUpgradeRequestWhereInput = {};
+
+    if (status) where.status = status as any;
+    if (search) {
+      where.OR = [
+        { requesterName: { contains: search, mode: "insensitive" } },
+        { requesterEmail: { contains: search, mode: "insensitive" } },
+        { tenant: { name: { contains: search, mode: "insensitive" } } },
+        {
+          tenant: {
+            constituencyName: { contains: search, mode: "insensitive" },
+          },
+        },
+      ];
+    }
+
+    const [requests, total] = await Promise.all([
+      prisma.planUpgradeRequest.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              constituencyName: true,
+              status: true,
+              maxUsers: true,
+              storageQuotaMB: true,
+            },
+          },
+          currentPlan: true,
+          requestedPlan: true,
+          reviewedBy: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      }),
+      prisma.planUpgradeRequest.count({ where }),
+    ]);
+
+    res.status(200).json(
+      ApiResponse.success({
+        requests,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const approvePlanUpgradeRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const id = getParamId(req);
+    const { adminNote, prorateImmediately, syncTenantLimits } = req.body;
+
+    const request = await prisma.planUpgradeRequest.findUnique({
+      where: { id },
+      include: {
+        currentPlan: true,
+        requestedPlan: true,
+        tenant: true,
+      },
+    });
+
+    if (!request) {
+      throw ApiError.notFound("Plan upgrade request not found");
+    }
+
+    if (request.status !== "PENDING") {
+      throw ApiError.conflict("Only pending upgrade requests can be approved");
+    }
+
+    const existingSubscription = await prisma.tenantSubscription.findUnique({
+      where: { tenantId: request.tenantId },
+      include: { plan: true },
+    });
+
+    if (!existingSubscription) {
+      throw ApiError.notFound("Tenant subscription not found");
+    }
+
+    if (existingSubscription.status === "CANCELLED") {
+      throw ApiError.conflict("Cancelled subscriptions cannot be upgraded");
+    }
+
+    if (existingSubscription.planId === request.requestedPlanId) {
+      throw ApiError.conflict("Tenant is already on this subscription plan");
+    }
+
+    await assertTenantCanUsePlan(request.tenantId, request.requestedPlan);
+
+    const now = new Date();
+    const effectiveBillingCycle =
+      request.requestedBillingCycle || existingSubscription.billingCycle;
+    const currentPeriodEnd = calculatePeriodEnd(effectiveBillingCycle, now);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedSubscription = await tx.tenantSubscription.update({
+        where: { tenantId: request.tenantId },
+        data: {
+          planId: request.requestedPlanId,
+          billingCycle: effectiveBillingCycle,
+          status: "ACTIVE",
+          currentPeriodStart: prorateImmediately
+            ? now
+            : existingSubscription.currentPeriodStart,
+          currentPeriodEnd,
+          nextPaymentDue: currentPeriodEnd,
+          suspendedAt: null,
+          cancelledAt: null,
+          amountDue: prorateImmediately
+            ? effectiveBillingCycle === "YEARLY"
+              ? request.requestedPlan.priceYearly
+              : request.requestedPlan.priceMonthly
+            : existingSubscription.amountDue,
+        },
+        include: { plan: true, tenant: true },
+      });
+
+      await tx.tenant.update({
+        where: { id: request.tenantId },
+        data:
+          syncTenantLimits !== false
+            ? {
+                maxUsers: request.requestedPlan.maxUsers,
+                storageQuotaMB: request.requestedPlan.storageMB,
+                status: "ACTIVE",
+              }
+            : { status: "ACTIVE" },
+      });
+
+      await tx.user.updateMany({
+        where: { tenantId: request.tenantId, status: "SUSPENDED" },
+        data: { status: "ACTIVE" },
+      });
+
+      await syncTenantModulesToPlan(
+        request.tenantId,
+        request.requestedPlanId,
+        tx,
+      );
+
+      const reviewedRequest = await tx.planUpgradeRequest.update({
+        where: { id },
+        data: {
+          status: "APPROVED",
+          adminNote,
+          reviewedById: req.platformUser?.id,
+          reviewedAt: now,
+        },
+        include: {
+          tenant: true,
+          currentPlan: true,
+          requestedPlan: true,
+          reviewedBy: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      return { updatedSubscription, reviewedRequest };
+    });
+
+    res.status(200).json(
+      ApiResponse.success(
+        {
+          ...result.reviewedRequest,
+          subscription: result.updatedSubscription,
+        },
+        "Plan upgrade request approved successfully",
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const rejectPlanUpgradeRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const id = getParamId(req);
+    const { adminNote } = req.body;
+
+    const existing = await prisma.planUpgradeRequest.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw ApiError.notFound("Plan upgrade request not found");
+    }
+
+    if (existing.status !== "PENDING") {
+      throw ApiError.conflict("Only pending upgrade requests can be rejected");
+    }
+
+    const request = await prisma.planUpgradeRequest.update({
+      where: { id },
+      data: {
+        status: "REJECTED",
+        adminNote,
+        reviewedById: req.platformUser?.id,
+        reviewedAt: new Date(),
+      },
+      include: {
+        tenant: true,
+        currentPlan: true,
+        requestedPlan: true,
+        reviewedBy: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    res
+      .status(200)
+      .json(ApiResponse.success(request, "Plan upgrade request rejected"));
+  } catch (error) {
+    next(error);
+  }
+};
