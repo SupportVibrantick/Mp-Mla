@@ -75,38 +75,39 @@ const PRIORITY_COLORS: Record<string, string> = {
   LOW: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/40",
 };
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  OPEN: {
-    bg: "bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50",
-    text: "text-blue-700 dark:text-blue-400",
-    dot: "bg-blue-500",
-  },
-  IN_PROGRESS: {
-    bg: "bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50",
-    text: "text-amber-700 dark:text-amber-400",
-    dot: "bg-amber-500",
-  },
-  ESCALATED: {
-    bg: "bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50",
-    text: "text-red-700 dark:text-red-400",
-    dot: "bg-red-500",
-  },
-  RESOLVED: {
-    bg: "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50",
-    text: "text-emerald-700 dark:text-emerald-400",
-    dot: "bg-emerald-500",
-  },
-  CLOSED: {
-    bg: "bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/50",
-    text: "text-slate-700 dark:text-slate-400",
-    dot: "bg-slate-500",
-  },
-  REJECTED: {
-    bg: "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50",
-    text: "text-rose-700 dark:text-rose-400",
-    dot: "bg-rose-500",
-  },
-};
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> =
+  {
+    OPEN: {
+      bg: "bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50",
+      text: "text-blue-700 dark:text-blue-400",
+      dot: "bg-blue-500",
+    },
+    IN_PROGRESS: {
+      bg: "bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50",
+      text: "text-amber-700 dark:text-amber-400",
+      dot: "bg-amber-500",
+    },
+    ESCALATED: {
+      bg: "bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50",
+      text: "text-red-700 dark:text-red-400",
+      dot: "bg-red-500",
+    },
+    RESOLVED: {
+      bg: "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50",
+      text: "text-emerald-700 dark:text-emerald-400",
+      dot: "bg-emerald-500",
+    },
+    CLOSED: {
+      bg: "bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/50",
+      text: "text-slate-700 dark:text-slate-400",
+      dot: "bg-slate-500",
+    },
+    REJECTED: {
+      bg: "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50",
+      text: "text-rose-700 dark:text-rose-400",
+      dot: "bg-rose-500",
+    },
+  };
 
 const PROJECT_STATUS: Record<string, { color: string; label: string }> = {
   PENDING: { color: "#3b82f6", label: "Pending" },
@@ -246,8 +247,14 @@ export default function Dashboard() {
     count: t.count,
   }));
 
-  const totalInstitutions = institutionPieData.reduce((acc: number, curr: any) => acc + curr.value, 0);
-  const totalProjects = projectPieData.reduce((acc: number, curr: any) => acc + curr.value, 0);
+  const totalInstitutions = institutionPieData.reduce(
+    (acc: number, curr: any) => acc + curr.value,
+    0,
+  );
+  const totalProjects = projectPieData.reduce(
+    (acc: number, curr: any) => acc + curr.value,
+    0,
+  );
 
   const statsList = [
     {
@@ -255,8 +262,9 @@ export default function Dashboard() {
       module: "wards",
       to: "/wards",
       icon: Map,
-      color: "text-indigo-500",
-      bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+      color: "text-indigo-600 dark:text-indigo-400",
+      bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
+      glowClass: "hover:shadow-indigo-500/10 hover:border-indigo-500/30",
       value: s.totalWards,
       label: "Wards",
       desc: `${s.totalPopulation.toLocaleString()} people`,
@@ -266,8 +274,9 @@ export default function Dashboard() {
       module: "grievances",
       to: "/public-requests?status=OPEN",
       icon: MessageSquare,
-      color: "text-blue-500",
-      bgColor: "bg-blue-50 dark:bg-blue-950/30",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-950/40",
+      glowClass: "hover:shadow-blue-500/10 hover:border-blue-500/30",
       value: s.openGrievances,
       label: "Open Requests",
       desc: `of ${s.totalGrievances} total`,
@@ -282,8 +291,9 @@ export default function Dashboard() {
       module: "projects",
       to: "/projects",
       icon: FolderKanban,
-      color: "text-amber-500",
-      bgColor: "bg-amber-50 dark:bg-amber-950/30",
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-950/40",
+      glowClass: "hover:shadow-amber-500/10 hover:border-amber-500/30",
       value: s.runningProjects,
       label: "Running Projects",
       desc: `${s.completedProjects} completed`,
@@ -293,8 +303,9 @@ export default function Dashboard() {
       module: "wards",
       to: "/wards",
       icon: Users,
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
+      glowClass: "hover:shadow-emerald-500/10 hover:border-emerald-500/30",
       value: s.totalVoters.toLocaleString(),
       label: "Total Voters",
       desc: `M: ${s.maleVoters.toLocaleString()} • F: ${s.femaleVoters.toLocaleString()}`,
@@ -304,8 +315,9 @@ export default function Dashboard() {
       module: "departments",
       to: "/departments",
       icon: Building2,
-      color: "text-cyan-500",
-      bgColor: "bg-cyan-50 dark:bg-cyan-950/30",
+      color: "text-cyan-600 dark:text-cyan-400",
+      bgColor: "bg-cyan-50 dark:bg-cyan-950/40",
+      glowClass: "hover:shadow-cyan-500/10 hover:border-cyan-500/30",
       value: s.totalDepartments,
       label: "Departments",
       desc: "Constituency scope",
@@ -315,8 +327,9 @@ export default function Dashboard() {
       module: "institutions",
       to: "/public-facilities",
       icon: Landmark,
-      color: "text-purple-500",
-      bgColor: "bg-purple-50 dark:bg-purple-950/30",
+      color: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-50 dark:bg-purple-950/40",
+      glowClass: "hover:shadow-purple-500/10 hover:border-purple-500/30",
       value: s.totalInstitutions,
       label: "Facilities",
       desc: "Active facilities",
@@ -326,8 +339,9 @@ export default function Dashboard() {
       module: "meeting",
       to: "/meetings",
       icon: Calendar,
-      color: "text-rose-500",
-      bgColor: "bg-rose-50 dark:bg-rose-950/30",
+      color: "text-rose-600 dark:text-rose-400",
+      bgColor: "bg-rose-50 dark:bg-rose-950/40",
+      glowClass: "hover:shadow-rose-500/10 hover:border-rose-500/30",
       value: s.scheduledMeetings,
       label: "Meetings",
       desc: "Upcoming sessions",
@@ -337,8 +351,9 @@ export default function Dashboard() {
       module: "community_groups",
       to: "/community",
       icon: Users,
-      color: "text-violet-500",
-      bgColor: "bg-violet-50 dark:bg-violet-950/30",
+      color: "text-violet-600 dark:text-violet-400",
+      bgColor: "bg-violet-50 dark:bg-violet-950/40",
+      glowClass: "hover:shadow-violet-500/10 hover:border-violet-500/30",
       value: s.totalCommunityGroups,
       label: "Collectives",
       desc: "Active groups",
@@ -349,57 +364,75 @@ export default function Dashboard() {
     <MainLayout title="Dashboard">
       <div className="space-y-6">
         {/* ═══ Constituency Overview Banner ═══ */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-indigo-500/20">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#114b8a] via-[#253e9a] to-[#612d95] text-white p-6 sm:p-8 shadow-xl border border-white/10">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-1/4 -mb-20 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-          
+
           <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
             <div className="space-y-2 max-w-xl">
-              <Badge variant="secondary" className="bg-white/10 hover:bg-white/20 text-indigo-200 border-none backdrop-blur-md px-3 py-1 text-xs">
+              <Badge
+                variant="secondary"
+                className="bg-white/10 hover:bg-white/20 text-[#b2cbdc] border-none backdrop-blur-md px-3 py-1 text-xs font-semibold"
+              >
                 Constituency Overview
               </Badge>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-200">
                 MP / MLA Constituency Dashboard
               </h1>
-              <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                Real-time metrics, active development works, citizen requests tracking, and public facility management.
+              <p className="text-xs sm:text-sm text-indigo-100/80 leading-relaxed">
+                Real-time metrics, active development works, citizen requests
+                tracking, and public facility management.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-6 xl:gap-8 bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 shadow-inner">
               {hasModule("wards") && (
                 <div className="space-y-1 pr-6 border-r border-white/10">
-                  <p className="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Wards</p>
-                  <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">{s.totalWards}</p>
+                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                    Wards
+                  </p>
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    {s.totalWards}
+                  </p>
                 </div>
               )}
               {hasModule("grievances") && (
                 <div className="space-y-1 pr-6 border-r border-white/10">
-                  <p className="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Requests</p>
-                  <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">{s.openGrievances}</p>
+                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                    Requests
+                  </p>
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    {s.openGrievances}
+                  </p>
                 </div>
               )}
               {hasModule("projects") && (
                 <div className="space-y-1 pr-6 border-r border-white/10">
-                  <p className="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Projects</p>
-                  <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">{s.runningProjects}</p>
+                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                    Projects
+                  </p>
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    {s.runningProjects}
+                  </p>
                 </div>
               )}
               {hasModule("wards") && (
                 <div className="space-y-1">
-                  <p className="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Voters</p>
-                  <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                    {s.totalVoters >= 100000 
-                      ? `${(s.totalVoters / 100000).toFixed(1)}L` 
-                      : s.totalVoters >= 1000 
-                        ? `${(s.totalVoters / 1000).toFixed(0)}K` 
+                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                    Voters
+                  </p>
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    {s.totalVoters >= 100000
+                      ? `${(s.totalVoters / 100000).toFixed(1)}L`
+                      : s.totalVoters >= 1000
+                        ? `${(s.totalVoters / 1000).toFixed(0)}K`
                         : s.totalVoters.toLocaleString()}
                   </p>
                 </div>
               )}
               <div className="w-full sm:w-auto mt-2 sm:mt-0 sm:pl-4">
                 <Link href="/reports">
-                  <Button className="w-full sm:w-auto bg-white hover:bg-indigo-50 text-indigo-950 font-semibold transition-colors duration-200 border-none shadow-md hover:shadow-lg flex items-center justify-center gap-2 group px-4 py-2 h-9 text-xs">
+                  <Button className="w-full sm:w-auto bg-white hover:bg-indigo-50 text-[#114b8a] font-bold transition-all duration-300 border-none shadow-md hover:shadow-lg flex items-center justify-center gap-2 group px-4 py-2 h-9 text-xs">
                     Full Reports
                     <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </Button>
@@ -411,252 +444,61 @@ export default function Dashboard() {
 
         {/* ═══ Row 1: Unified Stat Cards Grid ═══ */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 gap-4">
-          {statsList.filter((item) => hasModule(item.module)).map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link to={item.to} key={item.id} className="block">
-                <Card className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border border-border/50 bg-card hover:border-primary/20">
-                  <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className={cn("p-2 rounded-xl", item.bgColor)}>
-                        <Icon className={cn("h-4 w-4", item.color)} />
+          {statsList
+            .filter((item) => hasModule(item.module))
+            .map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link to={item.to} key={item.id} className="block group">
+                  <Card
+                    className={cn(
+                      "h-full cursor-pointer transition-all duration-500 ease-out",
+                      "bg-white/60 dark:bg-slate-900/60 backdrop-blur-md",
+                      "border border-white/60 dark:border-slate-800/60",
+                      "shadow-[0_8px_30px_rgb(0,0,0,0.015)]",
+                      "hover:bg-white/80 dark:hover:bg-slate-900/80 hover:-translate-y-1.5 hover:shadow-lg",
+                      item.glowClass,
+                    )}
+                  >
+                    <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div
+                          className={cn(
+                            "p-2 rounded-xl transition-transform duration-300 group-hover:scale-110",
+                            item.bgColor,
+                          )}
+                        >
+                          <Icon className={cn("h-4 w-4", item.color)} />
+                        </div>
+                        {item.trend && (
+                          <div className="bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/30">
+                            <TrendBadge
+                              current={item.trend.current}
+                              previous={item.trend.previous}
+                              suffix={item.trend.suffix}
+                            />
+                          </div>
+                        )}
                       </div>
-                      {item.trend && (
-                        <TrendBadge
-                          current={item.trend.current}
-                          previous={item.trend.previous}
-                          suffix={item.trend.suffix}
-                        />
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
-                        {item.label}
-                      </p>
-                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                        {item.value}
-                      </h3>
-                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium truncate">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+                      <div className="space-y-1">
+                        <p className="text-[10px] tracking-wider uppercase font-bold text-muted-foreground/85">
+                          {item.label}
+                        </p>
+                        <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent leading-none">
+                          {item.value}
+                        </h3>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-semibold truncate mt-1">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
         </div>
 
         <BirthdayWidget />
-
-        {/* ═══ Row 2: Institutions Breakdown + Grievance Trend ═══ */}
-        {(hasModule("institutions") || hasModule("grievances")) && (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
-            {hasModule("institutions") && (
-              <Card
-                className={
-                  hasModule("grievances") ? "lg:col-span-2" : "lg:col-span-5"
-                }
-              >
-                <CardHeader className="pb-2 px-3 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm sm:text-base font-semibold">
-                        Public Facilities
-                      </CardTitle>
-                      <CardDescription className="text-xs">By Category</CardDescription>
-                    </div>
-                    <Link to="/public-facilities">
-                      <Button variant="ghost" size="sm" className="text-xs hover:bg-muted">
-                        View All →
-                      </Button>
-                    </Link>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-3 sm:px-6">
-                  <div className="relative h-[250px] flex items-center justify-center">
-                    {institutionPieData.length > 0 ? (
-                      <>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={institutionPieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={80}
-                              paddingAngle={4}
-                              dataKey="value"
-                            >
-                              {institutionPieData.map(
-                                (entry: any, index: number) => (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={entry.color}
-                                  />
-                                ),
-                              )}
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "hsl(var(--card))",
-                                border: "1px solid hsl(var(--border))",
-                                borderRadius: "12px",
-                                boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)",
-                                fontSize: "11px",
-                              }}
-                            />
-                            <Legend 
-                              verticalAlign="bottom"
-                              height={36}
-                              wrapperStyle={{ fontSize: "10px" }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-6">
-                          <p className="text-2xl font-extrabold tracking-tight text-foreground">
-                            {totalInstitutions}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                            Total
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-muted-foreground text-xs">
-                        No public facility data
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {hasModule("grievances") && (
-              <Card
-                className={
-                  hasModule("institutions") ? "lg:col-span-3" : "lg:col-span-5"
-                }
-              >
-                <CardHeader className="pb-2 px-3 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm sm:text-base font-semibold">
-                        Public Request Trend
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        Created vs Resolved (6 months)
-                      </CardDescription>
-                    </div>
-                    <Link to="/public-requests">
-                      <Button variant="ghost" size="sm" className="text-xs hover:bg-muted">
-                        View All →
-                      </Button>
-                    </Link>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-1 sm:px-6">
-                  <div className="h-[230px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={d.grievances.trend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient
-                            id="gradCreated"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
-                            <stop
-                              offset="5%"
-                              stopColor="#3b82f6"
-                              stopOpacity={0.2}
-                            />
-                            <stop
-                              offset="95%"
-                              stopColor="#3b82f6"
-                              stopOpacity={0}
-                            />
-                          </linearGradient>
-                          <linearGradient
-                            id="gradResolved"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
-                            <stop
-                              offset="5%"
-                              stopColor="#22c55e"
-                              stopOpacity={0.2}
-                            />
-                            <stop
-                              offset="95%"
-                              stopColor="#22c55e"
-                              stopOpacity={0}
-                            />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
-                        <XAxis
-                          dataKey="month"
-                          fontSize={10}
-                          fontWeight={500}
-                          tickLine={false}
-                          axisLine={false}
-                          dy={10}
-                          className="text-muted-foreground"
-                        />
-                        <YAxis
-                          fontSize={10}
-                          fontWeight={500}
-                          tickLine={false}
-                          axisLine={false}
-                          dx={-10}
-                          width={35}
-                          className="text-muted-foreground"
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "12px",
-                            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)",
-                            fontSize: "11px",
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="created"
-                          stroke="#3b82f6"
-                          strokeWidth={2}
-                          fill="url(#gradCreated)"
-                          name="Created"
-                          activeDot={{ r: 6 }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="resolved"
-                          stroke="#22c55e"
-                          strokeWidth={2}
-                          fill="url(#gradResolved)"
-                          name="Resolved"
-                          activeDot={{ r: 6 }}
-                        />
-                        <Legend 
-                          verticalAlign="top"
-                          height={36}
-                          align="right"
-                          wrapperStyle={{ fontSize: "11px", paddingBottom: "10px" }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
 
         {/* ═══ Row 3: Category Chart + Project Pie ═══ */}
         {(hasModule("community_groups") || hasModule("projects")) && (
@@ -674,7 +516,11 @@ export default function Dashboard() {
                       </CardDescription>
                     </div>
                     <Link to="/community">
-                      <Button variant="ghost" size="sm" className="text-xs hover:bg-muted">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs hover:bg-muted"
+                      >
                         View All →
                       </Button>
                     </Link>
@@ -687,7 +533,12 @@ export default function Dashboard() {
                         data={communityTypeData}
                         margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                          opacity={0.4}
+                        />
                         <XAxis
                           dataKey="name"
                           fontSize={9}
@@ -720,7 +571,11 @@ export default function Dashboard() {
                           }}
                           cursor={{ fill: "hsl(var(--muted)/0.15)" }}
                         />
-                        <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={45}>
+                        <Bar
+                          dataKey="count"
+                          radius={[6, 6, 0, 0]}
+                          maxBarSize={45}
+                        >
                           {communityTypeData.map((entry: any, i: number) => (
                             <Cell
                               key={i}
@@ -748,11 +603,16 @@ export default function Dashboard() {
                         Project Status
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        {s.totalProjects} total projects • {fmt(s.totalBudget)} budget
+                        {s.totalProjects} total projects • {fmt(s.totalBudget)}{" "}
+                        budget
                       </CardDescription>
                     </div>
                     <Link to="/projects">
-                      <Button variant="ghost" size="sm" className="text-xs hover:bg-muted">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs hover:bg-muted"
+                      >
                         View All →
                       </Button>
                     </Link>
@@ -814,6 +674,235 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* ═══ Row 2: Institutions Breakdown + Grievance Trend ═══ */}
+        {(hasModule("institutions") || hasModule("grievances")) && (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+            {hasModule("institutions") && (
+              <Card
+                className={
+                  hasModule("grievances") ? "lg:col-span-2" : "lg:col-span-5"
+                }
+              >
+                <CardHeader className="pb-2 px-3 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm sm:text-base font-semibold">
+                        Public Facilities
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        By Category
+                      </CardDescription>
+                    </div>
+                    <Link to="/public-facilities">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs hover:bg-muted"
+                      >
+                        View All →
+                      </Button>
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-3 sm:px-6">
+                  <div className="relative h-[250px] flex items-center justify-center">
+                    {institutionPieData.length > 0 ? (
+                      <>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={institutionPieData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              paddingAngle={4}
+                              dataKey="value"
+                            >
+                              {institutionPieData.map(
+                                (entry: any, index: number) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={entry.color}
+                                  />
+                                ),
+                              )}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--card))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "12px",
+                                boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)",
+                                fontSize: "11px",
+                              }}
+                            />
+                            <Legend
+                              verticalAlign="bottom"
+                              height={36}
+                              wrapperStyle={{ fontSize: "10px" }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-6">
+                          <p className="text-2xl font-extrabold tracking-tight text-foreground">
+                            {totalInstitutions}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                            Total
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground text-xs">
+                        No public facility data
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {hasModule("grievances") && (
+              <Card
+                className={
+                  hasModule("institutions") ? "lg:col-span-3" : "lg:col-span-5"
+                }
+              >
+                <CardHeader className="pb-2 px-3 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm sm:text-base font-semibold">
+                        Public Request Trend
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Created vs Resolved (6 months)
+                      </CardDescription>
+                    </div>
+                    <Link to="/public-requests">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs hover:bg-muted"
+                      >
+                        View All →
+                      </Button>
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-1 sm:px-6">
+                  <div className="h-[230px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={d.grievances.trend}
+                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient
+                            id="gradCreated"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0.2}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                          <linearGradient
+                            id="gradResolved"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="#22c55e"
+                              stopOpacity={0.2}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="#22c55e"
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="hsl(var(--border))"
+                          opacity={0.4}
+                        />
+                        <XAxis
+                          dataKey="month"
+                          fontSize={10}
+                          fontWeight={500}
+                          tickLine={false}
+                          axisLine={false}
+                          dy={10}
+                          className="text-muted-foreground"
+                        />
+                        <YAxis
+                          fontSize={10}
+                          fontWeight={500}
+                          tickLine={false}
+                          axisLine={false}
+                          dx={-10}
+                          width={35}
+                          className="text-muted-foreground"
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "12px",
+                            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)",
+                            fontSize: "11px",
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="created"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          fill="url(#gradCreated)"
+                          name="Created"
+                          activeDot={{ r: 6 }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="resolved"
+                          stroke="#22c55e"
+                          strokeWidth={2}
+                          fill="url(#gradResolved)"
+                          name="Resolved"
+                          activeDot={{ r: 6 }}
+                        />
+                        <Legend
+                          verticalAlign="top"
+                          height={36}
+                          align="right"
+                          wrapperStyle={{
+                            fontSize: "11px",
+                            paddingBottom: "10px",
+                          }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
         {/* ═══ Row 4: Recent Public Requests + Projects ═══ */}
         {(hasModule("grievances") || hasModule("projects")) && (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
@@ -833,7 +922,11 @@ export default function Dashboard() {
                     </CardDescription>
                   </div>
                   <Link to="/public-requests">
-                    <Button variant="outline" size="sm" className="text-xs hover:bg-muted">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs hover:bg-muted"
+                    >
                       View All
                     </Button>
                   </Link>
@@ -895,17 +988,27 @@ export default function Dashboard() {
                               <td className="px-4 py-3 align-middle">
                                 <Badge
                                   variant="outline"
-                                  className={cn("text-[9px] sm:text-[10px] font-semibold border", pr)}
+                                  className={cn(
+                                    "text-[9px] sm:text-[10px] font-semibold border",
+                                    pr,
+                                  )}
                                 >
                                   {g.priority}
                                 </Badge>
                               </td>
                               <td className="px-4 py-3 align-middle">
                                 <span
-                                  className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border", st.bg, st.text)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                                    st.bg,
+                                    st.text,
+                                  )}
                                 >
                                   <span
-                                    className={cn("w-1.5 h-1.5 rounded-full", st.dot)}
+                                    className={cn(
+                                      "w-1.5 h-1.5 rounded-full",
+                                      st.dot,
+                                    )}
                                   />
                                   {g.status.replace("_", " ")}
                                 </span>
@@ -962,7 +1065,11 @@ export default function Dashboard() {
                       </CardDescription>
                     </div>
                     <Link to="/projects">
-                      <Button variant="ghost" size="sm" className="text-xs hover:bg-muted">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs hover:bg-muted"
+                      >
                         View All →
                       </Button>
                     </Link>
@@ -1000,8 +1107,12 @@ export default function Dashboard() {
                           </div>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[10px] sm:text-xs font-medium">
-                              <span className="text-muted-foreground">Completion Progress</span>
-                              <span className="font-mono text-foreground font-semibold">{p.completionPercent}%</span>
+                              <span className="text-muted-foreground">
+                                Completion Progress
+                              </span>
+                              <span className="font-mono text-foreground font-semibold">
+                                {p.completionPercent}%
+                              </span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
                               <div
@@ -1054,27 +1165,35 @@ export default function Dashboard() {
                 <CardContent className="px-3 sm:px-6 pb-4">
                   <div className="grid grid-cols-4 gap-2.5">
                     {d.grievances.byPriority.map((p: any) => {
-                      const colors: Record<string, { hex: string; cardClass: string }> = {
+                      const colors: Record<
+                        string,
+                        { hex: string; cardClass: string }
+                      > = {
                         URGENT: {
                           hex: "#ef4444",
-                          cardClass: "bg-rose-50/30 hover:bg-rose-50/50 border-rose-100/60 dark:bg-rose-950/10 dark:hover:bg-rose-950/20 dark:border-rose-900/30",
+                          cardClass:
+                            "bg-rose-50/30 hover:bg-rose-50/50 border-rose-100/60 dark:bg-rose-950/10 dark:hover:bg-rose-950/20 dark:border-rose-900/30",
                         },
                         HIGH: {
                           hex: "#f97316",
-                          cardClass: "bg-orange-50/30 hover:bg-orange-50/50 border-orange-100/60 dark:bg-orange-950/10 dark:hover:bg-orange-950/20 dark:border-orange-900/30",
+                          cardClass:
+                            "bg-orange-50/30 hover:bg-orange-50/50 border-orange-100/60 dark:bg-orange-950/10 dark:hover:bg-orange-950/20 dark:border-orange-900/30",
                         },
                         MEDIUM: {
                           hex: "#f59e0b",
-                          cardClass: "bg-amber-50/30 hover:bg-amber-50/50 border-amber-100/60 dark:bg-amber-950/10 dark:hover:bg-amber-950/20 dark:border-amber-900/30",
+                          cardClass:
+                            "bg-amber-50/30 hover:bg-amber-50/50 border-amber-100/60 dark:bg-amber-950/10 dark:hover:bg-amber-950/20 dark:border-amber-900/30",
                         },
                         LOW: {
                           hex: "#22c55e",
-                          cardClass: "bg-emerald-50/30 hover:bg-emerald-50/50 border-emerald-100/60 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 dark:border-emerald-900/30",
+                          cardClass:
+                            "bg-emerald-50/30 hover:bg-emerald-50/50 border-emerald-100/60 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 dark:border-emerald-900/30",
                         },
                       };
                       const config = colors[p.priority] || {
                         hex: "#6b7280",
-                        cardClass: "bg-slate-50/30 hover:bg-slate-50/50 border-slate-100/60 dark:bg-slate-900/10 dark:hover:bg-slate-900/20 dark:border-slate-800/30",
+                        cardClass:
+                          "bg-slate-50/30 hover:bg-slate-50/50 border-slate-100/60 dark:bg-slate-900/10 dark:hover:bg-slate-900/20 dark:border-slate-800/30",
                       };
 
                       return (
@@ -1082,7 +1201,12 @@ export default function Dashboard() {
                           key={p.priority}
                           to={`/public-requests?priority=${p.priority}`}
                         >
-                          <div className={cn("text-center p-3 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5", config.cardClass)}>
+                          <div
+                            className={cn(
+                              "text-center p-3 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5",
+                              config.cardClass,
+                            )}
+                          >
                             <div
                               className="w-2.5 h-2.5 rounded-full mx-auto mb-1.5"
                               style={{ backgroundColor: config.hex }}
@@ -1111,7 +1235,9 @@ export default function Dashboard() {
                 }
               >
                 <CardHeader className="pb-2 px-3 sm:px-6">
-                  <CardTitle className="text-sm font-semibold">Quick Access Links</CardTitle>
+                  <CardTitle className="text-sm font-semibold">
+                    Quick Access Links
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 px-3 sm:px-6 pb-4">
                   {[

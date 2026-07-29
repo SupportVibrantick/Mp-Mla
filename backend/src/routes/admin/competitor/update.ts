@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import {
   createAuditLog,
@@ -9,25 +10,21 @@ import { requireTenantId } from "../../../utils/tenant.js";
 /**
  * PUT /competitors/:id — Update competitor profile
  *
- * Uses req.tenantPrisma so reads/writes are scoped to the authenticated tenant (AC-3).
+ * Uses explicit tenantId scoping.
  */
 export async function updateCompetitor(
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> {
+): Promise<void> { 
   try {
     const tenantId = requireTenantId(req);
-
-    if (!req.tenantPrisma) {
-      throw new Error("Tenant context not initialized");
-    }
 
     const id = req.params.id as string;
     const data: any = { ...req.body };
 
-    const existing = await req.tenantPrisma.competitor.findFirst({
-      where: { id, isDeleted: false },
+    const existing = await prisma.competitor.findFirst({
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) throw ApiError.notFound("Competitor not found");
 
@@ -41,8 +38,8 @@ export async function updateCompetitor(
       if (data[field] === "") data[field] = null;
     });
 
-    const updated = await req.tenantPrisma.competitor.update({
-      where: { id },
+    const updated = await prisma.competitor.update({
+      where: { id, tenantId },
       data,
     });
 

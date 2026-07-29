@@ -5,6 +5,7 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /competitors/:id/metrics — List metrics for a competitor
@@ -15,11 +16,12 @@ export async function listCompetitorMetrics(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
     const { period, category } = req.query as Record<string, string>;
 
     const competitor = await prisma.competitor.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!competitor) throw ApiError.notFound("Competitor not found");
 
@@ -69,11 +71,12 @@ export async function submitCompetitorMetrics(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
     const { period, metrics } = req.body;
 
     const competitor = await prisma.competitor.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!competitor) throw ApiError.notFound("Competitor not found");
 
@@ -140,8 +143,14 @@ export async function deleteCompetitorMetric(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
     const metricId = req.params.metricId as string;
+
+    const competitor = await prisma.competitor.findFirst({
+      where: { id, tenantId, isDeleted: false },
+    });
+    if (!competitor) throw ApiError.notFound("Competitor not found");
 
     const metric = await prisma.competitorMetricEntry.findFirst({
       where: { id: metricId, competitorId: id },

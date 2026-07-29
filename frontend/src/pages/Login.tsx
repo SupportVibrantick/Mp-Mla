@@ -76,15 +76,15 @@ export default function Login() {
   return (
     <div className="min-h-screen w-full flex bg-background">
       {/* ─── Left Panel ──────────────────────────────── */}
-      <div className="hidden lg:flex w-1/2 bg-sidebar text-sidebar-foreground flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#0c3e72] via-[#104d88] to-[#1665a3] text-white flex-col justify-between p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/5 mix-blend-overlay" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl" />
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
             {settings.brand_logo_url ? (
-              <div className="h-16 max-w-[200px] flex items-center justify-center bg-white/10 rounded-xl p-2">
+              <div className="h-16 max-w-[200px] flex items-center justify-center bg-white/10 rounded-xl p-2 border border-white/10">
                 <img
                   src={getImageUrl(settings.brand_logo_url)}
                   alt="Logo"
@@ -93,8 +93,8 @@ export default function Login() {
               </div>
             ) : (
               <>
-                <div className="bg-primary p-2.5 rounded-xl">
-                  <Shield className="h-8 w-8 text-primary-foreground" />
+                <div className="bg-white/15 p-2.5 rounded-xl border border-white/10">
+                  <Shield className="h-8 w-8 text-white" />
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight">
                   {settings.org_name || "Constituency Portal"}
@@ -104,10 +104,10 @@ export default function Login() {
           </div>
 
           <div className="space-y-6 max-w-lg">
-            <h2 className="text-4xl font-bold leading-tight">
+            <h2 className="text-4xl font-bold leading-tight tracking-tight">
               Digital Governance for a Better Tomorrow
             </h2>
-            <p className="text-lg text-sidebar-foreground/70 leading-relaxed">
+            <p className="text-lg text-white/80 leading-relaxed font-medium">
               Empowering elected representatives with real-time data, grievance
               monitoring, and development tracking across the constituency.
             </p>
@@ -124,10 +124,10 @@ export default function Login() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center"
+                className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center hover:bg-white/15 hover:scale-[1.02] transition-all duration-300 shadow-md"
               >
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-sm text-sidebar-foreground/60">
+                <div className="text-2xl font-extrabold tracking-tight">{stat.value}</div>
+                <div className="text-sm text-white/75 font-medium mt-0.5">
                   {stat.label}
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="relative z-10 text-sm text-sidebar-foreground/50 sm:mt-10">
+        <div className="relative z-10 text-sm text-white/60 sm:mt-10 font-medium">
           © {new Date().getFullYear()}{" "}
           {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All
           rights reserved.

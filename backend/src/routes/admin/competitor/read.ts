@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * GET /competitors — List all competitors with stats
@@ -11,6 +12,7 @@ export async function listCompetitors(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const {
       page = "1",
       limit = "20",
@@ -23,7 +25,7 @@ export async function listCompetitors(
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
 
-    const where: any = { isDeleted: false };
+    const where: any = { tenantId, isDeleted: false };
 
     if (search) {
       where.OR = [
@@ -88,10 +90,11 @@ export async function getCompetitor(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
 
     const competitor = await prisma.competitor.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       include: {
         metrics: {
           orderBy: [{ period: "desc" }, { category: "asc" }],
@@ -135,11 +138,13 @@ export async function getCompetitorStats(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const [total, active, withAnalysis] = await Promise.all([
-      prisma.competitor.count({ where: { isDeleted: false } }),
-      prisma.competitor.count({ where: { isDeleted: false, isActive: true } }),
+      prisma.competitor.count({ where: { tenantId, isDeleted: false } }),
+      prisma.competitor.count({ where: { tenantId, isDeleted: false, isActive: true } }),
       prisma.competitor.count({
         where: {
+          tenantId,
           isDeleted: false,
           analyses: { some: { status: "COMPLETED" } },
         },
@@ -147,7 +152,7 @@ export async function getCompetitorStats(
     ]);
 
     const totalAnalyses = await prisma.competitorAnalysis.count({
-      where: { status: "COMPLETED" },
+      where: { status: "COMPLETED", competitor: { tenantId } },
     });
 
     res.json({

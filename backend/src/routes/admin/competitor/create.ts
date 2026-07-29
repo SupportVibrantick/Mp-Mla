@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import prisma from "../../../lib/prisma.js";
 import {
   createAuditLog,
   getRequestMeta,
@@ -9,7 +10,7 @@ import { requireTenantId } from "../../../utils/tenant.js";
 /**
  * POST /competitors — Create competitor profile
  *
- * Uses req.tenantPrisma so tenantId is automatically injected (AC-3).
+ * Uses explicit tenantId scoping.
  */
 export async function createCompetitor(
   req: Request,
@@ -18,10 +19,6 @@ export async function createCompetitor(
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
-
-    if (!req.tenantPrisma) {
-      throw new Error("Tenant context not initialized");
-    }
 
     const data: any = { ...req.body };
 
@@ -36,9 +33,9 @@ export async function createCompetitor(
     });
 
     data.createdById = req.user!.id;
+    data.tenantId = tenantId;
 
-    // tenantPrisma auto-injects tenantId (no need to set data.tenantId manually)
-    const competitor = await req.tenantPrisma.competitor.create({ data });
+    const competitor = await prisma.competitor.create({ data });
 
     await createAuditLog({
       tenantId,

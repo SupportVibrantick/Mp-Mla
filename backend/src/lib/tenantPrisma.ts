@@ -38,7 +38,8 @@ const TENANT_SCOPED_MODELS = [
 type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];
 
 function isTenantScoped(model: string): model is TenantScopedModel {
-  return TENANT_SCOPED_MODELS.includes(model as TenantScopedModel);
+  const normalized = model.charAt(0).toLowerCase() + model.slice(1);
+  return TENANT_SCOPED_MODELS.includes(normalized as TenantScopedModel);
 }
 
 export function getCurrentTenantId(): string | undefined {

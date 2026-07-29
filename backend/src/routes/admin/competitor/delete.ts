@@ -5,6 +5,7 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * DELETE /competitors/:id — Soft-delete competitor
@@ -17,13 +18,15 @@ export async function deleteCompetitor(
   try {
     const id = req.params.id as string;
 
+    const tenantId = requireTenantId(req);
+
     const existing = await prisma.competitor.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) throw ApiError.notFound("Competitor not found");
 
     await prisma.competitor.update({
-      where: { id },
+      where: { id, tenantId },
       data: { isDeleted: true, isActive: false },
     });
 
