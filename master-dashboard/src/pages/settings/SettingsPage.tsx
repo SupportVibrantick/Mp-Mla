@@ -543,7 +543,9 @@ export default function SettingsPage() {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [testEmailTo, setTestEmailTo] = useState("");
   const [imageFiles, setImageFiles] = useState<Record<string, File>>({});
-  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
+  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>(
+    {},
+  );
 
   const allSettings = res?.data || {};
 
@@ -571,13 +573,14 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     const hasFiles = Object.keys(imageFiles).length > 0;
-    
+
     const changes = groupSettings
       .filter((s: any) => {
         const current = formValues[s.key] ?? "";
         return (
           imageFiles[s.key] ||
-          (current !== (s.value || "") && !(s.masked && current.includes("••••")))
+          (current !== (s.value || "") &&
+            !(s.masked && current.includes("••••")))
         );
       })
       .map((s: any) => ({ key: s.key, value: formValues[s.key] ?? "" }));
@@ -597,15 +600,13 @@ export default function SettingsPage() {
     } else {
       await updateMut.mutateAsync(changes);
     }
-    
+
     setImageFiles({});
     setImagePreviews({});
     setDirty(false);
   };
 
-  const isCustomGroup =
-    activeGroup === "profile" ||
-    activeGroup === "language";
+  const isCustomGroup = activeGroup === "profile" || activeGroup === "language";
 
   const renderField = (s: any) => {
     const value = formValues[s.key] ?? "";
@@ -615,7 +616,10 @@ export default function SettingsPage() {
       case "image": {
         const currentImageUrl = imagePreviews[key] || getImageUrl(value);
         return (
-          <div className="space-y-4 border p-5 rounded-xl relative overflow-hidden bg-card" key={key}>
+          <div
+            className="space-y-4 border p-5 rounded-xl relative overflow-hidden bg-card"
+            key={key}
+          >
             <div className="absolute inset-0 bg-muted/5 pointer-events-none" />
             <div className="relative">
               <Label className="text-base font-semibold">{s.label}</Label>
@@ -623,7 +627,11 @@ export default function SettingsPage() {
                 <div className="relative group shrink-0">
                   <div className="w-24 h-24 rounded-xl border-2 border-dashed border-primary/20 bg-muted/30 overflow-hidden flex flex-col justify-center items-center relative transition-all group-hover:border-primary/50 group-hover:bg-primary/5">
                     {currentImageUrl ? (
-                      <img src={currentImageUrl} alt={s.label} className="w-full h-full object-contain p-2" />
+                      <img
+                        src={currentImageUrl}
+                        alt={s.label}
+                        className="w-full h-full object-contain p-2"
+                      />
                     ) : (
                       <Upload className="h-6 w-6 text-muted-foreground/50 mb-1" />
                     )}
@@ -650,16 +658,28 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-1.5 flex-1">
-                  <p className="text-sm font-medium text-foreground/90">Upload a new {s.label.toLowerCase()}</p>
-                  <p className="text-xs text-muted-foreground">{s.description || "Recommended format: PNG, SVG, or JPG."}</p>
+                  <p className="text-sm font-medium text-foreground/90">
+                    Upload a new {s.label.toLowerCase()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {s.description || "Recommended format: PNG, SVG, or JPG."}
+                  </p>
                   {imageFiles[key] && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => {
-                        setImageFiles((p) => { const n = {...p}; delete n[key]; return n; });
-                        setImagePreviews((p) => { const n = {...p}; delete n[key]; return n; });
-                      }} 
+                        setImageFiles((p) => {
+                          const n = { ...p };
+                          delete n[key];
+                          return n;
+                        });
+                        setImagePreviews((p) => {
+                          const n = { ...p };
+                          delete n[key];
+                          return n;
+                        });
+                      }}
                       className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2 mt-2 -ml-2"
                     >
                       Remove Selected File
@@ -1007,9 +1027,13 @@ export default function SettingsPage() {
                         <>
                           <Separator className="my-6" />
                           <div className="rounded-lg border p-5 bg-muted/20">
-                            <h3 className="text-sm font-semibold mb-1">Test SMTP Connection</h3>
+                            <h3 className="text-sm font-semibold mb-1">
+                              Test SMTP Connection
+                            </h3>
                             <p className="text-xs text-muted-foreground mb-4">
-                              Save your settings first, then enter an email address below to test if the portal can send emails.
+                              Save your settings first, then enter an email
+                              address below to test if the portal can send
+                              emails.
                             </p>
                             <div className="flex gap-3 max-w-sm">
                               <Input
@@ -1018,9 +1042,11 @@ export default function SettingsPage() {
                                 value={testEmailTo}
                                 onChange={(e) => setTestEmailTo(e.target.value)}
                               />
-                              <Button 
+                              <Button
                                 onClick={() => testEmailMut.mutate(testEmailTo)}
-                                disabled={!testEmailTo || testEmailMut.isPending}
+                                disabled={
+                                  !testEmailTo || testEmailMut.isPending
+                                }
                                 className="shrink-0 gap-2"
                               >
                                 {testEmailMut.isPending ? (

@@ -80,35 +80,68 @@ export default function Login() {
   return (
     <div className="min-h-screen w-full flex bg-background">
       {/* ─── Left Panel ──────────────────────────────── */}
-      <div className="hidden lg:flex w-1/2 bg-sidebar text-sidebar-foreground flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4f46e5] text-white flex-col justify-between p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/5 mix-blend-overlay" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
-            <div className="bg-primary p-2.5 rounded-xl">
-              <Shield className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Constituency Platform
-            </h1>
+            {settings.brand_logo_url ? (
+              <div className="h-16 max-w-[200px] flex items-center justify-center bg-white/10 rounded-xl p-2 border border-white/10">
+                <img
+                  src={getImageUrl(settings.brand_logo_url)}
+                  alt="Logo"
+                  className="h-full w-auto object-contain"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="bg-white/15 p-2.5 rounded-xl border border-white/10">
+                  <Shield className="h-8 w-8 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {settings.org_name || "Constituency Platform"}
+                </h1>
+              </>
+            )}
           </div>
 
           <div className="space-y-6 max-w-lg">
-            <h2 className="text-4xl font-bold leading-tight">
+            <h2 className="text-4xl font-bold leading-tight tracking-tight">
               Master Control Panel
             </h2>
-            <p className="text-lg text-sidebar-foreground/70 leading-relaxed">
+            <p className="text-lg text-white/80 leading-relaxed font-medium">
               Platform administration, tenant management, and global monitoring
               system for the Constituency Management SaaS.
             </p>
           </div>
+
+          <div className="mt-12 grid grid-cols-3 gap-4">
+            {[
+              { label: "Total Tenants", value: "50+" },
+              { label: "System Uptime", value: "99.9%" },
+              { label: "Revenue Tiers", value: "5" },
+              { label: "Global Modules", value: "12+" },
+              { label: "API Success", value: "100%" },
+              { label: "Latency", value: "<80ms" },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center hover:bg-white/15 hover:scale-[1.02] transition-all duration-300 shadow-md"
+              >
+                <div className="text-2xl font-extrabold tracking-tight">{stat.value}</div>
+                <div className="text-sm text-white/75 font-medium mt-0.5">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="relative z-10 text-sm text-sidebar-foreground/50 sm:mt-10">
+        <div className="relative z-10 text-sm text-white/60 sm:mt-10 font-medium">
           © {new Date().getFullYear()}{" "}
-          Vibrantick Infotech Solutions. All rights reserved.
+          {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All rights reserved.
         </div>
       </div>
 
@@ -117,9 +150,19 @@ export default function Login() {
         <Card className="w-full max-w-md border-none shadow-none bg-transparent">
           <CardHeader className="space-y-2 text-center pb-2">
             <div className="mx-auto p-3 rounded-full w-fit mb-2 lg:hidden">
-              <div className="bg-primary/10 p-3 rounded-full">
-                <Shield className="h-8 w-8 text-primary" />
-              </div>
+              {settings.brand_logo_url ? (
+                <div className="h-16 max-w-[200px] flex items-center justify-center mb-2 mx-auto">
+                  <img
+                    src={getImageUrl(settings.brand_logo_url)}
+                    alt="Logo"
+                    className="h-full w-auto object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="bg-primary/10 p-3 rounded-full">
+                  <Shield className="h-8 w-8 text-primary" />
+                </div>
+              )}
             </div>
             <h2 className="text-3xl font-bold">Platform Login</h2>
             <p className="text-muted-foreground">Master administrator access</p>
@@ -195,7 +238,7 @@ export default function Login() {
               {/* Submit */}
               <Button
                 type="submit"
-                className="w-full h-11 text-base"
+                className="w-full h-11 text-base bg-indigo-600 hover:bg-indigo-700 text-white"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -215,7 +258,6 @@ export default function Login() {
                 Platform Roles:
               </p>
               <div className="flex gap-2 justify-center flex-wrap">
-
                 <button
                   type="button"
                   onClick={() => fillDemo("platform_admin")}
@@ -223,8 +265,6 @@ export default function Login() {
                 >
                   Platform Admin
                 </button>
-
-
               </div>
             </div>
           </CardContent>

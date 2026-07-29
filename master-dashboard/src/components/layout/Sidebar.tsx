@@ -97,10 +97,10 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 80 : 280 }}
-        className="h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-xl"
+        className="h-screen bg-gradient-to-b from-[#1e1b4b] via-[#2d2a70] to-[#121240] text-white border-r border-white/10 flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-2xl"
       >
       {/* Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border/50">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-transparent">
         {!collapsed && (
           <div className="flex items-center gap-2 overflow-hidden">
             {settings.brand_logo_url ? (
@@ -113,14 +113,14 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
               </div>
             ) : (
               <>
-                <div className="bg-primary/20 p-1.5 rounded-lg flex-shrink-0">
-                  <Shield className="h-6 w-6 text-primary" />
+                <div className="bg-white/15 p-1.5 rounded-lg flex-shrink-0">
+                  <Shield className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <h1 className="font-heading font-bold text-sm leading-tight truncate">
+                  <h1 className="font-heading font-extrabold text-sm leading-tight truncate text-white">
                     {settings.org_name || "Constituency"}
                   </h1>
-                  <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider">
+                  <p className="text-[10px] text-white/70 truncate uppercase tracking-widest font-semibold">
                     {settings.org_short_name || "Management Portal"}
                   </p>
                 </div>
@@ -139,7 +139,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                 />
               </div>
             ) : (
-              <Shield className="h-8 w-8 text-primary" />
+              <Shield className="h-8 w-8 text-white" />
             )}
           </div>
         )}
@@ -147,7 +147,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           variant="ghost"
           size="icon"
           className={cn(
-            "text-sidebar-foreground hover:bg-sidebar-accent",
+            "text-white/80 hover:bg-white/15 hover:text-white",
             collapsed && "hidden",
           )}
           onClick={() => setCollapsed(true)}
@@ -163,19 +163,19 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           const content = (
             <div
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
                 isActive
-                  ? "bg-primary text-primary-foreground font-medium shadow-md"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  ? "bg-white/20 text-white font-extrabold border border-white/35 shadow-md"
+                  : "text-white/90 hover:bg-white/10 hover:text-white font-semibold",
               )}
             >
               <item.icon
                 className={cn(
                   "h-5 w-5 min-w-5",
-                  isActive ? "text-white" : "group-hover:text-primary",
+                  isActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
                 )}
               />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="truncate text-sm tracking-wide">{item.label}</span>}
             </div>
           );
 
@@ -185,7 +185,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                 <TooltipTrigger asChild>
                   <Link href={item.href}>{content}</Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={14} className="font-semibold text-xs ml-1">
+                <TooltipContent side="right" sideOffset={14} className="font-bold text-xs ml-1 bg-[#2d2a70] text-white border-white/10">
                   {item.label}
                 </TooltipContent>
               </Tooltip>
@@ -203,33 +203,35 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           <>
             <div className="mt-6 mb-2 px-3">
               {!collapsed ? (
-                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                <p className="text-[10px] uppercase font-bold text-white/70 tracking-widest">
                   Administration
                 </p>
               ) : (
-                <div className="border-t border-sidebar-border/50 mx-2" />
+                <div className="border-t border-white/10 mx-2" />
               )}
             </div>
 
             {adminItems.map((item) => {
-              const isActive = location === item.href;
+              const isItemActive = item.href === "/subscriptions"
+                ? location === "/subscriptions" || location.startsWith("/subscriptions/")
+                : location === item.href;
               const content = (
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
-                    isActive
-                      ? "bg-primary/20 text-primary font-medium"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
+                    isItemActive
+                      ? "bg-white/20 text-white font-extrabold border border-white/35 shadow-md"
+                      : "text-white/90 hover:bg-white/10 hover:text-white font-semibold",
                   )}
                 >
                   <item.icon
                     className={cn(
                       "h-5 w-5 min-w-5",
-                      isActive ? "text-primary" : "group-hover:text-primary",
+                      isItemActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
                     )}
                   />
                   {!collapsed && (
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate text-sm tracking-wide">{item.label}</span>
                   )}
                 </div>
               );
@@ -240,7 +242,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                     <TooltipTrigger asChild>
                       <Link href={item.href}>{content}</Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={14} className="font-semibold text-xs ml-1">
+                    <TooltipContent side="right" sideOffset={14} className="font-bold text-xs ml-1 bg-[#2d2a70] text-white border-white/10">
                       {item.label}
                     </TooltipContent>
                   </Tooltip>
@@ -256,20 +258,26 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           </>
         )}
 
-        <div className="my-4 border-t border-sidebar-border/50 mx-2" />
+        <div className="my-4 border-t border-white/10 mx-2" />
 
         {bottomItems.map((item) => {
+          const isActive = location === item.href;
           const content = (
             <div
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative",
-                location === item.href
-                  ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
+                isActive
+                  ? "bg-white/20 text-white font-extrabold border border-white/35 shadow-md"
+                  : "text-white/90 hover:bg-white/10 hover:text-white font-semibold",
               )}
             >
-              <item.icon className="h-5 w-5 min-w-5" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              <item.icon
+                className={cn(
+                  "h-5 w-5 min-w-5",
+                  isActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
+                )}
+              />
+              {!collapsed && <span className="truncate text-sm tracking-wide">{item.label}</span>}
             </div>
           );
 
@@ -279,7 +287,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                 <TooltipTrigger asChild>
                   <Link href={item.href}>{content}</Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={14} className="font-semibold text-xs ml-1">
+                <TooltipContent side="right" sideOffset={14} className="font-bold text-xs ml-1 bg-[#2d2a70] text-white border-white/10">
                   {item.label}
                 </TooltipContent>
               </Tooltip>
@@ -296,11 +304,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
       {/* Expand Button (when collapsed) */}
       {collapsed && (
-        <div className="p-2 flex justify-center">
+        <div className="p-2 flex justify-center border-t border-white/10">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(false)}
+            className="text-white/80 hover:bg-white/10 hover:text-white"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -308,23 +317,23 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       )}
 
       {/* User Profile */}
-      <div className="p-4 border-t border-sidebar-border/50 bg-sidebar-accent/10">
+      <div className="p-4 border-t border-white/10 bg-white/5">
         <div
           className={cn(
             "flex items-center gap-3",
             collapsed ? "justify-center" : "",
           )}
         >
-          <Avatar className="h-9 w-9 border border-sidebar-border shadow-sm">
+          <Avatar className="h-9 w-9 border border-white/20 shadow-sm">
             <AvatarImage src={user?.avatarUrl || ""} />
-            <AvatarFallback className="bg-primary/10 text-primary">
+            <AvatarFallback className="bg-white/20 text-white font-bold">
               {user?.name?.substring(0, 2).toUpperCase() || "CN"}
             </AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-sm font-extrabold truncate text-white">{user?.name}</p>
+              <p className="text-xs text-white/70 truncate font-semibold">
                 {user?.role}
               </p>
             </div>
@@ -333,7 +342,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              className="h-8 w-8 text-white/80 hover:bg-rose-500/20 hover:text-rose-350"
               onClick={() => logout()}
             >
               <LogOut className="h-4 w-4" />

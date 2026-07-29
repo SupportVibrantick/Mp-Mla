@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowUpRight,
+  ArrowUpCircle,
+  Calendar,
   Check,
   ChevronLeft,
   CreditCard,
@@ -415,11 +417,6 @@ export default function SubscriptionsPage() {
                         <div className="space-y-0.5">
                           <p className="font-semibold text-sm">{mod.name}</p>
                           <p className="text-xs text-muted-foreground line-clamp-2">{mod.description || "No description"}</p>
-                          {mod.isAddon && (
-                            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 border-amber-500/30 text-amber-600 bg-amber-500/5">
-                              Addon
-                            </Badge>
-                          )}
                         </div>
                       </div>
                     );
@@ -490,19 +487,19 @@ export default function SubscriptionsPage() {
               icon: CreditCard,
             },
             {
-              label: "MRR",
-              value: formatCurrency(metrics?.mrr ?? 0),
+              label: "Total Revenue",
+              value: formatCurrency(metrics?.totalRevenue ?? 0),
               icon: Wallet,
             },
             {
-              label: "ARR",
-              value: formatCurrency(metrics?.arr ?? 0),
-              icon: TrendingUp,
+              label: "Pending Upgrades",
+              value: metrics?.pendingUpgrades ?? 0,
+              icon: ArrowUpCircle,
             },
             {
-              label: "Churn (30D)",
-              value: `${(metrics?.churnRate30d ?? 0).toFixed(1)}%`,
-              icon: ArrowUpRight,
+              label: "Upcoming Renewals",
+              value: metrics?.upcomingRenewals ?? 0,
+              icon: Calendar,
             },
           ].map((metric) => (
             <Card
@@ -530,32 +527,34 @@ export default function SubscriptionsPage() {
           ))}
         </div>
 
-        <div className="flex items-center justify-center gap-4">
-          <span
-            className={
-              billingView === "MONTHLY"
-                ? "font-medium text-foreground"
-                : "text-muted-foreground"
-            }
-          >
-            Monthly
-          </span>
-          <Switch
-            checked={billingView === "YEARLY"}
-            onCheckedChange={(checked) =>
-              setBillingView(checked ? "YEARLY" : "MONTHLY")
-            }
-          />
-          <span
-            className={
-              billingView === "YEARLY"
-                ? "font-medium text-foreground"
-                : "text-muted-foreground"
-            }
-          >
-            Yearly
-          </span>
-          <span className="font-semibold text-emerald-600">-20%</span>
+        <div className="flex justify-center mb-8">
+          <div className="relative flex p-1.5 bg-muted/50 backdrop-blur-md rounded-2xl border border-border/60 shadow-inner max-w-xs w-full">
+            <button
+              type="button"
+              onClick={() => setBillingView("MONTHLY")}
+              className={`flex-1 relative z-10 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                billingView === "MONTHLY"
+                  ? "bg-background text-primary shadow-[0_2px_8px_rgba(59,130,246,0.08)] border border-border/40"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingView("YEARLY")}
+              className={`flex-1 relative z-10 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                billingView === "YEARLY"
+                  ? "bg-background text-primary shadow-[0_2px_8px_rgba(59,130,246,0.08)] border border-border/40"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Yearly
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                -20%
+              </span>
+            </button>
+          </div>
         </div>
 
         {(() => {
@@ -585,70 +584,79 @@ export default function SubscriptionsPage() {
                 return (
                   <Card
                     key={plan.id}
-                    className={`relative rounded-[28px] border p-8 shadow-sm transition-all duration-300 hover:shadow-md ${
+                    className={`relative rounded-[28px] border p-8 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
                       isFeatured
-                        ? "border-primary shadow-[0_0_0_1px_rgba(59,130,246,0.22)] bg-gradient-to-b from-primary/5 via-background to-background overflow-visible"
-                        : "border-border/60 hover:border-border overflow-hidden"
+                        ? "border-primary/60 shadow-[0_12px_40px_rgba(59,130,246,0.08)] bg-gradient-to-b from-primary/[0.03] via-background to-background overflow-visible scale-[1.02]"
+                        : "border-border/60 hover:border-border/80 overflow-hidden"
                     }`}
                   >
                     {isFeatured && (
-                      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-primary to-blue-500 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-sm">
+                      <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-primary to-blue-600 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-md">
                         Most Popular
                       </div>
                     )}
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-2xl font-semibold">{plan.name}</h3>
-                        <p className="mt-2 min-h-12 text-sm text-muted-foreground">
+                        <h3 className="text-2xl font-bold font-heading">{plan.name}</h3>
+                        <p className="mt-2 min-h-12 text-sm text-muted-foreground leading-relaxed">
                           {plan.description ||
                             "Built for teams that need reliable tenant scaling and billing control."}
                         </p>
                       </div>
-                      {isFeatured && <Sparkles className="h-5 w-5 text-primary animate-pulse" />}
+                      {isFeatured && <Sparkles className="h-5 w-5 text-primary animate-pulse shrink-0 mt-1" />}
                     </div>
-                    <div className="mt-6">
-                      <p className="text-5xl font-semibold tracking-tight">
+                    <div className="mt-6 flex items-baseline gap-1.5">
+                      <span className="text-5xl font-bold tracking-tight font-heading">
                         {formatCurrency(price)}
-                      </p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        /mo billed {billingView === "YEARLY" ? "yearly" : "monthly"}
-                      </p>
+                      </span>
+                      <span className="text-sm font-semibold text-muted-foreground">/mo</span>
                     </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      billed {billingView === "YEARLY" ? "yearly" : "monthly"}
+                    </p>
                     <div className="mt-6 flex gap-3">
                       <Button
-                        className="flex-1 rounded-2xl"
+                        className="flex-1 rounded-2xl font-semibold shadow-sm hover:shadow-md transition-all duration-300"
                         variant={isFeatured ? "default" : "outline"}
                         onClick={() => openEditPlan(plan)}
                       >
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit plan
+                        Edit Plan
                       </Button>
                     </div>
-                    <div className="mt-6 space-y-3">
+                    <div className="mt-8 space-y-4">
                       <div className="flex items-center gap-3 text-sm">
-                        <Check className="h-4 w-4 text-emerald-600" />
-                        <span>{plan.maxUsers} users included</span>
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        </div>
+                        <span className="text-muted-foreground font-medium"><strong className="text-foreground">{plan.maxUsers}</strong> users included</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
-                        <Check className="h-4 w-4 text-emerald-600" />
-                        <span>{plan.maxWards || 10} wards included</span>
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        </div>
+                        <span className="text-muted-foreground font-medium"><strong className="text-foreground">{plan.maxWards || 10}</strong> wards included</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
-                        <Check className="h-4 w-4 text-emerald-600" />
-                        <span>{formatStorage(plan.storageMB)} storage</span>
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        </div>
+                        <span className="text-muted-foreground font-medium"><strong className="text-foreground">{formatStorage(plan.storageMB)}</strong> storage</span>
                       </div>
                       {features.slice(0, 3).map((feature: string) => (
                         <div
                           key={feature}
                           className="flex items-center gap-3 text-sm"
                         >
-                          <Check className="h-4 w-4 text-emerald-600" />
-                          <span>{feature}</span>
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          </div>
+                          <span className="text-muted-foreground font-medium">{feature}</span>
                         </div>
                       ))}
                       {plan.planModules && plan.planModules.length > 0 && (
-                        <div className="pt-4 border-t border-border/40 mt-4">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                        <div className="pt-5 border-t border-border/50 mt-5">
+                          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                             Included Modules
                           </p>
                           <div className="flex flex-wrap gap-1.5">
@@ -656,7 +664,7 @@ export default function SubscriptionsPage() {
                               <Badge
                                 key={pm.moduleId}
                                 variant="secondary"
-                                className="text-[10px] px-2 py-0 h-5 font-normal"
+                                className="text-[10px] px-2 py-0.5 h-5 font-medium rounded-lg border border-border/40"
                               >
                                 {pm.module?.name}
                               </Badge>

@@ -432,8 +432,6 @@ model Module {
   name        String
   description String?
   category    String  @default("core")
-  isAddon     Boolean @default(false)
-  addonPrice  Float   @default(0)
   isActive    Boolean @default(true)
   sortOrder   Int     @default(0)
 
@@ -453,7 +451,6 @@ model TenantModuleAccess {
   moduleId  String
   isEnabled Boolean   @default(true)
   grantedAt DateTime  @default(now())
-  expiresAt DateTime?
 
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)

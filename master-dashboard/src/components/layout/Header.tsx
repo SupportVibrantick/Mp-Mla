@@ -39,7 +39,7 @@ export function Header({ title }: { title: string }) {
             className="pl-9 h-9 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:bg-background transition-all"
           />
         </div> */}
-{/* 
+        {/* 
         <Button
           variant="ghost"
           size="icon"

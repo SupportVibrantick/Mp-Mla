@@ -65,18 +65,18 @@ export default function UpcomingRenewalsPage() {
 
         <SubscriptionsNav />
 
-        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm">
+        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm bg-card/60 backdrop-blur-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Scheduled Renewals</h2>
+              <h2 className="text-2xl font-bold font-heading">Scheduled Renewals</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 All upcoming subscription cycles sorted by due date.
               </p>
             </div>
             <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input
-                className="pl-9"
+                className="pl-10 h-10 rounded-xl bg-background/50 border-border/60 focus-visible:ring-primary"
                 placeholder="Search tenant name..."
                 value={search}
                 onChange={(e) => {
@@ -95,9 +95,9 @@ export default function UpcomingRenewalsPage() {
                 ))}
               </div>
             ) : renewals.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground bg-background/30">
                 <Clock className="h-10 w-10 text-muted-foreground/60 mx-auto mb-3" />
-                <p className="font-medium">No renewals scheduled right now.</p>
+                <p className="font-semibold text-foreground">No renewals scheduled right now.</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Active tenants with valid billing next-due checkpoints will appear here.
                 </p>
@@ -107,17 +107,17 @@ export default function UpcomingRenewalsPage() {
                 {renewals.map((renewal: any) => (
                   <div
                     key={renewal.id}
-                    className="rounded-2xl border border-border/70 p-5 bg-card flex flex-col justify-between"
+                    className="rounded-2xl border border-border/60 p-5 bg-card/40 backdrop-blur-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-lg">{renewal.tenantName}</p>
+                        <p className="font-bold text-lg font-heading">{renewal.tenantName}</p>
                         {renewal.constituencyName && (
                           <p className="text-xs text-muted-foreground -mt-0.5">
                             {renewal.constituencyName}
                           </p>
                         )}
-                        <p className="text-xs font-medium text-primary mt-2">
+                        <p className="text-xs font-semibold text-primary mt-2">
                           {renewal.planName} · {renewal.billingCycle}
                         </p>
                       </div>
@@ -125,22 +125,22 @@ export default function UpcomingRenewalsPage() {
                         variant="outline"
                         className={
                           renewal.status === "ACTIVE"
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold"
+                            ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-emerald-500/20 font-semibold rounded-lg"
                             : renewal.status === "TRIALING"
-                              ? "border-blue-200 bg-blue-50 text-blue-700 font-semibold"
-                              : "border-amber-200 bg-amber-50 text-amber-700 font-semibold"
+                              ? "bg-blue-500/10 text-blue-600 hover:bg-blue-500/10 border-blue-500/20 font-semibold rounded-lg"
+                              : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/10 border-amber-500/20 font-semibold rounded-lg"
                         }
                       >
                         {renewal.status}
                       </Badge>
                     </div>
 
-                    <div className="mt-5 border-t border-border/40 pt-4 flex items-center justify-between text-sm">
+                    <div className="mt-5 border-t border-border/50 pt-4 flex items-center justify-between text-sm">
                       <div>
                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
                           Renewal Date
                         </p>
-                        <p className="font-medium text-foreground mt-0.5">
+                        <p className="font-semibold text-foreground mt-0.5">
                           {formatDate(renewal.nextPaymentDue)}
                         </p>
                       </div>
@@ -148,7 +148,7 @@ export default function UpcomingRenewalsPage() {
                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
                           Amount Due
                         </p>
-                        <p className="font-bold text-foreground mt-0.5 text-base text-emerald-700">
+                        <p className="font-bold text-emerald-600 mt-0.5 text-base font-heading">
                           {formatCurrency(renewal.amountDue || 0)}
                         </p>
                       </div>

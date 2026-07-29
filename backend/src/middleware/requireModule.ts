@@ -32,7 +32,6 @@ async function getEnabledModuleCodes(tenantId: string): Promise<Set<string>> {
     where: {
       tenantId,
       isEnabled: true,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     },
     include: { module: { select: { code: true, isActive: true } } },
   });

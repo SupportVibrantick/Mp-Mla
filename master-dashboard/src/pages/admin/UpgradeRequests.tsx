@@ -38,10 +38,10 @@ function formatDate(value?: string | Date | null) {
 }
 
 function statusClass(status: string) {
-  if (status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (status === "REJECTED") return "border-rose-200 bg-rose-50 text-rose-700";
-  if (status === "CANCELLED") return "border-slate-200 bg-slate-50 text-slate-700";
-  return "border-amber-200 bg-amber-50 text-amber-700";
+  if (status === "APPROVED") return "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-emerald-500/20";
+  if (status === "REJECTED") return "bg-rose-500/10 text-rose-600 hover:bg-rose-500/10 border-rose-500/20";
+  if (status === "CANCELLED") return "bg-slate-500/10 text-slate-600 hover:bg-slate-500/10 border-slate-500/20";
+  return "bg-amber-500/10 text-amber-600 hover:bg-amber-500/10 border-amber-500/20";
 }
 
 export default function UpgradeRequestsPage() {
@@ -84,10 +84,10 @@ export default function UpgradeRequestsPage() {
 
         <SubscriptionsNav />
 
-        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm">
+        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm bg-card/60 backdrop-blur-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Requests Queue</h2>
+              <h2 className="text-2xl font-bold font-heading">Requests Queue</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Pending approvals appear first by default.
               </p>
@@ -100,10 +100,10 @@ export default function UpgradeRequestsPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="w-[170px]">
+                <SelectTrigger className="w-[170px] h-10 rounded-xl bg-background/50 border-border/60">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="APPROVED">Approved</SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
@@ -111,9 +111,9 @@ export default function UpgradeRequestsPage() {
                 </SelectContent>
               </Select>
               <div className="relative w-full max-w-xs">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  className="pl-9"
+                  className="pl-10 h-10 rounded-xl bg-background/50 border-border/60 focus-visible:ring-primary"
                   placeholder="Search tenant/requester..."
                   value={search}
                   onChange={(event) => {
@@ -125,25 +125,25 @@ export default function UpgradeRequestsPage() {
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <div className="mt-6 overflow-x-auto border border-border/60 rounded-2xl bg-background/30 shadow-sm">
+            <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="pb-3 font-semibold">Tenant</th>
-                  <th className="pb-3 font-semibold">Plan Change</th>
-                  <th className="pb-3 font-semibold">Amount</th>
-                  <th className="pb-3 font-semibold">Requester</th>
-                  <th className="pb-3 font-semibold">Status</th>
-                  <th className="pb-3 font-semibold">Date</th>
-                  <th className="pb-3 font-semibold text-right">Actions</th>
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  <th className="p-4 font-semibold">Tenant</th>
+                  <th className="p-4 font-semibold">Plan Change</th>
+                  <th className="p-4 font-semibold">Amount</th>
+                  <th className="p-4 font-semibold">Requester</th>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-semibold">Date</th>
+                  <th className="p-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {requestsQuery.isLoading ? (
-                  Array.from({ length: limit }).map((_, index) => (
+                   Array.from({ length: limit }).map((_, index) => (
                     <tr key={index}>
                       {Array.from({ length: 7 }).map((__, cell) => (
-                        <td key={cell} className="py-4">
+                        <td key={cell} className="p-4">
                           <Skeleton className="h-4 w-28" />
                         </td>
                       ))}
@@ -151,7 +151,7 @@ export default function UpgradeRequestsPage() {
                   ))
                 ) : requests.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       No upgrade requests found.
                     </td>
                   </tr>
@@ -163,14 +163,14 @@ export default function UpgradeRequestsPage() {
                       : request.requestedPlan?.priceMonthly;
 
                     return (
-                      <tr key={request.id}>
-                        <td className="py-4">
+                      <tr key={request.id} className="hover:bg-muted/10 transition-colors">
+                        <td className="p-4">
                           <p className="font-semibold">{request.tenant?.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {request.tenant?.constituencyName || "N/A"}
                           </p>
                         </td>
-                        <td className="py-4">
+                        <td className="p-4">
                           <p className="font-medium">
                             {request.currentPlan?.name || "No plan"} to{" "}
                             {request.requestedPlan?.name}
@@ -179,32 +179,32 @@ export default function UpgradeRequestsPage() {
                             {request.requestedBillingCycle || "Existing cycle"}
                           </p>
                         </td>
-                        <td className="py-4 font-semibold">
+                        <td className="p-4 font-bold">
                           {formatCurrency(amount)}
                         </td>
-                        <td className="py-4">
+                        <td className="p-4">
                           <p>{request.requesterName || "N/A"}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground font-mono">
                             {request.requesterEmail || request.requesterPhone || "No contact"}
                           </p>
                         </td>
-                        <td className="py-4">
+                        <td className="p-4">
                           <Badge
                             variant="outline"
-                            className={`${statusClass(request.status)} font-semibold`}
+                            className={`${statusClass(request.status)} font-semibold rounded-lg`}
                           >
                             {request.status}
                           </Badge>
                         </td>
-                        <td className="py-4 text-muted-foreground">
+                        <td className="p-4 text-muted-foreground">
                           {formatDate(request.createdAt)}
                         </td>
-                        <td className="py-4">
+                        <td className="p-4">
                           <div className="flex justify-end gap-2">
                             <Button
                               type="button"
                               size="sm"
-                              className="gap-1"
+                              className="gap-1 rounded-xl shadow-sm font-semibold"
                               disabled={request.status !== "PENDING" || isReviewing}
                               onClick={() =>
                                 approveRequest.mutate({
@@ -220,7 +220,7 @@ export default function UpgradeRequestsPage() {
                               type="button"
                               size="sm"
                               variant="outline"
-                              className="gap-1"
+                              className="gap-1 rounded-xl font-semibold"
                               disabled={request.status !== "PENDING" || isReviewing}
                               onClick={() => rejectRequest.mutate({ id: request.id })}
                             >

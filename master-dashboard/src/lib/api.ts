@@ -336,15 +336,18 @@ export const tenantsApi = {
   activate: (id: string) => api.post(`/platform/tenants/${id}/activate`),
   remove: (id: string) => api.delete(`/platform/tenants/${id}`),
   listUsers: (id: string) => api.get(`/platform/tenants/${id}/users`),
-  createUser: (id: string, data: any) => api.post(`/platform/tenants/${id}/users`, data),
+  createUser: (id: string, data: any) =>
+    api.post(`/platform/tenants/${id}/users`, data),
   listPlans: () => api.get("/platform/tenants/plans"),
 };
 
 export const subscriptionsApi = {
   overview: () => api.get("/platform/subscriptions/overview"),
-  listPlans: (params?: any) => api.get("/platform/subscriptions/plans", { params }),
+  listPlans: (params?: any) =>
+    api.get("/platform/subscriptions/plans", { params }),
   createPlan: (data: any) => api.post("/platform/subscriptions/plans", data),
-  updatePlan: (id: string, data: any) => api.patch(`/platform/subscriptions/plans/${id}`, data),
+  updatePlan: (id: string, data: any) =>
+    api.patch(`/platform/subscriptions/plans/${id}`, data),
   listTenantSubscriptions: (params?: any) =>
     api.get("/platform/subscriptions/tenant-subscriptions", { params }),
   getTenantSubscription: (tenantId: string) =>
@@ -352,21 +355,36 @@ export const subscriptionsApi = {
   upsertTenantSubscription: (tenantId: string, data: any) =>
     api.put(`/platform/subscriptions/tenant-subscriptions/${tenantId}`, data),
   upgradeTenantSubscription: (tenantId: string, data: any) =>
-    api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/upgrade`, data),
+    api.post(
+      `/platform/subscriptions/tenant-subscriptions/${tenantId}/upgrade`,
+      data,
+    ),
   suspendTenantSubscription: (tenantId: string) =>
-    api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/suspend`),
+    api.post(
+      `/platform/subscriptions/tenant-subscriptions/${tenantId}/suspend`,
+    ),
   activateTenantSubscription: (tenantId: string) =>
-    api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/activate`),
+    api.post(
+      `/platform/subscriptions/tenant-subscriptions/${tenantId}/activate`,
+    ),
   cancelTenantSubscription: (tenantId: string) =>
     api.post(`/platform/subscriptions/tenant-subscriptions/${tenantId}/cancel`),
-  listInvoices: (params?: any) => api.get("/platform/subscriptions/invoices", { params }),
-  listRenewals: (params?: any) => api.get("/platform/subscriptions/renewals", { params }),
+  listInvoices: (params?: any) =>
+    api.get("/platform/subscriptions/invoices", { params }),
+  listRenewals: (params?: any) =>
+    api.get("/platform/subscriptions/renewals", { params }),
   listUpgradeRequests: (params?: any) =>
     api.get("/platform/subscriptions/upgrade-requests", { params }),
   approveUpgradeRequest: (id: string, data?: any) =>
-    api.post(`/platform/subscriptions/upgrade-requests/${id}/approve`, data || {}),
+    api.post(
+      `/platform/subscriptions/upgrade-requests/${id}/approve`,
+      data || {},
+    ),
   rejectUpgradeRequest: (id: string, data?: any) =>
-    api.post(`/platform/subscriptions/upgrade-requests/${id}/reject`, data || {}),
+    api.post(
+      `/platform/subscriptions/upgrade-requests/${id}/reject`,
+      data || {},
+    ),
 };
 
 export const modulesApi = {
@@ -391,10 +409,10 @@ export const paymentsApi = {
   list: (params?: any) => api.get("/platform/payments", { params }),
   get: (id: string) => api.get(`/platform/payments/${id}`),
   create: (data: any) => api.post("/platform/payments", data),
-  update: (id: string, data: any) => api.patch(`/platform/payments/${id}`, data),
-  updateStatus: (id: string, data: any) => api.patch(`/platform/payments/${id}/status`, data),
+  update: (id: string, data: any) =>
+    api.patch(`/platform/payments/${id}`, data),
+  updateStatus: (id: string, data: any) =>
+    api.patch(`/platform/payments/${id}/status`, data),
   delete: (id: string) => api.delete(`/platform/payments/${id}`),
   stats: () => api.get("/platform/payments/stats"),
 };
-
-

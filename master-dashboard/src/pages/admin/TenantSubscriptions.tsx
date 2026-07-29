@@ -215,18 +215,18 @@ export default function TenantSubscriptionsPage() {
 
         <SubscriptionsNav />
 
-        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
+        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm bg-card/60 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-3 mb-6">
             <div>
-              <h2 className="text-2xl font-semibold">All Tenant Subscriptions</h2>
+              <h2 className="text-2xl font-bold font-heading">All Tenant Subscriptions</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Search, upgrade, pause, or cancel subscriptions.
               </p>
             </div>
             <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input
-                className="pl-9"
+                className="pl-10 h-10 rounded-xl bg-background/50 border-border/60 focus-visible:ring-primary"
                 placeholder="Search tenants..."
                 value={subscriptionSearch}
                 onChange={(e) => {
@@ -237,38 +237,38 @@ export default function TenantSubscriptionsPage() {
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <div className="mt-6 overflow-x-auto border border-border/60 rounded-2xl bg-background/30 shadow-sm">
+            <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="pb-3 font-semibold">Tenant</th>
-                  <th className="pb-3 font-semibold">Plan</th>
-                  <th className="pb-3 font-semibold">MRR</th>
-                  <th className="pb-3 font-semibold">Renewal</th>
-                  <th className="pb-3 font-semibold">Status</th>
-                  <th className="pb-3 text-right font-semibold">Actions</th>
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  <th className="p-4 font-semibold">Tenant</th>
+                  <th className="p-4 font-semibold">Plan</th>
+                  <th className="p-4 font-semibold">MRR</th>
+                  <th className="p-4 font-semibold">Renewal</th>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {subscriptionsQuery.isLoading ? (
                   Array.from({ length: limit }).map((_, index) => (
                     <tr key={index}>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Skeleton className="h-4 w-36" />
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Skeleton className="h-4 w-20" />
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Skeleton className="h-4 w-20" />
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Skeleton className="h-4 w-20" />
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Skeleton className="h-6 w-24 rounded-full" />
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Skeleton className="ml-auto h-8 w-24" />
                       </td>
                     </tr>
@@ -277,15 +277,15 @@ export default function TenantSubscriptionsPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="py-12 text-center text-muted-foreground"
+                      className="p-8 text-center text-muted-foreground"
                     >
                       No tenant subscriptions found.
                     </td>
                   </tr>
                 ) : (
                   tenantSubscriptions.map((subscription: any) => (
-                    <tr key={subscription.id}>
-                      <td className="py-4">
+                    <tr key={subscription.id} className="hover:bg-muted/10 transition-colors">
+                      <td className="p-4">
                         <div>
                           <p className="font-semibold">
                             {subscription.tenant.name}
@@ -295,7 +295,7 @@ export default function TenantSubscriptionsPage() {
                           </p>
                         </div>
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <div>
                           <p className="font-medium">
                             {subscription.plan.name}
@@ -305,49 +305,50 @@ export default function TenantSubscriptionsPage() {
                           </p>
                         </div>
                       </td>
-                      <td className="py-4 font-semibold">
+                      <td className="p-4 font-bold">
                         {formatCurrency(
                           subscription.monthlyRecurringRevenue || 0,
                         )}
                       </td>
-                      <td className="py-4 text-muted-foreground">
+                      <td className="p-4 text-muted-foreground">
                         {formatShortDate(subscription.nextPaymentDue)}
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Badge
                           variant="outline"
                           className={
                             subscription.status === "ACTIVE"
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-emerald-500/20 font-semibold rounded-lg"
                               : subscription.status === "TRIALING"
-                                ? "border-blue-200 bg-blue-50 text-blue-700"
+                                ? "bg-blue-500/10 text-blue-600 hover:bg-blue-500/10 border-blue-500/20 font-semibold rounded-lg"
                                 : subscription.status === "SUSPENDED"
-                                  ? "border-orange-200 bg-orange-50 text-orange-700"
+                                  ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500/10 border-amber-500/20 font-semibold rounded-lg"
                                   : subscription.status === "CANCELLED" || subscription.status === "EXPIRED"
-                                    ? "border-rose-200 bg-rose-50 text-rose-700"
-                                    : "border-slate-200 bg-slate-50 text-slate-700"
+                                    ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/10 border-rose-500/20 font-semibold rounded-lg"
+                                    : "bg-slate-500/10 text-slate-600 hover:bg-slate-500/10 border-slate-500/20 font-semibold rounded-lg"
                           }
                         >
                           {subscription.status}
                         </Badge>
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <div className="flex justify-end">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8"
+                                className="h-8 w-8 rounded-lg"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
                               <DropdownMenuItem
                                 onClick={() =>
                                   openUpgradeDialog(subscription)
                                 }
+                                className="rounded-lg"
                               >
                                 <TrendingUp className="mr-2 h-4 w-4" />
                                 Upgrade Plan
@@ -357,6 +358,7 @@ export default function TenantSubscriptionsPage() {
                                   onClick={() =>
                                     openActionDialog("suspend", subscription)
                                   }
+                                  className="rounded-lg"
                                 >
                                   <PauseCircle className="mr-2 h-4 w-4" />
                                   Pause Subscription
@@ -367,6 +369,7 @@ export default function TenantSubscriptionsPage() {
                                   onClick={() =>
                                     openActionDialog("activate", subscription)
                                   }
+                                  className="rounded-lg"
                                 >
                                   <RotateCcw className="mr-2 h-4 w-4" />
                                   Resume Subscription
@@ -377,6 +380,7 @@ export default function TenantSubscriptionsPage() {
                                   onClick={() =>
                                     openActionDialog("activate", subscription)
                                   }
+                                  className="rounded-lg"
                                 >
                                   <RotateCcw className="mr-2 h-4 w-4" />
                                   Reactivate Subscription
@@ -387,7 +391,7 @@ export default function TenantSubscriptionsPage() {
                                   onClick={() =>
                                     openActionDialog("cancel", subscription)
                                   }
-                                  className="text-destructive focus:text-destructive"
+                                  className="text-destructive focus:text-destructive rounded-lg"
                                 >
                                   <XCircle className="mr-2 h-4 w-4" />
                                   Cancel Subscription

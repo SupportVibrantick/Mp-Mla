@@ -65,26 +65,35 @@ export const getSubscriptionOverview = async (
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
     const [
-      activeSubscriptions,
-      allSubscriptions,
-      churnedLast30Days,
+      activeSubscriptionsCount,
+      totalRevenueAggregate,
+      pendingUpgradesCount,
+      upcomingRenewalsCount,
       recentPayments,
       planDistribution,
       upcomingRenewals,
     ] = await Promise.all([
-      prisma.tenantSubscription.findMany({
+      prisma.tenantSubscription.count({
         where: { status: "ACTIVE" },
-        include: { plan: true, tenant: true },
       }),
-      prisma.tenantSubscription.findMany({
-        include: { plan: true },
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: { status: "SUCCESS" },
+      }),
+      prisma.planUpgradeRequest.count({
+        where: { status: "PENDING" },
       }),
       prisma.tenantSubscription.count({
         where: {
-          status: "CANCELLED",
-          cancelledAt: { gte: thirtyDaysAgo },
+          status: "ACTIVE",
+          nextPaymentDue: {
+            gte: new Date(),
+            lte: thirtyDaysFromNow,
+          },
         },
       }),
       prisma.payment.findMany({
@@ -132,23 +141,15 @@ export const getSubscriptionOverview = async (
       }),
     ]);
 
-    const mrr = activeSubscriptions.reduce(
-      (sum, subscription) => sum + getMonthlyRecurringRevenue(subscription),
-      0,
-    );
-    const arr = getArrFromMrr(mrr);
-    const churnRate30d =
-      allSubscriptions.length > 0
-        ? (churnedLast30Days / allSubscriptions.length) * 100
-        : 0;
+    const totalRevenue = totalRevenueAggregate._sum.amount || 0;
 
     res.status(200).json(
       ApiResponse.success({
         metrics: {
-          activeSubscriptions: activeSubscriptions.length,
-          mrr,
-          arr,
-          churnRate30d,
+          activeSubscriptions: activeSubscriptionsCount,
+          totalRevenue,
+          pendingUpgrades: pendingUpgradesCount,
+          upcomingRenewals: upcomingRenewalsCount,
         },
         planDistribution: planDistribution.map((plan) => ({
           id: plan.id,
@@ -249,9 +250,9 @@ export async function syncTenantModulesToPlan(
     include: { module: true },
   });
 
-  // 3. Deactivate/Delete modules that are not in the new plan and not marked as active addons
+  // 3. Deactivate/Delete modules that are not in the new plan
   const accessToRevoke = currentAccess.filter(
-    (access) => !planModuleIds.has(access.moduleId) && !access.module.isAddon,
+    (access) => !planModuleIds.has(access.moduleId),
   );
 
   if (accessToRevoke.length > 0) {

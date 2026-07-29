@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { generateJSON, generateText } from "../../../lib/gemini.js";
+import { generateJSON, generateText } from "../../../lib/deepseek.js";
 import {
   buildAnalysisPrompt,
   buildChatPrompt,
@@ -26,27 +26,39 @@ const analysisResultSchema = z.object({
   areasLeading: z.coerce.number().int().min(0).default(0),
   areasTrailing: z.coerce.number().int().min(0).default(0),
   areasTied: z.coerce.number().int().min(0).default(0),
-  metricComparisons: z.array(z.object({
-    category: z.string(),
-    categoryLabel: z.string().optional(),
-    ours: z.coerce.number().min(0).max(100).default(0),
-    theirs: z.coerce.number().min(0).max(100).default(0),
-    gap: z.coerce.number().default(0),
-    advantage: z.enum(["ours", "theirs", "tied"]).catch("tied"),
-    insight: z.string().default("No insight available."),
-    recommendation: z.string().default("Collect more data before deciding action."),
-  })).default([]),
+  metricComparisons: z
+    .array(
+      z.object({
+        category: z.string(),
+        categoryLabel: z.string().optional(),
+        ours: z.coerce.number().min(0).max(100).default(0),
+        theirs: z.coerce.number().min(0).max(100).default(0),
+        gap: z.coerce.number().default(0),
+        advantage: z.enum(["ours", "theirs", "tied"]).catch("tied"),
+        insight: z.string().default("No insight available."),
+        recommendation: z
+          .string()
+          .default("Collect more data before deciding action."),
+      }),
+    )
+    .default([]),
   strengths: z.array(z.string()).default([]),
   weaknesses: z.array(z.string()).default([]),
   opportunities: z.array(z.string()).default([]),
   threats: z.array(z.string()).default([]),
-  recommendations: z.array(z.object({
-    priority: z.enum(["HIGH", "MEDIUM", "LOW"]).catch("MEDIUM"),
-    action: z.string(),
-    expectedImpact: z.string().default("Impact to be validated after execution."),
-    timeline: z.string().default("1-2 weeks"),
-    category: z.string().optional(),
-  })).default([]),
+  recommendations: z
+    .array(
+      z.object({
+        priority: z.enum(["HIGH", "MEDIUM", "LOW"]).catch("MEDIUM"),
+        action: z.string(),
+        expectedImpact: z
+          .string()
+          .default("Impact to be validated after execution."),
+        timeline: z.string().default("1-2 weeks"),
+        category: z.string().optional(),
+      }),
+    )
+    .default([]),
 });
 
 /**
@@ -327,7 +339,12 @@ export async function sendChatMessage(
 
     // 1. Validate analysis exists and is completed
     const analysis = await prisma.competitorAnalysis.findFirst({
-      where: { id: analysisId, competitorId: id, status: "COMPLETED", competitor: { tenantId } },
+      where: {
+        id: analysisId,
+        competitorId: id,
+        status: "COMPLETED",
+        competitor: { tenantId },
+      },
       include: {
         competitor: {
           select: { candidateName: true, partyName: true },
@@ -353,7 +370,75 @@ export async function sendChatMessage(
       },
     });
 
-    // 3. Build context from analysis
+    // 3. Gather live database information
+    const [tenant, wards, projects, grievanceStats, recentGrievances] =
+      await Promise.all([
+        prisma.tenant.findUnique({
+          where: { id: tenantId },
+          select: {
+            name: true,
+            constituencyName: true,
+            state: true,
+            district: true,
+            representativeName: true,
+            representativeTitle: true,
+            partyName: true,
+          },
+        }),
+        prisma.ward.findMany({
+          where: { tenantId },
+          select: {
+            name: true,
+            wardNumber: true,
+          },
+        }),
+        prisma.project.findMany({
+          where: { tenantId },
+          select: {
+            name: true,
+            status: true,
+            budgetSanctioned: true,
+            budgetUsed: true,
+          },
+        }),
+        prisma.grievance.groupBy({
+          by: ["status"],
+          where: { tenantId },
+          _count: { id: true },
+        }),
+        prisma.grievance.findMany({
+          where: { tenantId },
+          orderBy: { createdAt: "desc" },
+          take: 15,
+          select: {
+            subject: true,
+            status: true,
+            category: true,
+            priority: true,
+          },
+        }),
+      ]);
+
+    const databaseContext = `
+## CURRENT TENANT & CONSTITUENCY DETAILS
+- Tenant Name: ${tenant?.name || "N/A"}
+- Constituency: ${tenant?.constituencyName || "N/A"} (State: ${tenant?.state || "N/A"}, District: ${tenant?.district || "N/A"})
+- Representative: ${tenant?.representativeName || "N/A"} (${tenant?.representativeTitle || "N/A"})
+- Party Name: ${tenant?.partyName || "N/A"}
+
+## CONSTITUENCY WARDS IN DATABASE (${wards.length} Wards)
+${wards.map((w) => `- Ward ${w.wardNumber}: ${w.name}`).join("\n")}
+
+## DEVELOPMENT PROJECTS (${projects.length} Projects)
+${projects.map((p) => `- Project: ${p.name} | Status: ${p.status} | Budget: ₹${p.budgetSanctioned} | Spent: ₹${p.budgetUsed || 0}`).join("\n")}
+
+## GRIEVANCES SUMMARY
+- Counts by Status: ${grievanceStats.map((g) => `${g.status}: ${g._count.id}`).join(", ") || "No grievances recorded."}
+- Recent Grievances:
+${recentGrievances.map((g) => `  * [${g.category}] ${g.subject} | Status: ${g.status} | Priority: ${g.priority}`).join("\n")}
+`.trim();
+
+    // 4. Build context from analysis
     const analysisContext = `
 Competitor: ${analysis.competitor.candidateName} (${analysis.competitor.partyName})
 Overall Score: ${analysis.overallScore}/100
@@ -367,13 +452,18 @@ Recommendations: ${JSON.stringify(analysis.recommendations)}
 Metric Comparisons: ${JSON.stringify(analysis.metricComparisons)}
 `.trim();
 
-    // 4. Call Gemini for chat response
-    const chatHistory = analysis.chatMessages.map((m: any) => ({
+    // 5. Call DeepSeek for chat response (slice to last 6 messages for context)
+    const chatHistory = analysis.chatMessages.slice(-6).map((m: any) => ({
       role: m.role as string,
       message: m.message as string,
     }));
 
-    const chatPrompt = buildChatPrompt(analysisContext, chatHistory, message);
+    const chatPrompt = buildChatPrompt(
+      analysisContext,
+      databaseContext,
+      chatHistory,
+      message,
+    );
     const aiResponse = await generateText(chatPrompt);
 
     // 5. Save AI response

@@ -265,99 +265,99 @@ export default function PaymentsPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent border-emerald-500/10">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-emerald-500/[0.03] via-card to-card border border-border/60 rounded-[28px] transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <TrendingUp className="w-16 h-16 text-emerald-500" />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total Revenue Collected</span>
-              <span className="p-1 bg-emerald-500/10 text-emerald-500 rounded-lg"><IndianRupee className="w-4 h-4" /></span>
+              <span className="text-sm font-semibold text-muted-foreground">Total Revenue</span>
+              <span className="p-2 bg-emerald-500/10 text-emerald-600 rounded-2xl"><IndianRupee className="w-4 h-4" /></span>
             </div>
             <div className="mt-4">
               {isStatsLoading ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
-                <h3 className="text-2xl font-bold text-emerald-500 font-heading">{formatCurrency(totalRevenue)}</h3>
+                <h3 className="text-3xl font-extrabold text-emerald-600 font-heading tracking-tight">{formatCurrency(totalRevenue)}</h3>
               )}
-              <p className="text-xs text-muted-foreground mt-1">From successfully processed invoice payments</p>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">From successfully settled payments</p>
             </div>
           </Card>
 
-          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-transparent to-transparent border-amber-500/10">
+          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-amber-500/[0.03] via-card to-card border border-border/60 rounded-[28px] transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <Clock className="w-16 h-16 text-amber-500" />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Pending Amount</span>
-              <span className="p-1 bg-amber-500/10 text-amber-500 rounded-lg"><Clock className="w-4 h-4" /></span>
+              <span className="text-sm font-semibold text-muted-foreground">Pending Volume</span>
+              <span className="p-2 bg-amber-500/10 text-amber-600 rounded-2xl"><Clock className="w-4 h-4" /></span>
             </div>
             <div className="mt-4">
               {isStatsLoading ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
-                <h3 className="text-2xl font-bold text-amber-500 font-heading">{formatCurrency(pendingAmount)}</h3>
+                <h3 className="text-3xl font-extrabold text-amber-500 font-heading tracking-tight">{formatCurrency(pendingAmount)}</h3>
               )}
-              <p className="text-xs text-muted-foreground mt-1">Awaiting confirmation or settlement</p>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Awaiting settlement or confirmation</p>
             </div>
           </Card>
 
-          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent border-indigo-500/10">
+          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-indigo-500/[0.03] via-card to-card border border-border/60 rounded-[28px] transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <CheckCircle className="w-16 h-16 text-indigo-500" />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Success Rate</span>
-              <span className="p-1 bg-indigo-500/10 text-indigo-500 rounded-lg"><CheckCircle className="w-4 h-4" /></span>
+              <span className="text-sm font-semibold text-muted-foreground">Success Rate</span>
+              <span className="p-2 bg-indigo-500/10 text-indigo-600 rounded-2xl"><CheckCircle className="w-4 h-4" /></span>
             </div>
             <div className="mt-4">
               {isStatsLoading ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
-                <h3 className="text-2xl font-bold text-indigo-500 font-heading">
+                <h3 className="text-3xl font-extrabold text-indigo-600 font-heading tracking-tight">
                   {totalCount > 0 ? `${Math.round((successCount / totalCount) * 100)}%` : "0%"}
                 </h3>
               )}
-              <p className="text-xs text-muted-foreground mt-1">{successCount} successful of {totalCount} total</p>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{successCount} successful of {totalCount} total</p>
             </div>
           </Card>
 
-          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-violet-500/5 via-transparent to-transparent border-violet-500/10">
+          <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-violet-500/[0.03] via-card to-card border border-border/60 rounded-[28px] transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <SlidersHorizontal className="w-16 h-16 text-violet-500" />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Active Payment Methods</span>
-              <span className="p-1 bg-violet-500/10 text-violet-500 rounded-lg"><SlidersHorizontal className="w-4 h-4" /></span>
+              <span className="text-sm font-semibold text-muted-foreground">Payment Methods</span>
+              <span className="p-2 bg-violet-500/10 text-violet-600 rounded-2xl"><SlidersHorizontal className="w-4 h-4" /></span>
             </div>
             <div className="mt-4 space-y-1">
               {isStatsLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : (
-                <div className="flex flex-wrap gap-1 max-h-[48px] overflow-y-auto">
+                <div className="flex flex-wrap gap-1.5 max-h-[48px] overflow-y-auto">
                   {stats.methodBreakdown.length === 0 ? (
                     <span className="text-xs text-muted-foreground">No method data yet</span>
                   ) : (
                     stats.methodBreakdown.slice(0, 3).map((item: any) => (
-                      <Badge key={item.method} variant="outline" className="text-[10px] py-0 px-1.5 border-violet-500/20 bg-violet-500/5">
+                      <Badge key={item.method} variant="outline" className="text-[10px] py-0.5 px-2 rounded-lg border-violet-500/20 bg-violet-500/5 font-semibold">
                         {item.method}: {formatCurrency(item.totalAmount)}
                       </Badge>
                     ))
                   )}
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground pt-1">Distribution of success payment volume</p>
+              <p className="text-[10px] text-muted-foreground pt-1 leading-relaxed">Distribution of success volumes</p>
             </div>
           </Card>
         </div>
 
         {/* Filters and List */}
-        <Card className="p-6">
+        <Card className="p-6 rounded-[28px] border border-border/60 shadow-sm bg-card/60 backdrop-blur-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
             {/* Search and filters */}
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
               <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search invoice, tx ID, tenant..."
                   value={search}
@@ -365,7 +365,7 @@ export default function PaymentsPage() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9 bg-background/50 border-muted-foreground/20 focus:border-primary"
+                  className="pl-10 h-10 rounded-xl bg-background/50 border-border/60 focus-visible:ring-primary"
                 />
               </div>
               <Select
@@ -375,10 +375,10 @@ export default function PaymentsPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="w-full sm:w-44 bg-background/50 border-muted-foreground/20">
+                <SelectTrigger className="w-full sm:w-44 h-10 rounded-xl bg-background/50 border-border/60">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="SUCCESS">Success</SelectItem>
@@ -390,17 +390,17 @@ export default function PaymentsPage() {
 
             {/* Export and action button */}
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                <FileSpreadsheet className="w-3.5 h-3.5" /> Export Excel
+              <Button variant="outline" size="sm" className="gap-2 h-10 rounded-xl px-4 text-xs font-semibold">
+                <FileSpreadsheet className="w-4 h-4" /> Export Excel
               </Button>
             </div>
           </div>
 
           {/* Table Container */}
-          <div className="border rounded-lg overflow-hidden bg-background/30 backdrop-blur-sm">
+          <div className="border border-border/60 rounded-2xl overflow-hidden bg-background/30 backdrop-blur-sm shadow-sm">
             <table className="w-full text-sm text-left border-collapse">
               <thead>
-                <tr className="border-b bg-muted/30 text-muted-foreground text-xs uppercase tracking-wider">
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                   <th className="p-4 font-semibold">Invoice Number</th>
                   <th className="p-4 font-semibold">Tenant & Subscription</th>
                   <th className="p-4 font-semibold">Amount</th>

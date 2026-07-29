@@ -27,7 +27,6 @@ export const listModulesSchema = z.object({
   search: z.string().optional(),
   category: z.string().optional(),
   isActive: z.enum(["true", "false"]).optional(),
-  isAddon: z.enum(["true", "false"]).optional(),
 });
 
 export const createModuleSchema = z.object({
@@ -35,8 +34,6 @@ export const createModuleSchema = z.object({
   name: z.string().min(2, "Module name is required"),
   description: z.string().optional(),
   category: z.string().optional().default("core"),
-  isAddon: z.boolean().optional().default(false),
-  addonPrice: z.coerce.number().min(0).optional().default(0),
   isActive: z.boolean().optional().default(true),
   sortOrder: z.coerce.number().int().optional().default(0),
 });
@@ -54,16 +51,13 @@ export const listTenantModulesSchema = z.object({
 export const grantModuleAccessSchema = z.object({
   moduleId: z.string().min(1, "Module ID is required"),
   isEnabled: z.boolean().optional().default(true),
-  expiresAt: z.string().optional(),
 });
 
 export const updateModuleAccessSchema = z.object({
   isEnabled: z.boolean().optional(),
-  expiresAt: z.string().nullable().optional(),
 });
 
 export const bulkGrantModulesSchema = z.object({
   moduleIds: z.array(z.string().min(1)).min(1, "At least one module ID is required"),
   isEnabled: z.boolean().optional().default(true),
-  expiresAt: z.string().optional(),
 });

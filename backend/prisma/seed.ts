@@ -677,8 +677,6 @@ async function main() {
       name: "Competitors",
       description: "Competitor profiles, metrics, and AI analysis.",
       category: "analytics",
-      isAddon: true,
-      addonPrice: 4999,
       sortOrder: 22,
     },
   ];
@@ -691,15 +689,11 @@ async function main() {
         name: moduleData.name,
         description: moduleData.description,
         category: moduleData.category,
-        isAddon: moduleData.isAddon ?? false,
-        addonPrice: moduleData.addonPrice ?? 0,
         isActive: true,
         sortOrder: moduleData.sortOrder,
       },
       create: {
         ...moduleData,
-        isAddon: moduleData.isAddon ?? false,
-        addonPrice: moduleData.addonPrice ?? 0,
         isActive: true,
       },
     });
@@ -746,7 +740,6 @@ async function main() {
       },
       update: {
         isEnabled: true,
-        expiresAt: null,
       },
       create: {
         tenantId: tenant.id,

@@ -123,10 +123,10 @@ export default function InvoicesPage() {
 
         <SubscriptionsNav />
 
-        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm">
+        <Card className="rounded-[28px] border border-border/60 p-6 shadow-sm bg-card/60 backdrop-blur-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Payment History</h2>
+              <h2 className="text-2xl font-bold font-heading">Payment History</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Search, filter, and track payments across all registered platforms.
               </p>
@@ -139,10 +139,10 @@ export default function InvoicesPage() {
                   setPage(1); // reset page on filter change
                 }}
               >
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[150px] h-10 rounded-xl bg-background/50 border-border/60">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="ALL">All Status</SelectItem>
                   <SelectItem value="SUCCESS">Paid</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
@@ -151,9 +151,9 @@ export default function InvoicesPage() {
               </Select>
 
               <div className="relative w-full max-w-xs">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  className="pl-9"
+                  className="pl-10 h-10 rounded-xl bg-background/50 border-border/60 focus-visible:ring-primary"
                   placeholder="Search invoice/tenant..."
                   value={search}
                   onChange={(e) => {
@@ -165,16 +165,16 @@ export default function InvoicesPage() {
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <div className="mt-6 overflow-x-auto border border-border/60 rounded-2xl bg-background/30 shadow-sm">
+            <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="pb-3 font-semibold">Invoice</th>
-                  <th className="pb-3 font-semibold">Tenant</th>
-                  <th className="pb-3 font-semibold">Plan</th>
-                  <th className="pb-3 font-semibold">Amount</th>
-                  <th className="pb-3 font-semibold">Status</th>
-                  <th className="pb-3 font-semibold">Date</th>
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  <th className="p-4 font-semibold">Invoice</th>
+                  <th className="p-4 font-semibold">Tenant</th>
+                  <th className="p-4 font-semibold">Plan</th>
+                  <th className="p-4 font-semibold">Amount</th>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-semibold">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -212,28 +212,28 @@ export default function InvoicesPage() {
                   </tr>
                 ) : (
                   invoices.map((invoice: any) => (
-                    <tr key={invoice.id}>
-                      <td className="py-4 font-semibold">
+                    <tr key={invoice.id} className="hover:bg-muted/10 transition-colors">
+                      <td className="p-4 font-semibold font-heading">
                         {invoice.invoiceNumber}
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         {invoice.tenant?.name || invoice.tenantName}
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         {invoice.plan?.name || invoice.planName}
                       </td>
-                      <td className="py-4 font-medium">
+                      <td className="p-4 font-bold">
                         {formatCurrency(invoice.amount)}
                       </td>
-                      <td className="py-4">
+                      <td className="p-4">
                         <Badge
                           variant="outline"
                           className={
                             invoice.status === "SUCCESS"
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold"
+                              ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-emerald-500/20 font-semibold rounded-lg"
                               : invoice.status === "PENDING"
-                                ? "border-amber-200 bg-amber-50 text-amber-700 font-semibold"
-                                : "border-rose-200 bg-rose-50 text-rose-700 font-semibold"
+                                ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500/10 border-amber-500/20 font-semibold rounded-lg"
+                                : "bg-rose-500/10 text-rose-600 hover:bg-rose-500/10 border-rose-500/20 font-semibold rounded-lg"
                           }
                         >
                           {invoice.status === "SUCCESS"
@@ -243,7 +243,7 @@ export default function InvoicesPage() {
                               : invoice.status}
                         </Badge>
                       </td>
-                      <td className="py-4 text-muted-foreground">
+                      <td className="p-4 text-muted-foreground">
                         {formatShortDate(invoice.paidAt || invoice.createdAt)}
                       </td>
                     </tr>

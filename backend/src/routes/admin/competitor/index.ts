@@ -85,17 +85,9 @@ router.get(
   getCompetitorStats,
 );
 
-router.get(
-  "/",
-  requirePermission("competitors", "read"),
-  listCompetitors,
-);
+router.get("/", requirePermission("competitors", "read"), listCompetitors);
 
-router.get(
-  "/:id",
-  requirePermission("competitors", "read"),
-  getCompetitor,
-);
+router.get("/:id", requirePermission("competitors", "read"), getCompetitor);
 
 router.post(
   "/",

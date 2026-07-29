@@ -69,7 +69,9 @@ export function useUpdateSettings() {
           })
           .then((r) => r.data);
       }
-      return api.put("/platform/settings", { settings: payload }).then((r) => r.data);
+      return api
+        .put("/platform/settings", { settings: payload })
+        .then((r) => r.data);
     },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["platform-settings"] });

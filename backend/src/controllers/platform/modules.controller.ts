@@ -25,7 +25,6 @@ export const listModules = async (
     const search = req.query.search as string;
     const category = req.query.category as string;
     const isActive = req.query.isActive as string;
-    const isAddon = req.query.isAddon as string;
 
     const where: Prisma.ModuleWhereInput = {};
 
@@ -43,10 +42,6 @@ export const listModules = async (
 
     if (typeof isActive === "string") {
       where.isActive = isActive === "true";
-    }
-
-    if (typeof isAddon === "string") {
-      where.isAddon = isAddon === "true";
     }
 
     const [modules, total] = await Promise.all([
@@ -316,7 +311,7 @@ export const grantModuleAccess = async (
 ) => {
   try {
     const tenantId = getParamId(req, "tenantId");
-    const { moduleId, isEnabled, expiresAt } = req.body;
+    const { moduleId, isEnabled } = req.body;
 
     // Verify tenant exists
     const tenant = await prisma.tenant.findUnique({
@@ -349,11 +344,9 @@ export const grantModuleAccess = async (
         tenantId,
         moduleId,
         isEnabled: isEnabled ?? true,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
       update: {
         isEnabled: isEnabled ?? true,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
       include: {
         module: true,
@@ -361,31 +354,6 @@ export const grantModuleAccess = async (
     });
 
     clearModuleAccessCache(tenantId);
-
-    if (module.isAddon && module.addonPrice > 0 && (isEnabled ?? true)) {
-      const subscription = await prisma.tenantSubscription.findUnique({
-        where: { tenantId },
-      });
-      if (subscription) {
-        const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-        const rand = Math.floor(1000 + Math.random() * 9000);
-        await prisma.$transaction([
-          prisma.payment.create({
-            data: {
-              subscriptionId: subscription.id,
-              amount: module.addonPrice,
-              status: "PENDING",
-              invoiceNumber: `INV-${date}-${rand}`,
-              notes: `Addon module: ${module.name} (${module.code})`,
-            },
-          }),
-          prisma.tenantSubscription.update({
-            where: { id: subscription.id },
-            data: { amountDue: { increment: module.addonPrice } },
-          }),
-        ]);
-      }
-    }
 
     res
       .status(200)
@@ -405,7 +373,7 @@ export const updateModuleAccess = async (
   try {
     const tenantId = getParamId(req, "tenantId");
     const moduleId = getParamId(req, "moduleId");
-    const { isEnabled, expiresAt } = req.body;
+    const { isEnabled } = req.body;
 
     const existing = await prisma.tenantModuleAccess.findUnique({
       where: {
@@ -421,10 +389,6 @@ export const updateModuleAccess = async (
 
     if (typeof isEnabled === "boolean") {
       updateData.isEnabled = isEnabled;
-    }
-
-    if (expiresAt !== undefined) {
-      updateData.expiresAt = expiresAt ? new Date(expiresAt) : null;
     }
 
     const access = await prisma.tenantModuleAccess.update({
@@ -489,7 +453,7 @@ export const bulkGrantModules = async (
 ) => {
   try {
     const tenantId = getParamId(req, "tenantId");
-    const { moduleIds, isEnabled, expiresAt } = req.body;
+    const { moduleIds, isEnabled } = req.body;
 
     // Verify tenant exists
     const tenant = await prisma.tenant.findUnique({
@@ -530,11 +494,9 @@ export const bulkGrantModules = async (
             tenantId,
             moduleId: module.id,
             isEnabled: isEnabled ?? true,
-            expiresAt: expiresAt ? new Date(expiresAt) : null,
           },
           update: {
             isEnabled: isEnabled ?? true,
-            expiresAt: expiresAt ? new Date(expiresAt) : null,
           },
           include: {
             module: true,

@@ -526,17 +526,6 @@ export default function ModulesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-
-                  <Select value={addonFilter} onValueChange={setAddonFilter}>
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Billing Tier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Core + Addons</SelectItem>
-                      <SelectItem value="core">Core Only</SelectItem>
-                      <SelectItem value="addon">Addons Only</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </Card>
@@ -580,9 +569,6 @@ export default function ModulesPage() {
                             {mod.code}
                           </code>
                         </div>
-                        <Badge variant={mod.isAddon ? "default" : "outline"} className="capitalize">
-                          {mod.isAddon ? "Add-on" : "Core Module"}
-                        </Badge>
                       </div>
 
                       <p className="mt-4 min-h-[48px] text-sm text-muted-foreground line-clamp-2">
@@ -594,19 +580,6 @@ export default function ModulesPage() {
                           <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Category</p>
                           <p className="text-sm font-semibold capitalize mt-0.5">{mod.category}</p>
                         </div>
-                        {mod.isAddon ? (
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Addon Price</p>
-                            <p className="text-lg font-bold text-foreground mt-0.5">
-                              {formatCurrency(mod.addonPrice)}<span className="text-xs font-normal">/mo</span>
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="text-right text-emerald-600 dark:text-emerald-400">
-                            <Check className="h-5 w-5 inline mr-1" />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Free in tier</span>
-                          </div>
-                        )}
                       </div>
 
                       <div className="mt-6 flex items-center justify-end gap-2 border-t pt-4">
@@ -696,17 +669,12 @@ export default function ModulesPage() {
                         <thead>
                           <tr className="border-b text-muted-foreground">
                             <th className="pb-3 font-semibold">Module</th>
-                            <th className="pb-3 font-semibold">Pricing</th>
                             <th className="pb-3 font-semibold">Enabled</th>
-                            <th className="pb-3 font-semibold">Expiration Rule</th>
                             <th className="pb-3 text-right font-semibold">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/60">
                           {tenantAccess.map((access: any) => {
-                            const isExpiryPast =
-                              access.expiresAt && new Date(access.expiresAt) < new Date();
-
                             return (
                               <tr key={access.id} className="hover:bg-muted/5 transition-colors">
                                 <td className="py-4">
@@ -717,45 +685,12 @@ export default function ModulesPage() {
                                     </code>
                                   </div>
                                 </td>
-                                <td className="py-4 font-medium">
-                                  {access.module.isAddon ? (
-                                    <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-medium">
-                                      Addon ({formatCurrency(access.module.addonPrice)})
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="border-emerald-600/20 text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/5">
-                                      Included
-                                    </Badge>
-                                  )}
-                                </td>
                                 <td className="py-4">
                                   <Switch
                                     checked={access.isEnabled}
                                     disabled={updateAccessMutation.isPending}
                                     onCheckedChange={() => handleToggleAccessEnabled(access)}
                                   />
-                                </td>
-                                <td className="py-4">
-                                  <div className="flex items-center gap-2 max-w-[180px]">
-                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                    <Input
-                                      type="date"
-                                      className={`h-8 py-1 px-2 rounded-lg text-xs ${
-                                        isExpiryPast ? "border-destructive text-destructive font-medium" : ""
-                                      }`}
-                                      value={
-                                        access.expiresAt
-                                          ? new Date(access.expiresAt).toISOString().split("T")[0]
-                                          : ""
-                                      }
-                                      onChange={(e) =>
-                                        handleUpdateExpiry(access.module.id, e.target.value)
-                                      }
-                                    />
-                                  </div>
-                                  {isExpiryPast && (
-                                    <p className="text-[10px] text-destructive font-medium mt-1">Expired</p>
-                                  )}
                                 </td>
                                 <td className="py-4 text-right">
                                   <Button
@@ -805,21 +740,11 @@ export default function ModulesPage() {
                             <SelectContent>
                               {unassignedModules.map((mod: any) => (
                                 <SelectItem key={mod.id} value={mod.id}>
-                                  {mod.name} ({mod.isAddon ? `Addon · ${formatCurrency(mod.addonPrice)}` : "Core"})
+                                  {mod.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Set Custom Expiration (Optional)</Label>
-                          <Input
-                            type="date"
-                            className="rounded-xl"
-                            value={grantExpiresAt}
-                            onChange={(e) => setGrantExpiresAt(e.target.value)}
-                          />
                         </div>
 
                         <Button
@@ -882,16 +807,6 @@ export default function ModulesPage() {
                               );
                             })
                           )}
-                        </div>
-
-                        <div className="space-y-2 pt-2">
-                          <Label className="text-xs">Set Expiration for Bulk Selection</Label>
-                          <Input
-                            type="date"
-                            className="rounded-xl h-9 text-xs"
-                            value={bulkGrantExpiresAt}
-                            onChange={(e) => setBulkGrantExpiresAt(e.target.value)}
-                          />
                         </div>
 
                         <Button
