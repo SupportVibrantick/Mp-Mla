@@ -33,6 +33,7 @@ import {
 } from "recharts";
 import {
   ArrowUpRight,
+  ArrowRight,
   ArrowDownRight,
   Minus,
   MessageSquare,
@@ -262,9 +263,9 @@ export default function Dashboard() {
       module: "wards",
       to: "/wards",
       icon: Map,
-      color: "text-indigo-600 dark:text-indigo-400",
-      bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
-      glowClass: "hover:shadow-indigo-500/10 hover:border-indigo-500/30",
+      color: "text-[#13538A] dark:text-blue-400",
+      bgColor: "bg-[#13538A]/10 dark:bg-blue-950/40",
+      borderTopColor: "border-t-[#13538A] dark:border-t-blue-500",
       value: s.totalWards,
       label: "Wards",
       desc: `${s.totalPopulation.toLocaleString()} people`,
@@ -276,7 +277,7 @@ export default function Dashboard() {
       icon: MessageSquare,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-950/40",
-      glowClass: "hover:shadow-blue-500/10 hover:border-blue-500/30",
+      borderTopColor: "border-t-blue-600 dark:border-t-blue-500",
       value: s.openGrievances,
       label: "Open Requests",
       desc: `of ${s.totalGrievances} total`,
@@ -293,7 +294,7 @@ export default function Dashboard() {
       icon: FolderKanban,
       color: "text-amber-600 dark:text-amber-400",
       bgColor: "bg-amber-50 dark:bg-amber-950/40",
-      glowClass: "hover:shadow-amber-500/10 hover:border-amber-500/30",
+      borderTopColor: "border-t-amber-500 dark:border-t-amber-400",
       value: s.runningProjects,
       label: "Running Projects",
       desc: `${s.completedProjects} completed`,
@@ -305,7 +306,7 @@ export default function Dashboard() {
       icon: Users,
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
-      glowClass: "hover:shadow-emerald-500/10 hover:border-emerald-500/30",
+      borderTopColor: "border-t-emerald-600 dark:border-t-emerald-500",
       value: s.totalVoters.toLocaleString(),
       label: "Total Voters",
       desc: `M: ${s.maleVoters.toLocaleString()} • F: ${s.femaleVoters.toLocaleString()}`,
@@ -317,7 +318,7 @@ export default function Dashboard() {
       icon: Building2,
       color: "text-cyan-600 dark:text-cyan-400",
       bgColor: "bg-cyan-50 dark:bg-cyan-950/40",
-      glowClass: "hover:shadow-cyan-500/10 hover:border-cyan-500/30",
+      borderTopColor: "border-t-cyan-600 dark:border-t-cyan-500",
       value: s.totalDepartments,
       label: "Departments",
       desc: "Constituency scope",
@@ -329,7 +330,7 @@ export default function Dashboard() {
       icon: Landmark,
       color: "text-purple-600 dark:text-purple-400",
       bgColor: "bg-purple-50 dark:bg-purple-950/40",
-      glowClass: "hover:shadow-purple-500/10 hover:border-purple-500/30",
+      borderTopColor: "border-t-purple-600 dark:border-t-purple-500",
       value: s.totalInstitutions,
       label: "Facilities",
       desc: "Active facilities",
@@ -341,7 +342,7 @@ export default function Dashboard() {
       icon: Calendar,
       color: "text-rose-600 dark:text-rose-400",
       bgColor: "bg-rose-50 dark:bg-rose-950/40",
-      glowClass: "hover:shadow-rose-500/10 hover:border-rose-500/30",
+      borderTopColor: "border-t-rose-600 dark:border-t-rose-500",
       value: s.scheduledMeetings,
       label: "Meetings",
       desc: "Upcoming sessions",
@@ -353,7 +354,7 @@ export default function Dashboard() {
       icon: Users,
       color: "text-violet-600 dark:text-violet-400",
       bgColor: "bg-violet-50 dark:bg-violet-950/40",
-      glowClass: "hover:shadow-violet-500/10 hover:border-violet-500/30",
+      borderTopColor: "border-t-violet-600 dark:border-t-violet-500",
       value: s.totalCommunityGroups,
       label: "Collectives",
       desc: "Active groups",
@@ -364,7 +365,7 @@ export default function Dashboard() {
     <MainLayout title="Dashboard">
       <div className="space-y-6">
         {/* ═══ Constituency Overview Banner ═══ */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#114b8a] via-[#253e9a] to-[#612d95] text-white p-6 sm:p-8 shadow-xl border border-white/10">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#13538A] via-[#1a6aad] to-[#5D28A8] text-white p-6 sm:p-8 shadow-lg border border-white/10">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-1/4 -mb-20 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
@@ -372,69 +373,61 @@ export default function Dashboard() {
             <div className="space-y-2 max-w-xl">
               <Badge
                 variant="secondary"
-                className="bg-white/10 hover:bg-white/20 text-[#b2cbdc] border-none backdrop-blur-md px-3 py-1 text-xs font-semibold"
+                className="bg-white/15 hover:bg-white/25 text-white border-none backdrop-blur-md px-3 py-1 text-xs font-semibold"
               >
                 Constituency Overview
               </Badge>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-200">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
                 MP / MLA Constituency Dashboard
               </h1>
-              <p className="text-xs sm:text-sm text-indigo-100/80 leading-relaxed">
+              <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
                 Real-time metrics, active development works, citizen requests
                 tracking, and public facility management.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-6 xl:gap-8 bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 shadow-inner">
-              {hasModule("wards") && (
-                <div className="space-y-1 pr-6 border-r border-white/10">
-                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
-                    Wards
-                  </p>
-                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                    {s.totalWards}
-                  </p>
-                </div>
-              )}
-              {hasModule("grievances") && (
-                <div className="space-y-1 pr-6 border-r border-white/10">
-                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
-                    Requests
-                  </p>
-                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                    {s.openGrievances}
-                  </p>
-                </div>
-              )}
-              {hasModule("projects") && (
-                <div className="space-y-1 pr-6 border-r border-white/10">
-                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
-                    Projects
-                  </p>
-                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                    {s.runningProjects}
-                  </p>
-                </div>
-              )}
-              {hasModule("wards") && (
-                <div className="space-y-1">
-                  <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
-                    Voters
-                  </p>
-                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                    {s.totalVoters >= 100000
-                      ? `${(s.totalVoters / 100000).toFixed(1)}L`
-                      : s.totalVoters >= 1000
-                        ? `${(s.totalVoters / 1000).toFixed(0)}K`
-                        : s.totalVoters.toLocaleString()}
-                  </p>
-                </div>
-              )}
-              <div className="w-full sm:w-auto mt-2 sm:mt-0 sm:pl-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {hasModule("wards") && (
+                  <div className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm ring-1 ring-white/20">
+                    <p className="text-xs text-white/70">Wards</p>
+                    <p className="mt-1 text-xl font-semibold">{s.totalWards}</p>
+                  </div>
+                )}
+                {hasModule("grievances") && (
+                  <div className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm ring-1 ring-white/20">
+                    <p className="text-xs text-white/70">Requests</p>
+                    <p className="mt-1 text-xl font-semibold">
+                      {s.openGrievances}
+                    </p>
+                  </div>
+                )}
+                {hasModule("projects") && (
+                  <div className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm ring-1 ring-white/20">
+                    <p className="text-xs text-white/70">Projects</p>
+                    <p className="mt-1 text-xl font-semibold">
+                      {s.runningProjects}
+                    </p>
+                  </div>
+                )}
+                {hasModule("wards") && (
+                  <div className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm ring-1 ring-white/20">
+                    <p className="text-xs text-white/70">Voters</p>
+                    <p className="mt-1 text-xl font-semibold">
+                      {s.totalVoters >= 100000
+                        ? `${(s.totalVoters / 100000).toFixed(1)}L`
+                        : s.totalVoters >= 1000
+                          ? `${(s.totalVoters / 1000).toFixed(0)}K`
+                          : s.totalVoters.toLocaleString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="w-full sm:w-auto mt-2 sm:mt-0">
                 <Link href="/reports">
-                  <Button className="w-full sm:w-auto bg-white hover:bg-indigo-50 text-[#114b8a] font-bold transition-all duration-300 border-none shadow-md hover:shadow-lg flex items-center justify-center gap-2 group px-4 py-2 h-9 text-xs">
+                  <Button className="w-full sm:w-auto bg-white hover:bg-white/90 text-[#13538A] font-semibold transition-all duration-300 border-none shadow-md hover:shadow-lg flex items-center justify-center gap-2 px-4 py-2.5 h-10 text-sm rounded-xl">
                     Full Reports
-                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               </div>
@@ -443,7 +436,7 @@ export default function Dashboard() {
         </div>
 
         {/* ═══ Row 1: Unified Stat Cards Grid ═══ */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-4">
           {statsList
             .filter((item) => hasModule(item.module))
             .map((item) => {
@@ -452,44 +445,61 @@ export default function Dashboard() {
                 <Link to={item.to} key={item.id} className="block group">
                   <Card
                     className={cn(
-                      "h-full cursor-pointer transition-all duration-500 ease-out",
-                      "bg-white/60 dark:bg-slate-900/60 backdrop-blur-md",
-                      "border border-white/60 dark:border-slate-800/60",
-                      "shadow-[0_8px_30px_rgb(0,0,0,0.015)]",
-                      "hover:bg-white/80 dark:hover:bg-slate-900/80 hover:-translate-y-1.5 hover:shadow-lg",
-                      item.glowClass,
+                      "h-full cursor-pointer transition-all duration-300 ease-out",
+                      "bg-white dark:bg-slate-900",
+                      "border border-slate-200/60 dark:border-slate-800/80",
+                      "border-t-[3px] sm:border-t-4",
+                      item.borderTopColor,
+                      "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+                      "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+                      "hover:border-slate-300 dark:hover:border-slate-700",
                     )}
                   >
-                    <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
-                      <div className="flex items-center justify-between">
+                    <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+                      <div className="flex items-start justify-between w-full gap-2">
+                        <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                          {item.label}
+                        </p>
                         <div
                           className={cn(
-                            "p-2 rounded-xl transition-transform duration-300 group-hover:scale-110",
+                            "p-2.5 rounded-xl transition-transform duration-300 group-hover:scale-105 flex items-center justify-center shrink-0 shadow-sm",
                             item.bgColor,
                           )}
                         >
-                          <Icon className={cn("h-4 w-4", item.color)} />
+                          <Icon className={cn("h-5 w-5", item.color)} />
                         </div>
-                        {item.trend && (
-                          <div className="bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/30">
-                            <TrendBadge
-                              current={item.trend.current}
-                              previous={item.trend.previous}
-                              suffix={item.trend.suffix}
-                            />
-                          </div>
-                        )}
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] tracking-wider uppercase font-bold text-muted-foreground/85">
-                          {item.label}
-                        </p>
-                        <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent leading-none">
+                      <div className="w-full flex-1 flex flex-col justify-end">
+                        <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
                           {item.value}
                         </h3>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-semibold truncate mt-1">
-                          {item.desc}
-                        </p>
+                        <div className="flex items-end justify-between w-full mt-2 gap-2">
+                          <div className="flex flex-col min-w-0">
+                            {item.desc && (
+                              <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium truncate">
+                                {item.desc}
+                              </p>
+                            )}
+                            {item.trend && (
+                              <div className="mt-1 inline-flex bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/30 w-fit">
+                                <TrendBadge
+                                  current={item.trend.current}
+                                  previous={item.trend.previous}
+                                  suffix={item.trend.suffix}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          {item.id === "voters" && (
+                            <div className="flex items-end gap-0.5 h-6 opacity-30 dark:opacity-50 shrink-0">
+                              <div className="w-1 bg-[#13538A] dark:bg-blue-400 rounded-t-[1px] h-2"></div>
+                              <div className="w-1 bg-[#13538A] dark:bg-blue-400 rounded-t-[1px] h-3"></div>
+                              <div className="w-1 bg-[#13538A] dark:bg-blue-400 rounded-t-[1px] h-4"></div>
+                              <div className="w-1 bg-[#13538A] dark:bg-blue-400 rounded-t-[1px] h-5"></div>
+                              <div className="w-1 bg-[#13538A] dark:bg-blue-400 rounded-t-[1px] h-6"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -504,22 +514,32 @@ export default function Dashboard() {
         {(hasModule("community_groups") || hasModule("projects")) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {hasModule("community_groups") && (
-              <Card className={!hasModule("projects") ? "lg:col-span-2" : ""}>
+              <Card
+                className={cn(
+                  "rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] bg-white dark:bg-slate-900 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700",
+                  !hasModule("projects") ? "lg:col-span-2" : ""
+                )}
+              >
                 <CardHeader className="pb-2 px-3 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm sm:text-base font-semibold">
-                        Community Groups
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        Active groups by type
-                      </CardDescription>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-650 dark:text-violet-400 shadow-sm shrink-0">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                          Community Groups
+                        </CardTitle>
+                        <CardDescription className="text-[11px] sm:text-xs">
+                          Active groups by type
+                        </CardDescription>
+                      </div>
                     </div>
                     <Link to="/community">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs hover:bg-muted"
+                        className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold h-8 px-3 rounded-full border border-slate-200/60 dark:border-slate-800 shadow-sm transition-all duration-200"
                       >
                         View All →
                       </Button>
@@ -592,26 +612,31 @@ export default function Dashboard() {
 
             {hasModule("projects") && (
               <Card
-                className={
+                className={cn(
+                  "rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] bg-white dark:bg-slate-900 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700",
                   !hasModule("community_groups") ? "lg:col-span-2" : ""
-                }
+                )}
               >
                 <CardHeader className="pb-2 px-3 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm sm:text-base font-semibold">
-                        Project Status
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        {s.totalProjects} total projects • {fmt(s.totalBudget)}{" "}
-                        budget
-                      </CardDescription>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-650 dark:text-amber-400 shadow-sm shrink-0">
+                        <FolderKanban className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                          Project Status
+                        </CardTitle>
+                        <CardDescription className="text-[11px] sm:text-xs">
+                          {s.totalProjects} total projects • {fmt(s.totalBudget)} budget
+                        </CardDescription>
+                      </div>
                     </div>
                     <Link to="/projects">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs hover:bg-muted"
+                        className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold h-8 px-3 rounded-full border border-slate-200/60 dark:border-slate-800 shadow-sm transition-all duration-200"
                       >
                         View All →
                       </Button>
@@ -679,25 +704,31 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
             {hasModule("institutions") && (
               <Card
-                className={
+                className={cn(
+                  "rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] bg-white dark:bg-slate-900 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700",
                   hasModule("grievances") ? "lg:col-span-2" : "lg:col-span-5"
-                }
+                )}
               >
                 <CardHeader className="pb-2 px-3 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm sm:text-base font-semibold">
-                        Public Facilities
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        By Category
-                      </CardDescription>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 shadow-sm shrink-0">
+                        <Landmark className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                          Public Facilities
+                        </CardTitle>
+                        <CardDescription className="text-[11px] sm:text-xs">
+                          By Category
+                        </CardDescription>
+                      </div>
                     </div>
                     <Link to="/public-facilities">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs hover:bg-muted"
+                        className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold h-8 px-3 rounded-full border border-slate-200/60 dark:border-slate-800 shadow-sm transition-all duration-200"
                       >
                         View All →
                       </Button>
@@ -765,25 +796,31 @@ export default function Dashboard() {
 
             {hasModule("grievances") && (
               <Card
-                className={
+                className={cn(
+                  "rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] bg-white dark:bg-slate-900 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700",
                   hasModule("institutions") ? "lg:col-span-3" : "lg:col-span-5"
-                }
+                )}
               >
                 <CardHeader className="pb-2 px-3 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm sm:text-base font-semibold">
-                        Public Request Trend
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        Created vs Resolved (6 months)
-                      </CardDescription>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shadow-sm shrink-0">
+                        <TrendingUp className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                          Public Request Trend
+                        </CardTitle>
+                        <CardDescription className="text-[11px] sm:text-xs">
+                          Created vs Resolved (6 months)
+                        </CardDescription>
+                      </div>
                     </div>
                     <Link to="/public-requests">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs hover:bg-muted"
+                        className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold h-8 px-3 rounded-full border border-slate-200/60 dark:border-slate-800 shadow-sm transition-all duration-200"
                       >
                         View All →
                       </Button>

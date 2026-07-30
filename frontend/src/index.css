@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -52,14 +53,14 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'DM Sans', sans-serif;
-  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'Outfit', sans-serif;
+  --font-heading: 'Outfit', sans-serif;
 }
 
 /* LIGHT MODE - Professional, Clean, Government Aesthetic */
 :root {
   /* Base - Clean White / Slate */
-  --background: 210 40% 98%; /* #F8FAFC */
+  --background: 210 17% 98%; /* #F8F9FA */
   --foreground: 222 47% 11%; /* #0F172A */
 
   /* Cards - White with subtle border */

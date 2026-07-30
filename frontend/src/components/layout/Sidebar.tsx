@@ -174,7 +174,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 80 : 280 }}
-        className="h-screen bg-gradient-to-b from-[#114b8a] via-[#1b3a88] to-[#13538A] text-white border-r border-white/10 flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-2xl"
+        className="h-screen bg-[#13538A] text-white border-r border-[#5D28A8] flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-2xl dark:bg-gray-900 dark:border-gray-800"
       >
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-transparent">
@@ -224,7 +224,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           variant="ghost"
           size="icon"
           className={cn(
-            "text-white/80 hover:bg-white/15 hover:text-white",
+            "text-white hover:bg-white/15",
             collapsed && "hidden",
           )}
           onClick={() => setCollapsed(true)}
@@ -235,6 +235,15 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto sidebar-scroll py-4 px-2 space-y-1">
+        <div className="mt-2 mb-2 px-3">
+          {!collapsed ? (
+            <p className="text-[10px] uppercase font-bold text-white/50 tracking-widest">
+              MENU
+            </p>
+          ) : (
+            <div className="border-t border-white/10 mx-2" />
+          )}
+        </div>
         {filteredNavItems.map((item) => {
           const isActive = location === item.href;
           const content = (
@@ -242,14 +251,14 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
                 isActive
-                  ? "bg-white/20 text-white font-extrabold border border-white/35 shadow-md"
-                  : "text-white/90 hover:bg-white/10 hover:text-white font-semibold",
+                  ? "bg-white/12 text-white font-medium shadow-sm"
+                  : "text-white hover:bg-white/5 font-medium",
               )}
             >
               <item.icon
                 className={cn(
                   "h-5 w-5 min-w-5",
-                  isActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
+                  isActive ? "text-white" : "text-white group-hover:text-white transition-colors",
                 )}
               />
               {!collapsed && <span className="truncate text-sm tracking-wide">{item.label}</span>}
@@ -295,14 +304,14 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
                     isActive
-                      ? "bg-white/20 text-white font-extrabold border border-white/35 shadow-md"
-                      : "text-white/90 hover:bg-white/10 hover:text-white font-semibold",
+                      ? "bg-white/12 text-white font-medium shadow-sm"
+                      : "text-white hover:bg-white/5 font-medium",
                   )}
                 >
                   <item.icon
                     className={cn(
                       "h-5 w-5 min-w-5",
-                      isActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
+                      isActive ? "text-white" : "text-white group-hover:text-white transition-colors",
                     )}
                   />
                   {!collapsed && (
@@ -342,14 +351,14 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
                 isActive
-                  ? "bg-white/20 text-white font-extrabold border border-white/35 shadow-md"
-                  : "text-white/90 hover:bg-white/10 hover:text-white font-semibold",
+                  ? "bg-white/12 text-white font-medium shadow-sm"
+                  : "text-white hover:bg-white/5 font-medium",
               )}
             >
               <item.icon
                 className={cn(
                   "h-5 w-5 min-w-5",
-                  isActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
+                  isActive ? "text-white" : "text-white group-hover:text-white transition-colors",
                 )}
               />
               {!collapsed && <span className="truncate text-sm tracking-wide">{item.label}</span>}

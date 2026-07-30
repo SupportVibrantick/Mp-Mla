@@ -34,20 +34,23 @@ export default function BirthdayWidget() {
   if (todayList.length === 0 && upcomingList.length === 0) return null;
 
   return (
-    <Card className="relative overflow-hidden bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-white/60 dark:border-slate-800/60 shadow-md hover:shadow-lg transition-all duration-300 rounded-2xl">
-      {/* Celebration Header Background */}
-      <div className="bg-gradient-to-r from-pink-500/5 via-rose-500/2 to-transparent border-b border-pink-500/10 dark:border-pink-500/5 py-4 px-6">
+    <Card className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 rounded-2xl">
+      {/* Celebration Header */}
+      <div className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-900/40">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-extrabold text-slate-850 dark:text-slate-100 tracking-tight flex items-center gap-2">
-            <Cake className="h-5 w-5 text-pink-500 animate-pulse" /> Birthdays
+          <CardTitle className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-pink-500 shadow-sm shrink-0">
+              <Cake className="h-4 w-4 animate-pulse" />
+            </div>
+            Birthdays
           </CardTitle>
           <Link to="/leaders/birthdays">
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs gap-1 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-650 dark:text-slate-350 font-bold h-8 px-3 rounded-full border border-slate-200/60 dark:border-slate-800 shadow-sm transition-all hover:scale-105"
+              className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold h-8 px-3 rounded-full border border-slate-200/60 dark:border-slate-800 shadow-sm transition-all duration-200"
             >
-              View All <ChevronRight className="h-3 w-3" />
+              View All <ChevronRight className="h-3 w-3 ml-0.5" />
             </Button>
           </Link>
         </div>
