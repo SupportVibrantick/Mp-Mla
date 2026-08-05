@@ -7,17 +7,28 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { requireTenantId } from "../../../utils/tenant.js";
+import { syncVoterDemographics } from "../voterList/demographicsSync.js";
 
-import catchAsync from "@/utils/catchAsync.js";
+import catchAsync from "../../../utils/catchAsync.js";
 
 /**
  * PUT /api/admin/demographics/ward/:wardId
- * Updates demographics for a ward or ward area.
+ * Updates manual census/survey demographics for a ward or ward area.
+ * Derived voter fields (totalVoters, maleVoters, femaleVoters, newVotersCount)
+ * are excluded from manual editing and are automatically synced from the Voter table.
  */
 export const updateDemographics = catchAsync(async (req, res) => {
   const tenantId = requireTenantId(req);
   const wardId = req.params.wardId as string;
-  const { wardAreaId, ...demoData } = req.body;
+
+  // Exclude derived voter counts (total, male, female) from manual user payload
+  const {
+    wardAreaId,
+    totalVoters,
+    maleVoters,
+    femaleVoters,
+    ...demoData
+  } = req.body;
 
   const ward = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
   if (!ward) throw ApiError.notFound("Ward not found");
@@ -50,6 +61,14 @@ export const updateDemographics = catchAsync(async (req, res) => {
     });
   }
 
+  // Sync voter count fields from actual voter records to ensure consistency
+  await syncVoterDemographics(tenantId, wardId);
+
+  // Fetch updated record after voter sync
+  const updatedDemo = await prisma.demographics.findUnique({
+    where: { id: demo.id },
+  });
+
   await createAuditLog({
     tenantId,
     userId: req.user!.id,
@@ -61,5 +80,5 @@ export const updateDemographics = catchAsync(async (req, res) => {
     ...getRequestMeta(req),
   });
 
-  res.json({ success: true, data: demo });
+  res.json({ success: true, data: updatedDemo || demo });
 });

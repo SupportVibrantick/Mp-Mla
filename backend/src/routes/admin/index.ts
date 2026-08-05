@@ -26,6 +26,7 @@ import recycleBinRoutes from "./recycleBin/index.js";
 import dataActivityRoutes from "./dataActivity/index.js";
 import meetingRoutes from "./meeting/index.js";
 import competitorRoutes from "./competitor/index.js";
+import voterListRoutes from "./voterList/index.js";
 
 const router = Router();
 
@@ -64,5 +65,6 @@ router.use("/data-activity", requireModule("data_import"), dataActivityRoutes);
 router.use("/meetings", requireModule("meeting"), meetingRoutes);
 router.use("/competitor-analysis", requireModule("competitors"), competitorRoutes);
 router.use("/dashboard", requireModule("dashboard"), dashboardRoutes);
+router.use("/voter-list", requireModule("voter_list"), voterListRoutes);
 
 export default router;

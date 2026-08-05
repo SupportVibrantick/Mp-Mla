@@ -61,6 +61,7 @@ import CompetitorListPage from "./pages/competitors/CompetitorListPage";
 import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
 import CompetitorDashboard from "./pages/competitors/CompetitorDashboard";
 import CompetitorDetailPage from "./pages/competitors/CompetitorDetailPage";
+import VoterListPage from "./pages/voterList/VoterListPage";
 
 function Router() {
   return (
@@ -294,6 +295,13 @@ function Router() {
       <Route path="/competitor-analysis/:id">
         <ProtectedRoute module="competitors" action="read">
           <CompetitorDetailPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Voter List */}
+      <Route path="/voter-list">
+        <ProtectedRoute module="voter_list" action="read">
+          <VoterListPage />
         </ProtectedRoute>
       </Route>
 

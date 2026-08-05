@@ -1103,24 +1103,11 @@ export default function WardFormPage() {
 
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Voters & Vital Stats
+                  Survey Vital Stats
                 </Label>
                 <div className="grid grid-cols-3 gap-3 mt-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Total Voters</Label>
-                    <Input
-                      type="number"
-                      value={demoForm.totalVoters || ""}
-                      onChange={(e) =>
-                        setDemoForm((p) => ({
-                          ...p,
-                          totalVoters: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">New Voters</Label>
+                    <Label className="text-xs">New Voters Count</Label>
                     <Input
                       type="number"
                       value={demoForm.newVotersCount || ""}
@@ -1156,32 +1143,6 @@ export default function WardFormPage() {
                         setDemoForm((p) => ({
                           ...p,
                           totalDeaths: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Male Voters</Label>
-                    <Input
-                      type="number"
-                      value={demoForm.maleVoters || ""}
-                      onChange={(e) =>
-                        setDemoForm((p) => ({
-                          ...p,
-                          maleVoters: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Female Voters</Label>
-                    <Input
-                      type="number"
-                      value={demoForm.femaleVoters || ""}
-                      onChange={(e) =>
-                        setDemoForm((p) => ({
-                          ...p,
-                          femaleVoters: parseInt(e.target.value) || 0,
                         }))
                       }
                     />

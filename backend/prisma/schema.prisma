@@ -247,6 +247,21 @@ enum SocialCategory {
   OTHER
 }
 
+enum VoterGender {
+  MALE
+  FEMALE
+  TRANSGENDER
+}
+
+enum BulkUploadStatus {
+  PENDING
+  VALIDATING
+  PROCESSING
+  COMPLETED
+  COMPLETED_WITH_ERRORS
+  FAILED
+}
+
 // ════════════════════════════════════════════════════════
 // ORGANIZATION & BRANDING
 // ════════════════════════════════════════════════════════
@@ -337,6 +352,8 @@ model Tenant {
   settings            TenantSetting[]
   ownMetrics          OwnMetricEntry[]
   planUpgradeRequests PlanUpgradeRequest[]
+  voters              Voter[]
+  bulkUploadJobs      BulkUploadJob[]
 
   @@index([status])
   @@map("tenants")
@@ -695,6 +712,7 @@ model Ward {
   // schemeBeneficiaries SchemeBeneficiary[]
   leaders             Leader[]
   institutionRequests InstitutionRequest[]
+  voters              Voter[]
 
   @@unique([tenantId, wardNumber])
   @@unique([tenantId, name])
@@ -728,6 +746,7 @@ model WardArea {
   ward            Ward             @relation(fields: [wardId], references: [id], onDelete: Cascade)
   demographics    Demographics[]
   communityGroups CommunityGroup[]
+  voters          Voter[]
 
   @@unique([wardId, name])
   @@index([wardId])
@@ -1816,4 +1835,104 @@ model CompetitorChat {
   @@index([analysisId])
   @@index([createdAt])
   @@map("competitor_chats")
+}
+
+// ════════════════════════════════════════════════════════
+// VOTER LIST (Demography / Electoral Roll)
+// ════════════════════════════════════════════════════════
+
+model Voter {
+  id                  String          @id @default(cuid())
+  tenantId            String
+  wardId              String
+  wardAreaId          String?
+
+  // Electoral Roll Identity
+  voterIdNumber       String          // EPIC number (unique per tenant)
+  slNo               Int?            // Serial number in voter list
+  sectionNo          Int?            // Part/Section number
+  boothNo            Int?            // Polling booth number
+
+  // Personal Details
+  name                String
+  relativeName        String?         // Father/Husband name
+  relationType        String?         // "F" (Father), "H" (Husband), "M" (Mother)
+  gender              VoterGender
+  age                 Int?
+
+  // Address
+  houseNo             String?
+  address             String?
+  locality            String?
+
+  // Contact (optional)
+  phone               String?
+
+  // Classification
+  isDisabled          Boolean         @default(false)
+
+  // Metadata
+  status              String          @default("ACTIVE") // ACTIVE, DELETED, SHIFTED
+  isDeleted           Boolean         @default(false)
+  uploadBatchId       String?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  // Relations
+  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward                Ward            @relation(fields: [wardId], references: [id])
+  wardArea            WardArea?       @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
+  uploadBatch         BulkUploadJob?  @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, voterIdNumber])
+  @@index([tenantId])
+  @@index([wardId])
+  @@index([wardAreaId])
+  @@index([gender])
+  @@index([age])
+  @@index([boothNo])
+  @@index([sectionNo])
+  @@index([isDeleted])
+  @@index([uploadBatchId])
+  @@index([tenantId, wardId, boothNo])
+  @@index([tenantId, wardId, sectionNo])
+  @@map("voters")
+}
+
+model BulkUploadJob {
+  id                  String           @id @default(cuid())
+  tenantId            String
+  module              String           // "voters", "institutions", etc.
+  fileName            String?
+  fileSize            Int?             // bytes
+
+  status              BulkUploadStatus @default(PENDING)
+  totalRows           Int              @default(0)
+  processedRows       Int              @default(0)
+  successCount        Int              @default(0)
+  failedCount         Int              @default(0)
+  duplicateCount      Int              @default(0)
+
+  // Error details — JSON array of { rowIndex, voterIdNumber?, field?, error }
+  errors              Json             @default("[]")
+  // Summary stats generated after completion
+  summary             Json?
+
+  startedAt           DateTime?
+  completedAt         DateTime?
+  uploadedById        String?
+  uploadedByName      String?
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  tenant              Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  voters              Voter[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([module])
+  @@index([createdAt])
+  @@map("bulk_upload_jobs")
 }

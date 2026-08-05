@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Building2,
   Users,
+  UserCheck,
   FileText,
   Map,
   BarChart3,
@@ -77,6 +78,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       icon: BarChart,
       href: "/demographics",
       module: "demographics",
+    },
+    {
+      label: "Voter List",
+      icon: UserCheck,
+      href: "/voter-list",
+      module: "voter_list",
     },
     {
       label: "Departments",

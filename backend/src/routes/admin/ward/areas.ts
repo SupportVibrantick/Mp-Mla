@@ -210,7 +210,11 @@ export async function updateArea(
           where: { tenantId, wardId: area.wardId, wardAreaId: area.id },
         });
 
-        if (existingDemo && existingDemo.source === "Auto-estimated") {
+        if (
+          existingDemo &&
+          (existingDemo.source === "Pending Survey Data" ||
+            existingDemo.source === "Auto-estimated")
+        ) {
           const demoData = buildDemographicsData(
             tenantId,
             area.wardId,

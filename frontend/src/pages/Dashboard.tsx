@@ -301,8 +301,8 @@ export default function Dashboard() {
     },
     {
       id: "voters",
-      module: "wards",
-      to: "/wards",
+      module: "voter_list",
+      to: "/voter-list",
       icon: Users,
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/40",

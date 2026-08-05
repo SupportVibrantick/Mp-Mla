@@ -184,6 +184,12 @@ const ALL_PERMISSIONS = [
     description: "Edit competitor data",
   },
   { module: "competitors", action: "delete", description: "Delete competitor" },
+
+  { module: "voter_list", action: "create", description: "Add voter" },
+  { module: "voter_list", action: "read", description: "View voter list" },
+  { module: "voter_list", action: "update", description: "Edit voter" },
+  { module: "voter_list", action: "delete", description: "Delete voter" },
+  { module: "voter_list", action: "export", description: "Export voter list" },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -235,6 +241,9 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     // ── Competitors ──
     { module: "competitors", action: "read" },
     { module: "competitors", action: "create" },
+    // ── Voter List ──
+    { module: "voter_list", action: "read" },
+    { module: "voter_list", action: "export" },
   ],
 
   OFFICE_STAFF: [
@@ -293,6 +302,11 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "competitors", action: "read" },
     { module: "competitors", action: "update" },
     { module: "competitors", action: "delete" },
+    // ── Voter List ──
+    { module: "voter_list", action: "create" },
+    { module: "voter_list", action: "read" },
+    { module: "voter_list", action: "update" },
+    { module: "voter_list", action: "export" },
   ],
 };
 
@@ -332,6 +346,10 @@ async function main() {
   await prisma.competitorMetricEntry.deleteMany();
   await prisma.competitor.deleteMany();
   await prisma.ownMetricEntry.deleteMany();
+
+  // 1b. Voter List & Bulk Upload Jobs
+  await prisma.voter.deleteMany();
+  await prisma.bulkUploadJob.deleteMany();
 
   // 2. Meetings, Bin, Logs & Activities
   await prisma.meeting.deleteMany();
@@ -678,6 +696,13 @@ async function main() {
       description: "Competitor profiles, metrics, and AI analysis.",
       category: "analytics",
       sortOrder: 22,
+    },
+    {
+      code: "voter_list",
+      name: "Voter List",
+      description: "Constituent voter roll & bulk upload ingestion.",
+      category: "core",
+      sortOrder: 23,
     },
   ];
 

@@ -315,11 +315,13 @@ export const auditLogsApi = {
   list: (params?: any) => api.get("/admin/audit-logs", { params }),
 };
 
+
 export const recycleBinApi = {
   list: (params?: any) => api.get("/admin/recycle-bin", { params }),
   restore: (id: string) => api.post(`/admin/recycle-bin/${id}/restore`),
   delete: (id: string) => api.delete(`/admin/recycle-bin/${id}`),
 };
+
 export const permissionsApi = {
   list: () => api.get("/admin/permissions"),
   roleDefaults: () => api.get("/admin/permissions/role-defaults"),
@@ -334,4 +336,22 @@ export const settingsApi = {
     api.get<{ success: boolean; data: Record<string, string> }>(
       "/admin/settings/public/branding",
     ),
+};
+
+export const voterListApi = {
+  list: (params?: any) => api.get("/admin/voter-list", { params }),
+  stats: (params?: any) => api.get("/admin/voter-list/stats", { params }),
+  get: (id: string) => api.get(`/admin/voter-list/${id}`),
+  create: (data: any) => api.post("/admin/voter-list", data),
+  update: (id: string, data: any) => api.put(`/admin/voter-list/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/voter-list/${id}`),
+  bulkUpload: (data: any) => api.post("/admin/voter-list/bulk", data),
+  listBulkJobs: (params?: any) => api.get("/admin/voter-list/bulk/jobs", { params }),
+  getBulkJob: (jobId: string) => api.get(`/admin/voter-list/bulk/jobs/${jobId}`),
+  exportCSV: (params?: any) =>
+    api.get("/admin/voter-list/export", { params, responseType: "blob" }),
+  downloadSampleCSV: () =>
+    api.get("/admin/voter-list/sample", { responseType: "blob" }),
+  downloadSampleExcel: () =>
+    api.get("/admin/voter-list/sample/excel", { responseType: "blob" }),
 };
