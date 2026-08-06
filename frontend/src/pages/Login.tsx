@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Shield,
   Lock,
@@ -17,6 +16,7 @@ import {
   Loader2,
   AlertCircle,
   Building2,
+  ArrowRight,
 } from "lucide-react";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { getImageUrl } from "@/lib/utils";
@@ -24,6 +24,7 @@ import { getImageUrl } from "@/lib/utils";
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -42,7 +43,7 @@ export default function Login() {
     setValue,
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", rememberMe: true },
   });
 
   const onSubmit = async (data: LoginForm) => {
@@ -74,8 +75,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-background">
-      {/* ─── Left Panel ──────────────────────────────── */}
+    <div className="min-h-screen w-full flex bg-background font-sans">
+      
+      {/* ─── Left Panel (Original Blue Gradient Branding) ───────── */}
       <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#0c3e72] via-[#104d88] to-[#1665a3] text-white flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-white/5 mix-blend-overlay" />
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl" />
@@ -142,157 +144,200 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ─── Right Panel — Login Form ────────────────── */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
-        {/* Simple Navigation Button */}
-        <div className="absolute top-4 right-4 md:top-8 md:right-8">
+      {/* ─── Right Panel — Reference Pixel-Perfect Login UI ─────── */}
+      <div className="w-full lg:w-1/2 bg-[#fafbfc] dark:bg-slate-950 flex flex-col justify-between p-6 md:p-10 relative">
+        
+        {/* Top Header: Register Facility Action */}
+        <div className="flex items-center justify-end w-full">
           <Link to="/register-public-facility">
             <Button
               variant="outline"
-              size="sm"
-              className="gap-2 border-primary/20 hover:bg-primary/5 text-primary h-9"
+              className="rounded-full border border-blue-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#1464a5] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 font-semibold px-4 h-9 shadow-sm transition-all gap-2 text-xs md:text-sm"
             >
-              <Building2 className="h-4 w-4" /> Register Facility
+              <Building2 className="h-4 w-4 text-[#1464a5] dark:text-blue-400" />
+              <span>Register Facility</span>
             </Button>
           </Link>
         </div>
 
-        <Card className="w-full max-w-md border-none shadow-none bg-transparent">
-          <CardHeader className="space-y-2 text-center pb-2">
-            <div className="mx-auto p-3 rounded-full w-fit mb-2 lg:hidden">
-              {settings.brand_logo_url ? (
-                <div className="h-16 max-w-[200px] flex items-center justify-center mb-2 mx-auto">
-                  <img
-                    src={getImageUrl(settings.brand_logo_url)}
-                    alt="Logo"
-                    className="h-full w-auto object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <Shield className="h-8 w-8 text-primary" />
-                </div>
+        {/* Center Form Section (Left-Aligned Content as in Reference Image) */}
+        <div className="w-full max-w-md mx-auto my-auto py-4 px-2 sm:px-0">
+          
+          {/* Admin Portal Badge */}
+          <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#edf4ff] dark:bg-blue-950/40 border border-[#d6e4f7] dark:border-blue-800/40 text-[#1565c0] dark:text-blue-300 text-xs font-semibold tracking-wide mb-4">
+            Admin Portal
+          </div>
+
+          {/* Mobile Logo Fallback */}
+          <div className="mb-4 lg:hidden">
+            {settings.brand_logo_url ? (
+              <img
+                src={getImageUrl(settings.brand_logo_url)}
+                alt="Logo"
+                className="h-10 w-auto object-contain"
+              />
+            ) : null}
+          </div>
+
+          {/* Title & Subtitle */}
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0f172a] dark:text-white">
+            Welcome back
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base font-normal mt-2.5 mb-8">
+            Sign in to manage constituency and platform operations.
+          </p>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl text-sm text-red-700 dark:text-red-300 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-red-500" />
+              <div>
+                <p className="font-semibold">Login Failed</p>
+                <p className="mt-0.5 opacity-90">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            
+            {/* Email Address */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-semibold text-[#334155] dark:text-slate-200">
+                Email address
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@constituency.gov.in"
+                  className={`h-12 pl-11 pr-4 bg-[#f1f5f9]/70 dark:bg-slate-900/80 border-slate-200/80 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-sm ${
+                    errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""
+                  }`}
+                  disabled={isSubmitting}
+                  {...register("email")}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-xs font-medium text-red-500 mt-1 pl-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
-            <h2 className="text-3xl font-bold">Welcome Back</h2>
-            <p className="text-muted-foreground">Sign in to your dashboard</p>
-          </CardHeader>
 
-          <CardContent className="pt-6">
-            {/* Error Alert */}
-            {error && (
-              <div className="mb-6 flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
-                <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-medium">Login Failed</p>
-                  <p className="mt-1 opacity-90">{error}</p>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="admin@constituency.gov.in"
-                    className={`pl-9 h-11 ${errors.email ? "border-destructive" : ""}`}
-                    disabled={isSubmitting}
-                    {...register("email")}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className={`pl-9 pr-10 h-11 ${errors.password ? "border-destructive" : ""}`}
-                    disabled={isSubmitting}
-                    {...register("password")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Submit */}
-              <Button
-                type="submit"
-                className="w-full h-11 text-base"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-
-            {/* Demo Quick Fill */}
-            <div className="mt-8 pt-6 border-t">
-              <p className="text-sm text-muted-foreground text-center mb-3">
-                Quick fill for demo:
-              </p>
-              <div className="flex gap-2 justify-center flex-wrap">
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-semibold text-[#334155] dark:text-slate-200">
+                Password
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className={`h-12 pl-11 pr-11 bg-[#f1f5f9]/70 dark:bg-slate-900/80 border-slate-200/80 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-sm ${
+                    errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""
+                  }`}
+                  disabled={isSubmitting}
+                  {...register("password")}
+                />
                 <button
                   type="button"
-                  onClick={() => fillDemo("admin")}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-xs font-medium transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1"
+                  tabIndex={-1}
                 >
-                  System Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemo("mla")}
-                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full text-xs font-medium transition-colors dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
-                >
-                  MLA / MP
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemo("staff")}
-                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium transition-colors dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
-                >
-                  Office Staff
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-xs font-medium text-red-500 mt-1 pl-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Keep Me Signed In & Forgot Password */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium text-sm">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded-md border-slate-300 text-[#1464a5] focus:ring-[#1464a5] cursor-pointer"
+                  {...register("rememberMe")}
+                />
+                <span>Keep me signed in</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => alert("Please contact your system administrator to reset your password.")}
+                className="text-sm font-semibold text-[#1565c0] dark:text-blue-400 hover:underline transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full h-13 rounded-2xl bg-[#1464a5] hover:bg-[#10538a] text-white font-semibold text-base shadow-lg shadow-[#1464a5]/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 mt-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign in to dashboard</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
+
+          {/* Quick Fill for Demo */}
+          <div className="mt-8 pt-6 border-t border-slate-200/70 dark:border-slate-800">
+            <p className="text-xs font-medium text-slate-400 text-center mb-3.5 tracking-wide">
+              Quick fill for demo:
+            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => fillDemo("admin")}
+                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200/80 text-slate-700 rounded-full text-xs font-semibold transition-all active:scale-95 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                System Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo("mla")}
+                className="px-4 py-1.5 bg-blue-50 hover:bg-blue-100/80 text-blue-600 rounded-full text-xs font-semibold transition-all active:scale-95 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:bg-blue-900/50"
+              >
+                MLA / MP
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo("staff")}
+                className="px-4 py-1.5 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-600 rounded-full text-xs font-semibold transition-all active:scale-95 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
+              >
+                Office Staff
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        {/* <div className="w-full text-center text-xs font-medium text-slate-400 dark:text-slate-500 py-2 tracking-wide">
+          Developed by {settings.brand_footer_text || "Vibrantick Infotech Solutions"}
+        </div> */}
       </div>
     </div>
   );

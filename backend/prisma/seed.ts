@@ -437,8 +437,6 @@ async function main() {
       district: "Central Delhi",
       representativeName: "Shri Example Singh",
       representativeTitle: "Member of Parliament",
-      maxUsers: 100,
-      storageQuotaMB: 51200,
     },
     create: {
       id: "tenant-default",
@@ -448,8 +446,6 @@ async function main() {
       district: "Central Delhi",
       representativeName: "Shri Example Singh",
       representativeTitle: "Member of Parliament",
-      maxUsers: 100,
-      storageQuotaMB: 51200,
     },
   });
   console.log("✅ Default tenant created");
@@ -462,9 +458,6 @@ async function main() {
       description: "Basic constituency operations for small offices.",
       priceMonthly: 2999,
       priceYearly: 29990,
-      maxUsers: 5,
-      maxWards: 10,
-      storageMB: 1024,
       features: [
         "Dashboard",
         "Wards",
@@ -481,9 +474,6 @@ async function main() {
       description: "Full MP/MLA office workflow for growing teams.",
       priceMonthly: 7999,
       priceYearly: 79990,
-      maxUsers: 25,
-      maxWards: 50,
-      storageMB: 10240,
       features: [
         "Everything in Starter",
         "Leaders",
@@ -500,9 +490,6 @@ async function main() {
       description: "Complete platform access for MP/MLA offices.",
       priceMonthly: 19999,
       priceYearly: 199990,
-      maxUsers: 100,
-      maxWards: 250,
-      storageMB: 51200,
       features: [
         "Everything in Professional",
         "Competitor Analysis",
@@ -523,9 +510,6 @@ async function main() {
         description: plan.description,
         priceMonthly: plan.priceMonthly,
         priceYearly: plan.priceYearly,
-        maxUsers: plan.maxUsers,
-        maxWards: plan.maxWards,
-        storageMB: plan.storageMB,
         features: plan.features,
         isActive: true,
         sortOrder: plan.sortOrder,

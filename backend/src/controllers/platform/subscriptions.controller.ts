@@ -158,8 +158,6 @@ export const getSubscriptionOverview = async (
           totalSubscriptions: plan._count.subscriptions,
           priceMonthly: plan.priceMonthly,
           priceYearly: plan.priceYearly,
-          maxUsers: plan.maxUsers,
-          storageMB: plan.storageMB,
           features: plan.features,
           description: plan.description,
           isPopular: plan.isPopular,
@@ -197,33 +195,13 @@ export const getSubscriptionOverview = async (
   }
 };
 
-async function assertTenantCanUsePlan(
-  tenantId: string,
-  plan: { maxUsers: number; storageMB: number },
-) {
+async function assertTenantCanUsePlan(tenantId: string) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    include: {
-      _count: {
-        select: { users: true },
-      },
-    },
   });
 
   if (!tenant) {
     throw ApiError.notFound("Tenant not found");
-  }
-
-  if (tenant._count.users > plan.maxUsers) {
-    throw ApiError.conflict(
-      `This tenant already has ${tenant._count.users} users, which exceeds the selected plan limit of ${plan.maxUsers}.`,
-    );
-  }
-
-  if (tenant.storageUsedMB > plan.storageMB) {
-    throw ApiError.conflict(
-      `This tenant is already using ${tenant.storageUsedMB} MB, which exceeds the selected plan storage limit of ${plan.storageMB} MB.`,
-    );
   }
 
   return tenant;
@@ -540,8 +518,6 @@ export const listTenantSubscriptions = async (
               name: true,
               constituencyName: true,
               status: true,
-              maxUsers: true,
-              storageQuotaMB: true,
               _count: {
                 select: { users: true },
               },
@@ -671,9 +647,6 @@ export const getTenantSubscription = async (
             name: true,
             constituencyName: true,
             status: true,
-            maxUsers: true,
-            storageQuotaMB: true,
-            storageUsedMB: true,
             _count: {
               select: { users: true },
             },
@@ -722,7 +695,7 @@ export const upsertTenantSubscription = async (
       throw ApiError.notFound("Subscription plan not found");
     }
 
-    await assertTenantCanUsePlan(tenantId, plan);
+    await assertTenantCanUsePlan(tenantId);
 
     // Validate trial configuration
     const effectiveStatus = status || "ACTIVE";
@@ -784,15 +757,7 @@ export const upsertTenantSubscription = async (
         },
       });
 
-      if (syncTenantLimits !== false) {
-        await tx.tenant.update({
-          where: { id: tenantId },
-          data: {
-            maxUsers: plan.maxUsers,
-            storageQuotaMB: plan.storageMB,
-          },
-        });
-      }
+
 
       if (status === "SUSPENDED") {
         await tx.user.updateMany({
@@ -876,7 +841,7 @@ export const upgradeTenantSubscription = async (
       );
     }
 
-    await assertTenantCanUsePlan(tenantId, nextPlan);
+    await assertTenantCanUsePlan(tenantId);
 
     const now = new Date();
     const effectiveBillingCycle =
@@ -909,21 +874,10 @@ export const upgradeTenantSubscription = async (
         },
       });
 
-      if (syncTenantLimits !== false) {
-        await tx.tenant.update({
-          where: { id: tenantId },
-          data: {
-            maxUsers: nextPlan.maxUsers,
-            storageQuotaMB: nextPlan.storageMB,
-            status: "ACTIVE",
-          },
-        });
-      } else {
-        await tx.tenant.update({
-          where: { id: tenantId },
-          data: { status: "ACTIVE" },
-        });
-      }
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: { status: "ACTIVE" },
+      });
 
       await tx.user.updateMany({
         where: { tenantId, status: "SUSPENDED" },
@@ -1243,8 +1197,6 @@ export const listPlanUpgradeRequests = async (
               name: true,
               constituencyName: true,
               status: true,
-              maxUsers: true,
-              storageQuotaMB: true,
             },
           },
           currentPlan: true,
@@ -1316,7 +1268,7 @@ export const approvePlanUpgradeRequest = async (
       throw ApiError.conflict("Tenant is already on this subscription plan");
     }
 
-    await assertTenantCanUsePlan(request.tenantId, request.requestedPlan);
+    await assertTenantCanUsePlan(request.tenantId);
 
     const now = new Date();
     const effectiveBillingCycle =
@@ -1348,14 +1300,7 @@ export const approvePlanUpgradeRequest = async (
 
       await tx.tenant.update({
         where: { id: request.tenantId },
-        data:
-          syncTenantLimits !== false
-            ? {
-                maxUsers: request.requestedPlan.maxUsers,
-                storageQuotaMB: request.requestedPlan.storageMB,
-                status: "ACTIVE",
-              }
-            : { status: "ACTIVE" },
+        data: { status: "ACTIVE" },
       });
 
       await tx.user.updateMany({

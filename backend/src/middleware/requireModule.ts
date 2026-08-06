@@ -13,7 +13,6 @@ export const ALWAYS_ENABLED_MODULES = new Set([
   "notifications",
   "recycle_bin",
   "data_import",
-  "voter_list",
 ]);
 
 const accessCache = new Map<

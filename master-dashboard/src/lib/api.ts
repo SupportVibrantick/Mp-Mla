@@ -415,4 +415,6 @@ export const paymentsApi = {
     api.patch(`/platform/payments/${id}/status`, data),
   delete: (id: string) => api.delete(`/platform/payments/${id}`),
   stats: () => api.get("/platform/payments/stats"),
+  createOrder: (data: any) => api.post("/platform/payments/order", data),
+  verifyPayment: (data: any) => api.post("/platform/payments/verify", data),
 };

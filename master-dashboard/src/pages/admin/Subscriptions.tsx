@@ -40,9 +40,6 @@ const planFormSchema = z.object({
   description: z.string().optional(),
   priceMonthly: z.preprocess((v) => Number(v), z.number().min(0)),
   priceYearly: z.preprocess((v) => Number(v), z.number().min(0)),
-  maxUsers: z.preprocess((v) => Number(v), z.number().int().min(1)),
-  maxWards: z.preprocess((v) => Number(v), z.number().int().min(1)),
-  storageMB: z.preprocess((v) => Number(v), z.number().int().min(100)),
   features: z.string().optional(),
   isPopular: z.boolean().default(false),
   sortOrder: z.preprocess((v) => Number(v), z.number().int().min(0)),
@@ -123,9 +120,6 @@ export default function SubscriptionsPage() {
       description: "",
       priceMonthly: 0,
       priceYearly: 0,
-      maxUsers: 5,
-      maxWards: 10,
-      storageMB: 1024,
       features: "",
       sortOrder: 0,
       moduleIds: [],
@@ -142,9 +136,6 @@ export default function SubscriptionsPage() {
       description: "",
       priceMonthly: 0,
       priceYearly: 0,
-      maxUsers: 5,
-      maxWards: 10,
-      storageMB: 1024,
       features: "",
       isPopular: false,
       sortOrder: 0,
@@ -161,9 +152,6 @@ export default function SubscriptionsPage() {
       description: plan.description || "",
       priceMonthly: plan.priceMonthly,
       priceYearly: plan.priceYearly,
-      maxUsers: plan.maxUsers,
-      maxWards: plan.maxWards || 10,
-      storageMB: plan.storageMB,
       features: parseFeatures(plan.features).join("\n"),
       isPopular: !!plan.isPopular,
       sortOrder: plan.sortOrder || 0,
@@ -323,32 +311,8 @@ export default function SubscriptionsPage() {
               </Card>
             </div>
 
-            {/* Limits & Customization */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="rounded-[24px] border border-border/60 p-6 shadow-sm space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-3">
-                  Usage Limits
-                </h3>
-
-                <div className="grid gap-4 grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="max-users">Max Users</Label>
-                    <Input type="number" id="max-users" placeholder="5" {...planForm.register("maxUsers")} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-wards">Max Wards</Label>
-                    <Input type="number" id="max-wards" placeholder="10" {...planForm.register("maxWards")} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="storage-mb">Storage (MB)</Label>
-                    <Input type="number" id="storage-mb" placeholder="1024" {...planForm.register("storageMB")} />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Control resources allocations for workspaces under this tier. (e.g. 1024 MB is 1 GB).
-                </p>
-              </Card>
-
+            {/* Customization */}
+            <div className="grid gap-6 md:grid-cols-1">
               {/* Features List */}
               <Card className="rounded-[24px] border border-border/60 p-6 shadow-sm space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-3">
@@ -625,25 +589,7 @@ export default function SubscriptionsPage() {
                       </Button>
                     </div>
                     <div className="mt-8 space-y-4">
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-                          <Check className="h-3 w-3 stroke-[3]" />
-                        </div>
-                        <span className="text-muted-foreground font-medium"><strong className="text-foreground">{plan.maxUsers}</strong> users included</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-                          <Check className="h-3 w-3 stroke-[3]" />
-                        </div>
-                        <span className="text-muted-foreground font-medium"><strong className="text-foreground">{plan.maxWards || 10}</strong> wards included</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-                          <Check className="h-3 w-3 stroke-[3]" />
-                        </div>
-                        <span className="text-muted-foreground font-medium"><strong className="text-foreground">{formatStorage(plan.storageMB)}</strong> storage</span>
-                      </div>
-                      {features.slice(0, 3).map((feature: string) => (
+                      {features.map((feature: string) => (
                         <div
                           key={feature}
                           className="flex items-center gap-3 text-sm"

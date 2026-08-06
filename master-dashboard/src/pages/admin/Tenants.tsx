@@ -100,9 +100,6 @@ const createTenantSchema = z.object({
   termStartDate: z.string().optional(),
   termEndDate: z.string().optional(),
 
-  maxUsers: z.preprocess((val) => Number(val), z.number().int().min(1).default(50)),
-  storageQuotaMB: z.preprocess((val) => Number(val), z.number().int().min(100).default(1024)),
-
   // Admin user
   adminEmail: z.string().email("Admin email is required"),
   adminPassword: z.string().min(6, "Admin password must be at least 6 characters"),
@@ -138,8 +135,6 @@ const updateTenantSchema = z.object({
   termEndDate: z.string().optional(),
 
   status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]),
-  maxUsers: z.preprocess((val) => Number(val), z.number().int().min(1)),
-  storageQuotaMB: z.preprocess((val) => Number(val), z.number().int().min(100)),
 });
 
 const createTenantUserSchema = z.object({
@@ -234,8 +229,6 @@ export default function TenantsPage() {
     "planId",
     "billingCycle",
     "trialDays",
-    "maxUsers",
-    "storageQuotaMB",
     "primaryColor",
     "secondaryColor",
   ];
@@ -328,8 +321,6 @@ export default function TenantsPage() {
       secondaryColor: "#3b82f6",
       representativeName: "",
       representativeTitle: "",
-      maxUsers: 50,
-      storageQuotaMB: 1024,
       adminEmail: "",
       adminPassword: "",
       adminName: "",
@@ -424,8 +415,6 @@ export default function TenantsPage() {
       termStartDate: tenant.termStartDate ? new Date(tenant.termStartDate).toISOString().split("T")[0] : "",
       termEndDate: tenant.termEndDate ? new Date(tenant.termEndDate).toISOString().split("T")[0] : "",
       status: tenant.status,
-      maxUsers: tenant.maxUsers,
-      storageQuotaMB: tenant.storageQuotaMB,
     });
     setEditOpen(true);
   };
@@ -516,12 +505,11 @@ export default function TenantsPage() {
       plan: tenant.subscription?.plan?.name || "No Plan",
       status: tenant.status,
       users: tenant._count?.users || 0,
-      storage: formatStorage(tenant.storageQuotaMB),
       mrr: getTenantMrr(tenant),
       createdAt: new Date(tenant.createdAt).toLocaleDateString("en-IN"),
     }));
 
-    const header = ["Tenant", "Constituency", "Plan", "Status", "Users", "Storage", "MRR", "Created"];
+    const header = ["Tenant", "Constituency", "Plan", "Status", "Users", "MRR", "Created"];
     const csv = [
       header.join(","),
       ...rows.map((row: any) =>
@@ -531,7 +519,6 @@ export default function TenantsPage() {
           row.plan,
           row.status,
           row.users,
-          row.storage,
           row.mrr,
           row.createdAt,
         ]
@@ -661,7 +648,6 @@ export default function TenantsPage() {
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">Plan</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">Status</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">Users</th>
-                  <th className="px-4 py-3.5 font-semibold text-muted-foreground">Storage</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">MRR</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">Created</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground text-right">Actions</th>
@@ -680,7 +666,6 @@ export default function TenantsPage() {
                       <td className="px-4 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-4 w-14" /></td>
-                      <td className="px-4 py-4"><Skeleton className="h-4 w-16" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-4 w-20" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-4 w-24" /></td>
                       <td className="px-4 py-4 text-right"><Skeleton className="h-8 w-8 ml-auto rounded" /></td>
@@ -741,7 +726,6 @@ export default function TenantsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-4 font-medium">{t._count?.users || 0}</td>
-                        <td className="px-4 py-4 font-medium">{formatStorage(t.storageQuotaMB)}</td>
                         <td className="px-4 py-4 font-semibold">{formatCurrency(getTenantMrr(t))}</td>
                         <td className="px-4 py-4 text-muted-foreground">
                           {new Date(t.createdAt).toLocaleDateString("en-IN")}
@@ -869,7 +853,6 @@ export default function TenantsPage() {
                     { label: "Plan", value: selectedTenant.subscription?.plan?.name || "No Plan" },
                     { label: "Status", value: STATUS_CONFIG[selectedTenant.status]?.label || selectedTenant.status },
                     { label: "Users", value: String(selectedTenant._count?.users || 0) },
-                    { label: "Storage", value: formatStorage(selectedTenant.storageQuotaMB) },
                     { label: "MRR", value: formatCurrency(getTenantMrr(selectedTenant)) },
                     { label: "Created", value: new Date(selectedTenant.createdAt).toLocaleDateString("en-CA") },
                     { label: "Slug", value: getTenantSlug(selectedTenant) },
@@ -1085,16 +1068,7 @@ export default function TenantsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="t-maxusers">Max Allowed Users</Label>
-                      <Input id="t-maxusers" type="number" {...createForm.register("maxUsers")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="t-quota">Storage Quota (MB)</Label>
-                      <Input id="t-quota" type="number" {...createForm.register("storageQuotaMB")} />
-                    </div>
-                  </div>
+
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -1298,14 +1272,7 @@ export default function TenantsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Max Users</Label>
-                  <Input type="number" {...editForm.register("maxUsers")} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Storage Quota (MB)</Label>
-                  <Input type="number" {...editForm.register("storageQuotaMB")} />
-                </div>
+
               </div>
 
               <DialogFooter className="pt-4 border-t">

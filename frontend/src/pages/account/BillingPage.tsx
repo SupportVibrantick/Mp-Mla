@@ -1,37 +1,37 @@
 import { MainLayout } from "../../components/layout/MainLayout";
+import { Skeleton } from "../../components/ui/skeleton";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Textarea } from "../../components/ui/textarea";
 import { Input } from "../../components/ui/input";
-import { Skeleton } from "../../components/ui/skeleton";
 import {
   useAccountSubscription,
   useAccountInvoices,
-  useAccountUsage,
   useAccountPlans,
   useRequestPlanUpgrade,
+  usePaymentCheckout,
 } from "../../hooks/useAccount";
 import { getImageUrl } from "../../lib/utils";
 import { useState } from "react";
 import { 
-  Users, 
-  Database, 
-  MapPin, 
   Check, 
   Mail, 
   Phone, 
   ArrowUpRight, 
   Clock, 
-  FileText 
+  FileText,
+  CreditCard,
+  Loader2,
+  ShieldCheck
 } from "lucide-react";
 
 export default function BillingPage() {
   const { data: subscription, isLoading: subLoading } =
     useAccountSubscription();
   const { data: invoices, isLoading: invLoading } = useAccountInvoices();
-  const { data: usage, isLoading: usageLoading } = useAccountUsage();
   const { data: plansData, isLoading: plansLoading } = useAccountPlans();
   const upgradeRequest = useRequestPlanUpgrade();
+  const { initiatePayment, isLoading: isCheckoutLoading } = usePaymentCheckout();
   const [selectedCycle, setSelectedCycle] = useState("MONTHLY");
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [requesterPhone, setRequesterPhone] = useState("");
@@ -47,6 +47,20 @@ export default function BillingPage() {
       requestedBillingCycle: selectedCycle,
       requesterPhone: requesterPhone || undefined,
       tenantNote: tenantNote || undefined,
+    });
+  };
+
+  const handlePayAmountDue = () => {
+    initiatePayment({
+      notes: `Payment for outstanding amount due (INR ${subscription?.amountDue})`,
+    });
+  };
+
+  const handlePayAndUpgrade = (planId: string) => {
+    initiatePayment({
+      planId,
+      billingCycle: selectedCycle,
+      notes: `Instant upgrade payment for plan ${planId}`,
     });
   };
 
@@ -165,11 +179,28 @@ export default function BillingPage() {
                   <div className="text-3xl font-extrabold tracking-tight text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
                     INR {subscription.amountDue?.toFixed(2) ?? "0.00"}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    To renew, update billing options, or query payments, contact {" "}
-                    <a href={`mailto:${subscription.supportEmail || 'support@platform.com'}`} className="underline text-primary">
-                      {subscription.supportEmail || "platform support"}
-                    </a>.
+                  {subscription.amountDue > 0 && (
+                    <Button
+                      onClick={handlePayAmountDue}
+                      disabled={isCheckoutLoading}
+                      className="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md font-bold text-sm flex items-center justify-center gap-2"
+                    >
+                      {isCheckoutLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4" />
+                          Pay Now via Razorpay
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Secured 256-bit Razorpay Gateway</span>
                   </div>
                 </div>
               </>
@@ -181,109 +212,7 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Resource Usage Section */}
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-bold tracking-tight text-foreground">Resource Allocation</h3>
-            <p className="text-sm text-muted-foreground">Monitor current workspace consumption relative to your plan limits.</p>
-          </div>
-          
-          <div className="grid gap-6 sm:grid-cols-3">
-            {usageLoading ? (
-              <>
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
-              </>
-            ) : usage ? (
-              <>
-                {/* Card 1: Users */}
-                {(() => {
-                  const pct = Math.min(100, Math.round((usage.users.used / usage.users.limit) * 100));
-                  const isNearLimit = pct >= 80;
-                  return (
-                    <div className="bg-card rounded-xl p-6 border border-border/50 shadow-sm transition-all duration-300 hover:shadow-md">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                          <Users className="w-5 h-5" />
-                        </div>
-                        <span className={`text-xs font-bold ${isNearLimit ? 'text-amber-500' : 'text-muted-foreground'}`}>{pct}%</span>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground mb-1">Licensed Users</h4>
-                        <p className="text-xs text-muted-foreground mb-4">
-                          <span className="font-bold text-foreground">{usage.users.used}</span> of {usage.users.limit} active
-                        </p>
-                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${isNearLimit ? 'bg-amber-500' : 'bg-primary'}`} 
-                            style={{ width: `${pct}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
 
-                {/* Card 2: Wards */}
-                {(() => {
-                  const pct = Math.min(100, Math.round((usage.wards.used / usage.wards.limit) * 100));
-                  const isNearLimit = pct >= 80;
-                  return (
-                    <div className="bg-card rounded-xl p-6 border border-border/50 shadow-sm transition-all duration-300 hover:shadow-md">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                          <MapPin className="w-5 h-5" />
-                        </div>
-                        <span className={`text-xs font-bold ${isNearLimit ? 'text-amber-500' : 'text-muted-foreground'}`}>{pct}%</span>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground mb-1">Active Wards</h4>
-                        <p className="text-xs text-muted-foreground mb-4">
-                          <span className="font-bold text-foreground">{usage.wards.used}</span> of {usage.wards.limit} allowed
-                        </p>
-                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${isNearLimit ? 'bg-amber-500' : 'bg-emerald-500'}`} 
-                            style={{ width: `${pct}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Card 3: Storage */}
-                {(() => {
-                  const pct = Math.min(100, Math.round((usage.storage.usedMB / usage.storage.limitMB) * 100));
-                  const isNearLimit = pct >= 85;
-                  return (
-                    <div className="bg-card rounded-xl p-6 border border-border/50 shadow-sm transition-all duration-300 hover:shadow-md">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
-                          <Database className="w-5 h-5" />
-                        </div>
-                        <span className={`text-xs font-bold ${isNearLimit ? 'text-red-500' : 'text-muted-foreground'}`}>{pct}%</span>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground mb-1">Storage Consumption</h4>
-                        <p className="text-xs text-muted-foreground mb-4">
-                          <span className="font-bold text-foreground">{usage.storage.usedMB} MB</span> of {usage.storage.limitMB} MB
-                        </p>
-                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${isNearLimit ? 'bg-destructive' : 'bg-primary'}`} 
-                            style={{ width: `${pct}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </>
-            ) : null}
-          </div>
-        </div>
 
         {/* Pricing Comparison & Request Section */}
         <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 space-y-8">
@@ -375,18 +304,6 @@ export default function BillingPage() {
                       </div>
                       
                       <ul className="space-y-3 mb-8 text-sm">
-                        <li className="flex items-center gap-2.5 text-muted-foreground">
-                          <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                          <span>Up to {plan.maxUsers} Users</span>
-                        </li>
-                        <li className="flex items-center gap-2.5 text-muted-foreground">
-                          <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                          <span>Up to {plan.maxWards} Wards</span>
-                        </li>
-                        <li className="flex items-center gap-2.5 text-muted-foreground">
-                          <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                          <span>{plan.storageMB} MB Storage</span>
-                        </li>
                         {Array.isArray(plan.features) && plan.features.map((feat: string, idx: number) => (
                           <li key={idx} className="flex items-center gap-2.5 text-muted-foreground">
                             <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -396,23 +313,35 @@ export default function BillingPage() {
                       </ul>
                     </div>
                     
-                    <Button
-                      className="w-full mt-auto"
-                      variant={isCurrent ? "outline" : "default"}
-                      disabled={isCurrent || !!pendingRequest || upgradeRequest.isPending}
-                      onClick={() => {
-                        setSelectedPlanId(plan.id);
-                        submitUpgradeRequest(plan.id);
-                      }}
-                    >
-                      {isCurrent
-                        ? "Current Subscription"
-                        : isPending
-                          ? "Request Pending"
-                          : selectedPlanId === plan.id && upgradeRequest.isPending
-                            ? "Submitting..."
-                            : "Request Upgrade"}
-                    </Button>
+                    <div className="space-y-2 mt-auto">
+                      {!isCurrent && (
+                        <Button
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-1.5"
+                          disabled={isCheckoutLoading}
+                          onClick={() => handlePayAndUpgrade(plan.id)}
+                        >
+                          <CreditCard className="w-4 h-4" />
+                          Pay & Upgrade Now
+                        </Button>
+                      )}
+                      <Button
+                        className="w-full"
+                        variant={isCurrent ? "outline" : "secondary"}
+                        disabled={isCurrent || !!pendingRequest || upgradeRequest.isPending}
+                        onClick={() => {
+                          setSelectedPlanId(plan.id);
+                          submitUpgradeRequest(plan.id);
+                        }}
+                      >
+                        {isCurrent
+                          ? "Current Subscription"
+                          : isPending
+                            ? "Request Pending"
+                            : selectedPlanId === plan.id && upgradeRequest.isPending
+                              ? "Submitting..."
+                              : "Request Approval"}
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -426,7 +355,7 @@ export default function BillingPage() {
               Request Upgrade Parameters
             </h4>
             <p className="text-xs text-muted-foreground mb-4">
-              Provide your contact number and notes below. These details are submitted automatically when you click the "Request Upgrade" button on any package.
+              Provide your contact number and notes below. These details are submitted automatically when you click the "Request Approval" button on any package.
             </p>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -475,6 +404,7 @@ export default function BillingPage() {
                       <th className="px-4 py-4 font-medium uppercase tracking-wider text-[11px]">Invoice #</th>
                       <th className="px-4 py-4 font-medium uppercase tracking-wider text-[11px]">Date</th>
                       <th className="px-4 py-4 font-medium uppercase tracking-wider text-[11px]">Amount</th>
+                      <th className="px-4 py-4 font-medium uppercase tracking-wider text-[11px]">Method / Gateway</th>
                       <th className="px-4 py-4 font-medium uppercase tracking-wider text-[11px]">Status</th>
                       <th className="px-4 py-4 font-medium uppercase tracking-wider text-[11px] text-right">Action</th>
                     </tr>
@@ -482,8 +412,8 @@ export default function BillingPage() {
                   <tbody className="divide-y divide-border/30">
                     {invoices.map((inv: any) => {
                       const status = inv.status?.toLowerCase();
-                      const isPaid = status === 'paid' || status === 'completed';
-                      const isPending = status === 'pending';
+                      const isPaid = status === 'paid' || status === 'completed' || status === 'success';
+                      const isPending = status === 'pending' || status === 'created';
                       
                       return (
                         <tr key={inv.id} className="hover:bg-muted/30 transition-colors">
@@ -495,6 +425,10 @@ export default function BillingPage() {
                           </td>
                           <td className="px-4 py-4 font-semibold text-foreground">
                             {inv.currency} {inv.amount?.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-4 text-xs text-muted-foreground">
+                            <span className="font-semibold text-foreground">{inv.method || "ONLINE"}</span>
+                            {inv.gateway && <span className="ml-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">{inv.gateway}</span>}
                           </td>
                           <td className="px-4 py-4">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
@@ -510,13 +444,25 @@ export default function BillingPage() {
                               {inv.status}
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-right">
+                          <td className="px-4 py-4 text-right flex items-center justify-end gap-2">
+                            {isPending && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="h-7 text-xs px-2.5 bg-blue-600 hover:bg-blue-700"
+                                disabled={isCheckoutLoading}
+                                onClick={() => initiatePayment({ paymentId: inv.id })}
+                              >
+                                <CreditCard className="w-3 h-3 mr-1" />
+                                Pay
+                              </Button>
+                            )}
                             {inv.invoiceUrl ? (
                               <a
                                 href={getImageUrl(inv.invoiceUrl)}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors font-semibold"
+                                className="inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors font-semibold text-xs"
                               >
                                 View
                                 <ArrowUpRight className="w-3.5 h-3.5" />

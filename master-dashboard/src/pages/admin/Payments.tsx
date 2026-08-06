@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  CreditCard,
+  ShieldCheck,
   ArrowDownLeft,
   ArrowUpRight,
   CheckCircle,
@@ -55,6 +57,7 @@ import {
   usePaymentsList,
   usePaymentStats,
   useUpdatePaymentStatus,
+  useAdminPaymentCheckout,
 } from "@/hooks/usePayments";
 import { useTenantSubscriptions } from "@/hooks/useSubscriptions";
 import { API_BASE_URL } from "@/lib/api";
@@ -119,6 +122,12 @@ export default function PaymentsPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
+  // Razorpay Collection States
+  const [paymentMode, setPaymentMode] = useState<"MANUAL" | "RAZORPAY">("RAZORPAY");
+  const [selectedSubForRzp, setSelectedSubForRzp] = useState("");
+  const [rzpAmount, setRzpAmount] = useState("");
+  const [rzpNotes, setRzpNotes] = useState("");
+
   // Queries
   const { data: paymentsData, isLoading: isPaymentsLoading, refetch: refetchPayments } = usePaymentsList({
     page: String(page),
@@ -130,9 +139,24 @@ export default function PaymentsPage() {
   const { data: statsData, isLoading: isStatsLoading, refetch: refetchStats } = usePaymentStats();
   const { data: subsData } = useTenantSubscriptions({ limit: "100" });
 
-  // Mutations
+  // Mutations & Checkout Hook
   const createPaymentMutation = useCreatePayment();
   const updateStatusMutation = useUpdatePaymentStatus();
+  const { initiatePayment: initiateAdminCheckout, isLoading: isRzpLoading } = useAdminPaymentCheckout();
+
+  const handleCollectRazorpay = () => {
+    if (!selectedSubForRzp) return;
+    initiateAdminCheckout({
+      subscriptionId: selectedSubForRzp,
+      amount: rzpAmount ? Number(rzpAmount) : undefined,
+      notes: rzpNotes || "Platform Admin Payment Collection",
+      onSuccess: () => {
+        setIsRecordOpen(false);
+        refetchPayments();
+        refetchStats();
+      },
+    });
+  };
 
   // Forms
   const recordForm = useForm<PaymentForm>({
@@ -225,7 +249,8 @@ export default function PaymentsPage() {
       case "SUCCESS":
         return <Badge className="bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/30 gap-1"><CheckCircle className="w-3.5 h-3.5" /> Success</Badge>;
       case "PENDING":
-        return <Badge className="bg-amber-500/20 text-amber-500 hover:bg-amber-500/20 border-amber-500/30 gap-1"><Clock className="w-3.5 h-3.5" /> Pending</Badge>;
+      case "CREATED":
+        return <Badge className="bg-amber-500/20 text-amber-500 hover:bg-amber-500/20 border-amber-500/30 gap-1"><Clock className="w-3.5 h-3.5" /> {status}</Badge>;
       case "FAILED":
         return <Badge className="bg-rose-500/20 text-rose-500 hover:bg-rose-500/20 border-rose-500/30 gap-1"><XCircle className="w-3.5 h-3.5" /> Failed</Badge>;
       case "REFUNDED":
@@ -520,158 +545,246 @@ export default function PaymentsPage() {
           )}
         </Card>
 
-        {/* RECORD PAYMENT DIALOG */}
+        {/* RECORD PAYMENT DIALOG (Razorpay + Manual) */}
         <Dialog open={isRecordOpen} onOpenChange={setIsRecordOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-heading">Record Payment</DialogTitle>
+              <DialogTitle className="font-heading">Collect / Record Payment</DialogTitle>
               <DialogDescription>
-                Manually record a payment against a tenant subscription.
+                Choose payment collection mode: Razorpay online gateway or manual entry.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={recordForm.handleSubmit(handleRecordPayment)} className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="subscriptionId">Select Tenant / Subscription</Label>
-                <Select
-                  onValueChange={(val) => recordForm.setValue("subscriptionId", val)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a tenant..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subscriptions.map((sub: any) => (
-                      <SelectItem key={sub.id} value={sub.id}>
-                        {sub.tenant?.name} ({sub.plan?.name})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {recordForm.formState.errors.subscriptionId && (
-                  <p className="text-xs text-rose-500">{recordForm.formState.errors.subscriptionId.message}</p>
-                )}
-              </div>
+            {/* Mode Switcher */}
+            <div className="grid grid-cols-2 gap-2 bg-muted p-1 rounded-xl mb-2">
+              <Button
+                type="button"
+                variant={paymentMode === "RAZORPAY" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-lg text-xs font-bold gap-1.5"
+                onClick={() => setPaymentMode("RAZORPAY")}
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                Razorpay Online
+              </Button>
+              <Button
+                type="button"
+                variant={paymentMode === "MANUAL" ? "default" : "ghost"}
+                size="sm"
+                className="rounded-lg text-xs font-bold gap-1.5"
+                onClick={() => setPaymentMode("MANUAL")}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Manual Record
+              </Button>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
+            {paymentMode === "RAZORPAY" ? (
+              <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (INR)</Label>
+                  <Label>Select Tenant / Subscription</Label>
+                  <Select onValueChange={(val) => setSelectedSubForRzp(val)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a tenant subscription..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subscriptions.map((sub: any) => (
+                        <SelectItem key={sub.id} value={sub.id}>
+                          {sub.tenant?.name} ({sub.plan?.name} — ₹{sub.plan?.priceMonthly}/mo)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Custom Amount (Optional - defaults to plan price)</Label>
                   <Input
-                    id="amount"
                     type="number"
                     step="0.01"
-                    placeholder="0.00"
-                    {...recordForm.register("amount")}
+                    placeholder="Leave blank for standard plan amount"
+                    value={rzpAmount}
+                    onChange={(e) => setRzpAmount(e.target.value)}
                   />
-                  {recordForm.formState.errors.amount && (
-                    <p className="text-xs text-rose-500">{recordForm.formState.errors.amount.message}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Notes / Reason</Label>
+                  <Textarea
+                    placeholder="e.g. Annual renewal collected by admin"
+                    rows={2}
+                    value={rzpNotes}
+                    onChange={(e) => setRzpNotes(e.target.value)}
+                  />
+                </div>
+
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Opens secure Razorpay Checkout popup to collect payment directly.</span>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRecordOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCollectRazorpay}
+                    disabled={!selectedSubForRzp || isRzpLoading}
+                    className="bg-blue-600 hover:bg-blue-700 font-bold"
+                  >
+                    {isRzpLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4 mr-2" />
+                    )}
+                    Collect via Razorpay
+                  </Button>
+                </DialogFooter>
+              </div>
+            ) : (
+              <form onSubmit={recordForm.handleSubmit(handleRecordPayment)} className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="subscriptionId">Select Tenant / Subscription</Label>
+                  <Select
+                    onValueChange={(val) => recordForm.setValue("subscriptionId", val)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a tenant..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subscriptions.map((sub: any) => (
+                        <SelectItem key={sub.id} value={sub.id}>
+                          {sub.tenant?.name} ({sub.plan?.name})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {recordForm.formState.errors.subscriptionId && (
+                    <p className="text-xs text-rose-500">{recordForm.formState.errors.subscriptionId.message}</p>
                   )}
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount (INR)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...recordForm.register("amount")}
+                    />
+                    {recordForm.formState.errors.amount && (
+                      <p className="text-xs text-rose-500">{recordForm.formState.errors.amount.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="method">Payment Method</Label>
+                    <Select
+                      defaultValue="BANK_TRANSFER"
+                      onValueChange={(val) => recordForm.setValue("method", val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                        <SelectItem value="UPI">UPI</SelectItem>
+                        <SelectItem value="CARD">Credit/Debit Card</SelectItem>
+                        <SelectItem value="NET_BANKING">Net Banking</SelectItem>
+                        <SelectItem value="CASH">Cash</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="transactionId">Transaction ID</Label>
+                    <Input
+                      id="transactionId"
+                      placeholder="Tx-12345..."
+                      {...recordForm.register("transactionId")}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Initial Status</Label>
+                    <Select
+                      defaultValue="PENDING"
+                      onValueChange={(val) => recordForm.setValue("status", val as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="SUCCESS">Success</SelectItem>
+                        <SelectItem value="FAILED">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="invoiceNumber">Invoice Number (Optional)</Label>
+                    <Input
+                      id="invoiceNumber"
+                      placeholder="e.g. INV-1002"
+                      {...recordForm.register("invoiceNumber")}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="paidAt">Paid At (Optional)</Label>
+                    <Input
+                      id="paidAt"
+                      type="date"
+                      {...recordForm.register("paidAt")}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="method">Payment Method</Label>
-                  <Select
-                    defaultValue="BANK_TRANSFER"
-                    onValueChange={(val) => recordForm.setValue("method", val)}
+                  <Label htmlFor="invoiceUrl">Invoice Doc URL (Optional)</Label>
+                  <Input
+                    id="invoiceUrl"
+                    placeholder="https://..."
+                    {...recordForm.register("invoiceUrl")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Enter comments or notes about this payment..."
+                    rows={2}
+                    {...recordForm.register("notes")}
+                  />
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsRecordOpen(false);
+                      recordForm.reset();
+                    }}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                      <SelectItem value="UPI">UPI</SelectItem>
-                      <SelectItem value="CARD">Credit/Debit Card</SelectItem>
-                      <SelectItem value="NET_BANKING">Net Banking</SelectItem>
-                      <SelectItem value="CASH">Cash</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="transactionId">Transaction ID</Label>
-                  <Input
-                    id="transactionId"
-                    placeholder="Tx-12345..."
-                    {...recordForm.register("transactionId")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">Initial Status</Label>
-                  <Select
-                    defaultValue="PENDING"
-                    onValueChange={(val) => recordForm.setValue("status", val as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="SUCCESS">Success</SelectItem>
-                      <SelectItem value="FAILED">Failed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="invoiceNumber">Invoice Number (Optional)</Label>
-                  <Input
-                    id="invoiceNumber"
-                    placeholder="e.g. INV-1002"
-                    {...recordForm.register("invoiceNumber")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="paidAt">Paid At (Optional)</Label>
-                  <Input
-                    id="paidAt"
-                    type="date"
-                    {...recordForm.register("paidAt")}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="invoiceUrl">Invoice Doc URL (Optional)</Label>
-                <Input
-                  id="invoiceUrl"
-                  placeholder="https://..."
-                  {...recordForm.register("invoiceUrl")}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Enter comments or notes about this payment..."
-                  rows={2}
-                  {...recordForm.register("notes")}
-                />
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsRecordOpen(false);
-                    recordForm.reset();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createPaymentMutation.isPending}>
-                  {createPaymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Save Record
-                </Button>
-              </DialogFooter>
-            </form>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createPaymentMutation.isPending}>
+                    {createPaymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Save Record
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
 

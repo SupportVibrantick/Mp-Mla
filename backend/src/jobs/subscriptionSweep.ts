@@ -49,7 +49,8 @@ async function advanceSubscriptionPeriod(
       currentPeriodStart: newStart,
       currentPeriodEnd: newEnd,
       nextPaymentDue: newEnd,
-      amountDue: { increment: amount },
+      // Skip amountDue increment for free plans (price = 0)
+      amountDue: amount > 0 ? { increment: amount } : 0,
       status: sub.status === "PAST_DUE" ? "ACTIVE" : sub.status,
     },
   });

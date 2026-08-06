@@ -46,10 +46,30 @@ enum BillingCycle {
   YEARLY
 }
 
+enum PaymentGateway {
+  RAZORPAY
+  STRIPE
+  PAYU
+  CASHFREE
+  PHONEPE
+}
+
+enum PaymentMethod {
+  ONLINE
+  OFFLINE
+  BANK_TRANSFER
+  CHEQUE
+  CASH
+  UPI
+}
+
 enum PaymentStatus {
+  CREATED
   PENDING
+  AUTHORIZED
   SUCCESS
   FAILED
+  CANCELLED
   REFUNDED
 }
 
@@ -324,9 +344,6 @@ model Tenant {
   termEndDate         DateTime?
 
   status              TenantStatus @default(ACTIVE)
-  maxUsers            Int          @default(5)
-  storageQuotaMB      Int          @default(1024)
-  storageUsedMB       Float        @default(0)
 
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
@@ -396,9 +413,6 @@ model SubscriptionPlan {
   description   String?
   priceMonthly  Float    @default(0)
   priceYearly   Float    @default(0)
-  maxUsers      Int      @default(5)
-  maxWards      Int      @default(10)
-  storageMB     Int      @default(1024)
   features      Json     @default("[]")
   isActive      Boolean  @default(true)
   isPopular     Boolean  @default(false)
@@ -493,28 +507,38 @@ model PlanModule {
 }
 
 model Payment {
-  id             String        @id @default(cuid())
-  subscriptionId String
-  amount         Float
-  taxAmount      Float?
-  gstNumber      String?
-  currency       String        @default("INR")
-  method         String?
-  transactionId  String?
-  status         PaymentStatus @default(PENDING)
-  invoiceNumber  String?
-  invoiceUrl     String?
-  notes          String?
-  paidAt         DateTime?
+  id               String          @id @default(cuid())
+  subscriptionId   String
+  amount           Float
+  taxAmount        Float?
+  gstNumber        String?
+  currency         String          @default("INR")
 
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  // Method & Gateway (separate concepts)
+  method           PaymentMethod?
+  gateway          PaymentGateway?
 
-  subscription   TenantSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  // Gateway-agnostic fields (works for Razorpay, Stripe, PayU, etc.)
+  gatewayOrderId   String?         @unique
+  gatewayPaymentId String?         @unique
+  gatewaySignature String?
+
+  transactionId    String?         // Legacy / manual reference
+  status           PaymentStatus   @default(CREATED)
+  invoiceNumber    String?         @unique
+  invoiceUrl       String?
+  notes            String?
+  paidAt           DateTime?
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  subscription     TenantSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([subscriptionId])
   @@index([status])
   @@index([createdAt])
+  @@index([gateway, gatewayOrderId])
   @@map("payments")
 }
 

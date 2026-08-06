@@ -155,6 +155,8 @@ export const accountApi = {
   getUsage: () => api.get("/admin/account/usage"),
   getPlans: () => api.get("/admin/account/plans"),
   requestUpgrade: (data: any) => api.post("/admin/account/upgrade-requests", data),
+  createPaymentOrder: (data: any) => api.post("/admin/account/payments/order", data),
+  verifyPayment: (data: any) => api.post("/admin/account/payments/verify", data),
 };
 
 export const usersApi = {

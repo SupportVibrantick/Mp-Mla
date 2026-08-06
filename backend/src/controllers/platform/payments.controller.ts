@@ -3,8 +3,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../lib/prisma.js";
 import { ApiError } from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
-import { advanceSubscriptionPeriod } from "../../jobs/subscriptionSweep.js";
-import { generateInvoicePdf } from "../../lib/invoicePdf.js";
+import * as paymentService from "../../services/payment.service.js";
+import { generateInvoicePdf } from "../../services/invoice.service.js";
 
 function getParamId(req: Request, name = "id"): string {
   const value = req.params[name];
@@ -150,9 +150,30 @@ export const createPayment = async (
       invoiceUrl,
       notes,
       paidAt,
+      taxAmount,
+      gstNumber,
     } = req.body;
 
-    // Verify subscription exists
+    // For SUCCESS payments, use the payment service (handles subscription updates, invoicing)
+    if (status === "SUCCESS") {
+      const result = await paymentService.recordManualPayment({
+        subscriptionId,
+        amount,
+        currency,
+        method: method || "OFFLINE",
+        transactionId,
+        notes,
+        paidAt,
+        status: "SUCCESS",
+        taxAmount,
+        gstNumber,
+        performedBy: req.platformUser?.id,
+      });
+      res.status(201).json(ApiResponse.created(result, "Payment recorded successfully"));
+      return;
+    }
+
+    // For non-SUCCESS (PENDING, FAILED, etc.), create directly
     const subscription = await prisma.tenantSubscription.findUnique({
       where: { id: subscriptionId },
     });
@@ -161,10 +182,6 @@ export const createPayment = async (
       throw ApiError.notFound("Tenant subscription not found");
     }
 
-    // Determine paidAt value if status is SUCCESS
-    const paidAtDate = status === "SUCCESS" ? (paidAt ? new Date(paidAt) : new Date()) : null;
-
-    // Generate automatic invoice number if not provided
     let finalInvoiceNumber = invoiceNumber;
     if (!finalInvoiceNumber) {
       const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -172,38 +189,30 @@ export const createPayment = async (
       finalInvoiceNumber = `INV-${datePart}-${randomPart}`;
     }
 
-    // Run in transaction to create payment and update subscription if successful
-    const result = await prisma.$transaction(async (tx) => {
-      const payment = await tx.payment.create({
-        data: {
-          subscriptionId,
-          amount,
-          currency: currency || "INR",
-          method,
-          transactionId,
-          status: status || "PENDING",
-          invoiceNumber: finalInvoiceNumber,
-          invoiceUrl,
-          notes,
-          paidAt: paidAtDate,
-        },
-      });
+    // Map method string to enum
+    const validMethods = ["ONLINE", "OFFLINE", "BANK_TRANSFER", "CHEQUE", "CASH", "UPI"];
+    const paymentMethod = method && validMethods.includes(method.toUpperCase())
+      ? method.toUpperCase()
+      : "OFFLINE";
 
-      if (status === "SUCCESS") {
-        // Update subscription last payment details
-        await tx.tenantSubscription.update({
-          where: { id: subscriptionId },
-          data: {
-            lastPaymentAt: paidAtDate,
-            amountDue: Math.max(0, subscription.amountDue - amount),
-          },
-        });
-      }
-
-      return payment;
+    const payment = await prisma.payment.create({
+      data: {
+        subscriptionId,
+        amount,
+        currency: currency || "INR",
+        method: paymentMethod as any,
+        transactionId,
+        status: status || "PENDING",
+        invoiceNumber: finalInvoiceNumber,
+        invoiceUrl,
+        notes,
+        paidAt: null,
+        taxAmount: taxAmount ?? null,
+        gstNumber: gstNumber ?? null,
+      },
     });
 
-    res.status(201).json(ApiResponse.created(result, "Payment recorded successfully"));
+    res.status(201).json(ApiResponse.created(payment, "Payment recorded successfully"));
   } catch (error) {
     next(error);
   }
@@ -260,71 +269,16 @@ export const updatePaymentStatus = async (
     const id = getParamId(req);
     const { status, paidAt, transactionId, method, invoiceUrl, notes } = req.body;
 
-    const existingPayment = await prisma.payment.findUnique({
-      where: { id },
-      include: { subscription: true },
+    // Delegate to payment service for full lifecycle handling
+    const result = await paymentService.updatePaymentStatus({
+      paymentId: id,
+      status,
+      paidAt,
+      transactionId,
+      method,
+      notes,
+      performedBy: req.platformUser?.id,
     });
-
-    if (!existingPayment) {
-      throw ApiError.notFound("Payment record not found");
-    }
-
-    const paidAtDate = status === "SUCCESS" ? (paidAt ? new Date(paidAt) : new Date()) : null;
-
-    const result = await prisma.$transaction(async (tx) => {
-      const updatedPayment = await tx.payment.update({
-        where: { id },
-        data: {
-          status,
-          paidAt: paidAtDate,
-          transactionId: transactionId !== undefined ? transactionId : existingPayment.transactionId,
-          method: method !== undefined ? method : existingPayment.method,
-          invoiceUrl: invoiceUrl !== undefined ? invoiceUrl : existingPayment.invoiceUrl,
-          notes: notes !== undefined ? notes : existingPayment.notes,
-        },
-      });
-
-      // If status changed to SUCCESS and wasn't SUCCESS before, update subscription payment info
-      if (status === "SUCCESS" && existingPayment.status !== "SUCCESS") {
-        const newAmountDue = Math.max(
-          0,
-          existingPayment.subscription.amountDue - existingPayment.amount,
-        );
-        await tx.tenantSubscription.update({
-          where: { id: existingPayment.subscriptionId },
-          data: {
-            lastPaymentAt: paidAtDate,
-            amountDue: newAmountDue,
-            status:
-              existingPayment.subscription.status === "PAST_DUE" ||
-              existingPayment.subscription.status === "SUSPENDED"
-                ? "ACTIVE"
-                : existingPayment.subscription.status,
-          },
-        });
-
-        if (newAmountDue === 0) {
-          await advanceSubscriptionPeriod(existingPayment.subscriptionId, tx);
-        }
-      }
-
-      return updatedPayment;
-    });
-
-    if (result.status === "SUCCESS" && !result.invoiceUrl) {
-      try {
-        const pdfUrl = await generateInvoicePdf(result.id);
-        if (pdfUrl) {
-          await prisma.payment.update({
-            where: { id: result.id },
-            data: { invoiceUrl: pdfUrl },
-          });
-          result.invoiceUrl = pdfUrl;
-        }
-      } catch {
-        // PDF generation is best-effort
-      }
-    }
 
     res.status(200).json(ApiResponse.success(result, "Payment status updated successfully"));
   } catch (error) {

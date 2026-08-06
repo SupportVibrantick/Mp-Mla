@@ -1,4 +1,11 @@
-import { createContext, useCallback, useEffect, useState, useContext, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+  useContext,
+  type ReactNode,
+} from "react";
 import { useLocation } from "wouter";
 import { TokenStorage } from "@/lib/auth";
 import { authApi } from "@/lib/api";
@@ -54,9 +61,9 @@ export const AuthContext = createContext<AuthContextType>({
   enabledModules: [],
   isAuthenticated: false,
   isLoading: true,
-  login: async () => { },
-  logout: async () => { },
-  refreshUser: async () => { },
+  login: async () => {},
+  logout: async () => {},
+  refreshUser: async () => {},
   can: () => false,
   canAny: () => false,
   hasModule: () => true,
@@ -70,7 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: TokenStorage.getStoredUser(),
     permissions: TokenStorage.getStoredPermissions()?.permissions || [],
-    permissionsByModule: TokenStorage.getStoredPermissions()?.permissionsByModule || {},
+    permissionsByModule:
+      TokenStorage.getStoredPermissions()?.permissionsByModule || {},
     enabledModules: [],
     isAuthenticated: !!TokenStorage.getRefreshToken(),
     isLoading: true,
@@ -105,7 +113,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const refreshToken = TokenStorage.getRefreshToken();
 
       if (!refreshToken) {
-        setState((prev) => ({ ...prev, isLoading: false, isAuthenticated: false, user: null }));
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isAuthenticated: false,
+          user: null,
+        }));
         return;
       }
 
@@ -175,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLocation("/dashboard");
       }
     },
-    [setLocation, loadPermissions]
+    [setLocation, loadPermissions],
   );
 
   // ─── Logout ─────────────────────────────────────────
@@ -183,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const refreshToken = TokenStorage.getRefreshToken();
       if (refreshToken) {
-        await authApi.logout(refreshToken).catch(() => { });
+        await authApi.logout(refreshToken).catch(() => {});
       }
     } finally {
       TokenStorage.clearAll();
@@ -220,10 +233,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Admin always has access
       if (state.user?.role === "SYSTEM_ADMIN") return true;
       return state.permissions.some(
-        (p) => p.module === module && p.action === action && p.granted
+        (p) => p.module === module && p.action === action && p.granted,
       );
     },
-    [state.permissions, state.isAuthenticated, state.user?.role]
+    [state.permissions, state.isAuthenticated, state.user?.role],
   );
 
   const canAny = useCallback(
@@ -232,7 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (state.user?.role === "SYSTEM_ADMIN") return true;
       return !!state.permissionsByModule[module]?.length;
     },
-    [state.permissionsByModule, state.isAuthenticated, state.user?.role]
+    [state.permissionsByModule, state.isAuthenticated, state.user?.role],
   );
 
   const hasRole = useCallback(
@@ -240,7 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!state.user) return false;
       return roles.includes(state.user.role);
     },
-    [state.user]
+    [state.user],
   );
 
   const hasModule = useCallback(

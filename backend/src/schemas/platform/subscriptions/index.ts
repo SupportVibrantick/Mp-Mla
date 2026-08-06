@@ -31,15 +31,13 @@ export const listPlansSchema = z.object({
   isActive: z.enum(["true", "false"]).optional(),
 });
 
+
 export const createPlanSchema = z.object({
   name: z.string().min(2, "Plan name is required"),
   code: z.string().min(2, "Plan code is required"),
   description: z.string().optional(),
   priceMonthly: z.coerce.number().min(0).default(0),
   priceYearly: z.coerce.number().min(0).default(0),
-  maxUsers: z.coerce.number().int().min(1).default(5),
-  maxWards: z.coerce.number().int().min(1).default(10),
-  storageMB: z.coerce.number().int().min(100).default(1024),
   features: z.any().optional().default([]),
   isActive: z.boolean().optional().default(true),
   isPopular: z.boolean().optional().default(false),

@@ -99,8 +99,6 @@ export const createTenant = async (
       partyLogoUrl,
       termStartDate,
       termEndDate,
-      maxUsers,
-      storageQuotaMB,
       adminEmail,
       adminPassword,
       adminName,
@@ -150,8 +148,6 @@ export const createTenant = async (
           partyLogoUrl,
           termStartDate: termStartDate ? new Date(termStartDate) : undefined,
           termEndDate: termEndDate ? new Date(termEndDate) : undefined,
-          maxUsers: maxUsers || 50,
-          storageQuotaMB: storageQuotaMB || 1024,
           status: "ACTIVE",
         },
       });
@@ -415,11 +411,6 @@ export const createTenantUser = async (
 
     if (!tenant) {
       throw ApiError.notFound("Tenant not found");
-    }
-
-    // Check user limits
-    if (tenant._count.users >= tenant.maxUsers) {
-      throw ApiError.forbidden(`Tenant has reached the maximum allowed users (${tenant.maxUsers})`);
     }
 
     // Check if email is already in use within this tenant

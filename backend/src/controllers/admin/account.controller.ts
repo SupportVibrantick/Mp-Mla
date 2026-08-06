@@ -18,21 +18,7 @@ export async function getSubscription(
     const tenantId = requireTenantId(req);
     const subscription = await prisma.tenantSubscription.findUnique({
       where: { tenantId },
-      include: {
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            priceMonthly: true,
-            priceYearly: true,
-            maxUsers: true,
-            maxWards: true,
-            storageMB: true,
-            features: true,
-          },
-        },
-      },
+      include: { plan: true },
     });
 
     if (!subscription) {
@@ -90,6 +76,7 @@ export async function getInvoices(
         invoiceNumber: true,
         invoiceUrl: true,
         method: true,
+        gateway: true,
         paidAt: true,
         createdAt: true,
       },
@@ -115,21 +102,18 @@ export async function getUsage(
   }
 }
 
-export async function getAvailablePlans(
+export async function getPlans(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
     const tenantId = requireTenantId(req);
-    const [subscription, plans, pendingRequest] = await Promise.all([
-      prisma.tenantSubscription.findUnique({
-        where: { tenantId },
-        select: { planId: true, billingCycle: true },
-      }),
+
+    const [plans, subscription, pendingRequest] = await Promise.all([
       prisma.subscriptionPlan.findMany({
         where: { isActive: true },
-        orderBy: [{ sortOrder: "asc" }, { priceMonthly: "asc" }],
+        orderBy: { sortOrder: "asc" },
         select: {
           id: true,
           name: true,
@@ -137,9 +121,6 @@ export async function getAvailablePlans(
           description: true,
           priceMonthly: true,
           priceYearly: true,
-          maxUsers: true,
-          maxWards: true,
-          storageMB: true,
           features: true,
           isPopular: true,
           sortOrder: true,
@@ -151,6 +132,10 @@ export async function getAvailablePlans(
             },
           },
         },
+      }),
+      prisma.tenantSubscription.findUnique({
+        where: { tenantId },
+        select: { planId: true, billingCycle: true },
       }),
       prisma.planUpgradeRequest.findFirst({
         where: { tenantId, status: "PENDING" },

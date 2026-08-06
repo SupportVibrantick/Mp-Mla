@@ -23,9 +23,6 @@ export const createTenantSchema = z.object({
   termStartDate: z.string().optional(),
   termEndDate: z.string().optional(),
 
-  maxUsers: z.number().int().min(1).optional(),
-  storageQuotaMB: z.number().int().min(100).optional(),
-
   // Admin user to create for this tenant
   adminEmail: z.string().email("Admin email is required"),
   adminPassword: z.string().min(6, "Admin password must be at least 6 characters"),
@@ -62,8 +59,6 @@ export const updateTenantSchema = z.object({
   termEndDate: z.string().optional(),
 
   status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]).optional(),
-  maxUsers: z.number().int().min(1).optional(),
-  storageQuotaMB: z.number().int().min(100).optional(),
 });
 
 // ─── List Tenants Query ────────────────────────────────
