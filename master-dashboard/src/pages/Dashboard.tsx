@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useDashboard } from "@/hooks/useDashboard";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { cn } from "@/lib/utils";
 
 import {
   Card,
@@ -162,30 +163,30 @@ export default function Dashboard() {
     <MainLayout title="Platform Dashboard">
       <div className="space-y-6">
         {/* ═══ Platform Administration Overview Banner ═══ */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1e1b4b] via-[#2d2a70] to-[#4f46e5] text-white p-6 sm:p-8 shadow-xl border border-white/10">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-1/4 -mb-20 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#13538A] via-[#1a6aad] to-[#5D28A8] text-white p-6 sm:p-8 shadow-lg border border-white/10">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-1/4 -mb-20 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
             <div className="space-y-2 max-w-xl">
               <Badge
                 variant="secondary"
-                className="bg-white/10 hover:bg-white/20 text-indigo-200 border-none backdrop-blur-md px-3 py-1 text-xs font-semibold"
+                className="bg-white/15 hover:bg-white/25 text-white border-none backdrop-blur-md px-3 py-1 text-xs font-semibold"
               >
                 SaaS Platform Control
               </Badge>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-200">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
                 Master Administration Dashboard
               </h1>
-              <p className="text-xs sm:text-sm text-indigo-100/80 leading-relaxed">
+              <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
                 Monitor global tenant metrics, subscription tiers, platform-wide modules, 
                 and recurring system-wide revenues in real time.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-6 xl:gap-8 bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 shadow-inner">
+            <div className="flex flex-wrap items-center gap-6 xl:gap-8 bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/20 shadow-inner">
               <div className="space-y-1 pr-6 border-r border-white/10">
-                <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                <p className="text-[10px] text-white/70 font-bold uppercase tracking-wider">
                   Active Tenants
                 </p>
                 <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
@@ -193,7 +194,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="space-y-1 pr-6 border-r border-white/10">
-                <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                <p className="text-[10px] text-white/70 font-bold uppercase tracking-wider">
                   MRR
                 </p>
                 <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
@@ -201,7 +202,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="space-y-1 pr-6 border-r border-white/10">
-                <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                <p className="text-[10px] text-white/70 font-bold uppercase tracking-wider">
                   Modules
                 </p>
                 <p className="text-xl sm:text-2xl font-black tracking-tight text-white">
@@ -209,7 +210,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] text-indigo-200 font-bold uppercase tracking-wider">
+                <p className="text-[10px] text-white/70 font-bold uppercase tracking-wider">
                   System Health
                 </p>
                 <p className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
@@ -224,157 +225,281 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ═══ Row 1: Key Premium Cards ══════════════════ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/tenants">
-            <Card className="bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white border-none rounded-2xl hover:shadow-indigo-500/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer relative overflow-hidden group shadow-md p-5 flex flex-col justify-between h-40">
-              {/* Top Row */}
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-white/20 text-white rounded-xl">
-                  <Users className="h-5 w-5" />
+        {/* ═══ Row 1: Unified Stat Cards Grid ═══ */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Total Tenants */}
+          <Link href="/tenants" className="block group">
+            <Card className={cn(
+              "h-full cursor-pointer transition-all duration-300 ease-out",
+              "bg-white dark:bg-slate-900",
+              "border border-slate-200/60 dark:border-slate-800/80",
+              "border-t-[3px] sm:border-t-4",
+              "border-t-[#13538A] dark:border-t-blue-500",
+              "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+              "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+              "hover:border-slate-300 dark:hover:border-slate-700",
+            )}>
+              <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+                <div className="flex items-start justify-between w-full gap-2">
+                  <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                    Total Tenants
+                  </p>
+                  <div className="p-2.5 rounded-xl bg-[#13538A]/10 dark:bg-blue-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                    <Users className="h-5 w-5 text-[#13538A] dark:text-blue-400" />
+                  </div>
                 </div>
-                <ArrowUpRight className="h-4.5 w-4.5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-              </div>
-              {/* Bottom Row */}
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold tracking-tight text-white">{s.tenants.total}</span>
-                  <span className="text-[10px] bg-white/25 text-white font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
-                    {s.tenants.active} Active
-                  </span>
+                <div className="w-full flex-1 flex flex-col justify-end">
+                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                    {s.tenants.total}
+                  </h3>
+                  <div className="flex items-end justify-between w-full mt-2 gap-2">
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium">
+                      {s.tenants.active} Active • Constituencies
+                    </p>
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <p className="text-xs text-white/95 font-bold uppercase tracking-wider">Total Tenants</p>
-                  <p className="text-[10px] text-white/75 font-medium">Constituencies & MLA Portals</p>
-                </div>
-              </div>
+              </CardContent>
             </Card>
           </Link>
 
-          <Card className="bg-gradient-to-br from-[#10b981] to-[#059669] text-white border-none rounded-2xl hover:shadow-emerald-500/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group shadow-md p-5 flex flex-col justify-between h-40">
-            {/* Top Row */}
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 bg-white/20 text-white rounded-xl">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <ArrowUpRight className="h-4.5 w-4.5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-            </div>
-            {/* Bottom Row */}
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold tracking-tight text-white">{fmt(s.monthlyRecurringRevenue)}</span>
-              </div>
-              <div className="mt-2">
-                <p className="text-xs text-white/95 font-bold uppercase tracking-wider">Monthly Revenue (MRR)</p>
-                <p className="text-[10px] text-white/75 font-medium">Based on active subscriptions</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-[#0284c7] to-[#2563eb] text-white border-none rounded-2xl hover:shadow-blue-500/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group shadow-md p-5 flex flex-col justify-between h-40">
-            {/* Top Row */}
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 bg-white/20 text-white rounded-xl">
-                <IndianRupee className="h-5 w-5" />
-              </div>
-              <ArrowUpRight className="h-4.5 w-4.5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-            </div>
-            {/* Bottom Row */}
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold tracking-tight text-white">{fmt(s.totalRevenue)}</span>
-              </div>
-              <div className="mt-2">
-                <p className="text-xs text-white/95 font-bold uppercase tracking-wider">Total Revenue</p>
-                <p className="text-[10px] text-white/75 font-medium">Total payments processed successfully</p>
-              </div>
-            </div>
-          </Card>
-
-          <Link href="/subscriptions">
-            <Card className="bg-gradient-to-br from-[#f97316] to-[#ea580c] text-white border-none rounded-2xl hover:shadow-orange-500/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer relative overflow-hidden group shadow-md p-5 flex flex-col justify-between h-40">
-              {/* Top Row */}
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-white/20 text-white rounded-xl">
-                  <CreditCard className="h-5 w-5" />
+          {/* Monthly Revenue (MRR) */}
+          <Card className={cn(
+            "h-full cursor-pointer transition-all duration-300 ease-out",
+            "bg-white dark:bg-slate-900",
+            "border border-slate-200/60 dark:border-slate-800/80",
+            "border-t-[3px] sm:border-t-4",
+            "border-t-emerald-600 dark:border-t-emerald-500",
+            "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+            "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+            "hover:border-slate-300 dark:hover:border-slate-700",
+          )}>
+            <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+              <div className="flex items-start justify-between w-full gap-2">
+                <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                  Monthly Revenue
+                </p>
+                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <ArrowUpRight className="h-4.5 w-4.5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
               </div>
-              {/* Bottom Row */}
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold tracking-tight text-white">{s.subscriptions.active}</span>
-                  <span className="text-[10px] bg-white/25 text-white font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
-                    Trial: {s.subscriptions.trialing}
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <p className="text-xs text-white/95 font-bold uppercase tracking-wider">Subscriptions</p>
-                  <p className="text-[10px] text-white/75 font-medium truncate">
-                    Past due: {s.subscriptions.pastDue} • Cancelled: {s.subscriptions.cancelled}
+              <div className="w-full flex-1 flex flex-col justify-end">
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                  {fmt(s.monthlyRecurringRevenue)}
+                </h3>
+                <div className="flex items-end justify-between w-full mt-2 gap-2">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium">
+                    Based on active subscriptions
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Revenue */}
+          <Card className={cn(
+            "h-full cursor-pointer transition-all duration-300 ease-out",
+            "bg-white dark:bg-slate-900",
+            "border border-slate-200/60 dark:border-slate-800/80",
+            "border-t-[3px] sm:border-t-4",
+            "border-t-cyan-600 dark:border-t-cyan-500",
+            "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+            "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+            "hover:border-slate-300 dark:hover:border-slate-700",
+          )}>
+            <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+              <div className="flex items-start justify-between w-full gap-2">
+                <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                  Total Revenue
+                </p>
+                <div className="p-2.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                  <IndianRupee className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                </div>
+              </div>
+              <div className="w-full flex-1 flex flex-col justify-end">
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                  {fmt(s.totalRevenue)}
+                </h3>
+                <div className="flex items-end justify-between w-full mt-2 gap-2">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium">
+                    Total payments processed
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Subscriptions */}
+          <Link href="/subscriptions" className="block group">
+            <Card className={cn(
+              "h-full cursor-pointer transition-all duration-300 ease-out",
+              "bg-white dark:bg-slate-900",
+              "border border-slate-200/60 dark:border-slate-800/80",
+              "border-t-[3px] sm:border-t-4",
+              "border-t-orange-500 dark:border-t-orange-400",
+              "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+              "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+              "hover:border-slate-300 dark:hover:border-slate-700",
+            )}>
+              <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+                <div className="flex items-start justify-between w-full gap-2">
+                  <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                    Subscriptions
+                  </p>
+                  <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                    <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                </div>
+                <div className="w-full flex-1 flex flex-col justify-end">
+                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                    {s.subscriptions.active}
+                  </h3>
+                  <div className="flex items-end justify-between w-full mt-2 gap-2">
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium truncate">
+                      Trial: {s.subscriptions.trialing} • Past due: {s.subscriptions.pastDue}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </Link>
         </div>
 
-        {/* ═══ Row 1b: Secondary Stat Cards ══════════════ */}
+        {/* ═══ Row 1b: Secondary Stat Cards ═══ */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/modules">
-            <Card className="bg-white/50 dark:bg-slate-950/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 hover:shadow-cyan-500/10 hover:border-cyan-500/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer rounded-2xl">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-400 rounded-lg">
-                  <Building2 className="h-5 w-5" />
+          {/* Modules */}
+          <Link href="/modules" className="block group">
+            <Card className={cn(
+              "h-full cursor-pointer transition-all duration-300 ease-out",
+              "bg-white dark:bg-slate-900",
+              "border border-slate-200/60 dark:border-slate-800/80",
+              "border-t-[3px] sm:border-t-4",
+              "border-t-purple-600 dark:border-t-purple-500",
+              "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+              "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+              "hover:border-slate-300 dark:hover:border-slate-700",
+            )}>
+              <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+                <div className="flex items-start justify-between w-full gap-2">
+                  <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                    Modules
+                  </p>
+                  <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                    <Building2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-lg font-bold tracking-tight">{s.totalModules}</p>
-                  <p className="text-xs text-muted-foreground font-semibold">Modules Available</p>
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Active: {s.activeModules}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/subscriptions">
-            <Card className="bg-white/50 dark:bg-slate-950/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 hover:shadow-purple-500/10 hover:border-purple-500/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer rounded-2xl">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400 rounded-lg">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold tracking-tight">{s.totalPlans}</p>
-                  <p className="text-xs text-muted-foreground font-semibold">Subscription Plans</p>
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Active: {s.activePlans}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/payments">
-            <Card className="bg-white/50 dark:bg-slate-950/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 hover:shadow-emerald-500/10 hover:border-emerald-500/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer rounded-2xl">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold tracking-tight">{s.payments.success}</p>
-                  <p className="text-xs text-muted-foreground font-semibold">Successful Invoices</p>
-                  <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">Pending: {s.payments.pending}</p>
+                <div className="w-full flex-1 flex flex-col justify-end">
+                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                    {s.totalModules}
+                  </h3>
+                  <div className="flex items-end justify-between w-full mt-2 gap-2">
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium">
+                      Active: {s.activeModules}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </Link>
 
-          <Card className="bg-white/50 dark:bg-slate-950/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 hover:shadow-rose-500/10 hover:border-rose-500/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 rounded-2xl">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 rounded-lg">
-                <Activity className="h-5 w-5 animate-pulse" />
+          {/* Subscription Plans */}
+          <Link href="/subscriptions" className="block group">
+            <Card className={cn(
+              "h-full cursor-pointer transition-all duration-300 ease-out",
+              "bg-white dark:bg-slate-900",
+              "border border-slate-200/60 dark:border-slate-800/80",
+              "border-t-[3px] sm:border-t-4",
+              "border-t-violet-600 dark:border-t-violet-500",
+              "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+              "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+              "hover:border-slate-300 dark:hover:border-slate-700",
+            )}>
+              <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+                <div className="flex items-start justify-between w-full gap-2">
+                  <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                    Plans
+                  </p>
+                  <div className="p-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                    <FileText className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                </div>
+                <div className="w-full flex-1 flex flex-col justify-end">
+                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                    {s.totalPlans}
+                  </h3>
+                  <div className="flex items-end justify-between w-full mt-2 gap-2">
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium">
+                      Active: {s.activePlans}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Successful Invoices */}
+          <Link href="/payments" className="block group">
+            <Card className={cn(
+              "h-full cursor-pointer transition-all duration-300 ease-out",
+              "bg-white dark:bg-slate-900",
+              "border border-slate-200/60 dark:border-slate-800/80",
+              "border-t-[3px] sm:border-t-4",
+              "border-t-amber-600 dark:border-t-amber-500",
+              "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+              "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+              "hover:border-slate-300 dark:hover:border-slate-700",
+            )}>
+              <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+                <div className="flex items-start justify-between w-full gap-2">
+                  <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                    Invoices
+                  </p>
+                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                    <CheckCircle2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                </div>
+                <div className="w-full flex-1 flex flex-col justify-end">
+                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                    {s.payments.success}
+                  </h3>
+                  <div className="flex items-end justify-between w-full mt-2 gap-2">
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium">
+                      Pending: {s.payments.pending}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* System Health */}
+          <Card className={cn(
+            "h-full cursor-pointer transition-all duration-300 ease-out",
+            "bg-white dark:bg-slate-900",
+            "border border-slate-200/60 dark:border-slate-800/80",
+            "border-t-[3px] sm:border-t-4",
+            "border-t-rose-600 dark:border-t-rose-500",
+            "shadow-[0_4px_12px_rgba(0,0,0,0.02)]",
+            "hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]",
+            "hover:border-slate-300 dark:hover:border-slate-700",
+          )}>
+            <CardContent className="p-5 flex flex-col justify-between h-full gap-3">
+              <div className="flex items-start justify-between w-full gap-2">
+                <p className="text-[10px] sm:text-[11px] tracking-wider uppercase font-semibold text-slate-400 dark:text-slate-500 leading-tight">
+                  System Health
+                </p>
+                <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center shrink-0 shadow-sm">
+                  <Activity className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                </div>
               </div>
-              <div>
-                <p className="text-lg font-bold tracking-tight">100.0%</p>
-                <p className="text-xs text-muted-foreground font-semibold">API System Health</p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">All systems operational</p>
+              <div className="w-full flex-1 flex flex-col justify-end">
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-white leading-none">
+                  100.0%
+                </h3>
+                <div className="flex items-end justify-between w-full mt-2 gap-2">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground/75 font-medium">
+                    All systems operational
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -383,7 +508,7 @@ export default function Dashboard() {
         {/* ═══ Row 2: Charts (Revenue Trend & Tenant Plan Distribution) ═════ */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Revenue Trend Area Chart */}
-          <Card className="lg:col-span-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 shadow-lg rounded-2xl overflow-hidden">
+          <Card className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden">
             <CardHeader className="pb-3 border-b border-border/40 bg-slate-50/50 dark:bg-slate-950/20 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -392,7 +517,7 @@ export default function Dashboard() {
                     Monthly income generated over the last 6 months
                   </CardDescription>
                 </div>
-                <Badge variant="secondary" className="font-mono text-xs bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-none font-bold">
+                <Badge variant="secondary" className="font-mono text-xs bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-none font-bold">
                   Success Status
                 </Badge>
               </div>
@@ -427,8 +552,8 @@ export default function Dashboard() {
                       <Tooltip
                         contentStyle={{
                           borderRadius: "12px",
-                          border: "1px solid rgba(255,255,255,0.2)",
-                          background: "rgba(255,255,255,0.9)",
+                          border: "1px solid hsl(var(--border))",
+                          background: "hsl(var(--card))",
                           boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
                           fontSize: "11px",
                           fontWeight: "bold",
@@ -456,7 +581,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Tenant Plan Distribution Pie Chart */}
-          <Card className="lg:col-span-2 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 shadow-lg rounded-2xl overflow-hidden">
+          <Card className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden">
             <CardHeader className="pb-3 border-b border-border/40 bg-slate-50/50 dark:bg-slate-950/20 px-6 py-4">
               <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100">Plan Distribution</CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
@@ -484,8 +609,8 @@ export default function Dashboard() {
                       <Tooltip
                         contentStyle={{
                           borderRadius: "12px",
-                          border: "1px solid rgba(255,255,255,0.2)",
-                          background: "rgba(255,255,255,0.9)",
+                          border: "1px solid hsl(var(--border))",
+                          background: "hsl(var(--card))",
                           boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
                           fontSize: "11px",
                           fontWeight: "bold",
@@ -508,7 +633,7 @@ export default function Dashboard() {
         {/* ═══ Row 3: Tables (Recent Tenants & Recent Payments) ════ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Tenants */}
-          <Card className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 shadow-lg rounded-2xl overflow-hidden">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-3 bg-slate-50/50 dark:bg-slate-950/20 px-6 py-4 border-b border-border/40">
               <div>
                 <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100">Recent Tenants</CardTitle>
@@ -517,7 +642,7 @@ export default function Dashboard() {
                 </CardDescription>
               </div>
               <Link href="/tenants">
-                <Button variant="outline" size="sm" className="text-xs h-8 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-900/50 dark:text-indigo-400 font-bold transition-colors">
+                <Button variant="outline" size="sm" className="text-xs h-8 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-400 font-bold transition-colors">
                   Manage Tenants
                 </Button>
               </Link>
@@ -537,7 +662,7 @@ export default function Dashboard() {
                     {d.recentTenants && d.recentTenants.map((t: any) => {
                       const st = TENANT_STATUS_STYLES[t.status] || { bg: "bg-slate-100", dot: "bg-slate-500" };
                       return (
-                        <tr key={t.id} className="hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 transition-colors">
+                        <tr key={t.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-950/10 transition-colors">
                           <td className="px-6 py-4">
                             <div className="font-bold text-slate-800 dark:text-slate-200">{t.name}</div>
                             <div className="text-[10px] text-muted-foreground font-semibold">{t.representativeName}</div>
@@ -546,7 +671,7 @@ export default function Dashboard() {
                             {t.constituencyName}
                           </td>
                           <td className="px-6 py-4 text-xs">
-                            <Badge variant="outline" className="font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-900/30">
+                            <Badge variant="outline" className="font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/50 dark:border-blue-900/30">
                               {t.subscription?.plan?.name || "No Plan"}
                             </Badge>
                           </td>
@@ -582,7 +707,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Recent Payments */}
-          <Card className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/40 shadow-lg rounded-2xl overflow-hidden">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-3 bg-slate-50/50 dark:bg-slate-950/20 px-6 py-4 border-b border-border/40">
               <div>
                 <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100">Recent Payments</CardTitle>
@@ -591,7 +716,7 @@ export default function Dashboard() {
                 </CardDescription>
               </div>
               <Link href="/payments">
-                <Button variant="outline" size="sm" className="text-xs h-8 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-900/50 dark:text-indigo-400 font-bold transition-colors">
+                <Button variant="outline" size="sm" className="text-xs h-8 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-400 font-bold transition-colors">
                   All Payments
                 </Button>
               </Link>
@@ -611,7 +736,7 @@ export default function Dashboard() {
                     {d.recentPayments && d.recentPayments.map((p: any) => {
                       const st = PAYMENT_STATUS_STYLES[p.status] || { bg: "bg-slate-50", text: "text-slate-700" };
                       return (
-                        <tr key={p.id} className="hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 transition-colors">
+                        <tr key={p.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-950/10 transition-colors">
                           <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">
                             {p.subscription?.tenant?.name || "System Billing"}
                           </td>
