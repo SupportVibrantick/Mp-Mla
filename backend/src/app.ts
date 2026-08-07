@@ -49,6 +49,13 @@ app.use(express.urlencoded({ extended: true }));
 // ─── Static file serving for uploads ─────────────────────
 app.use(
   "/uploads",
+  (_req, res, next) => {
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; script-src-attr 'unsafe-inline'; style-src * 'unsafe-inline' https:;",
+    );
+    next();
+  },
   express.static(path.join(__dirname, "..", "public", "uploads")),
 );
 

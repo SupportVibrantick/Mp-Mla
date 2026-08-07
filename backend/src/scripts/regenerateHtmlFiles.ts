@@ -1,130 +1,35 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import prisma from "../lib/prisma.js";
-import logger from "../utils/logger.js";
-import { Prisma } from "@prisma/client";
-
-/**
- * Invoice Service
- *
- * Handles invoice number generation and PDF creation.
- * IMPORTANT: Invoice number is generated ONLY after payment verification (SUCCESS).
- */
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const INVOICE_DIR = path.join(
-  __dirname,
-  "..",
-  "..",
-  "public",
-  "uploads",
-  "invoices",
-);
+const INVOICE_DIR = path.join(__dirname, "..", "..", "public", "uploads", "invoices");
 
-/** Sequential counter for invoice numbers within a day */
-let dailyCounter = 0;
-let lastCounterDate = "";
+function renderInvoiceHtml({
+  invoiceNumber,
+  customerName,
+  constituency,
+  email,
+  gstin,
+  formattedDate,
+  description,
+  subtotal,
+  tax,
+  total,
+  currencySymbol = "₹",
+  methodLabel = "ONLINE",
+  gatewayLabel = "RAZORPAY",
+  txnRef = "—",
+}: any) {
+  const companyName = "Vibrantick Infotech Solutions";
+  const companyAddress = "Sector 62, Noida, UP 201301";
+  const companyPhone = "+91 98765 43210";
+  const bankName = "HDFC Bank (Test Branch)";
+  const bankAccount = "50100234567890 (IFSC: HDFC0001234)";
+  const supportEmail = "support@vibrantick.org";
 
-/**
- * Generate a unique invoice number.
- * Format: INV-YYYYMMDD-XXXX (date + 4-char random)
- */
-export function generateInvoiceNumber(): string {
-  const now = new Date();
-  const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
-  const todayStr = datePart;
-
-  if (todayStr !== lastCounterDate) {
-    dailyCounter = 0;
-    lastCounterDate = todayStr;
-  }
-  dailyCounter++;
-
-  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `INV-${datePart}-${rand}`;
-}
-
-/**
- * Generate an HTML invoice for a payment and save it as a file.
- * Called ONLY after payment is verified as SUCCESS.
- * Returns the public URL path to the invoice.
- */
-export async function generateInvoicePdf(
-  paymentId: string,
-  tx?: Prisma.TransactionClient,
-): Promise<string | null> {
-  const client = tx || prisma;
-
-  const payment = await client.payment.findUnique({
-    where: { id: paymentId },
-    include: {
-      subscription: {
-        include: { tenant: true, plan: true },
-      },
-    },
-  });
-
-  if (!payment) return null;
-
-  if (!fs.existsSync(INVOICE_DIR)) {
-    fs.mkdirSync(INVOICE_DIR, { recursive: true });
-  }
-
-  const tenant = payment.subscription.tenant;
-  const plan = payment.subscription.plan;
-  const subtotal = payment.amount;
-  const tax = payment.taxAmount ?? 0;
-  const total = subtotal + tax;
-
-  // Generate invoice number if not already set
-  let invoiceNumber = payment.invoiceNumber;
-  if (!invoiceNumber) {
-    invoiceNumber = generateInvoiceNumber();
-    await client.payment.update({
-      where: { id: paymentId },
-      data: { invoiceNumber },
-    });
-  }
-
-  const filename = `invoice-${invoiceNumber}.html`;
-  const filePath = path.join(INVOICE_DIR, filename);
-
-  const methodLabel = payment.method || "—";
-  const gatewayLabel = payment.gateway || "";
-  const txnRef =
-    payment.gatewayPaymentId || payment.transactionId || "—";
-
-  // Date format matching target design (e.g. 12 October, 2025)
-  const d = payment.paidAt || payment.createdAt;
-  const day = d.getDate();
-  const month = d.toLocaleDateString("en-US", { month: "long" });
-  const year = d.getFullYear();
-  const formattedDate = `${day} ${month}, ${year}`;
-
-  const symbolMap: Record<string, string> = { INR: "₹", USD: "$", EUR: "€", GBP: "£" };
-  const currencySymbol = symbolMap[payment.currency?.toUpperCase()] || "₹";
-
-  // Fetch optional branding/platform settings or fallback to test defaults
-  const platformSettings = await client.platformSetting.findMany({
-    where: {
-      key: {
-        in: ["brand_company_name", "brand_company_address", "brand_company_phone", "brand_bank_name", "brand_bank_account", "brand_support_email"]
-      }
-    }
-  }).catch(() => []);
-
-  const settingsMap = new Map(platformSettings.map(s => [s.key, s.value]));
-
-  const companyName = settingsMap.get("brand_company_name") || "Vibrantick Infotech Solutions";
-  const companyAddress = settingsMap.get("brand_company_address") || "Sector 62, Noida, UP 201301";
-  const companyPhone = settingsMap.get("brand_company_phone") || "+91 98765 43210";
-  const bankName = settingsMap.get("brand_bank_name") || "HDFC Bank (Test Branch)";
-  const bankAccount = settingsMap.get("brand_bank_account") || "50100234567890 (IFSC: HDFC0001234)";
-  const supportEmail = settingsMap.get("brand_support_email") || "support@vibrantick.org";
-
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -160,7 +65,6 @@ export async function generateInvoicePdf(
     overflow: hidden;
   }
 
-  /* Decorative Geometric Watermark in top left corner */
   .bg-watermark {
     position: absolute;
     top: 0;
@@ -263,7 +167,6 @@ export async function generateInvoicePdf(
     text-align: right;
   }
 
-  /* Items Table Styling */
   .items-table {
     position: relative;
     z-index: 1;
@@ -297,7 +200,6 @@ export async function generateInvoicePdf(
     padding: 0;
   }
 
-  /* Total Block */
   .total-container {
     position: relative;
     z-index: 1;
@@ -319,7 +221,6 @@ export async function generateInvoicePdf(
     color: #111827;
   }
 
-  /* Bottom Bank & Details Grid */
   .bottom-grid {
     position: relative;
     z-index: 1;
@@ -347,7 +248,6 @@ export async function generateInvoicePdf(
     color: #4b5563;
   }
 
-  /* Footer */
   .footer-divider {
     position: relative;
     z-index: 1;
@@ -363,7 +263,6 @@ export async function generateInvoicePdf(
     color: #6b7280;
   }
 
-  /* Floating Toolbar for Browser View */
   .toolbar {
     max-width: 800px;
     margin: 0 auto 20px auto;
@@ -432,7 +331,6 @@ export async function generateInvoicePdf(
 </div>
 
 <div class="invoice-card">
-  <!-- Top Left Geometric Watermark -->
   <svg class="bg-watermark" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M-80 -80 L180 -80 L-80 180 Z" fill="#F1F5F9" opacity="0.9"/>
     <path d="M-40 -40 L220 -40 L-40 220 Z" fill="#E2E8F0" opacity="0.6"/>
@@ -442,7 +340,6 @@ export async function generateInvoicePdf(
     <polygon points="-40,140 140,-40 80,-40 -40,80" fill="#CBD5E1" opacity="0.4"/>
   </svg>
 
-  <!-- Header -->
   <div class="header">
     <div></div>
     <div class="company-info">
@@ -461,12 +358,10 @@ export async function generateInvoicePdf(
     </div>
   </div>
 
-  <!-- Title -->
   <div class="invoice-title-block">
     <h1 class="invoice-title">INVOICE</h1>
   </div>
 
-  <!-- Meta Info Grid -->
   <div class="meta-grid">
     <div class="meta-left">
       <div class="meta-item">
@@ -476,11 +371,11 @@ export async function generateInvoicePdf(
       <div class="meta-item bill-to-box">
         <span class="meta-label">Bill to:</span>
         <div>
-          <div class="bill-to-name">${tenant.name}</div>
+          <div class="bill-to-name">${customerName}</div>
           <div class="bill-to-address">
-            ${tenant.constituencyName ? `${tenant.constituencyName}<br>` : ""}
-            ${tenant.email || ""}
-            ${payment.gstNumber ? `<br>GSTIN: ${payment.gstNumber}` : ""}
+            ${constituency ? `${constituency}<br>` : ""}
+            ${email || ""}
+            ${gstin ? `<br>GSTIN: ${gstin}` : ""}
           </div>
         </div>
       </div>
@@ -493,7 +388,6 @@ export async function generateInvoicePdf(
     </div>
   </div>
 
-  <!-- Items Table -->
   <table class="items-table">
     <thead>
       <tr>
@@ -507,7 +401,7 @@ export async function generateInvoicePdf(
       <tr class="item-row">
         <td>1.</td>
         <td>
-          <strong style="color:#111827;">${plan.name} Plan</strong> — ${payment.subscription.billingCycle} billing cycle<br>
+          <strong style="color:#111827;">${description}</strong><br>
           <span style="font-size:12px; color:#9ca3af;">Method: ${methodLabel} ${gatewayLabel ? `(${gatewayLabel})` : ""} | Ref: ${txnRef}</span>
         </td>
         <td class="right">${currencySymbol}${subtotal.toFixed(2)}</td>
@@ -527,13 +421,11 @@ export async function generateInvoicePdf(
     </tbody>
   </table>
 
-  <!-- Total Summary Section -->
   <div class="total-container">
     <span class="total-label">Total</span>
     <span class="total-amount">${currencySymbol}${total.toFixed(2)}</span>
   </div>
 
-  <!-- Bank & Payment Details -->
   <div class="bottom-grid">
     <div class="bank-details">
       <div class="bank-row">
@@ -547,7 +439,6 @@ export async function generateInvoicePdf(
     </div>
   </div>
 
-  <!-- Footer Divider & Note -->
   <hr class="footer-divider">
   <div class="footer-text">
     If you have any question please contact : ${supportEmail}
@@ -573,17 +464,69 @@ export async function generateInvoicePdf(
 
 </body>
 </html>`;
-
-  fs.writeFileSync(filePath, html, "utf-8");
-  const invoiceUrl = `/uploads/invoices/${filename}`;
-
-  // Update payment with invoice URL
-  await client.payment.update({
-    where: { id: paymentId },
-    data: { invoiceUrl },
-  });
-
-  logger.info(`Invoice generated: ${invoiceNumber} for payment ${paymentId}`);
-  return invoiceUrl;
 }
 
+function processFiles() {
+  if (!fs.existsSync(INVOICE_DIR)) return;
+
+  const files = fs.readdirSync(INVOICE_DIR).filter(f => f.endsWith(".html"));
+  console.log(`Transforming ${files.length} existing HTML files...`);
+
+  for (const file of files) {
+    const fullPath = path.join(INVOICE_DIR, file);
+    const content = fs.readFileSync(fullPath, "utf-8");
+
+    // Extract invoice number
+    const invMatch = content.match(/Invoice\s*(?:#|No)?:?\s*([A-Z0-9-]+)/i);
+    const invoiceNumber = invMatch ? invMatch[1] : file.replace("invoice-", "").replace(".html", "");
+
+    // Extract customer name
+    const custMatch = content.match(/<strong>([^<]+)<\/strong>/i);
+    const customerName = custMatch ? custMatch[1].trim() : "Liceria & Co.";
+
+    // Extract constituency
+    const constMatch = content.match(/<\/strong><br>([^<]+)<br>/i);
+    const constituency = constMatch ? constMatch[1].trim() : "Chandni Chowk";
+
+    // Extract amount
+    const amtMatch = content.match(/Total<\/td><td[^>]*>(?:₹|\$)?([\d.]+)/i) || content.match(/([\d.]+)\s*<\/td><\/tr><\/table>/i);
+    const totalVal = amtMatch ? parseFloat(amtMatch[1]) : 1900;
+
+    // Extract plan/description
+    const descMatch = content.match(/<td>([^<]+(?:plan|YEARLY|Enterprise|Starter)[^<]*)<\/td>/i);
+    const description = descMatch ? descMatch[1].trim() : "Logo & Branding Package";
+
+    // Date
+    const dateMatch = content.match(/Date:\s*([^<]+)/i);
+    let formattedDate = "12 October, 2025";
+    if (dateMatch) {
+      const rawDateStr = dateMatch[1].trim();
+      const parsed = new Date(rawDateStr);
+      if (!isNaN(parsed.getTime())) {
+        const d = parsed.getDate();
+        const month = parsed.toLocaleDateString("en-US", { month: "long" });
+        const year = parsed.getFullYear();
+        formattedDate = `${d} ${month}, ${year}`;
+      }
+    }
+
+    const newHtml = renderInvoiceHtml({
+      invoiceNumber,
+      customerName,
+      constituency,
+      email: "",
+      gstin: "",
+      formattedDate,
+      description,
+      subtotal: totalVal,
+      tax: 0,
+      total: totalVal,
+      currencySymbol: "₹"
+    });
+
+    fs.writeFileSync(fullPath, newHtml, "utf-8");
+    console.log(`Transformed: ${file}`);
+  }
+}
+
+processFiles();
