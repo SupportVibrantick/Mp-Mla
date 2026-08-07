@@ -2,26 +2,15 @@ import { Link, useLocation } from "wouter";
 import { cn, getImageUrl } from "@/lib/utils";
 import {
   LayoutDashboard,
-  MessageSquareWarning,
-  ClipboardList,
   Building2,
   Users,
-  FileText,
-  Map,
-  BarChart3,
   Settings,
   Shield,
   ChevronLeft,
   ChevronRight,
   LogOut,
-  BarChart4,
-  BarChart,
-  Landmark,
   IndianRupeeIcon,
-  Cake,
-  Trash2,
   CalendarDays,
-  CreditCard,
   Puzzle,
   Layers,
   Receipt,
@@ -29,7 +18,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Tooltip,
@@ -45,92 +33,117 @@ interface SidebarProps {
   setCollapsed: (collapsed: boolean) => void;
 }
 
+interface NavItem {
+  label: string;
+  icon: React.ElementType;
+  href: string;
+  module?: string;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
 export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const { user, logout, canAny } = useAuth();
   const { settings } = useSystemSettings();
 
   const [location] = useLocation();
 
-  const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  const navSections: NavSection[] = [
+    {
+      title: "Main Menu",
+      items: [
+        { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+      ],
+    },
+    {
+      title: "Tenant Management",
+      items: [
+        {
+          label: "Tenant Management",
+          icon: Building2,
+          href: "/tenants",
+          module: "tenants",
+        },
+        { label: "Platform Users", icon: Users, href: "/users", module: "users" },
+      ],
+    },
+    {
+      title: "Subscriptions & Billing",
+      items: [
+        {
+          label: "Plans & Tiers",
+          icon: Layers,
+          href: "/subscriptions",
+          module: "subscriptions",
+        },
+        {
+          label: "Tenant Subscriptions",
+          icon: Users,
+          href: "/subscriptions/tenants",
+          module: "subscriptions",
+        },
+        {
+          label: "Upcoming Renewals",
+          icon: CalendarDays,
+          href: "/subscriptions/renewals",
+          module: "subscriptions",
+        },
+        {
+          label: "Upgrade Requests",
+          icon: ArrowUpCircle,
+          href: "/subscriptions/upgrade-requests",
+          module: "subscriptions",
+        },
+        {
+          label: "Invoices",
+          icon: Receipt,
+          href: "/subscriptions/invoices",
+          module: "subscriptions",
+        },
+        {
+          label: "Payments",
+          icon: IndianRupeeIcon,
+          href: "/payments",
+          module: "payments",
+        },
+        {
+          label: "Modules & Addons",
+          icon: Puzzle,
+          href: "/modules",
+          module: "modules",
+        },
+      ],
+    },
+    {
+      title: "System & Settings",
+      items: [
+        {
+          label: "Settings",
+          icon: Settings,
+          href: "/settings",
+          module: "settings",
+        },
+        {
+          label: "Profile",
+          icon: Users,
+          href: "/profile",
+        },
+      ],
+    },
   ];
 
-  const filteredNavItems = navItems.filter(
-    (item: any) =>
-      !item.module || canAny(item.module) || user?.role === "SUPER_ADMIN",
-  );
-
-  const adminItems = [
-    {
-      label: "Tenant Management",
-      icon: Building2,
-      href: "/tenants",
-      module: "tenants",
-    },
-    {
-      label: "Plans & Tiers",
-      icon: Layers,
-      href: "/subscriptions",
-      module: "subscriptions",
-    },
-    {
-      label: "Tenant Subscriptions",
-      icon: Users,
-      href: "/subscriptions/tenants",
-      module: "subscriptions",
-    },
-    {
-      label: "Upcoming Renewals",
-      icon: CalendarDays,
-      href: "/subscriptions/renewals",
-      module: "subscriptions",
-    },
-    {
-      label: "Upgrade Requests",
-      icon: ArrowUpCircle,
-      href: "/subscriptions/upgrade-requests",
-      module: "subscriptions",
-    },
-    {
-      label: "Invoices",
-      icon: Receipt,
-      href: "/subscriptions/invoices",
-      module: "subscriptions",
-    },
-    {
-      label: "Modules & Addons",
-      icon: Puzzle,
-      href: "/modules",
-      module: "modules",
-    },
-    {
-      label: "Payments",
-      icon: IndianRupeeIcon,
-      href: "/payments",
-      module: "payments",
-    },
-    { label: "Platform Users", icon: Users, href: "/users", module: "users" },
-  ].filter(
-    (item) =>
-      !item.module || canAny(item.module) || user?.role === "SUPER_ADMIN",
-  );
-
-  const bottomItems = [
-    {
-      label: "Settings",
-      icon: Settings,
-      href: "/settings",
-      module: "settings",
-    },
-    {
-      label: "Profile",
-      icon: Users,
-      href: "/profile",
-    },
-  ].filter(
-    (item) =>
-      !item.module || canAny(item.module) || user?.role === "SUPER_ADMIN",
-  );
+  const filteredSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) =>
+          !item.module || canAny(item.module) || user?.role === "SUPER_ADMIN",
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -140,7 +153,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         className="h-screen bg-[#13538A] text-white border-r border-[#5D28A8] flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 shadow-2xl dark:bg-gray-900 dark:border-gray-800"
       >
         {/* Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-transparent">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-transparent flex-shrink-0">
           {!collapsed && (
             <div className="flex items-center gap-2 overflow-hidden">
               {settings.brand_logo_url ? (
@@ -197,96 +210,34 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto sidebar-scroll py-4 px-2 space-y-1">
-          <div className="mt-2 mb-2 px-3">
-            {!collapsed ? (
-              <p className="text-[10px] uppercase font-bold text-white/50 tracking-widest">
-                MENU
-              </p>
-            ) : (
-              <div className="border-t border-white/10 mx-2" />
-            )}
-          </div>
-          {filteredNavItems.map((item) => {
-            const isActive = location === item.href;
-            const content = (
-              <div
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
-                  isActive
-                    ? "bg-white/12 text-white font-medium shadow-sm"
-                    : "text-white hover:bg-white/5 font-medium",
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    "h-5 w-5 min-w-5",
-                    isActive
-                      ? "text-white"
-                      : "text-white group-hover:text-white transition-colors",
-                  )}
-                />
-                {!collapsed && (
-                  <span className="truncate text-sm tracking-wide">
-                    {item.label}
-                  </span>
-                )}
-              </div>
-            );
-
-            if (collapsed) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    <Link href={item.href}>{content}</Link>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    sideOffset={14}
-                    className="font-bold text-xs ml-1 bg-[#1b3a88] text-white border-white/10"
-                  >
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return (
-              <Link key={item.href} href={item.href}>
-                {content}
-              </Link>
-            );
-          })}
-
-          {adminItems.length > 0 && (
-            <>
-              <div className="mt-6 mb-2 px-3">
-                {!collapsed ? (
-                  <p className="text-[10px] uppercase font-bold text-white/70 tracking-widest">
-                    Administration
+        <div className="flex-1 overflow-y-auto sidebar-scroll py-3 px-2 space-y-4">
+          {filteredSections.map((section, sectionIdx) => (
+            <div key={section.title} className="space-y-1">
+              {!collapsed ? (
+                <div className={cn("px-3 pb-1.5 pt-1", sectionIdx > 0 && "pt-3 border-t border-white/10")}>
+                  <p className="text-[11px] uppercase font-bold text-white/60 tracking-wider">
+                    {section.title}
                   </p>
-                ) : (
-                  <div className="border-t border-white/10 mx-2" />
-                )}
-              </div>
+                </div>
+              ) : (
+                sectionIdx > 0 && <div className="border-t border-white/10 mx-2 my-2" />
+              )}
 
-              {adminItems.map((item) => {
-                const isItemActive = location === item.href;
+              {section.items.map((item) => {
+                const isActive = location === item.href;
                 const content = (
                   <div
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
-                      isItemActive
-                        ? "bg-white/12 text-white font-medium shadow-sm"
-                        : "text-white hover:bg-white/5 font-medium",
+                      "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
+                      isActive
+                        ? "bg-white/15 text-white font-semibold shadow-sm"
+                        : "text-white/85 hover:text-white hover:bg-white/10 font-medium",
                     )}
                   >
                     <item.icon
                       className={cn(
                         "h-5 w-5 min-w-5",
-                        isItemActive
-                          ? "text-white"
-                          : "text-white group-hover:text-white transition-colors",
+                        isActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
                       )}
                     />
                     {!collapsed && (
@@ -306,8 +257,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                       <TooltipContent
                         side="right"
                         sideOffset={14}
-                        className="font-bold text-xs ml-1 bg-[#1b3a88] text-white border-white/10"
+                        className="font-bold text-xs ml-1 bg-[#1b3a88] text-white border-white/10 shadow-lg"
                       >
+                        <span className="text-[10px] uppercase opacity-70 block text-white/70 font-semibold mb-0.5">
+                          {section.title}
+                        </span>
                         {item.label}
                       </TooltipContent>
                     </Tooltip>
@@ -320,66 +274,13 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                   </Link>
                 );
               })}
-            </>
-          )}
-
-          <div className="my-4 border-t border-white/10 mx-2" />
-
-          {bottomItems.map((item) => {
-            const isActive = location === item.href;
-            const content = (
-              <div
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
-                  isActive
-                    ? "bg-white/12 text-white font-medium shadow-sm"
-                    : "text-white hover:bg-white/5 font-medium",
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    "h-5 w-5 min-w-5",
-                    isActive
-                      ? "text-white"
-                      : "text-white group-hover:text-white transition-colors",
-                  )}
-                />
-                {!collapsed && (
-                  <span className="truncate text-sm tracking-wide">
-                    {item.label}
-                  </span>
-                )}
-              </div>
-            );
-
-            if (collapsed) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    <Link href={item.href}>{content}</Link>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    sideOffset={14}
-                    className="font-bold text-xs ml-1 bg-[#1b3a88] text-white border-white/10"
-                  >
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return (
-              <Link key={item.href} href={item.href}>
-                {content}
-              </Link>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {/* Expand Button (when collapsed) */}
         {collapsed && (
-          <div className="p-2 flex justify-center border-t border-white/10">
+          <div className="p-2 flex justify-center border-t border-white/10 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -392,7 +293,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         )}
 
         {/* User Profile */}
-        <div className="p-4 border-t border-white/10 bg-white/5">
+        <div className="p-4 border-t border-white/10 bg-white/5 flex-shrink-0">
           <div
             className={cn(
               "flex items-center gap-3",
