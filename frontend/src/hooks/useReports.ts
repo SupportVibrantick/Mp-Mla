@@ -95,3 +95,41 @@ export function useExportReport() {
     }
   };
 }
+
+export function useDownloadPdfReport() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return async (type: string = "consolidated", params?: Record<string, any>) => {
+    try {
+      const response = await api.get(`/admin/reports/pdf`, {
+        params: { type, ...params },
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: "application/pdf" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${type}-governance-report-${new Date().toISOString().split("T")[0]}.pdf`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "PDF Generated Successfully",
+        description: `Official ${type} PDF report downloaded.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["data-activity"] });
+    } catch {
+      toast({
+        title: "PDF Generation Error",
+        description: "Failed to generate PDF report.",
+        variant: "destructive",
+      });
+    }
+  };
+}
+

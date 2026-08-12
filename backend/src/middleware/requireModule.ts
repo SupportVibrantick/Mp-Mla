@@ -19,7 +19,7 @@ const accessCache = new Map<
   string,
   { codes: Set<string>; expiresAt: number }
 >();
-const CACHE_TTL = 60 * 1000;
+const CACHE_TTL = 5 * 1000;
 
 async function getEnabledModuleCodes(tenantId: string): Promise<Set<string>> {
   const now = Date.now();

@@ -13,6 +13,7 @@ import { z } from "zod";
 import catchAsync from "@/utils/catchAsync.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { createReportPdfStream, generateReportReference } from "../../../services/pdfReportService.js";
 
 const router = Router();
 
@@ -755,6 +756,300 @@ router.get(
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(csv);
+  }),
+);
+
+// ════════════════════════════════════════════════════════
+// UNCAPPED PDF REPORT GENERATION (CONSOLIDATED & SINGLE MODULE)
+// ════════════════════════════════════════════════════════
+
+router.get(
+  "/pdf",
+  requirePermission("reports", "read"),
+  catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
+    const { type = "consolidated", wardId, status, dateFrom, dateTo } = req.query as Record<string, string>;
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        name: true,
+        constituencyName: true,
+        representativeName: true,
+        representativeTitle: true,
+        state: true,
+        district: true,
+      },
+    });
+
+    if (!tenant) {
+      throw new ApiError(404, "Tenant not found");
+    }
+
+    const where: any = { tenantId, isDeleted: false };
+    if (wardId && wardId !== "all") where.wardId = wardId;
+    if (status && status !== "all") where.status = status;
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) where.createdAt.lte = new Date(`${dateTo}T23:59:59Z`);
+    }
+
+    let reportData: any = {};
+    let dateRangeText = dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : dateFrom ? `From ${dateFrom}` : undefined;
+
+    if (type === "consolidated" || type === "ward" || type === "demographic") {
+      const [
+        wards,
+        gByWard,
+        pByWard,
+        iByWard,
+        allDemographics,
+        grievances,
+        projects,
+        departments,
+        institutions,
+        funds,
+        leaders,
+        gByStatus,
+        gByCategory,
+        pByStatus,
+        gDeptCounts,
+      ] = await Promise.all([
+        prisma.ward.findMany({ where: { tenantId, isDeleted: false }, orderBy: { wardNumber: "asc" } }),
+        prisma.grievance.groupBy({ by: ["wardId"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.project.groupBy({
+          by: ["wardId"],
+          where: { tenantId, isDeleted: false },
+          _count: true,
+          _sum: { budgetSanctioned: true },
+        }),
+        prisma.institution.groupBy({ by: ["wardId"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.demographics.findMany({ where: { tenantId, wardAreaId: null } }),
+        prisma.grievance.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
+        prisma.project.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
+        prisma.department.findMany({ where: { tenantId, isDeleted: false }, orderBy: { name: "asc" } }),
+        prisma.institution.findMany({ where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" } }),
+        prisma.fund.findMany({ where: { tenantId, isDeleted: false } }),
+        prisma.leader.findMany({ where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" } }),
+        // Chart aggregations
+        prisma.grievance.groupBy({ by: ["status"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.grievance.groupBy({ by: ["category"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.project.groupBy({ by: ["status"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.grievance.groupBy({
+          by: ["departmentId"],
+          where: { tenantId, isDeleted: false, departmentId: { not: null } },
+          _count: true,
+        }),
+      ]);
+
+      // Build ward data maps
+      const gMap = Object.fromEntries(gByWard.map((g) => [g.wardId, g._count]));
+      const pMap = Object.fromEntries(
+        pByWard.map((p) => [p.wardId, { count: p._count, budget: p._sum.budgetSanctioned || 0 }]),
+      );
+      const iMap = Object.fromEntries(iByWard.map((i) => [i.wardId, i._count]));
+      const demoMap: Record<string, any> = {};
+      allDemographics.forEach((d) => {
+        if (!demoMap[d.wardId]) demoMap[d.wardId] = d;
+      });
+
+      // Dept grievance map
+      const deptGMap = Object.fromEntries(gDeptCounts.map((g) => [g.departmentId!, g._count]));
+      const deptData = departments.map((d) => ({ ...d, totalGrievances: deptGMap[d.id] || 0 }));
+
+      // Enrich ward data
+      const wardData = wards.map((w) => ({
+        ...w,
+        grievances: gMap[w.id] || 0,
+        projects: pMap[w.id]?.count || 0,
+        projectBudget: pMap[w.id]?.budget || 0,
+        institutions: iMap[w.id] || 0,
+        totalVoters: demoMap[w.id]?.totalVoters || Math.round((w.totalPopulation || 0) * 0.65),
+      }));
+
+      // Aggregate demographics
+      const demoAgg = {
+        totalPopulation: 0, maleCount: 0, femaleCount: 0, transgenderCount: 0,
+        age0to6: 0, age7to18: 0, age19to35: 0, age36to60: 0, age60plus: 0,
+        totalHouseholds: 0, bplHouseholds: 0, aplHouseholds: 0,
+        generalCount: 0, obcCount: 0, scCount: 0, stCount: 0, minorityCount: 0, otherCount: 0,
+        totalVoters: 0, maleVoters: 0, femaleVoters: 0, newVotersCount: 0,
+        literacyRate: 0, maleLiteracyRate: 0, femaleLiteracyRate: 0,
+        totalBirths: 0, totalDeaths: 0,
+      };
+      let litCount = 0;
+      allDemographics.forEach((d) => {
+        demoAgg.totalPopulation += d.totalPopulation || 0;
+        demoAgg.maleCount += d.maleCount || 0;
+        demoAgg.femaleCount += d.femaleCount || 0;
+        demoAgg.transgenderCount += d.transgenderCount || 0;
+        demoAgg.age0to6 += d.age0to6 || 0;
+        demoAgg.age7to18 += d.age7to18 || 0;
+        demoAgg.age19to35 += d.age19to35 || 0;
+        demoAgg.age36to60 += d.age36to60 || 0;
+        demoAgg.age60plus += d.age60plus || 0;
+        demoAgg.totalHouseholds += d.totalHouseholds || 0;
+        demoAgg.bplHouseholds += d.bplHouseholds || 0;
+        demoAgg.aplHouseholds += d.aplHouseholds || 0;
+        demoAgg.generalCount += d.generalCount || 0;
+        demoAgg.obcCount += d.obcCount || 0;
+        demoAgg.scCount += d.scCount || 0;
+        demoAgg.stCount += d.stCount || 0;
+        demoAgg.minorityCount += d.minorityCount || 0;
+        demoAgg.otherCount += d.otherCount || 0;
+        demoAgg.totalVoters += d.totalVoters || 0;
+        demoAgg.maleVoters += d.maleVoters || 0;
+        demoAgg.femaleVoters += d.femaleVoters || 0;
+        demoAgg.newVotersCount += d.newVotersCount || 0;
+        demoAgg.totalBirths += d.totalBirths || 0;
+        demoAgg.totalDeaths += d.totalDeaths || 0;
+        if (d.literacyRate) { demoAgg.literacyRate += d.literacyRate; litCount++; }
+        if (d.maleLiteracyRate) demoAgg.maleLiteracyRate += d.maleLiteracyRate;
+        if (d.femaleLiteracyRate) demoAgg.femaleLiteracyRate += d.femaleLiteracyRate;
+      });
+      if (litCount > 0) {
+        demoAgg.literacyRate /= litCount;
+        demoAgg.maleLiteracyRate /= litCount;
+        demoAgg.femaleLiteracyRate /= litCount;
+      }
+
+      // Use ward-level totals as fallback if no demographics records exist
+      if (demoAgg.totalPopulation === 0) {
+        demoAgg.totalPopulation = wardData.reduce((s, w) => s + (w.totalPopulation || 0), 0);
+        demoAgg.maleCount = wardData.reduce((s, w) => s + (w.totalMale || 0), 0);
+        demoAgg.femaleCount = wardData.reduce((s, w) => s + (w.totalFemale || 0), 0);
+        demoAgg.totalHouseholds = wardData.reduce((s, w) => s + (w.totalHouseholds || 0), 0);
+        demoAgg.totalVoters = wardData.reduce((s, w) => s + (w.totalVoters || 0), 0);
+      }
+
+      // Build chart data
+      const chartData: any = {};
+      chartData.grievanceByStatus = gByStatus.map((g) => ({ label: g.status, value: g._count }));
+      chartData.grievanceByCategory = gByCategory.map((g) => ({ label: g.category, value: g._count }));
+      chartData.projectByStatus = pByStatus.map((p) => ({ label: p.status, value: p._count }));
+      chartData.populationByWard = wardData
+        .filter((w) => w.totalPopulation > 0)
+        .map((w) => ({ label: `Ward ${w.wardNumber} - ${w.name}`, value: w.totalPopulation || 0 }));
+      chartData.budgetByWard = wardData
+        .filter((w) => w.projectBudget > 0)
+        .map((w) => ({ label: `Ward ${w.wardNumber} - ${w.name}`, value: w.projectBudget }));
+
+      const totalPop = demoAgg.totalPopulation;
+      const totalHouseholds = demoAgg.totalHouseholds;
+      const totalVoters = demoAgg.totalVoters;
+      const totalBudget = wardData.reduce((s, w) => s + (w.projectBudget || 0), 0);
+      const totalGrievances = grievances.length;
+      const resolvedGrievances = grievances.filter((g) => g.status === "RESOLVED" || g.status === "CLOSED").length;
+
+      reportData = {
+        summary: {
+          totalWards: wardData.length,
+          totalPopulation: totalPop,
+          totalHouseholds,
+          totalVoters,
+          totalGrievances,
+          resolvedGrievances,
+          totalProjects: projects.length,
+          totalBudgetSanctioned: totalBudget,
+          totalInstitutions: institutions.length,
+          totalLeaders: leaders.length,
+          totalDepartments: departments.length,
+        },
+        chartData,
+        demographics: demoAgg,
+        wards: wardData,
+        grievances: type === "consolidated" ? grievances : [],
+        projects: type === "consolidated" ? projects : [],
+        departments: type === "consolidated" ? deptData : [],
+        institutions: type === "consolidated" ? institutions : [],
+        funds: type === "consolidated" ? funds : [],
+      };
+    } else if (type === "grievance") {
+      const [grievances, gByStatus, gByCategory] = await Promise.all([
+        prisma.grievance.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
+        prisma.grievance.groupBy({ by: ["status"], where: { ...where }, _count: true }),
+        prisma.grievance.groupBy({ by: ["category"], where: { ...where }, _count: true }),
+      ]);
+      const resolved = grievances.filter((g) => g.status === "RESOLVED" || g.status === "CLOSED").length;
+      const urgent = grievances.filter((g) => g.priority === "URGENT" || g.priority === "HIGH").length;
+      reportData = {
+        summary: { totalGrievances: grievances.length, resolvedGrievances: resolved, urgentGrievances: urgent },
+        chartData: {
+          grievanceByStatus: gByStatus.map((g) => ({ label: g.status, value: g._count })),
+          grievanceByCategory: gByCategory.map((g) => ({ label: g.category, value: g._count })),
+        },
+        grievances,
+      };
+    } else if (type === "project") {
+      const [projects, pByStatus] = await Promise.all([
+        prisma.project.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
+        prisma.project.groupBy({ by: ["status"], where: { ...where }, _count: true }),
+      ]);
+      const budgetSanctioned = projects.reduce((s, p) => s + (p.budgetSanctioned || 0), 0);
+      const budgetUsed = projects.reduce((s, p) => s + (p.budgetUsed || 0), 0);
+      const completed = projects.filter((p) => p.status === "COMPLETED").length;
+      reportData = {
+        summary: {
+          totalProjects: projects.length, completedProjects: completed,
+          totalBudgetSanctioned: budgetSanctioned, totalBudgetUsed: budgetUsed,
+        },
+        chartData: {
+          projectByStatus: pByStatus.map((p) => ({ label: p.status, value: p._count })),
+        },
+        projects,
+      };
+    } else if (type === "department") {
+      const [departments, gDepts] = await Promise.all([
+        prisma.department.findMany({ where: { tenantId, isDeleted: false }, orderBy: { name: "asc" } }),
+        prisma.grievance.groupBy({
+          by: ["departmentId"],
+          where: { tenantId, isDeleted: false, departmentId: { not: null } },
+          _count: true,
+        }),
+      ]);
+      const gMap = Object.fromEntries(gDepts.map((g) => [g.departmentId!, g._count]));
+      const deptData = departments.map((d) => ({ ...d, totalGrievances: gMap[d.id] || 0 }));
+      reportData = { summary: { totalDepartments: departments.length }, departments: deptData };
+    } else if (type === "institution") {
+      const institutions = await prisma.institution.findMany({
+        where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" },
+      });
+      reportData = { summary: { totalInstitutions: institutions.length }, institutions };
+    } else if (type === "fund") {
+      const funds = await prisma.fund.findMany({ where: { tenantId, isDeleted: false } });
+      const allocated = funds.reduce((s, f) => s + (f.totalAllocated || 0), 0);
+      const utilized = funds.reduce((s, f) => s + (f.totalUtilized || 0), 0);
+      reportData = {
+        summary: { totalFunds: funds.length, totalAllocated: allocated, totalUtilized: utilized },
+        funds,
+      };
+    } else if (type === "leader") {
+      const leaders = await prisma.leader.findMany({
+        where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" },
+      });
+      reportData = { summary: { totalLeaders: leaders.length }, leaders };
+    } else {
+      throw new ApiError(400, `Invalid report type: ${type}`);
+    }
+
+    const referenceNumber = generateReportReference();
+
+    const pdfStream = createReportPdfStream({
+      title: `${type === "consolidated" ? "CONSOLIDATED EXECUTIVE" : type.toUpperCase()} GOVERNANCE REPORT`,
+      type,
+      tenant,
+      generatedBy: req.user?.name || req.user?.email || "Platform Admin",
+      referenceNumber,
+      dateRangeText,
+      data: reportData,
+    });
+
+    const filename = `${type}-governance-report-${new Date().toISOString().split("T")[0]}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    pdfStream.pipe(res);
   }),
 );
 

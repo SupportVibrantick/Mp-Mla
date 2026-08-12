@@ -22,6 +22,7 @@ import {
   Trash2,
   CalendarDays,
   CreditCard,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -64,6 +65,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       items: [
         { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
         { label: "Reports", icon: BarChart3, href: "/reports", module: "reports" },
+        { label: "PDF Reports & Export", icon: FileText, href: "/reports/pdf", module: "reports" },
       ],
     },
     {

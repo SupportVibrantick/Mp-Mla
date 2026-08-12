@@ -56,6 +56,7 @@ import MeetingListPage from "./pages/meetings/MeetingListPage";
 import MeetingFormPage from "./pages/meetings/MeetingFormPage";
 import ProfilePage from "./pages/ProfilePage";
 import BillingPage from "./pages/account/BillingPage";
+import PdfReportsPage from "./pages/reports/PdfReportsPage";
 
 import CompetitorListPage from "./pages/competitors/CompetitorListPage";
 import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
@@ -258,6 +259,11 @@ function Router() {
       <Route path="/leaders/:id">
         <ProtectedRoute module="leaders" action="read">
           <LeaderDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/reports/pdf">
+        <ProtectedRoute module="reports" action="read">
+          <PdfReportsPage />
         </ProtectedRoute>
       </Route>
       <Route path="/reports">

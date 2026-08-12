@@ -18,6 +18,7 @@ import {
   useDemographicReport,
   useMonthlyReport,
   useExportReport,
+  useDownloadPdfReport,
 } from "@/hooks/useReports";
 import { useDataActivityStats } from "@/hooks/useDataActivity";
 import { useWards } from "@/hooks/useWards";
@@ -199,10 +200,12 @@ export default function ReportsPage() {
   const [customFrom, setCustomFrom] = useState<Date>();
   const [customTo, setCustomTo] = useState<Date>();
   const exportReport = useExportReport();
+  const downloadPdf = useDownloadPdfReport();
   const { data: wardsRes } = useWards({ limit: 100 });
   const activityStats = useDataActivityStats();
   const stats = activityStats.data?.data;
-  const wards = wardsRes?.data?.wards || [];
+  const rawWards = wardsRes?.data?.wards || wardsRes?.data || wardsRes;
+  const wards = Array.isArray(rawWards) ? rawWards : [];
   const today = new Date();
 
   const interval = useMemo(() => {
@@ -299,11 +302,20 @@ export default function ReportsPage() {
               Print
             </Button>
             <Button
+              variant="outline"
               size="sm"
               onClick={() => exportReport(active, exportParams)}
             >
               <Download className="h-4 w-4 mr-1.5" />
               Export CSV
+            </Button>
+            <Button
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={() => downloadPdf(active, exportParams)}
+            >
+              <FileText className="h-4 w-4 mr-1.5" />
+              Export PDF
             </Button>
           </div>
         </div>
