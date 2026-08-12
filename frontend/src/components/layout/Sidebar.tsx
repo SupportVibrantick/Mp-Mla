@@ -64,8 +64,18 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       title: "Main Menu",
       items: [
         { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-        { label: "Reports", icon: BarChart3, href: "/reports", module: "reports" },
-        { label: "PDF Reports & Export", icon: FileText, href: "/reports/pdf", module: "reports" },
+        {
+          label: "Reports",
+          icon: BarChart3,
+          href: "/reports",
+          module: "reports",
+        },
+        {
+          label: "Meeting Reports",
+          icon: FileText,
+          href: "/reports/pdf",
+          module: "reports",
+        },
       ],
     },
     {
@@ -204,7 +214,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       items: section.items.filter(
         (item) =>
           !item.module ||
-          (hasModule(item.module) && (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
+          (hasModule(item.module) &&
+            (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
       ),
     }))
     .filter((section) => section.items.length > 0);
@@ -278,13 +289,20 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           {filteredSections.map((section, sectionIdx) => (
             <div key={section.title} className="space-y-1">
               {!collapsed ? (
-                <div className={cn("px-3 pb-1.5 pt-1", sectionIdx > 0 && "pt-3 border-t border-white/10")}>
+                <div
+                  className={cn(
+                    "px-3 pb-1.5 pt-1",
+                    sectionIdx > 0 && "pt-3 border-t border-white/10",
+                  )}
+                >
                   <p className="text-[11px] uppercase font-bold text-white/60 tracking-wider">
                     {section.title}
                   </p>
                 </div>
               ) : (
-                sectionIdx > 0 && <div className="border-t border-white/10 mx-2 my-2" />
+                sectionIdx > 0 && (
+                  <div className="border-t border-white/10 mx-2 my-2" />
+                )
               )}
 
               {section.items.map((item) => {
@@ -301,7 +319,9 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                     <item.icon
                       className={cn(
                         "h-5 w-5 min-w-5",
-                        isActive ? "text-white" : "text-white/80 group-hover:text-white transition-colors",
+                        isActive
+                          ? "text-white"
+                          : "text-white/80 group-hover:text-white transition-colors",
                       )}
                     />
                     {!collapsed && (
@@ -372,7 +392,9 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
             </Avatar>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-extrabold truncate text-white">{user?.name}</p>
+                <p className="text-sm font-extrabold truncate text-white">
+                  {user?.name}
+                </p>
                 <p className="text-xs text-white/70 truncate font-semibold">
                   {user?.role}
                 </p>
@@ -394,4 +416,3 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     </TooltipProvider>
   );
 }
-
