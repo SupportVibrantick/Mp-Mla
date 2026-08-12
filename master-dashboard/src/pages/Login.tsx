@@ -293,7 +293,7 @@ export default function Login() {
           </form>
 
           {/* Quick Fill for Demo */}
-          <div className="mt-8 pt-6 border-t border-slate-200/70 dark:border-slate-800">
+          {/* <div className="mt-8 pt-6 border-t border-slate-200/70 dark:border-slate-800">
             <p className="text-xs font-medium text-slate-400 text-center mb-3.5 tracking-wide">
               Quick fill for demo:
             </p>
@@ -306,7 +306,7 @@ export default function Login() {
                 Platform Admin
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div />
