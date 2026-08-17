@@ -96,9 +96,10 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email, password } = req.body;
+      const normalizedEmail = String(email || "").trim().toLowerCase();
 
       const user = await prisma.platformUser.findUnique({
-        where: { email },
+        where: { email: normalizedEmail },
       });
 
       if (!user) {

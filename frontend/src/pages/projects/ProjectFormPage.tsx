@@ -35,7 +35,12 @@ const formSchema = z.object({
   department: z.string().min(1, "Department required"),
   wardId: z.string().min(1, "Ward required"),
   contractor: z.string().optional(),
-  contractorPhone: z.string().optional(),
+  contractorPhone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+      message: "Enter a valid 10-digit phone number",
+    }),
   startDate: z.string().optional(),
   expectedEndDate: z.string().optional(),
   budgetSanctioned: z.coerce.number().min(0).default(0),
@@ -298,8 +303,20 @@ export default function ProjectFormPage() {
                 <Label>Contractor Phone</Label>
                 <Input
                   {...register("contractorPhone")}
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
                   placeholder="9876543210"
+                  onInput={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    target.value = target.value.replace(/\D/g, "");
+                  }}
                 />
+                {errors.contractorPhone && (
+                  <p className="text-xs text-destructive">
+                    {errors.contractorPhone.message}
+                  </p>
+                )}
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">

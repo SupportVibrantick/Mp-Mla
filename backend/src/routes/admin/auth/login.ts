@@ -25,6 +25,7 @@ export async function login(
 ): Promise<void> {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = String(email || "").trim().toLowerCase();
     const meta = getRequestMeta(req);
     const tenantId = getTenantIdFromLoginRequest(req);
 
@@ -51,7 +52,7 @@ export async function login(
     const matches = tenantId
       ? []
       : await prisma.user.findMany({
-          where: { email },
+          where: { email: normalizedEmail },
           take: 2,
           orderBy: { createdAt: "asc" },
         });
@@ -64,7 +65,7 @@ export async function login(
 
     const user = tenantId
       ? await prisma.user.findFirst({
-          where: { tenantId, email },
+          where: { tenantId, email: normalizedEmail },
         })
       : (matches[0] ?? null);
 

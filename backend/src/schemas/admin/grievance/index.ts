@@ -11,7 +11,13 @@ export const createGrievanceSchema = z.object({
     .enum(["OFFICE", "PHONE", "EMAIL", "ONLINE", "FIELD_VISIT", "SOCIAL_MEDIA"])
     .default("OFFICE"),
   complainantName: z.string().optional().or(z.literal("")),
-  complainantPhone: z.string().optional().or(z.literal("")),
+  complainantPhone: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+      message: "Enter a valid 10-digit phone number",
+    }),
   complainantEmail: z.string().email().optional().or(z.literal("")),
   complainantAddress: z.string().optional(),
   locationAddress: z.string().optional(),
@@ -37,8 +43,17 @@ export const updateGrievanceSchema = z
     priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional(),
     source: z.string().optional(),
     complainantName: z.string().optional(),
-    complainantPhone: z.string().optional(),
-    complainantEmail: z.string().optional(),
+    complainantPhone: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+        message: "Enter a valid 10-digit phone number",
+      }),
+    complainantEmail: z
+      .string()
+      .email("Enter a valid email address")
+      .optional()
+      .or(z.literal("")),
     complainantAddress: z.string().optional(),
     locationAddress: z.string().optional(),
     expectedResolutionDate: z.string().datetime().optional(),

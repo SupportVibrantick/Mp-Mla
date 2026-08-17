@@ -46,8 +46,17 @@ const formSchema = z.object({
   priority: z.string().default("MEDIUM"),
   source: z.string().default("OFFICE"),
   complainantName: z.string().optional(),
-  complainantPhone: z.string().optional(),
-  complainantEmail: z.string().optional(),
+  complainantPhone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+      message: "Enter a valid 10-digit phone number",
+    }),
+  complainantEmail: z
+    .string()
+    .email("Enter a valid email address")
+    .optional()
+    .or(z.literal("")),
   complainantAddress: z.string().optional(),
   locationAddress: z.string().optional(),
   assignedDept: z.string().optional(),
@@ -202,7 +211,14 @@ export default function GrievanceFormPage() {
                 </Label>
                 <Input
                   {...register("complainantPhone")}
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
                   placeholder="9876543210 (optional)"
+                  onInput={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    target.value = target.value.replace(/\D/g, "");
+                  }}
                 />
                 {errors.complainantPhone && (
                   <p className="text-xs text-destructive">
@@ -218,6 +234,11 @@ export default function GrievanceFormPage() {
                   {...register("complainantEmail")}
                   placeholder="email@domain.com"
                 />
+                {errors.complainantEmail && (
+                  <p className="text-xs text-destructive">
+                    {errors.complainantEmail.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>

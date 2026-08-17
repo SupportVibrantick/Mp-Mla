@@ -59,7 +59,8 @@ export default function Login() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(data.email, data.password);
+      const normalizedEmail = data.email.trim().toLowerCase();
+      await login(normalizedEmail, data.password);
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
