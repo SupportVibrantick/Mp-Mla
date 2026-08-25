@@ -4,12 +4,16 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
-
 import catchAsync from "@/utils/catchAsync.js";
+import { recalculateFundTotals } from "./helper.js";
 
 /**
- * PUT /api/admin/fund/:id
- * Updates a fund's totals.
+ * PUT /api/admin/funds/:id
+ * Recalculates a fund's totals from its transactions.
+ *
+ * Financial totals are derived from FundTransaction records and must NOT
+ * be manually overwritten. This endpoint recalculates and returns the
+ * transaction-derived totals instead of accepting arbitrary totals.
  */
 export const updateFunds = catchAsync(async (req, res) => {
   const tenantId = req.tenantId;
@@ -21,9 +25,16 @@ export const updateFunds = catchAsync(async (req, res) => {
   });
   if (!old) throw ApiError.notFound("Fund not found");
 
+  // Totals are always derived from transactions — recalculate them.
+  const totals = await recalculateFundTotals(fundId);
+
   const fund = await prisma.fund.update({
     where: { id: fundId },
-    data: req.body,
+    data: {
+      totalAllocated: totals.totalAllocated,
+      totalReleased: totals.totalReleased,
+      totalUtilized: totals.totalUtilized,
+    },
   });
 
   await createAuditLog({
@@ -32,19 +43,23 @@ export const updateFunds = catchAsync(async (req, res) => {
     action: "UPDATE",
     module: "funds",
     recordId: fund.id,
-    description: `Updated ${fund.fundType} ${fund.financialYear}`,
+    description: `FUND_TOTALS_RECALCULATED: Fund ${fund.fundType} FY ${fund.financialYear} totals synchronized from transactions`,
     oldData: {
       totalAllocated: old.totalAllocated,
       totalReleased: old.totalReleased,
       totalUtilized: old.totalUtilized,
     },
-    newData: req.body,
+    newData: {
+      totalAllocated: fund.totalAllocated,
+      totalReleased: fund.totalReleased,
+      totalUtilized: fund.totalUtilized,
+    },
     ...getRequestMeta(req),
   });
 
   res.json({
     success: true,
-    message: "Fund updated",
+    message: "Fund totals recalculated from transactions",
     data: fund,
   });
 });

@@ -23,7 +23,16 @@ export function requirePermission(module: string, action: string) {
         throw ApiError.unauthorized();
       }
 
-      const hasAccess = await checkPermission(req.user.id, module, action);
+      const tenantId = req.tenantId || req.user.tenantId;
+      if (!tenantId) {
+        throw ApiError.forbidden("No tenant context found for this request.");
+      }
+
+      if (req.user.tenantId && req.user.tenantId !== tenantId) {
+        throw ApiError.forbidden("Access denied: tenant mismatch.");
+      }
+
+      const hasAccess = await checkPermission(req.user.id, tenantId, module, action);
 
       if (!hasAccess) {
         logger.warn(

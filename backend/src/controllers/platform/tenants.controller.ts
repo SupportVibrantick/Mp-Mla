@@ -99,6 +99,8 @@ export const createTenant = async (
       partyLogoUrl,
       termStartDate,
       termEndDate,
+      constituencyType,
+      constituencyCode,
       adminEmail,
       adminPassword,
       adminName,
@@ -149,6 +151,50 @@ export const createTenant = async (
           termStartDate: termStartDate ? new Date(termStartDate) : undefined,
           termEndDate: termEndDate ? new Date(termEndDate) : undefined,
           status: "ACTIVE",
+        },
+      });
+
+      // 1a. Create the Organization profile
+      await tx.organization.create({
+        data: {
+          tenantId: newTenant.id,
+          name: name,
+          tagline: "Serving the Citizens",
+          address,
+          phone,
+          email,
+          website: normalizeOptionalUrl(website),
+          logoUrl: logoUrl || undefined,
+          faviconUrl: faviconUrl || undefined,
+          primaryColor,
+          secondaryColor,
+        },
+      });
+
+      // 1b. Create the Constituency profile
+      const constituency = await tx.constituency.create({
+        data: {
+          tenantId: newTenant.id,
+          name: constituencyName,
+          code: constituencyCode || null,
+          type: constituencyType === "PARLIAMENTARY" ? "PARLIAMENTARY" : "ASSEMBLY",
+          districtId: null,
+          description: `${constituencyName} Constituency`,
+        },
+      });
+
+      // 1c. Create the Representative profile
+      await tx.representativeProfile.create({
+        data: {
+          tenantId: newTenant.id,
+          constituencyId: constituency.id,
+          name: representativeName,
+          title: representativeTitle,
+          photoUrl: representativePhoto || null,
+          partyName: partyName || null,
+          partyLogoUrl: partyLogoUrl || null,
+          termStartDate: termStartDate ? new Date(termStartDate) : null,
+          termEndDate: termEndDate ? new Date(termEndDate) : null,
         },
       });
 
@@ -250,6 +296,12 @@ export const listTenants = async (
               plan: true,
             },
           },
+          constituencies: {
+            select: {
+              type: true,
+              code: true,
+            },
+          },
           _count: {
             select: { users: true },
           },
@@ -282,9 +334,19 @@ export const listTenants = async (
       return sum + getMonthlyRecurringRevenue(subscription);
     }, 0);
 
+    const mappedTenants = tenants.map((t: any) => {
+      const constituency = t.constituencies?.[0];
+      return {
+        ...t,
+        constituencies: undefined,
+        constituencyType: constituency?.type || "ASSEMBLY",
+        constituencyCode: constituency?.code || null,
+      };
+    });
+
     res.status(200).json(
       ApiResponse.success({
-        tenants,
+        tenants: mappedTenants,
         stats: {
           totalTenants: total,
           activeTenants,
@@ -333,6 +395,12 @@ export const getTenantById = async (
             role: "SYSTEM_ADMIN",
           },
         },
+        constituencies: {
+          select: {
+            type: true,
+            code: true,
+          },
+        },
         _count: {
           select: { users: true, grievances: true },
         },
@@ -343,7 +411,15 @@ export const getTenantById = async (
       throw ApiError.notFound("Tenant not found");
     }
 
-    res.status(200).json(ApiResponse.success(tenant));
+    const constituency = (tenant as any).constituencies?.[0];
+    const responseTenant = {
+      ...tenant,
+      constituencies: undefined,
+      constituencyType: constituency?.type || "ASSEMBLY",
+      constituencyCode: constituency?.code || null,
+    };
+
+    res.status(200).json(ApiResponse.success(responseTenant));
   } catch (error) {
     next(error);
   }
@@ -373,9 +449,113 @@ export const updateTenant = async (
     }
     if (updateData.website === "") updateData.website = null;
 
-    const updatedTenant = await prisma.tenant.update({
-      where: { id },
-      data: updateData,
+    const updatedTenant = await prisma.$transaction(async (tx) => {
+      // 1. Update the tenant record
+      const tenant = await tx.tenant.update({
+        where: { id },
+        data: {
+          name: updateData.name,
+          constituencyName: updateData.constituencyName,
+          state: updateData.state,
+          district: updateData.district,
+          address: updateData.address,
+          phone: updateData.phone,
+          email: updateData.email,
+          website: updateData.website,
+          logoUrl: updateData.logoUrl,
+          faviconUrl: updateData.faviconUrl,
+          primaryColor: updateData.primaryColor,
+          secondaryColor: updateData.secondaryColor,
+          representativeName: updateData.representativeName,
+          representativeTitle: updateData.representativeTitle,
+          representativePhoto: updateData.representativePhoto,
+          partyName: updateData.partyName,
+          partyLogoUrl: updateData.partyLogoUrl,
+          termStartDate: updateData.termStartDate,
+          termEndDate: updateData.termEndDate,
+          status: updateData.status,
+        },
+      });
+
+      // 2. Upsert the Organization record
+      await tx.organization.upsert({
+        where: { tenantId: id },
+        update: {
+          name: updateData.name,
+          address: updateData.address,
+          phone: updateData.phone,
+          email: updateData.email,
+          website: updateData.website,
+          logoUrl: updateData.logoUrl,
+          faviconUrl: updateData.faviconUrl,
+          primaryColor: updateData.primaryColor,
+          secondaryColor: updateData.secondaryColor,
+        },
+        create: {
+          tenantId: id,
+          name: updateData.name || tenant.name,
+          address: updateData.address,
+          phone: updateData.phone,
+          email: updateData.email,
+          website: updateData.website,
+          logoUrl: updateData.logoUrl,
+          faviconUrl: updateData.faviconUrl,
+          primaryColor: updateData.primaryColor || "#1e40af",
+          secondaryColor: updateData.secondaryColor || "#3b82f6",
+        },
+      });
+
+      // 3. Upsert the Constituency record
+      let constituency = await tx.constituency.findFirst({
+        where: { tenantId: id },
+      });
+
+      if (constituency) {
+        constituency = await tx.constituency.update({
+          where: { id: constituency.id },
+          data: {
+            name: updateData.constituencyName,
+            type: updateData.constituencyType,
+            code: updateData.constituencyCode,
+          },
+        });
+      } else {
+        constituency = await tx.constituency.create({
+          data: {
+            tenantId: id,
+            name: updateData.constituencyName || tenant.constituencyName,
+            type: updateData.constituencyType || "ASSEMBLY",
+            code: updateData.constituencyCode || null,
+          },
+        });
+      }
+
+      // 4. Upsert the RepresentativeProfile record
+      await tx.representativeProfile.upsert({
+        where: { constituencyId: constituency.id },
+        update: {
+          name: updateData.representativeName,
+          title: updateData.representativeTitle,
+          photoUrl: updateData.representativePhoto,
+          partyName: updateData.partyName,
+          partyLogoUrl: updateData.partyLogoUrl,
+          termStartDate: updateData.termStartDate,
+          termEndDate: updateData.termEndDate,
+        },
+        create: {
+          tenantId: id,
+          constituencyId: constituency.id,
+          name: updateData.representativeName || tenant.representativeName,
+          title: updateData.representativeTitle || tenant.representativeTitle,
+          photoUrl: updateData.representativePhoto,
+          partyName: updateData.partyName,
+          partyLogoUrl: updateData.partyLogoUrl,
+          termStartDate: updateData.termStartDate,
+          termEndDate: updateData.termEndDate,
+        },
+      });
+
+      return tenant;
     });
 
     res.status(200).json(ApiResponse.success(updatedTenant, "Tenant updated successfully"));

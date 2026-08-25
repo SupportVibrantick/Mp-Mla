@@ -20,6 +20,7 @@ export async function listVoters(
       search,
       wardId,
       wardAreaId,
+      boothId,
       boothNo,
       sectionNo,
       gender,
@@ -42,6 +43,7 @@ export async function listVoters(
 
     if (wardId) where.wardId = String(wardId);
     if (wardAreaId) where.wardAreaId = String(wardAreaId);
+    if (boothId) where.boothId = String(boothId);
     if (boothNo) where.boothNo = Number(boothNo);
     if (sectionNo) where.sectionNo = Number(sectionNo);
     if (gender) where.gender = gender as VoterGender;

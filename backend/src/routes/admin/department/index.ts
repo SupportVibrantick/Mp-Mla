@@ -3,15 +3,21 @@ import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
 import {
   getDepartments,
+  getDepartmentGrievances,
+  getDepartmentSlas,
   getDepartmentStats,
+  getDepartmentTasks,
+  getDepartmentUsers,
+  getSingleDepartmentStats,
   getSingleDepartment,
 } from "./read.js";
 import {
   createSchema,
+  upsertDepartmentSlasSchema,
   updateSchema,
 } from "../../../schemas/admin/departments/index.js";
 import { createDepartment } from "./create.js";
-import { updateDepartment, toggleDepartment } from "./update.js";
+import { updateDepartment, toggleDepartment, upsertDepartmentSlas } from "./update.js";
 import { deleteDepartment } from "./delete.js";
 import { bulkCreateDepartments } from "./bulk.js";
 import { exportDepartments } from "./export.js";
@@ -41,6 +47,31 @@ router.get(
   requirePermission("departments", "read"),
   getSingleDepartment,
 );
+router.get(
+  "/:id/users",
+  requirePermission("departments", "read"),
+  getDepartmentUsers,
+);
+router.get(
+  "/:id/grievances",
+  requirePermission("departments", "read"),
+  getDepartmentGrievances,
+);
+router.get(
+  "/:id/tasks",
+  requirePermission("departments", "read"),
+  getDepartmentTasks,
+);
+router.get(
+  "/:id/slas",
+  requirePermission("departments", "read"),
+  getDepartmentSlas,
+);
+router.get(
+  "/:id/stats",
+  requirePermission("departments", "read"),
+  getSingleDepartmentStats,
+);
 
 // create departments
 
@@ -62,6 +93,12 @@ router.patch(
   "/:id/toggle-active",
   requirePermission("departments", "update"),
   toggleDepartment,
+);
+router.put(
+  "/:id/slas",
+  requirePermission("departments", "update"),
+  validate(upsertDepartmentSlasSchema),
+  upsertDepartmentSlas,
 );
 router.delete(
   "/:id",

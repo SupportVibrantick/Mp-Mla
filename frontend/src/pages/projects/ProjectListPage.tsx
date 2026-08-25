@@ -220,7 +220,7 @@ export default function ProjectListPage() {
     if (wardFilter !== "all") p.wardId = wardFilter;
     if (statusFilter !== "all") p.status = statusFilter;
     if (categoryFilter !== "all") p.category = categoryFilter;
-    if (deptFilter !== "all") p.department = deptFilter;
+    if (deptFilter !== "all") p.departmentId = deptFilter;
     return p;
   }, [search, wardFilter, statusFilter, categoryFilter, deptFilter, page]);
 
@@ -805,7 +805,7 @@ export default function ProjectListPage() {
                             <p className="text-[10px] text-muted-foreground font-normal mt-0.5">{p.ward?.name}</p>
                           </TableCell>
                           <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">
-                            {p.departmentInfo?.name || "—"}
+                            {p.department?.name || "—"}
                           </TableCell>
                           <TableCell className="py-4 px-4 align-middle text-right">
                             <p className="font-mono text-xs sm:text-sm font-bold text-foreground">

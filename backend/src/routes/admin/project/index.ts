@@ -11,7 +11,9 @@ import {
   deleteMilestone,
   toggleMilestone,
 } from "./milestones.js";
-import { addUpdate } from "./updates.js";
+import { addUpdate, listUpdates } from "./updates.js";
+import { addAttachment, listAttachments, deleteAttachment } from "./attachments.js";
+import { listProjectTimeline } from "./timeline.js";
 import { bulkCreateProjects } from "./bulk.js";
 import { exportProjects } from "./export.js";
 import {
@@ -21,6 +23,9 @@ import {
   updateEntrySchema,
   milestoneSchema,
 } from "@/schemas/admin/project/index.js";
+import { createUploader, enforceStorageAndTrack } from "../../../lib/upload.js";
+
+const projectUploader = createUploader("attachments");
 
 const router = Router();
 
@@ -77,11 +82,42 @@ router.patch(
 );
 
 // Updates
+router.get(
+  "/:id/updates",
+  requirePermission("projects", "read"),
+  listUpdates,
+);
 router.post(
   "/:id/updates",
   requirePermission("projects", "update"),
   validate(updateEntrySchema),
   addUpdate,
+);
+
+// Attachments
+router.get(
+  "/:id/attachments",
+  requirePermission("projects", "read"),
+  listAttachments,
+);
+router.post(
+  "/:id/attachments",
+  requirePermission("projects", "update"),
+  projectUploader.single("file"),
+  enforceStorageAndTrack,
+  addAttachment,
+);
+router.delete(
+  "/:id/attachments/:attachmentId",
+  requirePermission("projects", "update"),
+  deleteAttachment,
+);
+
+// Timeline
+router.get(
+  "/:id/timeline",
+  requirePermission("projects", "read"),
+  listProjectTimeline,
 );
 
 export default router;

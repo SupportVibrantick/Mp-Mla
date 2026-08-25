@@ -34,3 +34,40 @@ export async function recalculateFundTotals(fundId: string, prismaInstance?: any
   return { totalAllocated, totalReleased, totalUtilized };
 }
 
+/**
+ * Recalculate a project's budget fields (budgetSanctioned/budgetReleased/budgetUsed)
+ * from all linked fund transactions within the same tenant.
+ * Accepts an optional prisma transaction client for atomicity.
+ */
+export async function recalcProjectBudget(
+  projectId: string,
+  tenantId: string,
+  prismaInstance?: any
+) {
+  const p = prismaInstance || prisma;
+  const projTxns = await p.fundTransaction.findMany({
+    where: {
+      projectId,
+      isDeleted: false,
+      fund: { tenantId },
+    },
+    select: { amount: true, type: true },
+  });
+
+  let budgetSanctioned = 0;
+  let budgetReleased = 0;
+  let budgetUsed = 0;
+
+  projTxns.forEach((t: any) => {
+    if (t.type === "ALLOCATION") budgetSanctioned += t.amount;
+    else if (t.type === "RELEASE") budgetReleased += t.amount;
+    else if (t.type === "UTILIZATION") budgetUsed += t.amount;
+  });
+
+  await p.project.update({
+    where: { id: projectId },
+    data: { budgetSanctioned, budgetReleased, budgetUsed },
+  });
+
+  return { budgetSanctioned, budgetReleased, budgetUsed };
+}

@@ -59,7 +59,7 @@ export async function createCouncillor(
       data: { isCurrent: false, untilDate: new Date() },
     });
 
-    const data: any = { ...req.body, wardId, isCurrent: true };
+    const data: any = { tenantId, ...req.body, wardId, isCurrent: true };
     if (data.sinceDate) data.sinceDate = new Date(data.sinceDate);
 
     const councillor = await prisma.wardCouncillor.create({ data });

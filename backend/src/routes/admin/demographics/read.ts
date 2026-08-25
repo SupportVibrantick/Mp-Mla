@@ -31,6 +31,35 @@ export const summaryDemographics = catchAsync(async (req, res) => {
     orderBy: { ward: { wardNumber: "asc" } },
   });
 
+  const voterStats = await prisma.voter.groupBy({
+    by: ["wardId", "gender"],
+    where: { tenantId, isDeleted: false },
+    _count: { id: true },
+  });
+  const voterCountsByWard = new Map<
+    string,
+    { total: number; male: number; female: number }
+  >();
+  for (const stat of voterStats) {
+    const counts = voterCountsByWard.get(stat.wardId) || {
+      total: 0,
+      male: 0,
+      female: 0,
+    };
+    counts.total += stat._count.id;
+    if (stat.gender === "MALE") counts.male = stat._count.id;
+    if (stat.gender === "FEMALE") counts.female = stat._count.id;
+    voterCountsByWard.set(stat.wardId, counts);
+  }
+  for (const demo of wardDemos) {
+    const counts = voterCountsByWard.get(demo.wardId);
+    if (counts) {
+      demo.totalVoters = counts.total;
+      demo.maleVoters = counts.male;
+      demo.femaleVoters = counts.female;
+    }
+  }
+
   // Aggregate totals
   const sum = (field: string) =>
     wardDemos.reduce((s, d) => s + (Number((d as any)[field]) || 0), 0);
@@ -106,12 +135,12 @@ export const summaryDemographics = catchAsync(async (req, res) => {
     { label: "Female", value: totals.femaleCount, color: "#ec4899" },
     ...(totals.transgenderCount > 0
       ? [
-        {
-          label: "Transgender",
-          value: totals.transgenderCount,
-          color: "#a855f7",
-        },
-      ]
+          {
+            label: "Transgender",
+            value: totals.transgenderCount,
+            color: "#a855f7",
+          },
+        ]
       : []),
   ];
 

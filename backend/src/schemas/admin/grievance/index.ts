@@ -23,7 +23,7 @@ export const createGrievanceSchema = z.object({
   locationAddress: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  assignedDept: z.string().optional(),
+  departmentId: z.string().optional(),
   assignedToId: z.string().optional(),
   expectedResolutionDate: z.string().datetime().optional(),
 });
@@ -57,7 +57,7 @@ export const updateGrievanceSchema = z
     complainantAddress: z.string().optional(),
     locationAddress: z.string().optional(),
     expectedResolutionDate: z.string().datetime().optional(),
-    assignedDept: z.string().optional().nullable(),
+    departmentId: z.string().optional().nullable(),
     assignedToId: z.string().optional().nullable(),
   })
   .partial();
@@ -80,7 +80,7 @@ export const changeStatusSchema = z.object({
 
 export const assignSchema = z.object({
   assignedToId: z.string().optional().nullable(),
-  assignedDept: z.string().optional().nullable(),
+  departmentId: z.string().optional().nullable(),
   comment: z.string().optional(),
 });
 

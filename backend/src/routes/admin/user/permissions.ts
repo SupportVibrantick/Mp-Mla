@@ -40,7 +40,7 @@ export const getUserPermissions = catchAsync(
     if (!user) throw ApiError.notFound("User not found");
 
     // Get effective (merged) permissions
-    const effective = await getUserEffectivePermissions(user.id);
+    const effective = await getUserEffectivePermissions(user.id, tenantId);
 
     // Get raw overrides (what admin has explicitly set)
     const overrides = await prisma.userPermission.findMany({

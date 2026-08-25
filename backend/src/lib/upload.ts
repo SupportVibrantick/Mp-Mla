@@ -134,7 +134,9 @@ export async function enforceStorageAndTrack(
   if (Array.isArray(req.files)) {
     files.push(...req.files);
   } else if (req.files && typeof req.files === "object") {
-    for (const arr of Object.values(req.files as Record<string, Express.Multer.File[]>)) {
+    for (const arr of Object.values(
+      req.files as Record<string, Express.Multer.File[]>,
+    )) {
       if (Array.isArray(arr)) files.push(...arr);
     }
   }
@@ -156,10 +158,17 @@ export async function enforceStorageAndTrack(
         try {
           if (fs.existsSync(f.path)) fs.unlinkSync(f.path);
         } catch (unlinkErr) {
-          logger.warn(`Failed to delete over-quota file ${f.path}: ${unlinkErr}`);
+          logger.warn(
+            `Failed to delete over-quota file ${f.path}: ${unlinkErr}`,
+          );
         }
       }
-      next(new ApiError(413, "Storage quota exceeded. Free up space or upgrade your plan."));
+      next(
+        new ApiError(
+          413,
+          "Storage quota exceeded. Free up space or upgrade your plan.",
+        ),
+      );
       return;
     }
 
@@ -183,7 +192,9 @@ export async function trackMulterUploads(req: Request): Promise<void> {
   if (req.file) files.push(req.file);
   if (Array.isArray(req.files)) files.push(...req.files);
   else if (req.files && typeof req.files === "object") {
-    for (const arr of Object.values(req.files as Record<string, Express.Multer.File[]>)) {
+    for (const arr of Object.values(
+      req.files as Record<string, Express.Multer.File[]>,
+    )) {
       if (Array.isArray(arr)) files.push(...arr);
     }
   }
@@ -193,7 +204,10 @@ export async function trackMulterUploads(req: Request): Promise<void> {
   }
 }
 
-export function getUploadPath(filename: string, subDir: string = "attachments"): string {
+export function getUploadPath(
+  filename: string,
+  subDir: string = "attachments",
+): string {
   return `/uploads/${subDir}/${filename}`;
 }
 
@@ -212,4 +226,48 @@ export function deleteFile(filePath: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function createImageUploader(subDir: string) {
+  const dir = path.join(UPLOAD_DIR, subDir);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const imageMimeTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ]);
+
+  return multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => {
+        cb(null, dir);
+      },
+
+      filename: (_req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+
+        const ext = path.extname(file.originalname);
+
+        cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+      },
+    }),
+
+    fileFilter: (_req, file, cb) => {
+      if (!imageMimeTypes.has(file.mimetype)) {
+        cb(new Error("Only JPG, PNG, WEBP and GIF images are allowed."));
+        return;
+      }
+
+      cb(null, true);
+    },
+
+    limits: {
+      fileSize: 5 * 1024 * 1024,
+    },
+  });
 }

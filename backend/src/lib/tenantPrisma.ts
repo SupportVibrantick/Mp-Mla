@@ -14,17 +14,26 @@ const tenantContextStorage = new AsyncLocalStorage<{ tenantId: string }>();
 const TENANT_SCOPED_MODELS = [
   "user",
   "ward",
-  "grievance",
-  "project",
-  "department",
-  "leader",
+  "wardArea",
+  "wardCouncillor",
   "institution",
+  "incharge",
   "institutionRequest",
   "communityGroup",
   "demographics",
+  "grievance",
+  "grievanceTimeline",
+  "grievanceAttachment",
+  "project",
+  "projectMilestone",
+  "projectUpdate",
+  "projectAttachment",
+  "department",
+  "departmentSLA",
+  "leader",
+  "leaderGreeting",
   "fund",
-  "meeting",
-  "competitor",
+  "fundTransaction",
   "task",
   "notification",
   "notificationTemplate",
@@ -32,7 +41,50 @@ const TENANT_SCOPED_MODELS = [
   "tenantSetting",
   "dataActivity",
   "recycleBinEntry",
+  "meeting",
+  "event",
+  "eventTeamMember",
+  "eventAgenda",
+  "eventGuest",
+  "eventAttendance",
+  "eventMedia",
+  "eventReport",
+  "eventTimeline",
+  "appointment",
+  "janataDarbarSession",
+  "janataDarbarToken",
+  "scheme",
+  "schemeApplication",
+  "schemeApplicationDocument",
+  "contact",
+  "crmInteraction",
+  "crmFollowUp",
+  "document",
+  "documentVersion",
+  "documentLink",
+  "correspondence",
+  "correspondenceDocument",
+  "correspondenceTimeline",
+  "competitor",
+  "competitorMetricEntry",
+  "competitorAnalysis",
+  "competitorChat",
   "ownMetricEntry",
+  "voter",
+  "bulkUploadJob",
+  "tenantSubscription",
+  "tenantModuleAccess",
+  "planUpgradeRequest",
+  "payment",
+  "organization",
+  "constituency",
+  "representativeProfile",
+  "district",
+  "block",
+  "townVillage",
+  "pollingLocation",
+  "booth",
+  "geographyImportJob",
 ] as const;
 
 type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];
@@ -46,7 +98,10 @@ export function getCurrentTenantId(): string | undefined {
   return tenantContextStorage.getStore()?.tenantId;
 }
 
-export function runWithTenantContext<T>(tenantId: string, callback: () => T): T {
+export function runWithTenantContext<T>(
+  tenantId: string,
+  callback: () => T,
+): T {
   return tenantContextStorage.run({ tenantId }, callback);
 }
 
@@ -71,12 +126,14 @@ function tenantScopedExtension(getTenantId: () => string | undefined) {
       $allModels: {
         async findMany({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async findFirst({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async findUnique({ model, args, query }: any) {
@@ -96,47 +153,56 @@ function tenantScopedExtension(getTenantId: () => string | undefined) {
         },
         async create({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantData(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantData(args, tenantId);
           return query(args);
         },
         async createMany({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantData(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantData(args, tenantId);
           return query(args);
         },
         async update({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async updateMany({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async delete({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async deleteMany({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async count({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async aggregate({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
         async groupBy({ model, args, query }: any) {
           const tenantId = getTenantId();
-          if (tenantId && isTenantScoped(model)) applyTenantWhere(args, tenantId);
+          if (tenantId && isTenantScoped(model))
+            applyTenantWhere(args, tenantId);
           return query(args);
         },
       },

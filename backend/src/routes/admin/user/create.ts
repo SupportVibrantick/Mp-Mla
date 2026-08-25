@@ -21,7 +21,7 @@ import { assertCanCreateUser } from "../../../lib/quota.js";
 
 export const createUser = catchAsync(async (req: Request, res: Response) => {
   const tenantId = requireTenantId(req);
-  const { name, email, password, phone, role } = req.body;
+  const { name, email, password, phone, role, designation, departmentId } = req.body;
 
   // Check duplicate email
   const existing = await prisma.user.findFirst({
@@ -47,6 +47,14 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
+  if (departmentId) {
+    const department = await prisma.department.findFirst({
+      where: { id: departmentId, tenantId, isDeleted: false, isActive: true },
+      select: { id: true },
+    });
+    if (!department) throw ApiError.notFound("Active department not found");
+  }
+
   await assertCanCreateUser(tenantId);
 
   // Validate complexity
@@ -61,6 +69,8 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       phone: phone || null,
+      designation: designation || null,
+      departmentId: departmentId || null,
       tenantId,
       role,
       status: "ACTIVE",
@@ -74,6 +84,8 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
       phone: true,
       role: true,
       status: true,
+      designation: true,
+      departmentId: true,
       forcePasswordChange: true,
       createdAt: true,
     },
@@ -87,7 +99,7 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
     module: "users",
     recordId: user.id,
     description: `Admin ${req.user!.name} created user ${email} with role ${role}`,
-    newData: { name, email, role, phone },
+    newData: { name, email, role, phone, designation, departmentId },
     ...getRequestMeta(req),
   });
 

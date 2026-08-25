@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import {
   useFund,
-  useUpdateFund,
   useDeleteFund,
   useAddTransaction,
   useDeleteTransaction,
@@ -55,7 +54,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MainLayout } from "@/components/layout/MainLayout";
 import {
   BarChart,
@@ -70,30 +68,25 @@ import {
 import {
   ArrowLeft,
   IndianRupee,
-  Plus,
   Trash2,
-  Edit,
   Loader2,
   FolderKanban,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
+
+const TXN_PAGE_SIZE = 10;
 
 export default function FundDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { data: res, isLoading } = useFund(id);
   const { data: projRes } = useProjects({ limit: 200 });
-  const updateMut = useUpdateFund();
   const deleteMut = useDeleteFund();
   const addTxnMut = useAddTransaction();
   const delTxnMut = useDeleteTransaction();
 
-  const [editDlg, setEditDlg] = useState(false);
-  const [editForm, setEditForm] = useState({
-    totalAllocated: 0,
-    totalReleased: 0,
-    totalUtilized: 0,
-  });
   const [txnDlg, setTxnDlg] = useState(false);
   const [txnType, setTxnType] = useState("ALLOCATION");
   const [txnForm, setTxnForm] = useState({
@@ -102,9 +95,22 @@ export default function FundDetailPage() {
     projectId: "",
     date: "",
   });
+  const [txnPage, setTxnPage] = useState(1);
 
   const f = res?.data;
   const projects = projRes?.data || [];
+
+  // Client-side pagination for the transactions table
+  const allTxns = f?.transactions || [];
+  const totalTxnPages = Math.max(1, Math.ceil(allTxns.length / TXN_PAGE_SIZE));
+  const paginatedTxns = useMemo(
+    () =>
+      allTxns.slice(
+        (txnPage - 1) * TXN_PAGE_SIZE,
+        txnPage * TXN_PAGE_SIZE,
+      ),
+    [allTxns, txnPage],
+  );
 
   if (isLoading)
     return (
@@ -126,20 +132,6 @@ export default function FundDetailPage() {
     );
 
   const info = getFundTypeInfo(f.fundType);
-
-  const openEdit = () => {
-    setEditForm({
-      totalAllocated: f.totalAllocated,
-      totalReleased: f.totalReleased,
-      totalUtilized: f.totalUtilized,
-    });
-    setEditDlg(true);
-  };
-  const saveEdit = async () => {
-    if (!id) return;
-    await updateMut.mutateAsync({ id, data: editForm });
-    setEditDlg(false);
-  };
 
   const openTxn = (type: string) => {
     setTxnType(type);
@@ -167,6 +159,13 @@ export default function FundDetailPage() {
   };
 
   const txnTypeInfo = getTxnTypeInfo(txnType);
+
+  const projectHelperText =
+    txnType === "ALLOCATION"
+      ? "Linking updates the project's sanctioned budget automatically"
+      : txnType === "RELEASE"
+        ? "Linking updates the project's released budget automatically"
+        : "Linking updates the project's used budget automatically";
 
   return (
     <MainLayout title="Fund Detail">
@@ -461,7 +460,7 @@ export default function FundDetailPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(f.transactions || []).length === 0 ? (
+                {allTxns.length === 0 ? (
                   <TableRow className="hover:bg-transparent">
                     <TableCell
                       colSpan={6}
@@ -472,7 +471,7 @@ export default function FundDetailPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  f.transactions.map((t: any) => {
+                  paginatedTxns.map((t: any) => {
                     const tInfo = getTxnTypeInfo(t.type);
                     return (
                       <TableRow key={t.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
@@ -557,73 +556,38 @@ export default function FundDetailPage() {
                 )}
               </TableBody>
             </Table>
+
+            {/* Transaction Pagination */}
+            {allTxns.length > TXN_PAGE_SIZE && (
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Page {txnPage} of {totalTxnPages} ({allTxns.length} total)
+                </p>
+                <div className="flex gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
+                    disabled={txnPage <= 1}
+                    onClick={() => setTxnPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
+                    disabled={txnPage >= totalTxnPages}
+                    onClick={() => setTxnPage((p) => Math.min(totalTxnPages, p + 1))}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Edit Totals Dialog */}
-      <Dialog open={editDlg} onOpenChange={setEditDlg}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Fund Totals</DialogTitle>
-            <DialogDescription>
-              Directly adjust totals (use transactions for tracked changes)
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Allocated (₹)</Label>
-              <Input
-                type="number"
-                value={editForm.totalAllocated}
-                onChange={(e) =>
-                  setEditForm((p) => ({
-                    ...p,
-                    totalAllocated: parseFloat(e.target.value) || 0,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Released (₹)</Label>
-              <Input
-                type="number"
-                value={editForm.totalReleased}
-                onChange={(e) =>
-                  setEditForm((p) => ({
-                    ...p,
-                    totalReleased: parseFloat(e.target.value) || 0,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Utilized (₹)</Label>
-              <Input
-                type="number"
-                value={editForm.totalUtilized}
-                onChange={(e) =>
-                  setEditForm((p) => ({
-                    ...p,
-                    totalUtilized: parseFloat(e.target.value) || 0,
-                  }))
-                }
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDlg(false)}>
-              Cancel
-            </Button>
-            <Button disabled={updateMut.isPending} onClick={saveEdit}>
-              {updateMut.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Add Transaction Dialog */}
       <Dialog open={txnDlg} onOpenChange={setTxnDlg}>
@@ -695,46 +659,47 @@ export default function FundDetailPage() {
                 rows={2}
               />
             </div>
-            {txnType === "UTILIZATION" && (
-              <div className="space-y-2">
-                <Label>
-                  Link to Project{" "}
-                  <span className="text-muted-foreground text-[10px]">
-                    (optional)
-                  </span>
-                </Label>
-                <Select
-                  value={txnForm.projectId || "none"}
-                  onValueChange={(v) =>
-                    setTxnForm((p) => ({
-                      ...p,
-                      projectId: v === "none" ? "" : v,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select project (optional)" />
-                  </SelectTrigger>
+            {/* Project link — offered for ALL transaction types so
+                Allocation, Release and Utilization all update the
+                project's budgetSanctioned / budgetReleased / budgetUsed. */}
+            <div className="space-y-2">
+              <Label>
+                Link to Project{" "}
+                <span className="text-muted-foreground text-[10px]">
+                  (optional)
+                </span>
+              </Label>
+              <Select
+                value={txnForm.projectId || "none"}
+                onValueChange={(v) =>
+                  setTxnForm((p) => ({
+                    ...p,
+                    projectId: v === "none" ? "" : v,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project (optional)" />
+                </SelectTrigger>
 
-                  <SelectContent>
-                    <SelectItem value="none">— No project —</SelectItem>
+                <SelectContent>
+                  <SelectItem value="none">— No project —</SelectItem>
 
-                    {projects.map((p: any) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="font-mono text-[10px] mr-1">
-                          {p.projectCode}
-                        </span>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {projects.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      <span className="font-mono text-[10px] mr-1">
+                        {p.projectCode}
+                      </span>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                <p className="text-[10px] text-muted-foreground">
-                  Linking updates the project's budget utilized automatically
-                </p>
-              </div>
-            )}
+              <p className="text-[10px] text-muted-foreground">
+                {projectHelperText}
+              </p>
+            </div>
             <div className="space-y-2">
               <Label>Transaction Date</Label>
               <Input

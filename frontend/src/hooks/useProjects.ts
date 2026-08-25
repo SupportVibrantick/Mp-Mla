@@ -163,6 +163,41 @@ export function useAddProjectUpdate() {
     "Update Added",
   );
 }
+export function useUpdateMilestone() {
+  return useProjMut(
+    ({ id, msId, data }: any) =>
+      projectsApi.updateMilestone(id, msId, data).then((r) => r.data),
+    "Milestone Updated",
+  );
+}
+export function useProjectAttachments(id?: string) {
+  return useQuery({
+    queryKey: ["projects", id, "attachments"],
+    queryFn: () => projectsApi.listAttachments(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+export function useAddProjectAttachment() {
+  return useProjMut(
+    ({ id, data }: any) =>
+      projectsApi.addAttachment(id, data).then((r) => r.data),
+    "Attachment Added",
+  );
+}
+export function useDeleteProjectAttachment() {
+  return useProjMut(
+    ({ id, attachmentId }: any) =>
+      projectsApi.deleteAttachment(id, attachmentId).then((r) => r.data),
+    "Attachment Deleted",
+  );
+}
+export function useProjectTimeline(id?: string) {
+  return useQuery({
+    queryKey: ["projects", id, "timeline"],
+    queryFn: () => projectsApi.listTimeline(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}
 
 export function useBulkCreateProjects() {
   const qc = useQueryClient();

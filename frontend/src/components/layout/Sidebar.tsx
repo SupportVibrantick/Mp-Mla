@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { cn, getImageUrl } from "@/lib/utils";
 import {
@@ -13,6 +14,7 @@ import {
   Shield,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LogOut,
   BarChart4,
   BarChart,
@@ -23,6 +25,8 @@ import {
   CalendarDays,
   CreditCard,
   FileText,
+  Contact2,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,11 +45,19 @@ interface SidebarProps {
   setCollapsed: (collapsed: boolean) => void;
 }
 
+interface SubNavItem {
+  label: string;
+  href: string;
+  module?: string;
+  group?: string;
+}
+
 interface NavItem {
   label: string;
   icon: React.ElementType;
   href: string;
   module?: string;
+  children?: SubNavItem[];
 }
 
 interface NavSection {
@@ -56,8 +68,19 @@ interface NavSection {
 export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const { user, logout, canAny, hasModule } = useAuth();
   const { settings } = useSystemSettings();
-
   const [location] = useLocation();
+
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(
+    () => {
+      return {
+        "Geography Management": location.startsWith("/geography"),
+      };
+    },
+  );
+
+  const toggleSubmenu = (label: string) => {
+    setOpenSubmenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   const navSections: NavSection[] = [
     {
@@ -82,6 +105,57 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       title: "Constituency & Infra",
       items: [
         {
+          label: "Geography Management",
+          icon: Map,
+          href: "/geography",
+          module: "constituency",
+          children: [
+            { label: "Overview", href: "/geography" },
+            {
+              label: "Constituencies",
+              href: "/geography/constituencies",
+              group: "Electoral",
+            },
+            // { label: "Representative Profile", href: "/geography/representative", group: "Electoral" },
+            {
+              label: "Districts",
+              href: "/geography/districts",
+              group: "Administrative",
+            },
+            {
+              label: "Blocks",
+              href: "/geography/blocks",
+              group: "Administrative",
+            },
+            {
+              label: "Towns / Villages",
+              href: "/geography/town-villages",
+              group: "Administrative",
+            },
+            {
+              label: "Wards",
+              href: "/geography/wards",
+              group: "Administrative",
+              module: "wards",
+            },
+            {
+              label: "Polling Locations",
+              href: "/geography/polling-locations",
+              group: "Polling & Elections",
+            },
+            {
+              label: "Booths",
+              href: "/geography/booths",
+              group: "Polling & Elections",
+            },
+            {
+              label: "Bulk Import",
+              href: "/geography/import",
+              group: "Data Management",
+            },
+          ],
+        },
+        {
           label: "Projects",
           icon: ClipboardList,
           href: "/projects",
@@ -93,7 +167,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           href: "/public-facilities",
           module: "institutions",
         },
-        { label: "Wards", icon: Map, href: "/wards", module: "wards" },
         {
           label: "Departments",
           icon: Landmark,
@@ -105,6 +178,26 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           icon: IndianRupeeIcon,
           href: "/funds",
           module: "funds",
+        },
+        {
+          label: "Schemes",
+          icon: FileText,
+          href: "/schemes",
+          module: "schemes",
+          children: [
+            { label: "All Schemes", href: "/schemes" },
+            {
+              label: "Applications",
+              href: "/schemes/applications",
+              module: "scheme_applications",
+            },
+          ],
+        },
+        {
+          label: "Tasks",
+          icon: ClipboardList,
+          href: "/tasks",
+          module: "tasks",
         },
       ],
     },
@@ -153,16 +246,46 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           module: "grievances",
         },
         {
-          label: "Meetings & Events",
+          label: "Meetings",
           icon: CalendarDays,
           href: "/meetings",
           module: "meeting",
+        },
+        {
+          label: "Events",
+          icon: CalendarDays,
+          href: "/events",
+          module: "meeting",
+        },
+        {
+          label: "Janata Darbar",
+          icon: Users,
+          href: "/janata-darbar",
+          module: "meeting",
+        },
+        {
+          label: "Appointments",
+          icon: CalendarDays,
+          href: "/appointments",
+          module: "appointments",
         },
         {
           label: "Competitor Analysis",
           icon: BarChart4,
           href: "/competitor-analysis",
           module: "competitors",
+        },
+        {
+          label: "CRM Contacts",
+          icon: Contact2,
+          href: "/crm/contacts",
+          module: "crm",
+        },
+        {
+          label: "Documents",
+          icon: FolderOpen,
+          href: "/documents",
+          module: "documents",
         },
       ],
     },
@@ -211,12 +334,27 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const filteredSections = navSections
     .map((section) => ({
       ...section,
-      items: section.items.filter(
-        (item) =>
-          !item.module ||
-          (hasModule(item.module) &&
-            (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
-      ),
+      items: section.items
+        .filter(
+          (item) =>
+            !item.module ||
+            (hasModule(item.module) &&
+              (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
+        )
+        .map((item) => {
+          if (item.children) {
+            return {
+              ...item,
+              children: item.children.filter(
+                (child) =>
+                  !child.module ||
+                  (hasModule(child.module) &&
+                    (canAny(child.module) || user?.role === "SYSTEM_ADMIN")),
+              ),
+            };
+          }
+          return item;
+        }),
     }))
     .filter((section) => section.items.length > 0);
 
@@ -306,28 +444,54 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
               )}
 
               {section.items.map((item) => {
-                const isActive = location === item.href;
+                const hasChildren = !!(
+                  item.children && item.children.length > 0
+                );
+                const isSubmenuOpen = !!openSubmenus[item.label];
+                // An item is active if its href matches location, OR if any of its children matches location
+                const isItemActive =
+                  location === item.href ||
+                  (hasChildren &&
+                    item.children!.some((c) => location === c.href));
+
                 const content = (
                   <div
+                    onClick={(e) => {
+                      if (hasChildren && !collapsed) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleSubmenu(item.label);
+                      }
+                    }}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
-                      isActive
+                      "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 group relative mx-1",
+                      isItemActive && !hasChildren
                         ? "bg-white/15 text-white font-semibold shadow-sm"
                         : "text-white/85 hover:text-white hover:bg-white/10 font-medium",
                     )}
                   >
-                    <item.icon
-                      className={cn(
-                        "h-5 w-5 min-w-5",
-                        isActive
-                          ? "text-white"
-                          : "text-white/80 group-hover:text-white transition-colors",
+                    <div className="flex items-center gap-3">
+                      <item.icon
+                        className={cn(
+                          "h-5 w-5 min-w-5",
+                          isItemActive
+                            ? "text-white"
+                            : "text-white/80 group-hover:text-white transition-colors",
+                        )}
+                      />
+                      {!collapsed && (
+                        <span className="truncate text-sm tracking-wide">
+                          {item.label}
+                        </span>
                       )}
-                    />
-                    {!collapsed && (
-                      <span className="truncate text-sm tracking-wide">
-                        {item.label}
-                      </span>
+                    </div>
+                    {hasChildren && !collapsed && (
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 text-white/70 transition-transform duration-200",
+                          isSubmenuOpen && "transform rotate-180",
+                        )}
+                      />
                     )}
                   </div>
                 );
@@ -353,9 +517,61 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                 }
 
                 return (
-                  <Link key={item.href} href={item.href}>
-                    {content}
-                  </Link>
+                  <div key={item.href} className="space-y-1">
+                    {hasChildren ? (
+                      <div>
+                        {content}
+                        {isSubmenuOpen && (
+                          <div className="space-y-1 mt-1">
+                            {(() => {
+                              let lastGroup = "";
+                              return item.children!.map((child) => {
+                                const showGroupHeader =
+                                  child.group && child.group !== lastGroup;
+                                if (child.group) {
+                                  lastGroup = child.group;
+                                }
+                                const isChildActive = location === child.href;
+                                return (
+                                  <div key={child.href} className="space-y-0.5">
+                                    {showGroupHeader && (
+                                      <div className="text-[9px] font-bold text-white/50 tracking-widest pl-7 pt-2 pb-1 uppercase">
+                                        {child.group}
+                                      </div>
+                                    )}
+                                    <Link href={child.href}>
+                                      <div
+                                        className={cn(
+                                          "flex items-center gap-2 pl-9 pr-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 text-xs mx-1",
+                                          isChildActive
+                                            ? "bg-white/10 text-white font-semibold"
+                                            : "text-white/70 hover:text-white hover:bg-white/5 font-medium",
+                                        )}
+                                      >
+                                        <div
+                                          className={cn(
+                                            "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                                            isChildActive
+                                              ? "bg-white"
+                                              : "bg-white/30",
+                                          )}
+                                        />
+                                        <span className="truncate">
+                                          {child.label}
+                                        </span>
+                                      </div>
+                                    </Link>
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Link href={item.href}>{content}</Link>
+                    )}
+                  </div>
                 );
               })}
             </div>

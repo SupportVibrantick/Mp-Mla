@@ -518,6 +518,12 @@ export const listTenantSubscriptions = async (
               name: true,
               constituencyName: true,
               status: true,
+              constituencies: {
+                select: {
+                  type: true,
+                  code: true,
+                },
+              },
               _count: {
                 select: { users: true },
               },
@@ -528,10 +534,20 @@ export const listTenantSubscriptions = async (
       prisma.tenantSubscription.count({ where }),
     ]);
 
-    const normalized = subscriptions.map((subscription) => ({
-      ...subscription,
-      monthlyRecurringRevenue: getMonthlyRecurringRevenue(subscription),
-    }));
+    const normalized = subscriptions.map((subscription) => {
+      const tenant: any = subscription.tenant;
+      const constituency = tenant?.constituencies?.[0];
+      return {
+        ...subscription,
+        tenant: tenant ? {
+          ...tenant,
+          constituencies: undefined,
+          constituencyType: constituency?.type || "ASSEMBLY",
+          constituencyCode: constituency?.code || null,
+        } : null,
+        monthlyRecurringRevenue: getMonthlyRecurringRevenue(subscription),
+      };
+    });
 
     res.status(200).json(
       ApiResponse.success({
@@ -647,6 +663,12 @@ export const getTenantSubscription = async (
             name: true,
             constituencyName: true,
             status: true,
+            constituencies: {
+              select: {
+                type: true,
+                code: true,
+              },
+            },
             _count: {
               select: { users: true },
             },
@@ -659,9 +681,18 @@ export const getTenantSubscription = async (
       throw ApiError.notFound("Tenant subscription not found");
     }
 
+    const tenant: any = subscription.tenant;
+    const constituency = tenant?.constituencies?.[0];
+
     res.status(200).json(
       ApiResponse.success({
         ...subscription,
+        tenant: tenant ? {
+          ...tenant,
+          constituencies: undefined,
+          constituencyType: constituency?.type || "ASSEMBLY",
+          constituencyCode: constituency?.code || null,
+        } : null,
         monthlyRecurringRevenue: getMonthlyRecurringRevenue(subscription),
       }),
     );
@@ -756,8 +787,6 @@ export const upsertTenantSubscription = async (
           tenant: true,
         },
       });
-
-
 
       if (status === "SUSPENDED") {
         await tx.user.updateMany({

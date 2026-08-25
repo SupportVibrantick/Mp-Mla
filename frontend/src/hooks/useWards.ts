@@ -37,6 +37,8 @@ export interface Ward {
   id: string;
   wardNumber: number;
   name: string;
+  townVillageId?: string | null;
+  townVillage?: { id: string; name: string; type?: string } | null;
   zone?: string;
   status: string;
   areaType: string;

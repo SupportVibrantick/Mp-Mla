@@ -5,6 +5,7 @@ import * as xlsx from "xlsx";
 import ExcelJS from "exceljs";
 import { toast } from "sonner";
 import api from "@/lib/api";
+
 import {
   useWards,
   useWardStats,
@@ -55,6 +56,8 @@ import {
   FileUp,
   Download,
   Trash2,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -93,6 +96,8 @@ export default function WardsPage() {
 
   const { mutateAsync: bulkCreateWards } = useBulkCreateWards();
   const { mutateAsync: deleteWard, isPending: isDeleting } = useDeleteWard();
+
+
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -383,6 +388,8 @@ export default function WardsPage() {
               </Button>
             </PermissionGate>
 
+
+
             <PermissionGate module="wards" action="create">
               <Link to="/wards/new" className="w-full sm:w-auto">
                 <Button className="gap-2 w-full sm:w-auto justify-center bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 text-white font-semibold shadow-md hover:shadow-lg transition-all h-9 text-xs px-4 border-none">
@@ -591,6 +598,7 @@ export default function WardsPage() {
                   <TableRow className="hover:bg-transparent border-b border-border/50">
                     <TableHead className="w-14 h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">#</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward Name</TableHead>
+                    <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Constituency</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Zone</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
                     <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Population</TableHead>
@@ -606,7 +614,7 @@ export default function WardsPage() {
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i} className="border-b border-border/40">
-                        {Array.from({ length: 11 }).map((_, j) => (
+                        {Array.from({ length: 12 }).map((_, j) => (
                           <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -616,7 +624,7 @@ export default function WardsPage() {
                   ) : wards.length === 0 ? (
                     <TableRow className="hover:bg-transparent">
                       <TableCell
-                        colSpan={11}
+                        colSpan={12}
                         className="text-center py-16 text-muted-foreground text-xs font-semibold"
                       >
                         No wards found matching your filters.
@@ -636,6 +644,9 @@ export default function WardsPage() {
                                 {ward.name}
                               </span>
                             </Link>
+                          </TableCell>
+                          <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-foreground">
+                            {ward.constituency?.name || "—"}
                           </TableCell>
                           <TableCell className="py-4 px-4 align-middle">
                             {ward.zone ? (
@@ -834,6 +845,8 @@ export default function WardsPage() {
         }
         onDownloadSample={downloadSampleTemplate}
       />
+
+
     </MainLayout>
   );
 }

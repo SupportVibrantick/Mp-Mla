@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { z } from "zod";
 import { requireTenantId } from "../../../utils/tenant.js";
 
+/**
+ * POST /api/admin/grievance/:id/timeline
+ * Adds a comment/note to the grievance timeline.
+ */
 export async function addTimelineEntry(
   req: Request,
   res: Response,
@@ -18,6 +21,7 @@ export async function addTimelineEntry(
 
     const entry = await prisma.grievanceTimeline.create({
       data: {
+        tenantId,
         grievanceId: grievance.id,
         action: req.body.action,
         comment: req.body.comment,
@@ -31,6 +35,35 @@ export async function addTimelineEntry(
       message: "Timeline entry added",
       data: entry,
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/admin/grievance/:id/timeline
+ * Lists all timeline entries for a grievance.
+ */
+export async function listTimelineEntries(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const grievanceId = req.params.id as string;
+
+    const grievance = await prisma.grievance.findFirst({
+      where: { id: grievanceId, tenantId },
+    });
+    if (!grievance) throw ApiError.notFound("Grievance not found");
+
+    const data = await prisma.grievanceTimeline.findMany({
+      where: { tenantId, grievanceId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }

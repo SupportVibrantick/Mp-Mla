@@ -32,7 +32,7 @@ import { ArrowLeft, Save, FolderKanban, Loader2 } from "lucide-react";
 const formSchema = z.object({
   name: z.string().min(1, "Name required"),
   category: z.string().min(1, "Category required"),
-  department: z.string().min(1, "Department required"),
+  departmentId: z.string().min(1, "Department required"),
   wardId: z.string().min(1, "Ward required"),
   contractor: z.string().optional(),
   contractorPhone: z
@@ -49,8 +49,11 @@ const formSchema = z.object({
   fundType: z.string().default("OTHER"),
   description: z.string().optional(),
   address: z.string().optional(),
+  latitude: z.union([z.coerce.number(), z.string(), z.null()]).optional(),
+  longitude: z.union([z.coerce.number(), z.string(), z.null()]).optional(),
+  completionPercent: z.coerce.number().int().min(0).max(100).default(0),
 });
-type FV = z.infer<typeof formSchema>;
+type FV = z.input<typeof formSchema>;
 
 export default function ProjectFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -79,6 +82,9 @@ export default function ProjectFormPage() {
       budgetReleased: 0,
       budgetUsed: 0,
       fundType: "OTHER",
+      latitude: "",
+      longitude: "",
+      completionPercent: 0,
     },
   });
 
@@ -87,7 +93,7 @@ export default function ProjectFormPage() {
     reset({
       name: p.name,
       category: p.category,
-      department: p.department,
+      departmentId: p.departmentId || "",
       wardId: p.wardId,
       contractor: p.contractor || "",
       contractorPhone: p.contractorPhone || "",
@@ -99,6 +105,9 @@ export default function ProjectFormPage() {
       fundType: p.fundType,
       description: p.description || "",
       address: p.address || "",
+      latitude: p.latitude ?? "",
+      longitude: p.longitude ?? "",
+      completionPercent: p.completionPercent ?? 0,
     });
   }, [p, isEdit, reset]);
 
@@ -107,10 +116,13 @@ export default function ProjectFormPage() {
       ...data,
       startDate: data.startDate
         ? new Date(data.startDate).toISOString()
-        : undefined,
+        : null,
       expectedEndDate: data.expectedEndDate
         ? new Date(data.expectedEndDate).toISOString()
-        : undefined,
+        : null,
+      latitude: data.latitude === "" || data.latitude === null ? null : parseFloat(data.latitude as any),
+      longitude: data.longitude === "" || data.longitude === null ? null : parseFloat(data.longitude as any),
+      completionPercent: parseInt(data.completionPercent as any) || 0,
     };
     if (isEdit && id) {
       await updateMut.mutateAsync({ id, data: payload });
@@ -225,7 +237,7 @@ export default function ProjectFormPage() {
                     <ReactSelect
                       options={wardOptions}
                       value={wardOptions.find(
-                        (opt) => opt.value === field.value,
+                        (opt: any) => opt.value === field.value,
                       )}
                       onChange={(selected) => field.onChange(selected?.value)}
                       placeholder="Search ward..."
@@ -244,13 +256,13 @@ export default function ProjectFormPage() {
                   Department <span className="text-destructive">*</span>
                 </Label>
                 <Controller
-                  name="department"
+                  name="departmentId"
                   control={control}
                   render={({ field }) => (
                     <ReactSelect
                       options={departmentOptions}
                       value={departmentOptions.find(
-                        (opt) => opt.value === field.value,
+                        (opt: any) => opt.value === field.value,
                       )}
                       onChange={(selected) => field.onChange(selected?.value)}
                       placeholder="Select department"
@@ -258,9 +270,9 @@ export default function ProjectFormPage() {
                     />
                   )}
                 />
-                {errors.department && (
+                {errors.departmentId && (
                   <p className="text-xs text-destructive">
-                    {errors.department.message}
+                    {errors.departmentId.message}
                   </p>
                 )}
               </div>
@@ -329,19 +341,54 @@ export default function ProjectFormPage() {
                 <Input type="date" {...register("expectedEndDate")} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Location / Address</Label>
-              <Input
-                {...register("address")}
-                placeholder="Near market road, Sector 5"
-              />
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="md:col-span-2 space-y-2">
+                <Label>Location / Address</Label>
+                <Input
+                  {...register("address")}
+                  placeholder="Near market road, Sector 5"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Latitude</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  {...register("latitude")}
+                  placeholder="e.g. 28.6139"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Longitude</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  {...register("longitude")}
+                  placeholder="e.g. 77.2090"
+                />
+              </div>
             </div>
+            
             <div className="space-y-2">
               <Label>Description</Label>
               <Textarea
                 {...register("description")}
                 placeholder="About this project..."
                 rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs font-semibold">
+                <Label>Completion Progress</Label>
+                <span className="font-mono font-bold text-primary">{watch("completionPercent") || 0}%</span>
+              </div>
+              <Input
+                type="range"
+                min="0"
+                max="100"
+                {...register("completionPercent")}
+                className="h-10 cursor-pointer"
               />
             </div>
           </CardContent>

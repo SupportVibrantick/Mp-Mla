@@ -119,7 +119,11 @@ export default function VoterListPage() {
     return p;
   }, [page, search, selectedWard, selectedGender]);
 
-  const { data: votersRes, isLoading, isFetching } = useQuery({
+  const {
+    data: votersRes,
+    isLoading,
+    isFetching,
+  } = useQuery({
     queryKey: ["voters", queryParams],
     queryFn: () => voterListApi.list(queryParams),
   });
@@ -127,7 +131,9 @@ export default function VoterListPage() {
   const { data: statsRes } = useQuery({
     queryKey: ["voter-stats", selectedWard],
     queryFn: () =>
-      voterListApi.stats(selectedWard !== "ALL" ? { wardId: selectedWard } : {}),
+      voterListApi.stats(
+        selectedWard !== "ALL" ? { wardId: selectedWard } : {},
+      ),
   });
 
   const voters = votersRes?.data?.data?.voters || [];
@@ -150,6 +156,9 @@ export default function VoterListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["voters"] });
       queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["demographics"] });
+      queryClient.invalidateQueries({ queryKey: ["wards"] });
       setIsCreateOpen(false);
       resetForm();
       toast({
@@ -172,6 +181,9 @@ export default function VoterListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["voters"] });
       queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["demographics"] });
+      queryClient.invalidateQueries({ queryKey: ["wards"] });
       setIsEditOpen(false);
       setSelectedVoter(null);
       resetForm();
@@ -194,6 +206,9 @@ export default function VoterListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["voters"] });
       queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["demographics"] });
+      queryClient.invalidateQueries({ queryKey: ["wards"] });
       setDeleteConfirmId(null);
       toast({
         title: "Deleted",
@@ -214,6 +229,9 @@ export default function VoterListPage() {
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["voters"] });
       queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["demographics"] });
+      queryClient.invalidateQueries({ queryKey: ["wards"] });
       setBulkResult(res.data.data);
       setBulkProgress(100);
       toast({
@@ -225,7 +243,8 @@ export default function VoterListPage() {
       setBulkProgress(0);
       toast({
         title: "Bulk Upload Failed",
-        description: err?.response?.data?.message || "Bulk upload process failed",
+        description:
+          err?.response?.data?.message || "Bulk upload process failed",
         variant: "destructive",
       });
     },
@@ -319,7 +338,9 @@ export default function VoterListPage() {
     if (lines.length <= 1) return [];
 
     // Header row
-    const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+    const headers = lines[0]
+      .split(",")
+      .map((h) => h.trim().replace(/^"|"$/g, ""));
     const rows = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -456,7 +477,10 @@ export default function VoterListPage() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast({ title: "Export Started", description: "CSV file downloaded successfully" });
+      toast({
+        title: "Export Started",
+        description: "CSV file downloaded successfully",
+      });
     } catch {
       toast({
         title: "Export Failed",
@@ -476,7 +500,10 @@ export default function VoterListPage() {
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Voter List & Demographics
               </h1>
-              <Badge variant="outline" className="border-primary/30 text-primary font-semibold">
+              <Badge
+                variant="outline"
+                className="border-primary/30 text-primary font-semibold"
+              >
                 Electoral Roll
               </Badge>
             </div>
@@ -522,11 +549,7 @@ export default function VoterListPage() {
               <span>Bulk Upload</span>
             </Button>
 
-            <Button
-              size="sm"
-              onClick={handleOpenCreate}
-              className="gap-1.5"
-            >
+            <Button size="sm" onClick={handleOpenCreate} className="gap-1.5">
               <Plus className="h-4 w-4" />
               <span>Add Voter</span>
             </Button>
@@ -684,29 +707,49 @@ export default function VoterListPage() {
                   <TableHead className="w-[90px]">Gender</TableHead>
                   <TableHead className="w-[70px]">Age</TableHead>
                   <TableHead>Ward & Locality</TableHead>
-                  <TableHead className="text-right w-[100px]">Actions</TableHead>
+                  <TableHead className="text-right w-[100px]">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-10" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-28" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-10" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-28" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16 ml-auto" />
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : voters.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-12 text-muted-foreground"
+                    >
                       <Users className="h-10 w-10 mx-auto mb-2 opacity-40" />
                       <p className="font-semibold text-base">No Voters Found</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Try adjusting your search filters or bulk upload a new voter list CSV
+                        Try adjusting your search filters or bulk upload a new
+                        voter list CSV
                       </p>
                     </TableCell>
                   </TableRow>
@@ -717,7 +760,9 @@ export default function VoterListPage() {
                         {v.voterIdNumber}
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium text-foreground">{v.name}</div>
+                        <div className="font-medium text-foreground">
+                          {v.name}
+                        </div>
                         {v.houseNo && (
                           <div className="text-[11px] text-muted-foreground">
                             H.No: {v.houseNo}
@@ -745,8 +790,8 @@ export default function VoterListPage() {
                             v.gender === "MALE"
                               ? "bg-blue-500/10 text-blue-600 border-blue-200"
                               : v.gender === "FEMALE"
-                              ? "bg-pink-500/10 text-pink-600 border-pink-200"
-                              : "bg-purple-500/10 text-purple-600 border-purple-200"
+                                ? "bg-pink-500/10 text-pink-600 border-pink-200"
+                                : "bg-purple-500/10 text-purple-600 border-purple-200"
                           }
                         >
                           {v.gender}
@@ -757,7 +802,9 @@ export default function VoterListPage() {
                       </TableCell>
                       <TableCell>
                         <div className="text-xs font-medium text-foreground">
-                          {v.ward?.name ? `Ward ${v.ward.wardNumber} - ${v.ward.name}` : " - "}
+                          {v.ward?.name
+                            ? `Ward ${v.ward.wardNumber} - ${v.ward.name}`
+                            : " - "}
                         </div>
                         {v.locality && (
                           <div className="text-[11px] text-muted-foreground">
@@ -796,7 +843,8 @@ export default function VoterListPage() {
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between p-4 border-t border-border/50 text-xs">
               <span className="text-muted-foreground">
-                Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+                Showing page {pagination.page} of {pagination.totalPages} (
+                {pagination.total} total)
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -873,7 +921,10 @@ export default function VoterListPage() {
                 placeholder="e.g. ABC1234567"
                 value={form.voterIdNumber}
                 onChange={(e) =>
-                  setForm((p) => ({ ...p, voterIdNumber: e.target.value.toUpperCase() }))
+                  setForm((p) => ({
+                    ...p,
+                    voterIdNumber: e.target.value.toUpperCase(),
+                  }))
                 }
               />
             </div>
@@ -883,7 +934,9 @@ export default function VoterListPage() {
               <Input
                 placeholder="Constituent Name"
                 value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, name: e.target.value }))
+                }
               />
             </div>
 
@@ -910,7 +963,9 @@ export default function VoterListPage() {
                 type="number"
                 placeholder="Age in years"
                 value={form.age}
-                onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, age: e.target.value }))
+                }
               />
             </div>
 
@@ -950,7 +1005,9 @@ export default function VoterListPage() {
                 type="number"
                 placeholder="e.g. 12"
                 value={form.boothNo}
-                onChange={(e) => setForm((p) => ({ ...p, boothNo: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, boothNo: e.target.value }))
+                }
               />
             </div>
 
@@ -972,7 +1029,9 @@ export default function VoterListPage() {
                 type="number"
                 placeholder="e.g. 101"
                 value={form.slNo}
-                onChange={(e) => setForm((p) => ({ ...p, slNo: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, slNo: e.target.value }))
+                }
               />
             </div>
 
@@ -981,7 +1040,9 @@ export default function VoterListPage() {
               <Input
                 placeholder="House/Flat number"
                 value={form.houseNo}
-                onChange={(e) => setForm((p) => ({ ...p, houseNo: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, houseNo: e.target.value }))
+                }
               />
             </div>
 
@@ -990,7 +1051,9 @@ export default function VoterListPage() {
               <Input
                 placeholder="Colony / Sector Name"
                 value={form.locality}
-                onChange={(e) => setForm((p) => ({ ...p, locality: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, locality: e.target.value }))
+                }
               />
             </div>
 
@@ -999,7 +1062,9 @@ export default function VoterListPage() {
               <Input
                 placeholder="Full residential address"
                 value={form.address}
-                onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, address: e.target.value }))
+                }
               />
             </div>
 
@@ -1008,7 +1073,9 @@ export default function VoterListPage() {
               <Input
                 placeholder="10-digit mobile number"
                 value={form.phone}
-                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, phone: e.target.value }))
+                }
               />
             </div>
 
@@ -1022,7 +1089,10 @@ export default function VoterListPage() {
                 }
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <Label htmlFor="isDisabled" className="text-xs cursor-pointer font-medium">
+              <Label
+                htmlFor="isDisabled"
+                className="text-xs cursor-pointer font-medium"
+              >
                 Disabled / Special Assistance Voter
               </Label>
             </div>
@@ -1070,7 +1140,8 @@ export default function VoterListPage() {
               <span>Scalable Bulk Ingestion (1M+ Records)</span>
             </DialogTitle>
             <DialogDescription>
-              Upload voter electoral rolls in Excel (.xlsx) or CSV format. Batches are processed in high-throughput chunks of 5,000 records.
+              Upload voter electoral rolls in Excel (.xlsx) or CSV format.
+              Batches are processed in high-throughput chunks of 5,000 records.
             </DialogDescription>
           </DialogHeader>
 
@@ -1080,7 +1151,8 @@ export default function VoterListPage() {
               <div className="flex items-center gap-2 text-emerald-800">
                 <FileSpreadsheet className="h-4 w-4 flex-shrink-0" />
                 <span>
-                  Download sample templates pre-configured with interactive dropdown validation lists for Wards, Gender, & Relations.
+                  Download sample templates pre-configured with interactive
+                  dropdown validation lists for Wards, Gender, & Relations.
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -1090,14 +1162,17 @@ export default function VoterListPage() {
                   onClick={handleDownloadSampleExcel}
                   className="bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-100 text-xs h-7 gap-1"
                 >
-                  <FileSpreadsheet className="h-3 w-3" /> Download Excel (.xlsx) Template
+                  <FileSpreadsheet className="h-3 w-3" /> Download Excel (.xlsx)
+                  Template
                 </Button>
               </div>
             </div>
 
             {/* File Input */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Select Excel or CSV File (.xlsx, .xls, .csv)</Label>
+              <Label className="text-xs font-semibold">
+                Select Excel or CSV File (.xlsx, .xls, .csv)
+              </Label>
               <Input
                 type="file"
                 accept=".xlsx,.xls,.csv"
@@ -1108,7 +1183,11 @@ export default function VoterListPage() {
               />
               {bulkFile && (
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Selected file: <span className="font-mono font-semibold">{bulkFile.name}</span> ({(bulkFile.size / 1024).toFixed(1)} KB)
+                  Selected file:{" "}
+                  <span className="font-mono font-semibold">
+                    {bulkFile.name}
+                  </span>{" "}
+                  ({(bulkFile.size / 1024).toFixed(1)} KB)
                 </p>
               )}
             </div>
@@ -1116,7 +1195,9 @@ export default function VoterListPage() {
             {/* Or Paste CSV Raw Text */}
             {!bulkFile && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Or Paste CSV Text directly</Label>
+                <Label className="text-xs font-semibold">
+                  Or Paste CSV Text directly
+                </Label>
                 <textarea
                   rows={4}
                   placeholder={`voterIdNumber,wardNumber,name,gender,relativeName\nABC1234567,1,Rajesh Kumar,MALE,Suresh Kumar`}
@@ -1143,20 +1224,36 @@ export default function VoterListPage() {
               <div className="space-y-3 pt-2">
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
                   <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl">
-                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Total</span>
-                    <span className="text-base font-bold">{bulkResult.totalRows}</span>
+                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
+                      Total
+                    </span>
+                    <span className="text-base font-bold">
+                      {bulkResult.totalRows}
+                    </span>
                   </div>
                   <div className="bg-emerald-50 text-emerald-800 p-2 rounded-xl">
-                    <span className="block text-[10px] uppercase font-semibold">Success</span>
-                    <span className="text-base font-bold">{bulkResult.successCount}</span>
+                    <span className="block text-[10px] uppercase font-semibold">
+                      Success
+                    </span>
+                    <span className="text-base font-bold">
+                      {bulkResult.successCount}
+                    </span>
                   </div>
                   <div className="bg-amber-50 text-amber-800 p-2 rounded-xl">
-                    <span className="block text-[10px] uppercase font-semibold">Duplicates</span>
-                    <span className="text-base font-bold">{bulkResult.duplicateCount}</span>
+                    <span className="block text-[10px] uppercase font-semibold">
+                      Duplicates
+                    </span>
+                    <span className="text-base font-bold">
+                      {bulkResult.duplicateCount}
+                    </span>
                   </div>
                   <div className="bg-rose-50 text-rose-800 p-2 rounded-xl">
-                    <span className="block text-[10px] uppercase font-semibold">Failed</span>
-                    <span className="text-base font-bold">{bulkResult.failedCount}</span>
+                    <span className="block text-[10px] uppercase font-semibold">
+                      Failed
+                    </span>
+                    <span className="text-base font-bold">
+                      {bulkResult.failedCount}
+                    </span>
                   </div>
                 </div>
 
@@ -1188,7 +1285,11 @@ export default function VoterListPage() {
                                 {err.voterIdNumber || " - "}
                               </TableCell>
                               <TableCell className="text-rose-700">
-                                {err.field && <span className="font-semibold mr-1">[{err.field}]:</span>}
+                                {err.field && (
+                                  <span className="font-semibold mr-1">
+                                    [{err.field}]:
+                                  </span>
+                                )}
                                 {err.error}
                               </TableCell>
                             </TableRow>
@@ -1203,15 +1304,14 @@ export default function VoterListPage() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsBulkOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsBulkOpen(false)}>
               Close
             </Button>
             <Button
               onClick={handleProcessBulkUpload}
-              disabled={bulkMutation.isPending || (!bulkFile && !bulkRawText.trim())}
+              disabled={
+                bulkMutation.isPending || (!bulkFile && !bulkRawText.trim())
+              }
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {bulkMutation.isPending && (
@@ -1237,7 +1337,9 @@ export default function VoterListPage() {
               <span>Confirm Soft-Delete</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Are you sure you want to soft-delete this voter record? The voter will be marked as DELETED and ward demographics will be automatically recalculated.
+              Are you sure you want to soft-delete this voter record? The voter
+              will be marked as DELETED and ward demographics will be
+              automatically recalculated.
             </DialogDescription>
           </DialogHeader>
 

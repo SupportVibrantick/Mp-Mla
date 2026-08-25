@@ -5,7 +5,10 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
-import { sendAdminNotification, buildActivityEmailHtml } from "../../../lib/email.js";
+import {
+  sendAdminNotification,
+  buildActivityEmailHtml,
+} from "../../../lib/email.js";
 import { VoterGender, Prisma } from "@prisma/client";
 import logger from "../../../utils/logger.js";
 import { syncVoterDemographics } from "./demographicsSync.js";
@@ -77,7 +80,10 @@ function getRowValue(row: any, ...aliases: string[]): any {
   for (const alias of aliases) {
     const target = alias.toLowerCase().replace(/[^a-z0-9]/g, "");
     for (const k of keys) {
-      const cleanK = k.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+      const cleanK = k
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
       if (
         cleanK === target &&
         row[k] !== undefined &&
@@ -137,7 +143,8 @@ export async function bulkUploadVoters(
     if (!Array.isArray(rawRows) || rawRows.length === 0) {
       res.status(400).json({
         success: false,
-        message: "Request body must contain a non-empty 'rows' array (or be a JSON array).",
+        message:
+          "Request body must contain a non-empty 'rows' array (or be a JSON array).",
       });
       return;
     }
@@ -173,9 +180,7 @@ export async function bulkUploadVoters(
     ]);
 
     const wardByNumber = new Map(allWards.map((w) => [w.wardNumber, w]));
-    const wardByName = new Map(
-      allWards.map((w) => [w.name.toLowerCase(), w]),
-    );
+    const wardByName = new Map(allWards.map((w) => [w.name.toLowerCase(), w]));
     const areaByWardAndName = new Map(
       allAreas.map((a) => [`${a.wardId}__${a.name.toLowerCase()}`, a.id]),
     );
@@ -199,7 +204,14 @@ export async function bulkUploadVoters(
 
       // Required: voterIdNumber
       const voterIdNumber = safeString(
-        getRowValue(row, "voterIdNumber", "voterId", "epicNo", "epicNumber", "voter_id_number")
+        getRowValue(
+          row,
+          "voterIdNumber",
+          "voterId",
+          "epicNo",
+          "epicNumber",
+          "voter_id_number",
+        ),
       );
       if (!voterIdNumber) {
         errors.push({
@@ -235,7 +247,7 @@ export async function bulkUploadVoters(
 
       // Required: name
       const name = safeString(
-        getRowValue(row, "name", "voterName", "voter_name", "fullname")
+        getRowValue(row, "name", "voterName", "voter_name", "fullname"),
       );
       if (!name) {
         errors.push({
@@ -261,10 +273,20 @@ export async function bulkUploadVoters(
       }
 
       // Required: wardNumber (resolve to wardId)
-      const rawWardNumber = getRowValue(row, "wardNumber", "wardNo", "ward_number", "ward");
+      const rawWardNumber = getRowValue(
+        row,
+        "wardNumber",
+        "wardNo",
+        "ward_number",
+        "ward",
+      );
       let wardId: string | null = null;
 
-      if (rawWardNumber !== undefined && rawWardNumber !== null && rawWardNumber !== "") {
+      if (
+        rawWardNumber !== undefined &&
+        rawWardNumber !== null &&
+        rawWardNumber !== ""
+      ) {
         const wNum = parseInt(String(rawWardNumber), 10);
         if (!isNaN(wNum)) {
           const ward = wardByNumber.get(wNum);
@@ -289,12 +311,16 @@ export async function bulkUploadVoters(
       }
 
       // Optional: wardAreaName → resolve to wardAreaId
-      const rawWardAreaName = getRowValue(row, "wardAreaName", "wardArea", "ward_area_name");
+      const rawWardAreaName = getRowValue(
+        row,
+        "wardAreaName",
+        "wardArea",
+        "ward_area_name",
+      );
       let wardAreaId: string | null = null;
       if (rawWardAreaName) {
         const areaName = String(rawWardAreaName).trim().toLowerCase();
-        wardAreaId =
-          areaByWardAndName.get(`${wardId}__${areaName}`) || null;
+        wardAreaId = areaByWardAndName.get(`${wardId}__${areaName}`) || null;
       }
 
       // Build validated record
@@ -303,19 +329,41 @@ export async function bulkUploadVoters(
         wardId,
         wardAreaId,
         voterIdNumber,
-        slNo: safeInt(getRowValue(row, "slNo", "serialNo", "sl_no", "sno", "srno")) ?? null,
-        sectionNo: safeInt(getRowValue(row, "sectionNo", "section_no", "section")) ?? null,
-        boothNo: safeInt(getRowValue(row, "boothNo", "booth_no", "booth")) ?? null,
+        slNo:
+          safeInt(
+            getRowValue(row, "slNo", "serialNo", "sl_no", "sno", "srno"),
+          ) ?? null,
+        sectionNo:
+          safeInt(getRowValue(row, "sectionNo", "section_no", "section")) ??
+          null,
+        boothNo:
+          safeInt(getRowValue(row, "boothNo", "booth_no", "booth")) ?? null,
         name,
-        relativeName: safeString(getRowValue(row, "relativeName", "guardianName", "fatherName", "husbandName")) || null,
-        relationType: normalizeRelationType(getRowValue(row, "relationType", "relation")),
+        relativeName:
+          safeString(
+            getRowValue(
+              row,
+              "relativeName",
+              "guardianName",
+              "fatherName",
+              "husbandName",
+            ),
+          ) || null,
+        relationType: normalizeRelationType(
+          getRowValue(row, "relationType", "relation"),
+        ),
         gender,
         age: safeInt(getRowValue(row, "age")) ?? null,
-        houseNo: safeString(getRowValue(row, "houseNo", "hNo", "house_no")) || null,
+        houseNo:
+          safeString(getRowValue(row, "houseNo", "hNo", "house_no")) || null,
         address: safeString(getRowValue(row, "address", "fullAddress")) || null,
-        locality: safeString(getRowValue(row, "locality", "area", "colony")) || null,
-        phone: safeString(getRowValue(row, "phone", "mobile", "contact")) || null,
-        isDisabled: normalizeBoolean(getRowValue(row, "isDisabled", "disabled", "is_disabled")),
+        locality:
+          safeString(getRowValue(row, "locality", "area", "colony")) || null,
+        phone:
+          safeString(getRowValue(row, "phone", "mobile", "contact")) || null,
+        isDisabled: normalizeBoolean(
+          getRowValue(row, "isDisabled", "disabled", "is_disabled"),
+        ),
         uploadBatchId: job.id,
       };
 
@@ -408,11 +456,7 @@ export async function bulkUploadVoters(
 
     // ─── 6. Auto-update Demographics voter counts ─────────
     if (successCount > 0) {
-      try {
-        await syncVoterDemographics(tenantId);
-      } catch (err) {
-        logger.error(`Failed to sync voter demographics: ${(err as Error).message}`);
-      }
+      await syncVoterDemographics(tenantId);
     }
 
     // ─── 7. Respond ───────────────────────────────────────

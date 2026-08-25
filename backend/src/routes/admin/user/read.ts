@@ -12,16 +12,18 @@ import { requireTenantId } from "../../../utils/tenant.js";
 export const listUsers = catchAsync(async (req: Request, res: Response) => {
   const tenantId = requireTenantId(req);
   const { page, limit, skip } = parsePagination(req.query);
-  const { role, status, search } = req.query as Record<string, string>;
+  const { role, status, departmentId, search } = req.query as Record<string, string>;
 
   const where: any = { tenantId };
   if (role) where.role = role;
   if (status) where.status = status;
+  if (departmentId && departmentId !== "all") where.departmentId = departmentId;
   if (search) {
     where.OR = [
       { name: { contains: search, mode: "insensitive" } },
       { email: { contains: search, mode: "insensitive" } },
       { phone: { contains: search, mode: "insensitive" } },
+      { designation: { contains: search, mode: "insensitive" } },
     ];
   }
 
@@ -35,6 +37,9 @@ export const listUsers = catchAsync(async (req: Request, res: Response) => {
         phone: true,
         role: true,
         status: true,
+        designation: true,
+        departmentId: true,
+        departmentRef: { select: { id: true, name: true, code: true } },
         avatarUrl: true,
         lastLoginAt: true,
         forcePasswordChange: true,
@@ -89,6 +94,9 @@ export const getUser = catchAsync(async (req: Request, res: Response) => {
       phone: true,
       role: true,
       status: true,
+      designation: true,
+      departmentId: true,
+      departmentRef: { select: { id: true, name: true, code: true } },
       avatarUrl: true,
       lastLoginAt: true,
       lastLoginIp: true,

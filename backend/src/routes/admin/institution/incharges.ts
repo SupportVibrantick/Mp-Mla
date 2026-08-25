@@ -146,7 +146,7 @@ export async function createIncharge(
     const institutionId = req.params.institutionId as string;
     const inst = await getInstitutionOrThrow(institutionId, tenantId);
 
-    const data: any = { ...req.body, institutionId };
+    const data: any = { ...req.body, institutionId, tenantId };
     if (data.email === "") delete data.email;
     if (data.adharNumber === "") delete data.adharNumber;
     if (data.dateOfBirth) data.dateOfBirth = new Date(data.dateOfBirth);

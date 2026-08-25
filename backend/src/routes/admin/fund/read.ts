@@ -1,11 +1,10 @@
 import prisma from "../../../lib/prisma.js";
-
 import { ApiError } from "../../../utils/ApiError.js";
 import catchAsync from "@/utils/catchAsync.js";
 import { getCurrentFY } from "./helper.js";
 
 /**
- * GET /api/admin/fund
+ * GET /api/admin/funds
  * Lists all funds with optional filtering.
  */
 export const getFunds = catchAsync(async (req, res) => {
@@ -29,6 +28,7 @@ export const getFunds = catchAsync(async (req, res) => {
 
   const enriched = funds.map((f) => ({
     ...f,
+    availableBalance: Math.max(0, f.totalReleased - f.totalUtilized),
     releasePct:
       f.totalAllocated > 0
         ? Math.round((f.totalReleased / f.totalAllocated) * 100)
@@ -45,7 +45,7 @@ export const getFunds = catchAsync(async (req, res) => {
 });
 
 /**
- * GET /api/admin/fund/overview
+ * GET /api/admin/funds/stats
  * Gets dashboard overview for a financial year.
  */
 export const overviewDashboard = catchAsync(async (req, res) => {
@@ -67,12 +67,24 @@ export const overviewDashboard = catchAsync(async (req, res) => {
   const totalReleased = funds.reduce((s, f) => s + f.totalReleased, 0);
   const totalUtilized = funds.reduce((s, f) => s + f.totalUtilized, 0);
 
+  // Projects Funded: count of unique projects linked to these fund transactions
+  const projectFundedGroup = await prisma.fundTransaction.groupBy({
+    by: ["projectId"],
+    where: {
+      fund: { tenantId, financialYear: fy },
+      projectId: { not: null },
+      isDeleted: false,
+    },
+  });
+  const projectsFunded = projectFundedGroup.length;
+
   const byType = funds.map((f) => ({
     id: f.id,
     fundType: f.fundType,
     allocated: f.totalAllocated,
     released: f.totalReleased,
     utilized: f.totalUtilized,
+    availableBalance: Math.max(0, f.totalReleased - f.totalUtilized),
     transactionCount: f._count.transactions,
     releasePct:
       f.totalAllocated > 0
@@ -157,8 +169,10 @@ export const overviewDashboard = catchAsync(async (req, res) => {
       totalAllocated,
       totalReleased,
       totalUtilized,
+      availableBalance: Math.max(0, totalReleased - totalUtilized),
       unreleasedAmount: Math.max(0, totalAllocated - totalReleased),
       unusedAmount: Math.max(0, totalReleased - totalUtilized),
+      projectsFunded,
       releasePct:
         totalAllocated > 0
           ? Math.round((totalReleased / totalAllocated) * 100)
@@ -177,7 +191,7 @@ export const overviewDashboard = catchAsync(async (req, res) => {
 });
 
 /**
- * GET /api/admin/fund/:id
+ * GET /api/admin/funds/:id
  * Gets a single fund with its transactions.
  */
 export const getSingleFunds = catchAsync(async (req, res) => {
@@ -277,8 +291,9 @@ export const getSingleFunds = catchAsync(async (req, res) => {
       byType,
       monthlyBreakdown,
       projectUsage: Object.values(projectUsage).sort(
-        (a, b) => b.total - a.total,
+        (a, b) => b.total - a.total
       ),
+      availableBalance: Math.max(0, fund.totalReleased - fund.totalUtilized),
       releasePct:
         fund.totalAllocated > 0
           ? Math.round((fund.totalReleased / fund.totalAllocated) * 100)
@@ -290,4 +305,21 @@ export const getSingleFunds = catchAsync(async (req, res) => {
       unusedAmount: Math.max(0, fund.totalReleased - fund.totalUtilized),
     },
   });
+});
+
+/**
+ * GET /api/admin/funds/:id/transactions
+ * Lists transactions for a specific fund.
+ */
+export const getFundTransactions = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId;
+  if (!tenantId) throw ApiError.badRequest("Tenant context is required");
+
+  const fundId = req.params.id as string;
+  const transactions = await prisma.fundTransaction.findMany({
+    where: { fundId, tenantId, isDeleted: false },
+    orderBy: { date: "desc" },
+  });
+
+  res.json({ success: true, data: transactions });
 });

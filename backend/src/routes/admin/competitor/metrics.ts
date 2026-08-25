@@ -92,6 +92,7 @@ export async function submitCompetitorMetrics(
             },
           },
           create: {
+            tenantId,
             competitorId: id,
             category: m.category,
             metricKey: m.metricKey,

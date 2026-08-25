@@ -111,6 +111,7 @@ export async function runSubscriptionSweep() {
     if (!existingPending && amount > 0) {
       await prisma.payment.create({
         data: {
+          tenantId: sub.tenantId,
           subscriptionId: sub.id,
           amount,
           status: "PENDING",

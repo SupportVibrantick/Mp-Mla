@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import api from "@/lib/api";
 import { useParams, useLocation, Link } from "wouter";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,13 +69,13 @@ import {
   Users,
 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faOm, 
-  faStarAndCrescent, 
-  faKhanda, 
-  faCross, 
-  faDharmachakra, 
-  faHandsPraying 
+import {
+  faOm,
+  faStarAndCrescent,
+  faKhanda,
+  faCross,
+  faDharmachakra,
+  faHandsPraying,
 } from "@fortawesome/free-solid-svg-icons";
 import { useToast } from "@/hooks/use-toast";
 
@@ -91,6 +92,8 @@ const wardSchema = z.object({
   pincode: z.string().optional(),
   description: z.string().optional(),
   establishedDate: z.string().optional(),
+  constituencyId: z.string().optional().nullable(),
+  townVillageId: z.string().optional().nullable(),
 });
 
 type WardFormValues = z.infer<typeof wardSchema>;
@@ -221,6 +224,53 @@ export default function WardFormPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const isEdit = !!id;
+  const [constituencies, setConstituencies] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [townVillages, setTownVillages] = useState<any[]>([]);
+  const [selectedDistrictId, setSelectedDistrictId] = useState<string>("");
+
+  useEffect(() => {
+    const fetchConstituencies = async () => {
+      try {
+        const res = await api.get(
+          "/admin/constituency/constituencies/list?limit=100",
+        );
+        const list = res.data?.data;
+        setConstituencies(Array.isArray(list) ? list : list?.items || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    const fetchDistricts = async () => {
+      try {
+        const res = await api.get("/admin/constituency/districts?limit=100");
+        const list = res.data?.data;
+        setDistricts(Array.isArray(list) ? list : list?.items || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchConstituencies();
+    fetchDistricts();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDistrictId) {
+      setTownVillages([]);
+      return;
+    }
+    const fetchTownVillages = async () => {
+      try {
+        const res = await api.get(
+          `/admin/constituency/districts/${selectedDistrictId}/town-villages`,
+        );
+        setTownVillages(res.data?.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchTownVillages();
+  }, [selectedDistrictId]);
 
   // ─── API Hooks ────────────────────────────────────────
 
@@ -255,6 +305,8 @@ export default function WardFormPage() {
       areaType: "Urban",
       status: "ACTIVE",
       description: "",
+      constituencyId: "",
+      townVillageId: "",
     },
   });
 
@@ -304,7 +356,19 @@ export default function WardFormPage() {
       establishedDate: ward.establishedDate
         ? ward.establishedDate.split("T")[0]
         : "",
+      constituencyId: ward.constituencyId || "",
+      townVillageId: ward.townVillageId || "",
     });
+
+    if (ward.townVillageId) {
+      api
+        .get(`/admin/constituency/town-villages/${ward.townVillageId}`)
+        .then((res) => {
+          const townVillage = res.data?.data;
+          if (townVillage?.districtId)
+            setSelectedDistrictId(townVillage.districtId);
+        });
+    }
 
     // Areas
     setLocalAreas(
@@ -614,7 +678,7 @@ export default function WardFormPage() {
             <CardTitle className="text-base">Ward Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>
                   Ward Name <span className="text-destructive">*</span>
@@ -640,6 +704,92 @@ export default function WardFormPage() {
                     {errors.wardNumber.message}
                   </p>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label>District</Label>
+                <Select
+                  value={selectedDistrictId || "none"}
+                  onValueChange={(val) =>
+                    setSelectedDistrictId(val === "none" ? "" : val)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select District" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {districts.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Town/Village</Label>
+                <Controller
+                  control={control}
+                  name="townVillageId"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value || "none"}
+                      onValueChange={(val) =>
+                        field.onChange(val === "none" ? "" : val)
+                      }
+                      disabled={!selectedDistrictId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Town/Village" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {townVillages.map((townVillage) => (
+                          <SelectItem
+                            key={townVillage.id}
+                            value={townVillage.id}
+                          >
+                            {townVillage.name} ({townVillage.type})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.townVillageId && (
+                  <p className="text-xs text-destructive">
+                    {errors.townVillageId.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Constituency</Label>
+                <Controller
+                  control={control}
+                  name="constituencyId"
+                  render={({ field }) => (
+                    <Select
+                      key={field.value}
+                      value={field.value || "none"}
+                      onValueChange={(val) =>
+                        field.onChange(val === "none" ? "" : val)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Constituency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {constituencies.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="grid md:grid-cols-4 gap-4">
@@ -982,20 +1132,58 @@ export default function WardFormPage() {
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mt-2">
                 {(
                   [
-                    { key: "hinduCount", label: "Hindu", faIcon: faOm, color: "text-orange-500" },
-                    { key: "muslimCount", label: "Muslim", faIcon: faStarAndCrescent, color: "text-emerald-600" },
-                    { key: "sikhCount", label: "Sikh", faIcon: faKhanda, color: "text-blue-600" },
-                    { key: "christianCount", label: "Christian", faIcon: faCross, color: "text-purple-600" },
-                    { key: "buddhistCount", label: "Buddhist", faIcon: faDharmachakra, color: "text-amber-600" },
-                    { key: "jainCount", label: "Jain", faIcon: faHandsPraying, color: "text-teal-600" },
-                    { key: "otherReligionCount", label: "Other", Icon: Users, color: "text-gray-500" },
+                    {
+                      key: "hinduCount",
+                      label: "Hindu",
+                      faIcon: faOm,
+                      color: "text-orange-500",
+                    },
+                    {
+                      key: "muslimCount",
+                      label: "Muslim",
+                      faIcon: faStarAndCrescent,
+                      color: "text-emerald-600",
+                    },
+                    {
+                      key: "sikhCount",
+                      label: "Sikh",
+                      faIcon: faKhanda,
+                      color: "text-blue-600",
+                    },
+                    {
+                      key: "christianCount",
+                      label: "Christian",
+                      faIcon: faCross,
+                      color: "text-purple-600",
+                    },
+                    {
+                      key: "buddhistCount",
+                      label: "Buddhist",
+                      faIcon: faDharmachakra,
+                      color: "text-amber-600",
+                    },
+                    {
+                      key: "jainCount",
+                      label: "Jain",
+                      faIcon: faHandsPraying,
+                      color: "text-teal-600",
+                    },
+                    {
+                      key: "otherReligionCount",
+                      label: "Other",
+                      Icon: Users,
+                      color: "text-gray-500",
+                    },
                   ] as const
                 ).map((f: any) => (
                   <div key={f.key} className="space-y-1">
                     <Label className="text-xs flex items-center gap-1.5">
                       {f.label}
                       {f.faIcon ? (
-                        <FontAwesomeIcon icon={f.faIcon} className={`h-3 w-3 ${f.color}`} />
+                        <FontAwesomeIcon
+                          icon={f.faIcon}
+                          className={`h-3 w-3 ${f.color}`}
+                        />
                       ) : (
                         <f.Icon className={`h-3.5 w-3.5 ${f.color}`} />
                       )}
@@ -1184,11 +1372,7 @@ export default function WardFormPage() {
               Cancel
             </Button>
           </Link>
-          <Button
-            type="submit"
-            disabled={isSaving}
-            className="gap-2 min-w-[140px]"
-          >
+          <Button type="submit" disabled={isSaving} className="gap-2 min-w-35">
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Saving...

@@ -10,8 +10,8 @@ export const SCHEME_STATUSES = [
       "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   },
   {
-    value: "EXPIRED",
-    label: "Expired",
+    value: "INACTIVE",
+    label: "Inactive",
     color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
   },
   {
@@ -20,20 +20,35 @@ export const SCHEME_STATUSES = [
     color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
   {
-    value: "SUSPENDED",
-    label: "Suspended",
+    value: "EXPIRED",
+    label: "Expired",
     color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   },
 ] as const;
 
 export const SCHEME_LEVELS = [
-  { value: "Central", label: "Central", icon: "🏛️" },
-  { value: "State", label: "State", icon: "🏢" },
-  { value: "Local", label: "Local", icon: "🏘️" },
+  { value: "CENTRAL", label: "Central", icon: "🏛️" },
+  { value: "STATE", label: "State", icon: "🏢" },
+  { value: "LOCAL", label: "Local", icon: "🏘️" },
+] as const;
+
+export const SCHEME_APPLICATION_STATUSES = [
+  { value: "DRAFT", label: "Draft", color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
+  { value: "SUBMITTED", label: "Submitted", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
+  { value: "UNDER_REVIEW", label: "Under Review", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" },
+  { value: "DOCUMENT_PENDING", label: "Document Pending", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400" },
+  { value: "APPROVED", label: "Approved", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
+  { value: "REJECTED", label: "Rejected", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
+  { value: "COMPLETED", label: "Completed", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  { value: "CANCELLED", label: "Cancelled", color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
 ] as const;
 
 export function getSchemeStatusInfo(s: string) {
   return SCHEME_STATUSES.find((x) => x.value === s) || SCHEME_STATUSES[0];
+}
+
+export function getSchemeApplicationStatusInfo(s: string) {
+  return SCHEME_APPLICATION_STATUSES.find((x) => x.value === s) || SCHEME_APPLICATION_STATUSES[0];
 }
 
 function useSchemeMut(fn: (d: any) => Promise<any>, title: string) {
@@ -55,6 +70,7 @@ function useSchemeMut(fn: (d: any) => Promise<any>, title: string) {
   });
 }
 
+// ─── Schemes ───
 export function useSchemes(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["schemes", params],
@@ -93,28 +109,87 @@ export function useDeleteScheme() {
     "Scheme Deleted",
   );
 }
-export function useUpsertBeneficiary() {
+
+// ─── Scheme Applications ───
+export function useSchemeApplications(params?: Record<string, any>) {
+  return useQuery({
+    queryKey: ["scheme-applications", params],
+    queryFn: () => api.get("/admin/schemes/applications/all", { params }).then((r) => r.data),
+  });
+}
+export function useSchemeApplication(id?: string) {
+  return useQuery({
+    queryKey: ["scheme-applications", id],
+    queryFn: () => api.get(`/admin/schemes/applications/${id}`).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+export function useCreateSchemeApplication() {
   return useSchemeMut(
-    ({ id, data }: any) =>
-      api.post(`/admin/schemes/${id}/beneficiaries`, data).then((r) => r.data),
-    "Beneficiary Updated",
+    (data) => api.post("/admin/schemes/applications", data).then((r) => r.data),
+    "Application Created",
   );
 }
-export function useBulkBeneficiaries() {
+export function useUpdateSchemeApplication() {
   return useSchemeMut(
     ({ id, data }: any) =>
-      api
-        .post(`/admin/schemes/${id}/beneficiaries/bulk`, data)
-        .then((r) => r.data),
-    "Bulk Updated",
+      api.put(`/admin/schemes/applications/${id}`, data).then((r) => r.data),
+    "Application Updated",
   );
 }
-export function useDeleteBeneficiary() {
+export function useUpdateSchemeApplicationStatus() {
   return useSchemeMut(
-    ({ id, bId }: any) =>
-      api
-        .delete(`/admin/schemes/${id}/beneficiaries/${bId}`)
-        .then((r) => r.data),
-    "Entry Removed",
+    ({ id, data }: any) =>
+      api.patch(`/admin/schemes/applications/${id}/status`, data).then((r) => r.data),
+    "Status Updated",
+  );
+}
+export function useAssignSchemeApplication() {
+  return useSchemeMut(
+    ({ id, data }: any) =>
+      api.patch(`/admin/schemes/applications/${id}/assign`, data).then((r) => r.data),
+    "Application Assigned",
+  );
+}
+export function useUpdateSchemeApplicationFollowUp() {
+  return useSchemeMut(
+    ({ id, data }: any) =>
+      api.patch(`/admin/schemes/applications/${id}/follow-up`, data).then((r) => r.data),
+    "Follow-up Updated",
+  );
+}
+export function useCreateTaskFromApplication() {
+  return useSchemeMut(
+    ({ id, data }: any) =>
+      api.post(`/admin/schemes/applications/${id}/create-task`, data).then((r) => r.data),
+    "Task Created",
+  );
+}
+export function useCreateGrievanceFromApplication() {
+  return useSchemeMut(
+    ({ id, data }: any) =>
+      api.post(`/admin/schemes/applications/${id}/create-grievance`, data).then((r) => r.data),
+    "Grievance Created",
+  );
+}
+export function useUploadApplicationDocument() {
+  return useSchemeMut(
+    ({ id, data }: any) =>
+      api.post(`/admin/schemes/applications/${id}/documents`, data).then((r) => r.data),
+    "Document Uploaded",
+  );
+}
+export function useListApplicationDocuments(id?: string) {
+  return useQuery({
+    queryKey: ["scheme-applications", id, "documents"],
+    queryFn: () => api.get(`/admin/schemes/applications/${id}/documents`).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+export function useDeleteApplicationDocument() {
+  return useSchemeMut(
+    (documentId: string) =>
+      api.delete(`/admin/schemes/applications/documents/${documentId}`).then((r) => r.data),
+    "Document Deleted",
   );
 }

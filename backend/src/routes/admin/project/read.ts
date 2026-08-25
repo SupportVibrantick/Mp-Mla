@@ -5,24 +5,24 @@ import { buildPagination, parsePagination } from "../../../utils/helpers.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
- * GET /api/admin/project
+ * GET /api/admin/projects
  * Lists all projects with optional filtering and pagination.
  */
 export async function listProjects(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
     const { page, limit, skip } = parsePagination(req.query);
-    const { wardId, status, department, category, fundType, search } =
+    const { wardId, status, departmentId, category, fundType, search } =
       req.query as Record<string, string>;
 
     const where: any = { tenantId, isDeleted: false };
     if (wardId) where.wardId = wardId;
     if (status && status !== "all") where.status = status;
-    if (department && department !== "all") where.department = department;
+    if (departmentId && departmentId !== "all") where.departmentId = departmentId;
     if (category && category !== "all") where.category = category;
     if (fundType && fundType !== "all") where.fundType = fundType;
     if (search) {
@@ -30,6 +30,7 @@ export async function listProjects(
         { name: { contains: search, mode: "insensitive" } },
         { projectCode: { contains: search, mode: "insensitive" } },
         { contractor: { contains: search, mode: "insensitive" } },
+        { address: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -38,6 +39,7 @@ export async function listProjects(
         where,
         include: {
           ward: { select: { id: true, name: true, wardNumber: true } },
+          department: { select: { id: true, name: true, code: true } },
           _count: {
             select: { milestones: true, updates: true, attachments: true },
           },
@@ -49,17 +51,8 @@ export async function listProjects(
       prisma.project.count({ where }),
     ]);
 
-    // Resolve department names
-    const deptIds = [...new Set(data.map((p) => p.department).filter(Boolean))];
-    const depts = await prisma.department.findMany({
-      where: { tenantId, id: { in: deptIds } },
-      select: { id: true, name: true, code: true },
-    });
-    const deptMap = Object.fromEntries(depts.map((d) => [d.id, d]));
-
     const enriched = data.map((p) => ({
       ...p,
-          departmentInfo: deptMap[p.department] || null,
       budgetUtilization:
         p.budgetSanctioned > 0
           ? Math.round((p.budgetUsed / p.budgetSanctioned) * 100)
@@ -77,13 +70,13 @@ export async function listProjects(
 }
 
 /**
- * GET /api/admin/project/:id
+ * GET /api/admin/projects/:id
  * Gets a single project by ID with detailed information.
  */
 export async function getProject(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
@@ -95,26 +88,37 @@ export async function getProject(
         ward: {
           select: { id: true, name: true, wardNumber: true, zone: true },
         },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            headName: true,
+            headPhone: true,
+            headEmail: true,
+          },
+        },
         createdBy: { select: { id: true, name: true } },
         milestones: { orderBy: { orderIndex: "asc" } },
         updates: { orderBy: { createdAt: "desc" } },
         attachments: { orderBy: { createdAt: "desc" } },
+        fundTransactions: {
+          where: { isDeleted: false },
+          orderBy: { date: "desc" },
+          include: {
+            fund: {
+              select: {
+                id: true,
+                fundType: true,
+                financialYear: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!project) throw ApiError.notFound("Project not found");
- let departmentInfo = null;
-    if (project.department) {
-      departmentInfo = await prisma.department.findFirst({
-        where: { id: project.department, tenantId },
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          headName: true,
-          headPhone: true,
-        },
-      });
-    }
+
     const completedMs = project.milestones.filter((m) => m.isCompleted).length;
     const totalMs = project.milestones.length;
     const budgetUtilization =
@@ -126,7 +130,6 @@ export async function getProject(
       success: true,
       data: {
         ...project,
-        departmentInfo,
         completedMilestones: completedMs,
         totalMilestones: totalMs,
         budgetUtilization,
@@ -138,18 +141,23 @@ export async function getProject(
 }
 
 /**
- * GET /api/admin/project/stats
+ * GET /api/admin/projects/stats
  * Gets aggregated statistics for all projects.
  */
 export async function getProjectStats(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
-    const wardId = req.query.wardId as string;
-    const w: any = { tenantId, isDeleted: false, ...(wardId ? { wardId } : {}) };
+    const { wardId, departmentId, status, fundType } = req.query as Record<string, string>;
+
+    const w: any = { tenantId, isDeleted: false };
+    if (wardId) w.wardId = wardId;
+    if (departmentId) w.departmentId = departmentId;
+    if (status && status !== "all") w.status = status;
+    if (fundType && fundType !== "all") w.fundType = fundType;
 
     const [
       total,
@@ -161,6 +169,7 @@ export async function getProjectStats(
       completedProjects,
       pendingAlerts,
       delayedProjects,
+      completionAgg,
     ] = await Promise.all([
       prisma.project.count({ where: w }),
       prisma.project.groupBy({ by: ["status"], where: w, _count: true }),
@@ -221,6 +230,10 @@ export async function getProjectStats(
         select: { id: true, name: true, status: true, expectedEndDate: true },
         take: 10,
       }),
+      prisma.project.aggregate({
+        where: w,
+        _avg: { completionPercent: true },
+      }),
     ]);
 
     // Calculate Average Completion Time
@@ -263,6 +276,11 @@ export async function getProjectStats(
       return acc;
     }, []);
 
+    const totalSanctioned = budgetAgg._sum.budgetSanctioned || 0;
+    const totalReleased = budgetAgg._sum.budgetReleased || 0;
+    const totalUsed = budgetAgg._sum.budgetUsed || 0;
+    const averageCompletion = completionAgg._avg.completionPercent || 0;
+
     res.json({
       success: true,
       data: {
@@ -272,16 +290,20 @@ export async function getProjectStats(
         completed: sm["COMPLETED"] || 0,
         onHold: sm["ON_HOLD"] || 0,
         cancelled: sm["CANCELLED"] || 0,
-        totalSanctioned: budgetAgg._sum.budgetSanctioned || 0,
-        totalReleased: budgetAgg._sum.budgetReleased || 0,
-        totalUsed: budgetAgg._sum.budgetUsed || 0,
+        totalBudget: totalSanctioned,
+        releasedBudget: totalReleased,
+        utilizedBudget: totalUsed,
+        averageCompletion: Math.round(averageCompletion),
+        totalSanctioned,
+        totalReleased,
+        totalUsed,
         avgCompletionTime,
         pendingAlerts,
         delayedProjects: delayedProjects.map((p) => ({
           ...p,
           daysOverdue: Math.floor(
             (Date.now() - new Date(p.expectedEndDate!).getTime()) /
-              (1000 * 60 * 60 * 24),
+              (1000 * 60 * 60 * 24)
           ),
         })),
         delayedCount: delayedProjects.length,

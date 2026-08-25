@@ -857,6 +857,8 @@ export default function TenantsPage() {
                     { label: "Created", value: new Date(selectedTenant.createdAt).toLocaleDateString("en-CA") },
                     { label: "Slug", value: getTenantSlug(selectedTenant) },
                     { label: "Tenant ID", value: selectedTenant.id },
+                    { label: "Constituency", value: `${selectedTenant.constituencyName} (${selectedTenant.constituencyType || "ASSEMBLY"})` },
+                    { label: "Constituency Code", value: selectedTenant.constituencyCode || "N/A" },
                   ].map((item) => (
                     <div
                       key={item.label}

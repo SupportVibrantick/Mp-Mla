@@ -66,8 +66,10 @@ import {
   UserPlus,
   Loader2,
   Star,
+  Plus,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const TL_ICONS: Record<string, any> = {
   CREATED: MessageSquare,
@@ -116,11 +118,40 @@ export default function GrievanceDetailPage() {
   const [assignDlg, setAssignDlg] = useState(false);
   const [af, setAf] = useState({
     assignedToId: "none",
-    assignedDept: "none",
+    departmentId: "none",
     comment: "",
   });
   const [cmtText, setCmtText] = useState("");
   const [cmtType, setCmtType] = useState("COMMENT");
+
+  const assignFormFilteredUsers = af.departmentId && af.departmentId !== "none"
+    ? users.filter((u: any) => u.departmentId === af.departmentId)
+    : users;
+
+  const handleAssignDeptChange = (deptId: string) => {
+    const nextDeptId = deptId === "none" ? "none" : deptId;
+    const filtered = nextDeptId !== "none"
+      ? users.filter((u: any) => u.departmentId === nextDeptId)
+      : users;
+    const stillValid = af.assignedToId && af.assignedToId !== "none" && af.assignedToId !== ""
+      ? filtered.some((u: any) => u.id === af.assignedToId)
+      : true;
+    setAf((p) => ({
+      ...p,
+      departmentId: nextDeptId,
+      assignedToId: stillValid ? p.assignedToId : "none",
+    }));
+  };
+
+  const handleAssignUserChange = (userId: string) => {
+    const nextUserId = userId === "none" ? "" : userId;
+    const user = users.find((u: any) => u.id === nextUserId);
+    setAf((p) => ({
+      ...p,
+      assignedToId: nextUserId,
+      departmentId: (!p.departmentId || p.departmentId === "none") && user?.departmentId ? user.departmentId : p.departmentId,
+    }));
+  };
 
   const g = res?.data;
 
@@ -156,6 +187,13 @@ export default function GrievanceDetailPage() {
   const cI = getCategoryInfo(g.category);
   const nextStatuses = STATUS_TRANSITIONS[g.status] || [];
 
+  const expectedDate = g.expectedResolutionDate ? new Date(g.expectedResolutionDate) : null;
+  const now = new Date();
+  const resolvedOrClosedAt = g.resolvedAt ? new Date(g.resolvedAt) : (g.closedAt ? new Date(g.closedAt) : null);
+  const isOverdue = expectedDate && !resolvedOrClosedAt && now > expectedDate && ["OPEN", "IN_PROGRESS", "ESCALATED"].includes(g.status);
+  const isBreachedResolved = expectedDate && resolvedOrClosedAt && resolvedOrClosedAt > expectedDate;
+  const isMet = expectedDate && resolvedOrClosedAt && resolvedOrClosedAt <= expectedDate;
+
   const openStatus = (status: string) => {
     setSf({
       status,
@@ -190,9 +228,9 @@ export default function GrievanceDetailPage() {
     await assignMut.mutateAsync({
       id,
       data: {
-        ...af,
-        assignedToId: af.assignedToId || null,
-        assignedDept: af.assignedDept || null,
+        assignedToId: af.assignedToId === "none" ? null : af.assignedToId,
+        departmentId: af.departmentId === "none" ? null : af.departmentId,
+        comment: af.comment,
       },
     });
     setAssignDlg(false);
@@ -226,6 +264,21 @@ export default function GrievanceDetailPage() {
                   {pI.icon} {pI.label}
                 </Badge>
                 <Badge className={`text-[10px] font-bold border-none ${sI.color}`}>{sI.label}</Badge>
+                {isOverdue && (
+                  <Badge className="text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-400 gap-1 border-none">
+                    <AlertTriangle className="h-3 w-3 shrink-0" /> SLA Overdue
+                  </Badge>
+                )}
+                {isBreachedResolved && (
+                  <Badge className="text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-400 gap-1 border-none">
+                    <AlertTriangle className="h-3 w-3 shrink-0" /> SLA Breached (Late)
+                  </Badge>
+                )}
+                {isMet && (
+                  <Badge className="text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400 gap-1 border-none">
+                    <CheckCircle2 className="h-3 w-3 shrink-0" /> SLA Met
+                  </Badge>
+                )}
               </div>
               <h2 className="text-base sm:text-lg font-bold text-foreground mt-1.5">{g.subject}</h2>
               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5 flex-wrap font-medium">
@@ -265,8 +318,8 @@ export default function GrievanceDetailPage() {
                 className="gap-1 text-xs border-border/60 bg-card font-bold"
                 onClick={() => {
                   setAf({
-                    assignedToId: g.assignedToId || "",
-                    assignedDept: g.assignedDept || "",
+                    assignedToId: g.assignedToId || "none",
+                    departmentId: g.departmentId || "none",
                     comment: "",
                   });
                   setAssignDlg(true);
@@ -281,6 +334,23 @@ export default function GrievanceDetailPage() {
                   Edit
                 </Button>
               </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 border-border/60 bg-card font-bold"
+                onClick={() => {
+                  navigate("/tasks", {
+                    state: {
+                      openCreate: true,
+                      grievanceId: g.id,
+                      departmentId: g.departmentId || "",
+                    },
+                  });
+                }}
+              >
+                <Plus className="h-3.5 w-3.5 text-primary" />
+                Create Task
+              </Button>
             </PermissionGate>
             <PermissionGate module="grievances" action="delete">
               <AlertDialog>
@@ -563,6 +633,15 @@ export default function GrievanceDetailPage() {
                   <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Registered</span>
                   <span className="text-foreground">{format(new Date(g.createdAt), "dd MMM yyyy")}</span>
                 </div>
+                {g.expectedResolutionDate && (
+                  <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
+                    <span className="text-muted-foreground uppercase text-[10px] tracking-wider">SLA Target Date</span>
+                    <span className={cn("text-xs font-semibold flex items-center gap-1", (isOverdue || isBreachedResolved) ? "text-rose-600 dark:text-rose-400" : "text-foreground")}>
+                      {format(new Date(g.expectedResolutionDate), "dd MMM yyyy")}
+                      {isOverdue && <span className="text-[10px] font-bold">(Overdue)</span>}
+                    </span>
+                  </div>
+                )}
                 {g.resolvedAt && (
                   <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
                     <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Resolved Date</span>
@@ -740,13 +819,8 @@ export default function GrievanceDetailPage() {
             <div className="space-y-2">
               <Label>Department</Label>
               <Select
-                value={af.assignedDept || "none"}
-                onValueChange={(v) =>
-                  setAf((p) => ({
-                    ...p,
-                    assignedDept: v === "none" ? "" : v,
-                  }))
-                }
+                value={af.departmentId || "none"}
+                onValueChange={handleAssignDeptChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
@@ -765,19 +839,14 @@ export default function GrievanceDetailPage() {
               <Label>Assign To</Label>
               <Select
                 value={af.assignedToId || "none"}
-                onValueChange={(v) =>
-                  setAf((p) => ({
-                    ...p,
-                    assignedToId: v === "none" ? "" : v,
-                  }))
-                }
+                onValueChange={handleAssignUserChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select user" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— Unassigned —</SelectItem>
-                  {users.map((u: any) => (
+                  {assignFormFilteredUsers.map((u: any) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.name || u.email}
                     </SelectItem>

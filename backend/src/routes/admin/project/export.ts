@@ -18,6 +18,11 @@ export const exportProjects = catchAsync(async (req: Request, res: Response) => 
                     wardNumber: true,
                     name: true
                 }
+            },
+            department: {
+                select: {
+                    name: true
+                }
             }
         },
         orderBy: { projectCode: 'asc' }
@@ -27,7 +32,7 @@ export const exportProjects = catchAsync(async (req: Request, res: Response) => 
         projectCode: p.projectCode,
         name: p.name,
         category: p.category,
-        department: p.department,
+        department: p.department?.name || "",
         contractor: p.contractor,
         contractorPhone: p.contractorPhone,
         wardNumber: p.ward.wardNumber,

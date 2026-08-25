@@ -282,14 +282,48 @@ enum BulkUploadStatus {
   FAILED
 }
 
+enum TownVillageType {
+  TOWN
+  VILLAGE
+}
+
+enum GeographyNature {
+  URBAN
+  RURAL
+}
+
 // ════════════════════════════════════════════════════════
 // ORGANIZATION & BRANDING
 // ════════════════════════════════════════════════════════
 
 model Organization {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique
+  name           String
+  tagline        String?
+  address        String?
+  phone          String?
+  email          String?
+  website        String?
+  logoUrl        String?
+  faviconUrl     String?
+  primaryColor   String   @default("#1e40af")
+  secondaryColor String   @default("#3b82f6")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("organizations")
+}
+
+// ════════════════════════════════════════════════════════
+// TENANT (SaaS Multi-Tenancy Core)
+// ════════════════════════════════════════════════════════
+
+model Tenant {
   id               String  @id @default(cuid())
   name             String
-  tagline          String?
   constituencyName String
   state            String
   district         String
@@ -310,67 +344,84 @@ model Organization {
   termStartDate       DateTime?
   termEndDate         DateTime?
 
+  status TenantStatus @default(ACTIVE)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("organizations")
-}
+  users                      User[]
+  organization               Organization?
+  subscription               TenantSubscription?
+  moduleAccess               TenantModuleAccess[]
+  wards                      Ward[]
+  wardAreas                  WardArea[]
+  wardCouncillors            WardCouncillor[]
+  grievances                 Grievance[]
+  grievanceTimelines         GrievanceTimeline[]
+  grievanceAttachments       GrievanceAttachment[]
+  departmentSlas             DepartmentSLA[]
+  projects                   Project[]
+  projectMilestones          ProjectMilestone[]
+  projectUpdates             ProjectUpdate[]
+  projectAttachments         ProjectAttachment[]
+  projectTimelines           ProjectTimeline[]
+  taskTimelines              TaskTimeline[]
+  events                     Event[]
+  eventTeamMembers           EventTeamMember[]
+  eventGuests                EventGuest[]
+  eventAttendances           EventAttendance[]
+  eventMedia                 EventMedia[]
+  eventAgendas               EventAgenda[]
+  eventReports               EventReport[]
+  eventTimelines             EventTimeline[]
+  appointments               Appointment[]
+  janataSessions             JanataDarbarSession[]
+  janataTokens               JanataDarbarToken[]
+  schemes                    Scheme[]
+  schemeApplications         SchemeApplication[]
+  schemeApplicationDocuments SchemeApplicationDocument[]
+  crmContacts                Contact[]
+  crmInteractions            CRMInteraction[]
+  crmFollowUps               CRMFollowUp[]
+  documents                  Document[]
+  documentLinks              DocumentLink[]
+  correspondences            Correspondence[]
+  correspondenceDocuments    CorrespondenceDocument[]
+  correspondenceTimelines    CorrespondenceTimeline[]
+  departments                Department[]
+  leaders                    Leader[]
+  leaderGreetings            LeaderGreeting[]
+  institutions               Institution[]
+  incharges                  Incharge[]
+  institutionRequests        InstitutionRequest[]
+  communityGroups            CommunityGroup[]
+  demographics               Demographics[]
+  funds                      Fund[]
+  fundTransactions           FundTransaction[]
+  meetings                   Meeting[]
+  competitors                Competitor[]
+  competitorMetricEntries    CompetitorMetricEntry[]
+  competitorAnalyses         CompetitorAnalysis[]
+  competitorChats            CompetitorChat[]
+  tasks                      Task[]
+  notifications              Notification[]
+  auditLogs                  AuditLog[]
+  settings                   TenantSetting[]
+  ownMetrics                 OwnMetricEntry[]
+  planUpgradeRequests        PlanUpgradeRequest[]
+  payments                   Payment[]
+  voters                     Voter[]
+  bulkUploadJobs             BulkUploadJob[]
+  constituencies             Constituency[]
+  representativeProfiles     RepresentativeProfile[]
+  districts                  District[]
+  blocks                     Block[]
+  pollingLocations           PollingLocation[]
+  booths                     Booth[]
+  townVillages               TownVillage[]
 
-// ════════════════════════════════════════════════════════
-// TENANT (SaaS Multi-Tenancy Core)
-// ════════════════════════════════════════════════════════
-
-model Tenant {
-  id                  String       @id @default(cuid())
-  name                String
-  constituencyName    String
-  state               String
-  district            String
-  address             String?
-  phone               String?
-  email               String?
-  website             String?
-  logoUrl             String?
-  faviconUrl          String?
-  primaryColor        String       @default("#1e40af")
-  secondaryColor      String       @default("#3b82f6")
-
-  representativeName  String
-  representativeTitle String
-  representativePhoto String?
-  partyName           String?
-  partyLogoUrl        String?
-  termStartDate       DateTime?
-  termEndDate         DateTime?
-
-  status              TenantStatus @default(ACTIVE)
-
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-
-  users               User[]
-  subscription        TenantSubscription?
-  moduleAccess        TenantModuleAccess[]
-  wards               Ward[]
-  grievances          Grievance[]
-  projects            Project[]
-  departments         Department[]
-  leaders             Leader[]
-  institutions        Institution[]
-  institutionRequests InstitutionRequest[]
-  communityGroups     CommunityGroup[]
-  demographics        Demographics[]
-  funds               Fund[]
-  meetings            Meeting[]
-  competitors         Competitor[]
-  tasks               Task[]
-  notifications       Notification[]
-  auditLogs           AuditLog[]
-  settings            TenantSetting[]
-  ownMetrics          OwnMetricEntry[]
-  planUpgradeRequests PlanUpgradeRequest[]
-  voters              Voter[]
-  bulkUploadJobs      BulkUploadJob[]
+  geographyImportJobs GeographyImportJob[]
+  constituencyWards   ConstituencyWard[]
 
   @@index([status])
   @@map("tenants")
@@ -391,10 +442,10 @@ model PlatformUser {
   lastLoginAt DateTime?
   lastLoginIp String?
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  refreshTokens RefreshToken[]
+  refreshTokens               RefreshToken[]
   reviewedPlanUpgradeRequests PlanUpgradeRequest[] @relation("PlanUpgradeRequestReviewedBy")
 
   @@index([role])
@@ -407,23 +458,23 @@ model PlatformUser {
 // ════════════════════════════════════════════════════════
 
 model SubscriptionPlan {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  code          String   @unique
-  description   String?
-  priceMonthly  Float    @default(0)
-  priceYearly   Float    @default(0)
-  features      Json     @default("[]")
-  isActive      Boolean  @default(true)
-  isPopular     Boolean  @default(false)
-  sortOrder     Int      @default(0)
+  id           String  @id @default(cuid())
+  name         String  @unique
+  code         String  @unique
+  description  String?
+  priceMonthly Float   @default(0)
+  priceYearly  Float   @default(0)
+  features     Json    @default("[]")
+  isActive     Boolean @default(true)
+  isPopular    Boolean @default(false)
+  sortOrder    Int     @default(0)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  subscriptions TenantSubscription[]
-  planModules   PlanModule[]
-  currentUpgradeRequests PlanUpgradeRequest[] @relation("PlanUpgradeRequestCurrentPlan")
+  subscriptions            TenantSubscription[]
+  planModules              PlanModule[]
+  currentUpgradeRequests   PlanUpgradeRequest[] @relation("PlanUpgradeRequestCurrentPlan")
   requestedUpgradeRequests PlanUpgradeRequest[] @relation("PlanUpgradeRequestRequestedPlan")
 
   @@index([isActive])
@@ -445,12 +496,12 @@ model TenantSubscription {
   nextPaymentDue     DateTime?
   amountDue          Float              @default(0)
 
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  plan               SubscriptionPlan   @relation(fields: [planId], references: [id])
-  payments           Payment[]
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+  payments Payment[]
 
   @@index([status])
   @@index([nextPaymentDue])
@@ -466,8 +517,8 @@ model Module {
   isActive    Boolean @default(true)
   sortOrder   Int     @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   tenantAccess TenantModuleAccess[]
   planModules  PlanModule[]
@@ -477,14 +528,14 @@ model Module {
 }
 
 model TenantModuleAccess {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   tenantId  String
   moduleId  String
-  isEnabled Boolean   @default(true)
-  grantedAt DateTime  @default(now())
+  isEnabled Boolean  @default(true)
+  grantedAt DateTime @default(now())
 
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, moduleId])
   @@index([tenantId])
@@ -493,12 +544,12 @@ model TenantModuleAccess {
 }
 
 model PlanModule {
-  id        String           @id @default(cuid())
-  planId    String
-  moduleId  String
-  
-  plan      SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  module    Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  id       String @id @default(cuid())
+  planId   String
+  moduleId String
+
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  module Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@unique([planId, moduleId])
   @@index([planId])
@@ -507,34 +558,37 @@ model PlanModule {
 }
 
 model Payment {
-  id               String          @id @default(cuid())
-  subscriptionId   String
-  amount           Float
-  taxAmount        Float?
-  gstNumber        String?
-  currency         String          @default("INR")
+  id             String  @id @default(cuid())
+  tenantId       String
+  subscriptionId String
+  amount         Float
+  taxAmount      Float?
+  gstNumber      String?
+  currency       String  @default("INR")
 
   // Method & Gateway (separate concepts)
-  method           PaymentMethod?
-  gateway          PaymentGateway?
+  method  PaymentMethod?
+  gateway PaymentGateway?
 
   // Gateway-agnostic fields (works for Razorpay, Stripe, PayU, etc.)
-  gatewayOrderId   String?         @unique
-  gatewayPaymentId String?         @unique
+  gatewayOrderId   String? @unique
+  gatewayPaymentId String? @unique
   gatewaySignature String?
 
-  transactionId    String?         // Legacy / manual reference
-  status           PaymentStatus   @default(CREATED)
-  invoiceNumber    String?         @unique
-  invoiceUrl       String?
-  notes            String?
-  paidAt           DateTime?
+  transactionId String? // Legacy / manual reference
+  status        PaymentStatus @default(CREATED)
+  invoiceNumber String?       @unique
+  invoiceUrl    String?
+  notes         String?
+  paidAt        DateTime?
 
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  subscription     TenantSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription TenantSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([subscriptionId])
   @@index([status])
   @@index([createdAt])
@@ -557,13 +611,13 @@ model PlanUpgradeRequest {
   reviewedById          String?
   reviewedAt            DateTime?
 
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant                Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  currentPlan           SubscriptionPlan?        @relation("PlanUpgradeRequestCurrentPlan", fields: [currentPlanId], references: [id])
-  requestedPlan         SubscriptionPlan         @relation("PlanUpgradeRequestRequestedPlan", fields: [requestedPlanId], references: [id])
-  reviewedBy            PlatformUser?            @relation("PlanUpgradeRequestReviewedBy", fields: [reviewedById], references: [id])
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  currentPlan   SubscriptionPlan? @relation("PlanUpgradeRequestCurrentPlan", fields: [currentPlanId], references: [id])
+  requestedPlan SubscriptionPlan  @relation("PlanUpgradeRequestRequestedPlan", fields: [requestedPlanId], references: [id])
+  reviewedBy    PlatformUser?     @relation("PlanUpgradeRequestReviewedBy", fields: [reviewedById], references: [id])
 
   @@index([tenantId])
   @@index([status])
@@ -577,18 +631,19 @@ model PlanUpgradeRequest {
 // ════════════════════════════════════════════════════════
 
 model User {
-  id          String     @id @default(cuid())
-  email       String
-  phone       String?
-  tenantId    String
-  password    String
-  name        String
-  role        UserRole
-  status      UserStatus @default(ACTIVE)
-  avatarUrl   String?
-  designation String?
-  department  String?
-  bio         String?
+  id           String     @id @default(cuid())
+  email        String
+  phone        String?
+  tenantId     String
+  password     String
+  name         String
+  role         UserRole
+  status       UserStatus @default(ACTIVE)
+  avatarUrl    String?
+  designation  String?
+  department   String?
+  departmentId String?
+  bio          String?
 
   // Security
   lastLoginAt         DateTime?
@@ -605,27 +660,39 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant         Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdByAdmin User?  @relation("UserCreatedBy", fields: [createdById], references: [id])
-  usersCreated   User[] @relation("UserCreatedBy")
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  departmentRef  Department? @relation(fields: [departmentId], references: [id])
+  createdByAdmin User?       @relation("UserCreatedBy", fields: [createdById], references: [id])
+  usersCreated   User[]      @relation("UserCreatedBy")
 
-  permissions        UserPermission[]
-  refreshTokens      RefreshToken[]
-  auditLogs          AuditLog[]
-  tasksAssigned      Task[]           @relation("TaskAssignedTo")
-  tasksCreated       Task[]           @relation("TaskCreatedBy")
-  grievancesCreated  Grievance[]      @relation("GrievanceCreatedBy")
-  grievancesAssigned Grievance[]      @relation("GrievanceAssignedTo")
-  projectsCreated    Project[]        @relation("ProjectCreatedBy")
-  notifications      Notification[]
+  permissions                UserPermission[]
+  refreshTokens              RefreshToken[]
+  auditLogs                  AuditLog[]
+  tasksAssigned              Task[]                @relation("TaskAssignedTo")
+  tasksCreated               Task[]                @relation("TaskCreatedBy")
+  grievancesCreated          Grievance[]           @relation("GrievanceCreatedBy")
+  grievancesAssigned         Grievance[]           @relation("GrievanceAssignedTo")
+  projectsCreated            Project[]             @relation("ProjectCreatedBy")
+  notifications              Notification[]
+  organizedEvents            Event[]               @relation("EventOrganizer")
+  eventTeamMembers           EventTeamMember[]
+  appointmentsCreated        Appointment[]
+  janataSessionsCreated      JanataDarbarSession[]
+  janataTokensAssigned       JanataDarbarToken[]   @relation("TokenOfficer")
+  schemeApplicationsAssigned SchemeApplication[]   @relation("SchemeApplicationOfficer")
+  crmFollowUps               CRMFollowUp[]         @relation("FollowUpOfficer")
+  contactsCreated            Contact[]             @relation("ContactCreatedBy")
+  documentsUploaded          Document[]            @relation("DocumentUploadedBy")
+  correspondencesAssigned    Correspondence[]      @relation("CorrespondenceAssignedTo")
 
+  @@unique([tenantId, email])
+  @@unique([tenantId, phone])
   @@index([tenantId])
+  @@index([departmentId])
   @@index([email])
   @@index([phone])
   @@index([role])
   @@index([status])
-  @@unique([tenantId, email])
-  @@unique([tenantId, phone])
   @@map("users")
 }
 
@@ -702,9 +769,11 @@ model Ward {
   tenantId   String
   wardNumber Int
   name       String
+  code       String?
   zone       String? // "A", "B", "C" etc.
   status     WardStatus @default(ACTIVE)
   isDeleted  Boolean    @default(false)
+  deletedAt  DateTime?
 
   // Aggregate fields (computed from areas, cached for performance)
   totalPopulation Int @default(0)
@@ -721,22 +790,34 @@ model Ward {
   description     String?
   establishedDate DateTime?
 
+  constituencyId String?
+  townVillageId  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  constituency Constituency? @relation(fields: [constituencyId], references: [id], onDelete: SetNull)
+
+  townVillage         TownVillage?         @relation(fields: [townVillageId], references: [id], onDelete: SetNull)
+  booths              Booth[]
   areas               WardArea[]
   councillors         WardCouncillor[]
   institutions        Institution[]
   grievances          Grievance[]
   projects            Project[]
+  events              Event[]
+  janataTokens        JanataDarbarToken[]
+  schemeApplications  SchemeApplication[]
+  crmContacts         Contact[]
   demographics        Demographics[]
   communityGroups     CommunityGroup[]
   // schemeBeneficiaries SchemeBeneficiary[]
   leaders             Leader[]
   institutionRequests InstitutionRequest[]
   voters              Voter[]
+  constituencyWards   ConstituencyWard[]
 
   @@unique([tenantId, wardNumber])
   @@unique([tenantId, name])
@@ -749,6 +830,7 @@ model Ward {
 
 model WardArea {
   id          String       @id @default(cuid())
+  tenantId    String
   wardId      String
   name        String
   areaType    WardAreaType @default(RESIDENTIAL)
@@ -757,8 +839,8 @@ model WardArea {
   maleCount   Int          @default(0)
   femaleCount Int          @default(0)
   pincode     String?
-  landmark    String?                                      
-  description String?                                       
+  landmark    String?
+  description String?
   latitude    Float?
   longitude   Float?
   isActive    Boolean      @default(true)
@@ -767,12 +849,14 @@ model WardArea {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ward            Ward             @relation(fields: [wardId], references: [id], onDelete: Cascade)
   demographics    Demographics[]
   communityGroups CommunityGroup[]
   voters          Voter[]
 
   @@unique([wardId, name])
+  @@index([tenantId])
   @@index([wardId])
   @@index([isDeleted])
   @@index([areaType])
@@ -781,6 +865,7 @@ model WardArea {
 
 model WardCouncillor {
   id          String    @id @default(cuid())
+  tenantId    String
   wardId      String
   name        String
   phone       String?
@@ -796,8 +881,10 @@ model WardCouncillor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ward Ward @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward   Ward   @relation(fields: [wardId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([wardId])
   @@index([isCurrent])
   @@map("ward_councillors")
@@ -844,6 +931,7 @@ model Institution {
 
 model Incharge {
   id            String    @id @default(cuid())
+  tenantId      String
   institutionId String
   name          String
   designation   String
@@ -858,8 +946,10 @@ model Incharge {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([institutionId])
   @@map("incharges")
 }
@@ -1047,7 +1137,6 @@ model Grievance {
   subcategory  String?
   description  String
   wardId       String
-  assignedDept String?
   assignedToId String?
   status       GrievanceStatus   @default(OPEN)
   isDeleted    Boolean           @default(false)
@@ -1078,23 +1167,35 @@ model Grievance {
   updatedAt DateTime @updatedAt
 
   tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ward       Ward  @relation(fields: [wardId], references: [id])
-  createdBy  User? @relation("GrievanceCreatedBy", fields: [createdById], references: [id])
-  assignedTo User? @relation("GrievanceAssignedTo", fields: [assignedToId], references: [id])
+  ward       Ward   @relation(fields: [wardId], references: [id])
+  createdBy  User?  @relation("GrievanceCreatedBy", fields: [createdById], references: [id])
+  assignedTo User?  @relation("GrievanceAssignedTo", fields: [assignedToId], references: [id])
 
-  timeline     GrievanceTimeline[]
-  attachments  GrievanceAttachment[]
-  // department   Department?           @relation(fields: [departmentId], references: [id])
-  departmentId String?
-  department   Department?           @relation(fields: [departmentId], references: [id])
+  timeline            GrievanceTimeline[]
+  attachments         GrievanceAttachment[]
+  departmentId        String?
+  department          Department?           @relation(fields: [departmentId], references: [id])
+  slaStartedAt        DateTime?
+  slaHoursApplied     Int?
+  tasks               Task[]
+  janataSessionId     String?
+  janataTokenId       String?
+  schemeApplicationId String?
+  janataSession       JanataDarbarSession?  @relation(fields: [janataSessionId], references: [id], onDelete: SetNull)
+  janataToken         JanataDarbarToken?    @relation(fields: [janataTokenId], references: [id], onDelete: SetNull)
+  schemeApplication   SchemeApplication?    @relation(fields: [schemeApplicationId], references: [id], onDelete: SetNull)
+  crmInteractions     CRMInteraction[]
 
   @@unique([tenantId, ticketNumber])
   @@index([tenantId])
   @@index([wardId])
   @@index([status])
   @@index([isDeleted])
+  @@index([janataSessionId])
+  @@index([janataTokenId])
+  @@index([schemeApplicationId])
   @@index([priority])
-  @@index([assignedDept])
+  @@index([departmentId])
   @@index([assignedToId])
   @@index([createdAt])
   @@index([ticketNumber])
@@ -1103,6 +1204,7 @@ model Grievance {
 
 model GrievanceTimeline {
   id          String           @id @default(cuid())
+  tenantId    String
   grievanceId String
   action      String           @default("STATUS_CHANGE")
   fromStatus  GrievanceStatus?
@@ -1113,24 +1215,38 @@ model GrievanceTimeline {
   metadata    Json?
   createdAt   DateTime         @default(now())
 
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   grievance Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([grievanceId])
   @@map("grievance_timeline")
 }
 
 model GrievanceAttachment {
-  id          String   @id @default(cuid())
-  grievanceId String
-  fileUrl     String
-  fileName    String
-  fileType    String?
-  fileSize    Int?
-  createdAt   DateTime @default(now())
+  id             String                            @id @default(cuid())
+  tenantId       String
+  grievanceId    String
+  fileUrl        String
+  fileName       String
+  fileType       String?
+  fileSize       Int?
+  createdAt      DateTime                          @default(now())
+  classification GrievanceAttachmentClassification @default(GENERAL)
 
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   grievance Grievance @relation(fields: [grievanceId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@map("grievance_attachments")
+}
+
+enum GrievanceAttachmentClassification {
+  GENERAL
+  BEFORE_PHOTO
+  AFTER_PHOTO
+  RESOLUTION_PROOF
+  DOCUMENT
 }
 
 // ════════════════════════════════════════════════════════
@@ -1143,7 +1259,7 @@ model Project {
   projectCode     String
   name            String
   category        String
-  department      String
+  departmentId    String?
   contractor      String?
   contractorPhone String?
   wardId          String
@@ -1171,25 +1287,30 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ward        Ward                @relation(fields: [wardId], references: [id])
-  createdBy   User?               @relation("ProjectCreatedBy", fields: [createdById], references: [id])
-  milestones  ProjectMilestone[]
-  updates     ProjectUpdate[]
-  attachments ProjectAttachment[]
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward             Ward                @relation(fields: [wardId], references: [id])
+  createdBy        User?               @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  department       Department?         @relation(fields: [departmentId], references: [id])
+  milestones       ProjectMilestone[]
+  updates          ProjectUpdate[]
+  attachments      ProjectAttachment[]
+  tasks            Task[]
+  fundTransactions FundTransaction[]
+  timeline         ProjectTimeline[]
 
   @@unique([tenantId, projectCode])
   @@index([tenantId])
   @@index([wardId])
   @@index([status])
   @@index([isDeleted])
-  @@index([department])
+  @@index([departmentId])
   @@index([createdAt])
   @@map("projects")
 }
 
 model ProjectMilestone {
   id            String    @id @default(cuid())
+  tenantId      String
   projectId     String
   title         String
   description   String?
@@ -1199,38 +1320,59 @@ model ProjectMilestone {
   orderIndex    Int       @default(0)
   createdAt     DateTime  @default(now())
 
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([projectId])
   @@map("project_milestones")
 }
 
 model ProjectUpdate {
   id         String   @id @default(cuid())
+  tenantId   String
   projectId  String
   updateText String
   updatedBy  String
   photoUrl   String?
   createdAt  DateTime @default(now())
 
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([projectId])
   @@map("project_updates")
 }
 
 model ProjectAttachment {
-  id        String   @id @default(cuid())
-  projectId String
-  fileUrl   String
-  fileName  String
-  fileType  String?
-  fileSize  Int?
-  createdAt DateTime @default(now())
+  id             String                          @id @default(cuid())
+  tenantId       String
+  projectId      String
+  fileUrl        String
+  fileName       String
+  fileType       String?
+  fileSize       Int?
+  classification ProjectAttachmentClassification @default(OTHER)
+  createdAt      DateTime                        @default(now())
 
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@map("project_attachments")
+}
+
+enum ProjectAttachmentClassification {
+  SANCTION_DOCUMENT
+  WORK_ORDER
+  ESTIMATE
+  BEFORE_PHOTO
+  PROGRESS_PHOTO
+  AFTER_PHOTO
+  BILL
+  COMPLETION_CERTIFICATE
+  OTHER
 }
 
 // ════════════════════════════════════════════════════════
@@ -1293,16 +1435,43 @@ model Department {
   isActive    Boolean @default(true)
   isDeleted   Boolean @default(false)
 
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  grievances Grievance[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  grievances      Grievance[]
+  users           User[]
+  tasks           Task[]
+  projects        Project[]
+  slas            DepartmentSLA[]
+  janataTokens    JanataDarbarToken[]
+  correspondences Correspondence[]
 
   @@unique([tenantId, name])
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([isDeleted])
   @@map("departments")
+}
+
+model DepartmentSLA {
+  id           String            @id @default(cuid())
+  tenantId     String
+  departmentId String
+  priority     GrievancePriority
+  slaHours     Int
+  isActive     Boolean           @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, priority])
+  @@index([tenantId])
+  @@index([departmentId])
+  @@index([priority])
+  @@map("department_slas")
 }
 
 // leaders 
@@ -1357,9 +1526,9 @@ model Leader {
   instagramUrl String?
 
   // Relations
-  relation  String? // "Supporter", "Neutral", "Alliance"
+  relation String? // "Supporter", "Neutral", "Alliance"
   // influence String? // "High", "Medium", "Low"
-  notes     String?
+  notes    String?
 
   tags      String[]
   isActive  Boolean  @default(true)
@@ -1384,6 +1553,7 @@ model Leader {
 
 model LeaderGreeting {
   id         String              @id @default(cuid())
+  tenantId   String
   leaderId   String
   type       String // "BIRTHDAY", "FESTIVAL", "ACHIEVEMENT", "CUSTOM"
   channel    NotificationChannel // SMS, EMAIL, WHATSAPP, IN_APP
@@ -1396,8 +1566,10 @@ model LeaderGreeting {
 
   createdAt DateTime @default(now())
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   leader Leader @relation(fields: [leaderId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([leaderId])
   @@index([type, year])
   @@map("leader_greetings")
@@ -1431,6 +1603,7 @@ model Fund {
 
 model FundTransaction {
   id          String   @id @default(cuid())
+  tenantId    String
   fundId      String
   amount      Float
   type        String // ALLOCATION, RELEASE, UTILIZATION
@@ -1440,9 +1613,13 @@ model FundTransaction {
   isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  fund Fund @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fund    Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id])
 
+  @@index([tenantId])
   @@index([fundId])
+  @@index([projectId])
   @@index([isDeleted])
   @@map("fund_transactions")
 }
@@ -1452,30 +1629,63 @@ model FundTransaction {
 // ════════════════════════════════════════════════════════
 
 model Task {
-  id           String       @id @default(cuid())
-  tenantId     String
-  title        String
-  description  String?
-  assignedToId String
-  createdById  String
-  priority     TaskPriority @default(MEDIUM)
-  status       TaskStatus   @default(TODO)
-  dueDate      DateTime?
-  completedAt  DateTime?
-  grievanceId  String?
-  projectId    String?
+  id                  String       @id @default(cuid())
+  tenantId            String
+  taskCode            String
+  title               String
+  description         String?
+  assignedToId        String
+  createdById         String
+  priority            TaskPriority @default(MEDIUM)
+  status              TaskStatus   @default(TODO)
+  dueDate             DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  completedById       String?
+  grievanceId         String?
+  projectId           String?
+  departmentId        String?
+  eventId             String?
+  appointmentId       String?
+  janataSessionId     String?
+  janataTokenId       String?
+  schemeApplicationId String?
+  correspondenceId    String?
+  isDeleted           Boolean      @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  assignedTo User   @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
-  createdBy  User   @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department        Department?          @relation(fields: [departmentId], references: [id])
+  assignedTo        User                 @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  createdBy         User                 @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  grievance         Grievance?           @relation(fields: [grievanceId], references: [id])
+  project           Project?             @relation(fields: [projectId], references: [id])
+  event             Event?               @relation(fields: [eventId], references: [id])
+  appointment       Appointment?         @relation(fields: [appointmentId], references: [id])
+  janataSession     JanataDarbarSession? @relation(fields: [janataSessionId], references: [id], onDelete: SetNull)
+  janataToken       JanataDarbarToken?   @relation(fields: [janataTokenId], references: [id], onDelete: SetNull)
+  schemeApplication SchemeApplication?   @relation(fields: [schemeApplicationId], references: [id], onDelete: SetNull)
+  correspondence    Correspondence?      @relation(fields: [correspondenceId], references: [id], onDelete: SetNull)
+  timeline          TaskTimeline[]
+  crmInteractions   CRMInteraction[]
 
+  @@unique([tenantId, taskCode])
   @@index([tenantId])
+  @@index([departmentId])
   @@index([assignedToId])
   @@index([status])
   @@index([dueDate])
+  @@index([grievanceId])
+  @@index([projectId])
+  @@index([eventId])
+  @@index([appointmentId])
+  @@index([janataSessionId])
+  @@index([janataTokenId])
+  @@index([schemeApplicationId])
+  @@index([isDeleted])
   @@map("tasks")
 }
 
@@ -1696,7 +1906,7 @@ model Meeting {
   organizedBy String?
   isDeleted   Boolean       @default(false)
 
-  reminderSent Boolean       @default(false)
+  reminderSent Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1723,32 +1933,32 @@ enum CompetitorAnalysisStatus {
 }
 
 model Competitor {
-  id              String   @id @default(cuid())
-  tenantId        String
-  candidateName   String
-  partyName       String
-  partyLogoUrl    String?
-  candidatePhoto  String?
-  designation     String?
-  constituency    String?
-  phone           String?
-  email           String?
-  facebookUrl     String?
-  twitterUrl      String?
-  instagramUrl    String?
-  youtubeUrl      String?
-  websiteUrl      String?
-  notes           String?
-  isActive        Boolean  @default(true)
-  isDeleted       Boolean  @default(false)
+  id             String  @id @default(cuid())
+  tenantId       String
+  candidateName  String
+  partyName      String
+  partyLogoUrl   String?
+  candidatePhoto String?
+  designation    String?
+  constituency   String?
+  phone          String?
+  email          String?
+  facebookUrl    String?
+  twitterUrl     String?
+  instagramUrl   String?
+  youtubeUrl     String?
+  websiteUrl     String?
+  notes          String?
+  isActive       Boolean @default(true)
+  isDeleted      Boolean @default(false)
 
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant    Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  metrics   CompetitorMetricEntry[]
-  analyses  CompetitorAnalysis[]
+  tenant   Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  metrics  CompetitorMetricEntry[]
+  analyses CompetitorAnalysis[]
 
   @@index([tenantId])
   @@index([isDeleted])
@@ -1758,23 +1968,26 @@ model Competitor {
 }
 
 model CompetitorMetricEntry {
-  id            String   @id @default(cuid())
-  competitorId  String
-  category      String   // VOTER_OUTREACH, GROUND_NETWORK, ISSUE_RESOLUTION, PUBLIC_SENTIMENT, DIGITAL_PRESENCE, EVENTS_ACTIVITIES, FINANCIAL_DEVELOPMENT
-  metricKey     String   // e.g. "rallies_held", "door_to_door_visits"
-  metricLabel   String   // Human-readable: "Rallies/Sabhas Held"
-  value         Float
-  unit          String?  // "count", "percentage", "days", "currency"
-  period        String   // "2026-04" (YYYY-MM format)
-  notes         String?
-  source        String?  // "field_workers", "news", "social_media"
+  id           String  @id @default(cuid())
+  tenantId     String
+  competitorId String
+  category     String // VOTER_OUTREACH, GROUND_NETWORK, ISSUE_RESOLUTION, PUBLIC_SENTIMENT, DIGITAL_PRESENCE, EVENTS_ACTIVITIES, FINANCIAL_DEVELOPMENT
+  metricKey    String // e.g. "rallies_held", "door_to_door_visits"
+  metricLabel  String // Human-readable: "Rallies/Sabhas Held"
+  value        Float
+  unit         String? // "count", "percentage", "days", "currency"
+  period       String // "2026-04" (YYYY-MM format)
+  notes        String?
+  source       String? // "field_workers", "news", "social_media"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   competitor Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
 
   @@unique([competitorId, metricKey, period])
+  @@index([tenantId])
   @@index([competitorId])
   @@index([category])
   @@index([period])
@@ -1784,12 +1997,12 @@ model CompetitorMetricEntry {
 model OwnMetricEntry {
   id          String  @id @default(cuid())
   tenantId    String
-  category    String  // Same categories as competitor
-  metricKey   String  // e.g. "rallies_held", "social_media_followers"
-  metricLabel String  // Human-readable label
+  category    String // Same categories as competitor
+  metricKey   String // e.g. "rallies_held", "social_media_followers"
+  metricLabel String // Human-readable label
   value       Float
   unit        String? // "count", "percentage", "days", "currency"
-  period      String  // "2026-04" (YYYY-MM format)
+  period      String // "2026-04" (YYYY-MM format)
   isAuto      Boolean @default(false) // true = system-computed, false = manual
   notes       String?
 
@@ -1808,37 +2021,40 @@ model OwnMetricEntry {
 }
 
 model CompetitorAnalysis {
-  id             String                   @id @default(cuid())
-  competitorId   String
-  status         CompetitorAnalysisStatus @default(PENDING)
-  
+  id           String                   @id @default(cuid())
+  tenantId     String
+  competitorId String
+  status       CompetitorAnalysisStatus @default(PENDING)
+
   // Snapshot of data used for analysis
-  ownMetricsSnapshot       Json?  // Snapshot of own metrics at time of analysis
-  competitorMetricsSnapshot Json?  // Snapshot of competitor metrics at time of analysis
+  ownMetricsSnapshot        Json? // Snapshot of own metrics at time of analysis
+  competitorMetricsSnapshot Json? // Snapshot of competitor metrics at time of analysis
 
   // AI-generated analysis
-  executiveSummary    String?
-  metricComparisons   Json?    // Array of {metric, ours, theirs, gap, advantage, insight, recommendation}
-  strengths           Json?    // Array of strings
-  weaknesses          Json?    // Array of strings
-  opportunities       Json?    // Array of strings
-  threats             Json?    // Array of strings
-  recommendations     Json?    // Array of {priority, action, expectedImpact, timeline}
-  overallScore        Float?   // 0-100 competitive position score
-  areasLeading        Int      @default(0)
-  areasTrailing       Int      @default(0)
-  areasTied           Int      @default(0)
+  executiveSummary  String?
+  metricComparisons Json? // Array of {metric, ours, theirs, gap, advantage, insight, recommendation}
+  strengths         Json? // Array of strings
+  weaknesses        Json? // Array of strings
+  opportunities     Json? // Array of strings
+  threats           Json? // Array of strings
+  recommendations   Json? // Array of {priority, action, expectedImpact, timeline}
+  overallScore      Float? // 0-100 competitive position score
+  areasLeading      Int     @default(0)
+  areasTrailing     Int     @default(0)
+  areasTied         Int     @default(0)
 
   errorMessage String?
-  
+
   triggeredById String?
   completedAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  competitor Competitor     @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  competitor   Competitor       @relation(fields: [competitorId], references: [id], onDelete: Cascade)
   chatMessages CompetitorChat[]
 
+  @@index([tenantId])
   @@index([competitorId])
   @@index([status])
   @@index([createdAt])
@@ -1847,6 +2063,7 @@ model CompetitorAnalysis {
 
 model CompetitorChat {
   id         String @id @default(cuid())
+  tenantId   String
   analysisId String
   role       String // "user" or "assistant"
   message    String
@@ -1854,8 +2071,10 @@ model CompetitorChat {
   createdById String?
   createdAt   DateTime @default(now())
 
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   analysis CompetitorAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([analysisId])
   @@index([createdAt])
   @@map("competitor_chats")
@@ -1866,48 +2085,50 @@ model CompetitorChat {
 // ════════════════════════════════════════════════════════
 
 model Voter {
-  id                  String          @id @default(cuid())
-  tenantId            String
-  wardId              String
-  wardAreaId          String?
+  id         String  @id @default(cuid())
+  tenantId   String
+  wardId     String
+  wardAreaId String?
+  boothId    String?
 
   // Electoral Roll Identity
-  voterIdNumber       String          // EPIC number (unique per tenant)
-  slNo               Int?            // Serial number in voter list
-  sectionNo          Int?            // Part/Section number
-  boothNo            Int?            // Polling booth number
+  voterIdNumber String // EPIC number (unique per tenant)
+  slNo          Int? // Serial number in voter list
+  sectionNo     Int? // Part/Section number
+  boothNo       Int? // Polling booth number
 
   // Personal Details
-  name                String
-  relativeName        String?         // Father/Husband name
-  relationType        String?         // "F" (Father), "H" (Husband), "M" (Mother)
-  gender              VoterGender
-  age                 Int?
+  name         String
+  relativeName String? // Father/Husband name
+  relationType String? // "F" (Father), "H" (Husband), "M" (Mother)
+  gender       VoterGender
+  age          Int?
 
   // Address
-  houseNo             String?
-  address             String?
-  locality            String?
+  houseNo  String?
+  address  String?
+  locality String?
 
   // Contact (optional)
-  phone               String?
+  phone String?
 
   // Classification
-  isDisabled          Boolean         @default(false)
+  isDisabled Boolean @default(false)
 
   // Metadata
-  status              String          @default("ACTIVE") // ACTIVE, DELETED, SHIFTED
-  isDeleted           Boolean         @default(false)
-  uploadBatchId       String?
+  status        String  @default("ACTIVE") // ACTIVE, DELETED, SHIFTED
+  isDeleted     Boolean @default(false)
+  uploadBatchId String?
 
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ward                Ward            @relation(fields: [wardId], references: [id])
-  wardArea            WardArea?       @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
-  uploadBatch         BulkUploadJob?  @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward        Ward           @relation(fields: [wardId], references: [id])
+  wardArea    WardArea?      @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
+  uploadBatch BulkUploadJob? @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
+  booth       Booth?         @relation(fields: [boothId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, voterIdNumber])
   @@index([tenantId])
@@ -1919,44 +2140,1212 @@ model Voter {
   @@index([sectionNo])
   @@index([isDeleted])
   @@index([uploadBatchId])
+  @@index([boothId])
   @@index([tenantId, wardId, boothNo])
   @@index([tenantId, wardId, sectionNo])
   @@map("voters")
 }
 
 model BulkUploadJob {
-  id                  String           @id @default(cuid())
-  tenantId            String
-  module              String           // "voters", "institutions", etc.
-  fileName            String?
-  fileSize            Int?             // bytes
+  id       String  @id @default(cuid())
+  tenantId String
+  module   String // "voters", "institutions", etc.
+  fileName String?
+  fileSize Int? // bytes
 
-  status              BulkUploadStatus @default(PENDING)
-  totalRows           Int              @default(0)
-  processedRows       Int              @default(0)
-  successCount        Int              @default(0)
-  failedCount         Int              @default(0)
-  duplicateCount      Int              @default(0)
+  status         BulkUploadStatus @default(PENDING)
+  totalRows      Int              @default(0)
+  processedRows  Int              @default(0)
+  successCount   Int              @default(0)
+  failedCount    Int              @default(0)
+  duplicateCount Int              @default(0)
 
   // Error details — JSON array of { rowIndex, voterIdNumber?, field?, error }
-  errors              Json             @default("[]")
+  errors  Json  @default("[]")
   // Summary stats generated after completion
-  summary             Json?
+  summary Json?
 
-  startedAt           DateTime?
-  completedAt         DateTime?
-  uploadedById        String?
-  uploadedByName      String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  uploadedById   String?
+  uploadedByName String?
 
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant              Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  voters              Voter[]
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  voters Voter[]
 
   @@index([tenantId])
   @@index([status])
   @@index([module])
   @@index([createdAt])
   @@map("bulk_upload_jobs")
+}
+
+// ════════════════════════════════════════════════════════
+// CONSTITUENCY & GEOGRAPHY (Phase 3)
+// ════════════════════════════════════════════════════════
+
+enum ConstituencyType {
+  ASSEMBLY
+  PARLIAMENTARY
+}
+
+enum GeographyImportStatus {
+  PENDING
+  VALIDATING
+  PREVIEW
+  IMPORTING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+model Constituency {
+  id          String           @id @default(cuid())
+  tenantId    String
+  name        String
+  code        String?
+  type        ConstituencyType @default(ASSEMBLY)
+  districtId  String?
+  description String?
+  latitude    Float?
+  longitude   Float?
+  boundary    Json?
+  isActive    Boolean          @default(true)
+  isDeleted   Boolean          @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  district        District?               @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  representatives RepresentativeProfile[]
+
+  townVillages TownVillage[]
+
+  wards             Ward[]
+  booths            Booth[]
+  constituencyWards ConstituencyWard[]
+
+  @@unique([tenantId, name])
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("constituencies")
+}
+
+model RepresentativeProfile {
+  id             String @id @default(cuid())
+  tenantId       String
+  constituencyId String @unique
+
+  name     String
+  title    String
+  photoUrl String?
+
+  partyName    String?
+  partyLogoUrl String?
+
+  termStartDate DateTime?
+  termEndDate   DateTime?
+
+  officePhone   String?
+  officeEmail   String?
+  officeAddress String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  constituency Constituency @relation(fields: [constituencyId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, constituencyId])
+  @@index([tenantId])
+  @@map("representative_profiles")
+}
+
+model District {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String
+  code        String?
+  state       String
+  description String?
+  latitude    Float?
+  longitude   Float?
+  boundary    Json?
+  isActive    Boolean   @default(true)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  constituencies Constituency[]
+  blocks         Block[]
+  townVillages   TownVillage[]
+
+  @@unique([tenantId, name])
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("districts")
+}
+
+model Block {
+  id          String    @id @default(cuid())
+  tenantId    String
+  districtId  String
+  name        String
+  code        String?
+  description String?
+  latitude    Float?
+  longitude   Float?
+  boundary    Json?
+  isActive    Boolean   @default(true)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  district     District      @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  townVillages TownVillage[]
+
+  @@unique([tenantId, districtId, name])
+  @@unique([tenantId, districtId, code])
+  @@index([tenantId])
+  @@index([tenantId, districtId])
+  @@map("blocks")
+}
+
+model TownVillage {
+  id         String @id @default(cuid())
+  tenantId   String
+  districtId String
+
+  // Optional because urban towns don't belong to a Block
+  blockId String?
+
+  // Constituency in which this town/village currently falls
+  constituencyId String?
+
+  name String
+  code String?
+
+  type   TownVillageType @default(VILLAGE)
+  nature GeographyNature @default(RURAL)
+
+  description String?
+  pincode     String?
+  latitude    Float?
+  longitude   Float?
+  boundary    Json?
+
+  isActive  Boolean   @default(true)
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  district District @relation(fields: [districtId], references: [id], onDelete: Restrict)
+
+  block Block? @relation(fields: [blockId], references: [id], onDelete: SetNull)
+
+  constituency Constituency? @relation(fields: [constituencyId], references: [id], onDelete: SetNull)
+
+  wards  Ward[]
+  booths Booth[]
+
+  @@unique([tenantId, districtId, name])
+  @@unique([tenantId, districtId, code])
+  @@index([tenantId])
+  @@index([tenantId, districtId])
+  @@index([tenantId, constituencyId])
+  @@index([tenantId, blockId])
+  @@index([tenantId, type])
+  @@index([tenantId, nature])
+  @@index([isDeleted])
+  @@map("town_villages")
+}
+
+model PollingLocation {
+  id           String    @id @default(cuid())
+  tenantId     String
+  name         String
+  code         String?
+  description  String?
+  address      String?
+  pincode      String?
+  latitude     Float?
+  longitude    Float?
+  buildingName String?
+  landmark     String?
+  isAccessible Boolean   @default(true)
+  isActive     Boolean   @default(true)
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  booths Booth[]
+
+  @@index([tenantId])
+  @@map("polling_locations")
+}
+
+model Booth {
+  id       String @id @default(cuid())
+  tenantId String
+
+  constituencyId String
+
+  wardId        String?
+  townVillageId String?
+
+  pollingLocationId String?
+
+  boothNumber Int
+  boothName   String
+  code        String?
+  description String?
+
+  latitude  Float?
+  longitude Float?
+  boundary  Json?
+
+  isActive  Boolean   @default(true)
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  constituency Constituency @relation(fields: [constituencyId], references: [id], onDelete: Cascade)
+
+  ward Ward? @relation(fields: [wardId], references: [id], onDelete: SetNull)
+
+  townVillage TownVillage? @relation(fields: [townVillageId], references: [id], onDelete: SetNull)
+
+  pollingLocation PollingLocation? @relation(fields: [pollingLocationId], references: [id], onDelete: SetNull)
+
+  voters Voter[]
+
+  @@unique([tenantId, constituencyId, boothNumber])
+  @@index([tenantId])
+  @@index([tenantId, constituencyId])
+  @@index([tenantId, wardId])
+  @@index([tenantId, townVillageId])
+  @@index([tenantId, pollingLocationId])
+  @@map("booths")
+}
+
+model ConstituencyWard {
+  id             String   @id @default(cuid())
+  tenantId       String
+  constituencyId String
+  wardId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  constituency Constituency @relation(fields: [constituencyId], references: [id], onDelete: Cascade)
+  ward         Ward         @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+  @@unique([constituencyId, wardId])
+  @@index([tenantId])
+  @@map("constituency_wards")
+}
+
+model GeographyImportJob {
+  id             String                @id @default(cuid())
+  tenantId       String
+  fileName       String?
+  fileSize       Int?
+  status         GeographyImportStatus @default(PENDING)
+  totalRows      Int                   @default(0)
+  processedRows  Int                   @default(0)
+  successCount   Int                   @default(0)
+  failedCount    Int                   @default(0)
+  errors         Json                  @default("[]")
+  summary        Json?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  uploadedById   String?
+  uploadedByName String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("geography_import_jobs")
+}
+
+model ProjectTimeline {
+  id          String   @id @default(cuid())
+  tenantId    String
+  projectId   String
+  action      String
+  comment     String?
+  metadata    Json?
+  changedById String?
+  createdAt   DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("project_timelines")
+}
+
+model TaskTimeline {
+  id          String   @id @default(cuid())
+  tenantId    String
+  taskId      String
+  action      String
+  comment     String?
+  metadata    Json?
+  changedById String?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("task_timelines")
+}
+
+enum EventType {
+  PUBLIC_MEETING
+  JANATA_DARBAR
+  CONSTITUENCY_VISIT
+  VILLAGE_VISIT
+  DEVELOPMENT_INAUGURATION
+  PUBLIC_HEARING
+  OFFICIAL_MEETING
+  COMMUNITY_EVENT
+  PRESS_CONFERENCE
+}
+
+enum EventStatus {
+  DRAFT
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+enum EventMode {
+  OFFLINE
+  ONLINE
+  HYBRID
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  tenantId    String
+  eventCode   String
+  title       String
+  description String?
+  type        EventType
+  status      EventStatus @default(DRAFT)
+  mode        EventMode   @default(OFFLINE)
+
+  startDate DateTime
+  endDate   DateTime?
+
+  location    String?
+  address     String?
+  meetingLink String? // Added to support ONLINE/HYBRID modes
+  latitude    Float?
+  longitude   Float?
+
+  wardId      String?
+  organizerId String?
+  isDeleted   Boolean @default(false)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward            Ward?             @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  organizer       User?             @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: SetNull)
+  agenda          EventAgenda[]
+  guests          EventGuest[]
+  team            EventTeamMember[]
+  attendance      EventAttendance[]
+  media           EventMedia[]
+  report          EventReport?
+  tasks           Task[]
+  timeline        EventTimeline[]
+  crmInteractions CRMInteraction[]
+
+  @@unique([tenantId, eventCode])
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@index([startDate])
+  @@index([wardId])
+  @@index([organizerId])
+  @@index([isDeleted])
+  @@map("events")
+}
+
+model EventTeamMember {
+  id         String   @id @default(cuid())
+  tenantId   String
+  eventId    String
+  userId     String
+  role       String?
+  assignedAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_team_members")
+}
+
+model EventAgenda {
+  id          String    @id @default(cuid())
+  tenantId    String
+  eventId     String
+  title       String
+  description String?
+  orderIndex  Int       @default(0)
+  startTime   DateTime?
+  endTime     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@map("event_agendas")
+}
+
+model EventGuest {
+  id               String   @id @default(cuid())
+  tenantId         String
+  eventId          String
+  name             String
+  designation      String?
+  organization     String?
+  phone            String?
+  email            String?
+  invitationStatus String?
+  attendanceStatus String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@map("event_guests")
+}
+
+model EventAttendance {
+  id           String    @id @default(cuid())
+  tenantId     String
+  eventId      String
+  name         String
+  phone        String?
+  category     String?
+  checkedInAt  DateTime?
+  checkedOutAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@map("event_attendances")
+}
+
+enum EventMediaType {
+  PHOTO
+  VIDEO
+  DOCUMENT
+}
+
+model EventMedia {
+  id           String         @id @default(cuid())
+  tenantId     String
+  eventId      String
+  type         EventMediaType
+  fileUrl      String
+  fileName     String
+  fileType     String?
+  fileSize     Int?
+  caption      String?
+  uploadedById String?
+  createdAt    DateTime       @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([type])
+  @@map("event_media")
+}
+
+model EventReport {
+  id              String   @id @default(cuid())
+  tenantId        String
+  eventId         String   @unique
+  summary         String?
+  highlights      String?
+  issues          String?
+  decisions       String?
+  outcomes        String?
+  remarks         String?
+  attendanceCount Int      @default(0)
+  createdById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_reports")
+}
+
+model EventTimeline {
+  id          String   @id @default(cuid())
+  tenantId    String
+  eventId     String
+  action      String
+  description String?
+  changedById String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("event_timelines")
+}
+
+enum AppointmentType {
+  MLA_MP_MEETING
+  PUBLIC_GRIEVANCE
+  OFFICE_APPOINTMENT
+  DEVELOPMENT_DISCUSSION
+  OFFICIAL_MEETING
+}
+
+enum AppointmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model Appointment {
+  id                String            @id @default(cuid())
+  tenantId          String
+  appointmentNumber String
+  title             String
+  type              AppointmentType
+  status            AppointmentStatus @default(PENDING)
+
+  requesterName  String
+  requesterPhone String?
+  requesterEmail String?
+
+  date      DateTime
+  startTime String
+  endTime   String
+
+  location           String?
+  purpose            String?
+  notes              String?
+  rejectionReason    String?
+  cancellationReason String?
+
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  createdById  String?
+  isDeleted    Boolean   @default(false)
+  reminderSent Boolean   @default(false)
+  reminderAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy       User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  tasks           Task[]
+  crmInteractions CRMInteraction[]
+
+  @@unique([tenantId, appointmentNumber])
+  @@index([tenantId])
+  @@index([date])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([isDeleted])
+  @@map("appointments")
+}
+
+enum JanataSessionType {
+  JANATA_DARBAR
+  PUBLIC_HEARING
+}
+
+enum JanataSessionStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum JanataTokenStatus {
+  WAITING
+  CALLED
+  IN_PROGRESS
+  RESOLVED
+  REFERRED
+  ABSENT
+}
+
+model JanataDarbarSession {
+  id            String              @id @default(cuid())
+  tenantId      String
+  sessionNumber String
+  title         String
+  type          JanataSessionType
+  status        JanataSessionStatus @default(SCHEDULED)
+
+  date        DateTime
+  startTime   String
+  endTime     String
+  location    String
+  description String?
+
+  createdById String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy       User?               @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  tokens          JanataDarbarToken[]
+  grievances      Grievance[]
+  tasks           Task[]
+  crmInteractions CRMInteraction[]
+
+  @@unique([tenantId, sessionNumber])
+  @@index([tenantId])
+  @@index([date])
+  @@index([status])
+  @@index([type])
+  @@index([isDeleted])
+  @@map("janata_darbar_sessions")
+}
+
+model JanataDarbarToken {
+  id          String            @id @default(cuid())
+  tenantId    String
+  sessionId   String
+  tokenNumber String // e.g. JD-001
+  status      JanataTokenStatus @default(WAITING)
+
+  visitorName String
+  phone       String?
+  address     String?
+  purpose     String?
+  notes       String?
+
+  wardId            String?
+  assignedOfficerId String?
+  departmentId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session         JanataDarbarSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  assignedOfficer User?               @relation("TokenOfficer", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
+  department      Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  ward            Ward?               @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  grievances      Grievance[]
+  tasks           Task[]
+  crmInteractions CRMInteraction[]
+
+  @@unique([sessionId, tokenNumber])
+  @@index([tenantId])
+  @@index([sessionId])
+  @@index([status])
+  @@map("janata_darbar_tokens")
+}
+
+enum SchemeStatus {
+  ACTIVE
+  INACTIVE
+  UPCOMING
+  EXPIRED
+}
+
+enum SchemeLevel {
+  CENTRAL
+  STATE
+  LOCAL
+}
+
+enum SchemeApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  DOCUMENT_PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+model Scheme {
+  id         String      @id @default(cuid())
+  tenantId   String
+  name       String
+  code       String?
+  department String
+  level      SchemeLevel @default(STATE)
+
+  description       String?
+  eligibility       String?
+  benefits          String?
+  requiredDocuments Json?
+  applicationUrl    String?
+
+  status SchemeStatus @default(ACTIVE)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  isDeleted   Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  applications SchemeApplication[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([department])
+  @@index([status])
+  @@index([isDeleted])
+  @@map("schemes")
+}
+
+model SchemeApplication {
+  id                String @id @default(cuid())
+  tenantId          String
+  schemeId          String
+  applicationNumber String
+
+  beneficiaryName  String
+  beneficiaryPhone String?
+  beneficiaryEmail String?
+  address          String?
+  wardId           String?
+
+  status SchemeApplicationStatus @default(DRAFT)
+
+  assignedToId    String?
+  notes           String?
+  rejectionReason String?
+  followUpDate    DateTime?
+  completedAt     DateTime?
+
+  createdById String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant          Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  scheme          Scheme                      @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  assignedTo      User?                       @relation("SchemeApplicationOfficer", fields: [assignedToId], references: [id], onDelete: SetNull)
+  ward            Ward?                       @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  documents       SchemeApplicationDocument[]
+  grievances      Grievance[]
+  tasks           Task[]
+  crmInteractions CRMInteraction[]
+
+  @@unique([tenantId, applicationNumber])
+  @@index([tenantId])
+  @@index([schemeId])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([wardId])
+  @@index([followUpDate])
+  @@index([isDeleted])
+  @@map("scheme_applications")
+}
+
+model SchemeApplicationDocument {
+  id            String @id @default(cuid())
+  tenantId      String
+  applicationId String
+
+  fileName String
+  fileUrl  String
+  fileType String?
+  fileSize Int?
+
+  documentType String?
+  createdAt    DateTime @default(now())
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  application SchemeApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([applicationId])
+  @@map("scheme_application_documents")
+}
+
+enum ContactCategory {
+  CITIZEN
+  COMMUNITY_LEADER
+  ORGANIZATION
+  NGO
+  OFFICIAL
+  BUSINESS
+  MEDIA
+  OTHER
+}
+
+enum InteractionChannel {
+  CALL
+  EMAIL
+  SMS
+  WHATSAPP
+  OFFICE_VISIT
+  LETTER
+  MEETING
+  OTHER
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Contact {
+  id       String          @id @default(cuid())
+  tenantId String
+  name     String
+  phone    String?
+  email    String?
+  address  String?
+  wardId   String?
+  category ContactCategory @default(CITIZEN)
+
+  relationship   String?
+  tags           String? // Comma-separated tags
+  importantNotes String?
+
+  isDeleted   Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy    User?            @relation("ContactCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  ward         Ward?            @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  interactions CRMInteraction[]
+  followUps    CRMFollowUp[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([isDeleted])
+  @@map("crm_contacts")
+}
+
+model CRMInteraction {
+  id        String             @id @default(cuid())
+  tenantId  String
+  contactId String
+  channel   InteractionChannel
+  date      DateTime           @default(now())
+  summary   String
+  details   String?
+
+  grievanceId         String?
+  appointmentId       String?
+  eventId             String?
+  janataSessionId     String?
+  janataTokenId       String?
+  schemeApplicationId String?
+  taskId              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact           Contact              @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  grievance         Grievance?           @relation(fields: [grievanceId], references: [id], onDelete: SetNull)
+  appointment       Appointment?         @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  event             Event?               @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  janataSession     JanataDarbarSession? @relation(fields: [janataSessionId], references: [id], onDelete: SetNull)
+  janataToken       JanataDarbarToken?   @relation(fields: [janataTokenId], references: [id], onDelete: SetNull)
+  schemeApplication SchemeApplication?   @relation(fields: [schemeApplicationId], references: [id], onDelete: SetNull)
+  task              Task?                @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([channel])
+  @@index([date])
+  @@map("crm_interactions")
+}
+
+model CRMFollowUp {
+  id           String         @id @default(cuid())
+  tenantId     String
+  contactId    String
+  followUpDate DateTime
+  assignedToId String?
+  purpose      String
+  notes        String?
+  status       FollowUpStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact    Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedTo User?   @relation("FollowUpOfficer", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([followUpDate])
+  @@index([status])
+  @@map("crm_follow_ups")
+}
+
+enum DocumentCategory {
+  GENERAL
+  GRIEVANCE
+  PROJECT
+  SCHEME
+  EVENT
+  MEETING
+  APPOINTMENT
+  LETTER
+  APPLICATION
+  GOVERNMENT
+  FINANCIAL
+  LEGAL
+  REPORT
+  OTHER
+}
+
+model Document {
+  id          String           @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  category    DocumentCategory @default(GENERAL)
+
+  fileName String
+  fileUrl  String
+  fileType String?
+  fileSize Int?
+
+  version      Int     @default(1)
+  isDeleted    Boolean @default(false)
+  uploadedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant                  Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploadedBy              User?                    @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  versions                DocumentVersion[]
+  links                   DocumentLink[]
+  correspondenceDocuments CorrespondenceDocument[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([isDeleted])
+  @@index([createdAt])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id         String  @id @default(cuid())
+  documentId String
+  version    Int
+  fileName   String
+  fileUrl    String
+  fileType   String?
+  fileSize   Int?
+
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("document_versions")
+}
+
+model DocumentLink {
+  id         String   @id @default(cuid())
+  tenantId   String
+  documentId String
+  module     String
+  recordId   String
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([documentId])
+  @@index([module, recordId])
+  @@map("document_links")
+}
+
+enum CorrespondenceType {
+  LETTER
+  APPLICATION
+  REQUEST
+  REPRESENTATION
+  COMPLAINT
+  RECOMMENDATION
+  OTHER
+}
+
+enum CorrespondenceStatus {
+  RECEIVED
+  UNDER_REVIEW
+  ASSIGNED
+  IN_PROGRESS
+  REPLY_PENDING
+  REPLIED
+  COMPLETED
+  REJECTED
+  CLOSED
+}
+
+model Correspondence {
+  id              String             @id @default(cuid())
+  tenantId        String
+  referenceNumber String
+  type            CorrespondenceType
+  subject         String
+  description     String?
+
+  senderName    String?
+  senderPhone   String?
+  senderEmail   String?
+  senderAddress String?
+
+  receivedDate DateTime  @default(now())
+  dueDate      DateTime?
+
+  status       CorrespondenceStatus @default(RECEIVED)
+  assignedToId String?
+  departmentId String?
+
+  replyText   String?
+  repliedAt   DateTime?
+  completedAt DateTime?
+
+  notes       String?
+  isDeleted   Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant     Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedTo User?                    @relation("CorrespondenceAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  department Department?              @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  documents  CorrespondenceDocument[]
+  timeline   CorrespondenceTimeline[]
+  tasks      Task[]
+
+  @@unique([tenantId, referenceNumber])
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([departmentId])
+  @@index([receivedDate])
+  @@index([dueDate])
+  @@index([isDeleted])
+  @@map("correspondences")
+}
+
+model CorrespondenceDocument {
+  id               String   @id @default(cuid())
+  tenantId         String
+  correspondenceId String
+  documentId       String
+  createdAt        DateTime @default(now())
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  correspondence Correspondence @relation(fields: [correspondenceId], references: [id], onDelete: Cascade)
+  document       Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([correspondenceId, documentId])
+  @@index([tenantId])
+  @@index([correspondenceId])
+  @@index([documentId])
+  @@map("correspondence_documents")
+}
+
+model CorrespondenceTimeline {
+  id               String   @id @default(cuid())
+  tenantId         String
+  correspondenceId String
+  action           String
+  comment          String?
+  changedById      String?
+  createdAt        DateTime @default(now())
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  correspondence Correspondence @relation(fields: [correspondenceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([correspondenceId])
+  @@index([createdAt])
+  @@map("correspondence_timeline")
 }

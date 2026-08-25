@@ -23,6 +23,10 @@ export const createTenantSchema = z.object({
   termStartDate: z.string().optional(),
   termEndDate: z.string().optional(),
 
+  // Constituency specific properties
+  constituencyType: z.enum(["ASSEMBLY", "PARLIAMENTARY"]).optional().default("ASSEMBLY"),
+  constituencyCode: z.string().optional(),
+
   // Admin user to create for this tenant
   adminEmail: z.string().email("Admin email is required"),
   adminPassword: z.string().min(6, "Admin password must be at least 6 characters"),
@@ -59,6 +63,8 @@ export const updateTenantSchema = z.object({
   termEndDate: z.string().optional(),
 
   status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]).optional(),
+  constituencyType: z.enum(["ASSEMBLY", "PARLIAMENTARY"]).optional(),
+  constituencyCode: z.string().optional(),
 });
 
 // ─── List Tenants Query ────────────────────────────────

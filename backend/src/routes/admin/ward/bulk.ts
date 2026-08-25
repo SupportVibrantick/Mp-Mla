@@ -144,6 +144,7 @@ export async function bulkCreateWards(
                         } else {
                             await tx.wardCouncillor.create({
                                 data: {
+                                    tenantId,
                                     wardId: currentWardId,
                                     isCurrent: true,
                                     ...councillorUpdate,
@@ -182,6 +183,7 @@ export async function bulkCreateWards(
                         } else {
                             const createdArea = await tx.wardArea.create({
                                 data: {
+                                    tenantId,
                                     wardId: currentWardId,
                                     name: String(aName),
                                     ...aUpdate,

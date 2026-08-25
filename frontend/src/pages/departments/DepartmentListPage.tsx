@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   useDepartments,
@@ -22,6 +22,13 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -65,8 +72,14 @@ import {
   FolderKanban,
   FileUp,
   Download,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useParams } from "wouter";
+import DepartmentDetailPage from "./DepartmentDetailPage";
 
 const emptyForm = {
   name: "",
@@ -79,10 +92,28 @@ const emptyForm = {
 };
 
 export default function DepartmentListPage() {
+  const params = useParams<{ id?: string }>();
+  if (params.id) {
+    return <DepartmentDetailPage id={params.id} />;
+  }
+
   const [search, setSearch] = useState("");
-  const { data: res, isLoading } = useDepartments({
-    search: search || undefined,
-  });
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
+
+  const queryParams = useMemo(() => {
+    const p: Record<string, any> = { page, limit: 10 };
+    if (search) p.search = search;
+    if (statusFilter !== "all")
+      p.isActive = statusFilter === "active" ? "true" : "false";
+    if (sortBy) p.sortBy = sortBy;
+    p.sortOrder = sortOrder;
+    return p;
+  }, [search, statusFilter, sortBy, sortOrder, page]);
+
+  const { data: res, isLoading } = useDepartments(queryParams);
   const { data: statsRes } = useDepartmentStats();
   const createMut = useCreateDepartment();
   const updateMut = useUpdateDepartment();
@@ -172,6 +203,7 @@ export default function DepartmentListPage() {
   };
 
   const departments = res?.data || [];
+  const pagination = res?.pagination;
   const stats = statsRes?.data;
 
   const openAdd = () => {
@@ -202,6 +234,14 @@ export default function DepartmentListPage() {
       await createMut.mutateAsync(payload);
     }
     setDlg(false);
+  };
+
+  const reset = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setSortBy("name");
+    setSortOrder("asc");
+    setPage(1);
   };
 
   return (
@@ -333,16 +373,90 @@ export default function DepartmentListPage() {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search departments..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20 rounded-xl"
-          />
-        </div>
+        {/* Filters */}
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl">
+          <CardContent className="p-4">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, code or head..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20"
+                />
+              </div>
+              <div className="flex gap-2.5 flex-wrap w-full lg:w-auto">
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) => {
+                    setStatusFilter(v);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-40 h-10 border-border/60 bg-muted/10">
+                    <Filter className="h-3.5 w-3.5 mr-1.5" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={sortBy}
+                  onValueChange={(v) => {
+                    setSortBy(v);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-40 h-10 border-border/60 bg-muted/10">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="code">Code</SelectItem>
+                    <SelectItem value="createdAt">Created Date</SelectItem>
+                    <SelectItem value="updatedAt">Updated Date</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 border-border/60 bg-muted/10"
+                  onClick={() => {
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                    setPage(1);
+                  }}
+                  title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                >
+                  {sortOrder === "asc" ? (
+                    <ArrowUp className="h-4 w-4" />
+                  ) : (
+                    <ArrowDown className="h-4 w-4" />
+                  )}
+                </Button>
+                {(search ||
+                  statusFilter !== "all" ||
+                  sortBy !== "name" ||
+                  sortOrder !== "asc") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="text-xs h-10 px-3 text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Table */}
         <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
@@ -378,7 +492,7 @@ export default function DepartmentListPage() {
                         className="text-center py-16 text-muted-foreground text-xs"
                       >
                         <Landmark className="h-10 w-10 mx-auto mb-3 opacity-30 text-muted-foreground" />
-                        <p className="font-medium text-sm">No departments found.</p>
+                        <p className="font-medium text-sm">No departments found matching your filters.</p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -519,6 +633,35 @@ export default function DepartmentListPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+                </p>
+                <div className="flex gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
+                    disabled={!pagination.hasPrevPage}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
+                    disabled={!pagination.hasNextPage}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -570,7 +713,6 @@ export default function DepartmentListPage() {
                 onChange={(e) =>
                   setForm((p) => ({ ...p, description: e.target.value }))
                 }
-                placeholder="About this department..."
                 className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
               />
             </div>

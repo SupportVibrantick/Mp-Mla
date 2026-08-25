@@ -92,7 +92,7 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
                 projectCode: sCode,
                 tenantId,
                 category: String(category || "General"),
-                department: resolvedDeptId || "Unassigned",
+                departmentId: resolvedDeptId || null,
                 contractor: safeString(contractor),
                 contractorPhone: safeString(contractorPhone),
                 wardId,
@@ -130,7 +130,6 @@ export const bulkCreateProjects = catchAsync(async (req: Request, res: Response)
                     data: {
                         ...projectData,
                         category: projectData.category || "General",
-                        department: projectData.department || "Unassigned",
                         fundType: projectData.fundType || "OTHER",
                         status: projectData.status || "PENDING",
                         completionPercent: projectData.completionPercent || 0,

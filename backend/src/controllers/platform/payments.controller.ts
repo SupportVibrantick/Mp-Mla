@@ -197,6 +197,7 @@ export const createPayment = async (
 
     const payment = await prisma.payment.create({
       data: {
+        tenantId: subscription.tenantId,
         subscriptionId,
         amount,
         currency: currency || "INR",

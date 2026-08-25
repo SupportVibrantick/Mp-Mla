@@ -11,9 +11,6 @@ const api = axios.create({
   // baseURL: API_BASE_URL,
   baseURL: API_BASE_URL,
   timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // Track if we're currently refreshing to prevent multiple refresh calls
@@ -40,6 +37,9 @@ api.interceptors.request.use(
     const token = TokenStorage.getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (config.headers && !(config.data instanceof FormData)) {
+      config.headers["Content-Type"] = "application/json";
     }
     return config;
   },
@@ -154,9 +154,12 @@ export const accountApi = {
   getInvoices: () => api.get("/admin/account/invoices"),
   getUsage: () => api.get("/admin/account/usage"),
   getPlans: () => api.get("/admin/account/plans"),
-  requestUpgrade: (data: any) => api.post("/admin/account/upgrade-requests", data),
-  createPaymentOrder: (data: any) => api.post("/admin/account/payments/order", data),
-  verifyPayment: (data: any) => api.post("/admin/account/payments/verify", data),
+  requestUpgrade: (data: any) =>
+    api.post("/admin/account/upgrade-requests", data),
+  createPaymentOrder: (data: any) =>
+    api.post("/admin/account/payments/order", data),
+  verifyPayment: (data: any) =>
+    api.post("/admin/account/payments/verify", data),
 };
 
 export const usersApi = {
@@ -275,6 +278,24 @@ export const projectsApi = {
 
   addUpdate: (id: string, data: any) =>
     api.post(`/admin/projects/${id}/updates`, data),
+
+  updateMilestone: (id: string, msId: string, data: any) =>
+    api.put(`/admin/projects/${id}/milestones/${msId}`, data),
+
+  listAttachments: (id: string) => api.get(`/admin/projects/${id}/attachments`),
+
+  addAttachment: (id: string, data: any) =>
+    api.post(`/admin/projects/${id}/attachments`, data, {
+      headers:
+        data instanceof FormData
+          ? { "Content-Type": "multipart/form-data" }
+          : undefined,
+    }),
+
+  deleteAttachment: (id: string, attachmentId: string) =>
+    api.delete(`/admin/projects/${id}/attachments/${attachmentId}`),
+
+  listTimeline: (id: string) => api.get(`/admin/projects/${id}/timeline`),
 };
 
 export const institutionsApi = {
@@ -307,6 +328,13 @@ export const departmentsApi = {
   update: (id: string, data: any) => api.put(`/admin/departments/${id}`, data),
   delete: (id: string) => api.delete(`/admin/departments/${id}`),
   toggle: (id: string) => api.patch(`/admin/departments/${id}/toggle-active`),
+  getUsers: (id: string) => api.get(`/admin/departments/${id}/users`),
+  getGrievances: (id: string) => api.get(`/admin/departments/${id}/grievances`),
+  getTasks: (id: string) => api.get(`/admin/departments/${id}/tasks`),
+  getSlas: (id: string) => api.get(`/admin/departments/${id}/slas`),
+  updateSlas: (id: string, data: any) =>
+    api.put(`/admin/departments/${id}/slas`, data),
+  getSingleStats: (id: string) => api.get(`/admin/departments/${id}/stats`),
 };
 
 export const dashboardApi = {
@@ -316,7 +344,6 @@ export const dashboardApi = {
 export const auditLogsApi = {
   list: (params?: any) => api.get("/admin/audit-logs", { params }),
 };
-
 
 export const recycleBinApi = {
   list: (params?: any) => api.get("/admin/recycle-bin", { params }),
@@ -348,12 +375,34 @@ export const voterListApi = {
   update: (id: string, data: any) => api.put(`/admin/voter-list/${id}`, data),
   delete: (id: string) => api.delete(`/admin/voter-list/${id}`),
   bulkUpload: (data: any) => api.post("/admin/voter-list/bulk", data),
-  listBulkJobs: (params?: any) => api.get("/admin/voter-list/bulk/jobs", { params }),
-  getBulkJob: (jobId: string) => api.get(`/admin/voter-list/bulk/jobs/${jobId}`),
+  listBulkJobs: (params?: any) =>
+    api.get("/admin/voter-list/bulk/jobs", { params }),
+  getBulkJob: (jobId: string) =>
+    api.get(`/admin/voter-list/bulk/jobs/${jobId}`),
   exportCSV: (params?: any) =>
     api.get("/admin/voter-list/export", { params, responseType: "blob" }),
   downloadSampleCSV: () =>
     api.get("/admin/voter-list/sample", { responseType: "blob" }),
   downloadSampleExcel: () =>
     api.get("/admin/voter-list/sample/excel", { responseType: "blob" }),
+};
+
+export const tasksApi = {
+  list: (params?: any) => api.get("/admin/tasks", { params }),
+  get: (id: string) => api.get(`/admin/tasks/${id}`),
+  stats: () => api.get("/admin/tasks/stats"),
+  create: (data: any) => api.post("/admin/tasks", data),
+  update: (id: string, data: any) => api.put(`/admin/tasks/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/tasks/${id}`),
+  changeStatus: (id: string, status: string) =>
+    api.patch(`/admin/tasks/${id}/status`, { status }),
+  assign: (id: string, data: { assignedToId: string; departmentId?: string }) =>
+    api.patch(`/admin/tasks/${id}/assign`, data),
+  bulkAssign: (data: {
+    taskIds: string[];
+    assignedToId: string;
+    departmentId?: string;
+  }) => api.post("/admin/tasks/bulk-assign", data),
+  bulkStatus: (data: { taskIds: string[]; status: string }) =>
+    api.post("/admin/tasks/bulk-status", data),
 };

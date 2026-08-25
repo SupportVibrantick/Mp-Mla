@@ -10,7 +10,7 @@ import {
 import { createGrievance } from "./create.js";
 import { updateGrievance, changeStatus, assignGrievance } from "./update.js";
 import { deleteGrievance } from "./delete.js";
-import { addTimelineEntry } from "./timeline.js";
+import { addTimelineEntry, listTimelineEntries } from "./timeline.js";
 import { exportGrievances } from "./export.js";
 import { bulkCreateGrievances } from "./bulk.js";
 
@@ -75,6 +75,11 @@ router.patch(
   requirePermission("grievances", "update"),
   validate(assignSchema),
   assignGrievance,
+);
+router.get(
+  "/:id/timeline",
+  requirePermission("grievances", "read"),
+  listTimelineEntries,
 );
 router.post(
   "/:id/timeline",

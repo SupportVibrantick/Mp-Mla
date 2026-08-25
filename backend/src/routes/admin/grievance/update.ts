@@ -10,6 +10,8 @@ import {
   getTransitionLabel,
 } from "./helpers.js";
 import { requireTenantId } from "../../../utils/tenant.js";
+import { calculateGrievanceSla } from "../../../services/grievance/sla.service.js";
+import { applyTransition } from "../../../services/grievance/grievanceWorkflow.service.js";
 
 export async function updateGrievance(
   req: Request,
@@ -23,6 +25,7 @@ export async function updateGrievance(
       where: { id: grievanceId, tenantId },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
+    if (old.isDeleted) throw ApiError.badRequest("Cannot update a deleted grievance.");
 
     const data: any = { ...req.body };
     if (data.complainantEmail === "") delete data.complainantEmail;
@@ -34,18 +37,48 @@ export async function updateGrievance(
       if (!ward) throw ApiError.notFound("Ward not found");
     }
 
-    if (data.assignedToId) {
-      const user = await prisma.user.findFirst({
-        where: { id: data.assignedToId, tenantId },
+    if (data.departmentId) {
+      const dept = await prisma.department.findFirst({
+        where: { id: data.departmentId, tenantId, isDeleted: false, isActive: true },
       });
-      if (!user) throw ApiError.notFound("Assigned user not found");
+      if (!dept) throw ApiError.notFound("Active department not found");
     }
 
-    if (data.assignedDept) {
-      const dept = await prisma.department.findFirst({
-        where: { id: data.assignedDept, tenantId },
+    if (data.assignedToId) {
+      const user = await prisma.user.findFirst({
+        where: { id: data.assignedToId, tenantId, status: "ACTIVE" },
       });
-      if (!dept) throw ApiError.notFound("Department not found");
+      if (!user) throw ApiError.notFound("Active assigned user not found");
+
+      const targetDeptId = data.departmentId !== undefined ? data.departmentId : old.departmentId;
+      if (targetDeptId && user.departmentId !== targetDeptId) {
+        throw ApiError.badRequest("Assigned user does not belong to the selected department");
+      }
+    }
+
+    if (data.departmentId !== undefined || data.priority !== undefined) {
+      const targetDeptId = data.departmentId !== undefined ? data.departmentId : old.departmentId;
+      const targetPriority = data.priority !== undefined ? data.priority : old.priority;
+
+      if (targetDeptId) {
+        const isDeptChanged = data.departmentId !== undefined && data.departmentId !== old.departmentId;
+        const startTime = isDeptChanged ? new Date() : (old.slaStartedAt || old.createdAt);
+
+        const slaDetails = await calculateGrievanceSla(
+          tenantId,
+          targetDeptId,
+          targetPriority,
+          startTime
+        );
+
+        data.slaStartedAt = slaDetails.slaStartedAt;
+        data.slaHoursApplied = slaDetails.slaHoursApplied;
+        data.expectedResolutionDate = slaDetails.expectedResolutionDate;
+      } else {
+        data.slaStartedAt = null;
+        data.slaHoursApplied = null;
+        data.expectedResolutionDate = null;
+      }
     }
 
     const grievance = await prisma.grievance.update({
@@ -64,10 +97,13 @@ export async function updateGrievance(
     if (data.category && data.category !== old.category)
       changes.push(`Category: ${old.category} → ${data.category}`);
     if (data.wardId && data.wardId !== old.wardId) changes.push(`Ward changed`);
+    if (data.departmentId !== undefined && data.departmentId !== old.departmentId)
+      changes.push("Department changed");
 
     if (changes.length > 0) {
       await prisma.grievanceTimeline.create({
         data: {
+          tenantId,
           grievanceId: grievance.id,
           action: "UPDATED",
           comment: changes.join(". "),
@@ -109,10 +145,7 @@ export async function changeStatus(
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
-    const old = await prisma.grievance.findFirst({
-      where: { id: req.params.id as string, tenantId },
-    });
-    if (!old) throw ApiError.notFound("Grievance not found");
+    const grievanceId = req.params.id as string;
 
     const {
       status,
@@ -123,92 +156,24 @@ export async function changeStatus(
       satisfactionRating,
     } = req.body;
 
-    if (!isValidTransition(old.status, status)) {
-      throw ApiError.badRequest(
-        `Cannot change from ${old.status} to ${status}`,
-      );
-    }
-
-    const updateData: any = { status };
-    const now = new Date();
-
-    switch (status) {
-      case "RESOLVED":
-        updateData.resolvedAt = now;
-        updateData.closedAt = null;
-        updateData.rejectionReason = null;
-        if (resolutionNotes) updateData.resolutionNotes = resolutionNotes;
-        break;
-      case "CLOSED":
-        updateData.closedAt = now;
-        if (satisfactionRating)
-          updateData.satisfactionRating = satisfactionRating;
-        break;
-      case "ESCALATED":
-        updateData.escalatedAt = now;
-        if (escalationReason) updateData.escalationReason = escalationReason;
-        break;
-      case "REJECTED":
-        updateData.rejectionReason =
-          rejectionReason || "Rejected by administrator";
-        updateData.resolvedAt = null;
-        updateData.closedAt = null;
-        updateData.resolutionNotes = null;
-        break;
-      case "IN_PROGRESS":
-        if (
-          old.status === "RESOLVED" ||
-          old.status === "CLOSED" ||
-          old.status === "REJECTED"
-        ) {
-          updateData.resolvedAt = null;
-          updateData.closedAt = null;
-          updateData.resolutionNotes = null;
-          updateData.rejectionReason = null;
-          updateData.satisfactionRating = null;
-        }
-        break;
-      case "OPEN":
-        updateData.resolvedAt = null;
-        updateData.closedAt = null;
-        updateData.resolutionNotes = null;
-        updateData.rejectionReason = null;
-        updateData.satisfactionRating = null;
-        updateData.escalatedAt = null;
-        updateData.escalationReason = null;
-        break;
-    }
-
-    const grievance = await prisma.grievance.update({
-      where: { id: req.params.id as string },
-      data: updateData,
-      include: {
-        ward: { select: { name: true } },
-        assignedTo: { select: { name: true } },
-      },
+    const old = await prisma.grievance.findFirst({
+      where: { id: grievanceId, tenantId },
     });
+    if (!old) throw ApiError.notFound("Grievance not found");
 
-    const label = getTransitionLabel(old.status, status);
-    const extraComment = [
-      resolutionNotes ? `Resolution: ${resolutionNotes}` : "",
-      rejectionReason ? `Reason: ${rejectionReason}` : "",
-      escalationReason ? `Reason: ${escalationReason}` : "",
-    ]
-      .filter(Boolean)
-      .join(". ");
-
-    await prisma.grievanceTimeline.create({
-      data: {
-        grievanceId: grievance.id,
-        action: "STATUS_CHANGE",
-        fromStatus: old.status as any,
-        toStatus: status as any,
-        comment:
-          comment || `${label}${extraComment ? `. ${extraComment}` : ""}`,
-        changedBy: req.user!.name || req.user!.email,
-        changedById: req.user!.id,
-      },
-    });
+    const grievance = await applyTransition(
+      grievanceId,
+      tenantId,
+      status,
+      req.user!,
+      {
+        comment,
+        resolutionNotes,
+        rejectionReason,
+        escalationReason,
+        satisfactionRating,
+      }
+    );
 
     await createAuditLog({
       tenantId,
@@ -244,28 +209,56 @@ export async function assignGrievance(
       where: { id: grievanceId, tenantId },
     });
     if (!old) throw ApiError.notFound("Grievance not found");
+    if (old.isDeleted) throw ApiError.badRequest("Cannot assign a deleted grievance.");
 
-    const { assignedToId, assignedDept, comment } = req.body;
+    const { assignedToId, departmentId, comment } = req.body;
+
+    if (departmentId) {
+      const dept = await prisma.department.findFirst({
+        where: { id: departmentId, tenantId, isDeleted: false, isActive: true },
+      });
+      if (!dept) throw ApiError.notFound("Active department not found");
+    }
 
     if (assignedToId) {
       const user = await prisma.user.findFirst({
-        where: { id: assignedToId, tenantId },
+        where: { id: assignedToId, tenantId, status: "ACTIVE" },
       });
-      if (!user) throw ApiError.notFound("Assigned user not found");
-    }
+      if (!user) throw ApiError.notFound("Active assigned user not found");
 
-    if (assignedDept) {
-      const dept = await prisma.department.findFirst({
-        where: { id: assignedDept, tenantId },
-      });
-      if (!dept) throw ApiError.notFound("Department not found");
+      const targetDeptId = departmentId !== undefined ? departmentId : old.departmentId;
+      if (targetDeptId && user.departmentId !== targetDeptId) {
+        throw ApiError.badRequest("Assigned user does not belong to the selected department");
+      }
     }
 
     const updateData: any = {};
     if (assignedToId !== undefined)
       updateData.assignedToId = assignedToId || null;
-    if (assignedDept !== undefined)
-      updateData.assignedDept = assignedDept || null;
+    if (departmentId !== undefined)
+      updateData.departmentId = departmentId || null;
+
+    if (departmentId !== undefined) {
+      if (departmentId) {
+        const isDeptChanged = departmentId !== old.departmentId;
+        const startTime = isDeptChanged ? new Date() : (old.slaStartedAt || old.createdAt);
+
+        const slaDetails = await calculateGrievanceSla(
+          tenantId,
+          departmentId,
+          old.priority,
+          startTime
+        );
+
+        updateData.slaStartedAt = slaDetails.slaStartedAt;
+        updateData.slaHoursApplied = slaDetails.slaHoursApplied;
+        updateData.expectedResolutionDate = slaDetails.expectedResolutionDate;
+      } else {
+        updateData.slaStartedAt = null;
+        updateData.slaHoursApplied = null;
+        updateData.expectedResolutionDate = null;
+      }
+    }
 
     const grievance = await prisma.grievance.update({
       where: { id: grievanceId },
@@ -278,9 +271,9 @@ export async function assignGrievance(
     // Build assignment label
     const parts: string[] = [];
     if (grievance.assignedTo) parts.push(`to ${grievance.assignedTo.name}`);
-    if (assignedDept) {
+    if (departmentId) {
       const dept = await prisma.department.findFirst({
-        where: { id: assignedDept, tenantId },
+        where: { id: departmentId, tenantId },
         select: { name: true },
       });
       if (dept) parts.push(`(Dept: ${dept.name})`);
@@ -288,12 +281,20 @@ export async function assignGrievance(
 
     await prisma.grievanceTimeline.create({
       data: {
+        tenantId,
         grievanceId: grievance.id,
         action: "ASSIGNMENT",
         comment: comment || `Assigned ${parts.join(" ") || "updated"}`,
         changedBy: req.user!.name || req.user!.email,
         changedById: req.user!.id,
-        metadata: { assignedToId, assignedDept },
+        metadata: {
+          assignedToId,
+          departmentId,
+          previousDepartmentId: old.departmentId,
+          newDepartmentId: departmentId !== undefined ? departmentId : old.departmentId,
+          previousAssignedToId: old.assignedToId,
+          newAssignedToId: assignedToId !== undefined ? assignedToId : old.assignedToId,
+        },
       },
     });
 
@@ -304,7 +305,8 @@ export async function assignGrievance(
       module: "grievances",
       recordId: grievance.id,
       description: `Assigned ${grievance.ticketNumber} ${parts.join(" ")}`,
-      newData: { assignedToId, assignedDept },
+      oldData: { assignedToId: old.assignedToId, departmentId: old.departmentId },
+      newData: { assignedToId, departmentId },
       ...getRequestMeta(req),
     });
 

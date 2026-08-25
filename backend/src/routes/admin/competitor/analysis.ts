@@ -134,6 +134,7 @@ export async function triggerAnalysis(
     // 4. Create analysis record as PROCESSING
     const analysis = await prisma.competitorAnalysis.create({
       data: {
+        tenantId,
         competitorId: id,
         status: "PROCESSING",
         ownMetricsSnapshot: ownMetricsList as any,
@@ -363,6 +364,7 @@ export async function sendChatMessage(
     // 2. Save user message
     await prisma.competitorChat.create({
       data: {
+        tenantId,
         analysisId,
         role: "user",
         message,
@@ -469,6 +471,7 @@ Metric Comparisons: ${JSON.stringify(analysis.metricComparisons)}
     // 5. Save AI response
     const assistantMsg = await prisma.competitorChat.create({
       data: {
+        tenantId,
         analysisId,
         role: "assistant",
         message: aiResponse,

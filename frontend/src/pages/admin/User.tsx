@@ -9,6 +9,7 @@ import {
   useUpdateUser,
   useDeleteUser,
 } from "@/hooks/useUsers";
+import { useDepartments } from "@/hooks/useDepartments";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
+  Building2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -82,6 +84,8 @@ const createUserSchema = z.object({
     .regex(/[A-Z]/, "Needs uppercase letter")
     .regex(/[0-9]/, "Needs a number"),
   phone: z.string().min(10, "Minimum 10 digits").optional().or(z.literal("")),
+  designation: z.string().optional().or(z.literal("")),
+  departmentId: z.string().optional().or(z.literal("")),
   role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"], {
     required_error: "Please select a role",
   }),
@@ -90,6 +94,8 @@ const createUserSchema = z.object({
 const editUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   phone: z.string().optional().or(z.literal("")),
+  designation: z.string().optional().or(z.literal("")),
+  departmentId: z.string().optional().or(z.literal("")),
   role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"]),
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]),
 });
@@ -103,14 +109,6 @@ const ROLE_LABELS: Record<string, string> = {
   SYSTEM_ADMIN: "System Admin",
   MLA_MP: "MLA / MP",
   OFFICE_STAFF: "Office Staff",
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  SYSTEM_ADMIN:
-    "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
-  MLA_MP: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  OFFICE_STAFF:
-    "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
 };
 
 const STATUS_CONFIG: Record<
@@ -140,6 +138,7 @@ export default function UserManagement() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
 
   // Dialogs
@@ -155,10 +154,13 @@ export default function UserManagement() {
     if (search) params.search = search;
     if (roleFilter !== "all") params.role = roleFilter;
     if (statusFilter !== "all") params.status = statusFilter;
+    if (departmentFilter !== "all") params.departmentId = departmentFilter;
     return params;
-  }, [search, roleFilter, statusFilter, page]);
+  }, [search, roleFilter, statusFilter, departmentFilter, page]);
 
   const { data, isLoading } = useUsers(queryParams);
+  const { data: deptRes } = useDepartments({ limit: 200 });
+  const departments = deptRes?.data || [];
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
   const deleteMutation = useDeleteUser();
@@ -174,12 +176,18 @@ export default function UserManagement() {
       email: "",
       password: "",
       phone: "",
+      designation: "",
+      departmentId: "",
       role: undefined as any,
     },
   });
 
   const handleCreate = async (formData: CreateForm) => {
-    await createMutation.mutateAsync(formData);
+    await createMutation.mutateAsync({
+      ...formData,
+      designation: formData.designation || null,
+      departmentId: formData.departmentId || null,
+    });
     setCreateOpen(false);
     createForm.reset();
     setShowPassword(false);
@@ -195,6 +203,8 @@ export default function UserManagement() {
     editForm.reset({
       name: user.name,
       phone: user.phone || "",
+      designation: user.designation || "",
+      departmentId: user.departmentId || "",
       role: user.role,
       status: user.status,
     });
@@ -203,7 +213,14 @@ export default function UserManagement() {
 
   const handleEdit = async (formData: EditForm) => {
     if (!selectedUser) return;
-    await updateMutation.mutateAsync({ id: selectedUser.id, data: formData });
+    await updateMutation.mutateAsync({
+      id: selectedUser.id,
+      data: {
+        ...formData,
+        designation: formData.designation || null,
+        departmentId: formData.departmentId || null,
+      },
+    });
     setEditOpen(false);
     setSelectedUser(null);
   };
@@ -226,7 +243,7 @@ export default function UserManagement() {
               <Users className="h-7 w-7 text-primary" /> User Directory
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
-              Create and manage user accounts, system roles, and detailed override policies
+              Create and manage user accounts, roles, departments, and designations
             </p>
           </div>
 
@@ -252,7 +269,7 @@ export default function UserManagement() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Search by name, email, phone, or designation..."
                   className="pl-9 bg-background/50 border-muted-foreground/20 rounded-xl h-9 text-xs"
                   value={search}
                   onChange={(e) => {
@@ -295,6 +312,25 @@ export default function UserManagement() {
                   <SelectItem value="SUSPENDED">Suspended</SelectItem>
                 </SelectContent>
               </Select>
+              <Select
+                value={departmentFilter}
+                onValueChange={(v) => {
+                  setDepartmentFilter(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[220px] bg-background/50 border-muted-foreground/20 rounded-xl text-xs h-9">
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map((d: any) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name} ({d.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -305,24 +341,13 @@ export default function UserManagement() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="hover:bg-transparent border-b border-border/50">
-                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
-                    User
-                  </th>
-                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
-                    Role
-                  </th>
-                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
-                    Status
-                  </th>
-                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 hidden md:table-cell">
-                    Last Login
-                  </th>
-                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 hidden lg:table-cell">
-                    Created By
-                  </th>
-                  <th className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">
-                    Actions
-                  </th>
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">User</th>
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Role</th>
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Department</th>
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 hidden md:table-cell">Status</th>
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 hidden lg:table-cell">Last Login</th>
+                  <th className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20 hidden lg:table-cell">Created By</th>
+                  <th className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -338,29 +363,17 @@ export default function UserManagement() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                      </td>
-                      <td className="px-4 py-4">
-                        <Skeleton className="h-5 w-16 rounded-full" />
-                      </td>
-                      <td className="px-4 py-4 hidden md:table-cell">
-                        <Skeleton className="h-4 w-24 rounded" />
-                      </td>
-                      <td className="px-4 py-4 hidden lg:table-cell">
-                        <Skeleton className="h-4 w-20 rounded" />
-                      </td>
-                      <td className="px-4 py-4">
-                        <Skeleton className="h-8 w-8 ml-auto rounded-full" />
-                      </td>
+                      <td className="px-4 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                      <td className="px-4 py-4 hidden md:table-cell"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                      <td className="px-4 py-4 hidden lg:table-cell"><Skeleton className="h-4 w-24 rounded" /></td>
+                      <td className="px-4 py-4 hidden lg:table-cell"><Skeleton className="h-4 w-20 rounded" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-8 w-8 ml-auto rounded-full" /></td>
                     </tr>
                   ))
                 ) : users.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-16 text-center text-xs sm:text-sm font-semibold text-muted-foreground leading-relaxed"
-                    >
+                    <td colSpan={7} className="px-4 py-16 text-center text-xs sm:text-sm font-semibold text-muted-foreground leading-relaxed">
                       No users found matching your filters.
                     </td>
                   </tr>
@@ -377,10 +390,7 @@ export default function UserManagement() {
                     else if (u.role === "OFFICE_STAFF") roleBadgeColor = "bg-emerald-500/10 text-emerald-500";
 
                     return (
-                      <tr
-                        key={u.id}
-                        className="hover:bg-muted/10 transition-colors border-b border-border/40"
-                      >
+                      <tr key={u.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-extrabold text-sm shrink-0 border border-primary/20">
@@ -388,96 +398,75 @@ export default function UserManagement() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-bold text-foreground text-xs sm:text-sm">
-                                  {u.name}
-                                </span>
+                                <span className="font-bold text-foreground text-xs sm:text-sm">{u.name}</span>
                                 {isCurrentUser && (
-                                  <Badge
-                                    className="text-[9px] font-bold px-1.5 py-0 bg-primary/10 text-primary border-none"
-                                  >
-                                    You
-                                  </Badge>
+                                  <Badge className="text-[9px] font-bold px-1.5 py-0 bg-primary/10 text-primary border-none">You</Badge>
                                 )}
                                 {u.forcePasswordChange && (
-                                  <Badge
-                                    className="text-[9px] font-bold px-1.5 py-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-none"
-                                  >
-                                    Reset Required
-                                  </Badge>
+                                  <Badge className="text-[9px] font-bold px-1.5 py-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-none">Reset Required</Badge>
                                 )}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 font-semibold">
                                 <span className="truncate">{u.email}</span>
-                                {u.phone && (
-                                  <span className="hidden sm:inline">
-                                    • {u.phone}
-                                  </span>
-                                )}
+                                {u.phone && <span className="hidden sm:inline"> • {u.phone}</span>}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3.5 align-middle">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${roleBadgeColor}`}
-                          >
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${roleBadgeColor}`}>
                             <Shield className="h-3 w-3" />
                             {ROLE_LABELS[u.role] || u.role}
                           </span>
+                          {u.designation && (
+                            <p className="mt-1 text-[9px] font-semibold text-muted-foreground">{u.designation}</p>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 align-middle">
-                          <span
-                            className={`inline-flex items-center gap-1 text-xs font-bold ${statusCfg.color}`}
-                          >
+                          {u.departmentRef ? (
+                            <Badge variant="outline" className="text-[9px] font-bold border-border/60">
+                              <Building2 className="h-3 w-3 mr-1" />
+                              {u.departmentRef.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic font-medium">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 hidden md:table-cell align-middle">
+                          <span className={`inline-flex items-center gap-1 text-xs font-bold ${statusCfg.color}`}>
                             <StatusIcon className="h-3.5 w-3.5 opacity-80" />
                             {statusCfg.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 hidden md:table-cell align-middle">
+                        <td className="px-4 py-3.5 hidden lg:table-cell align-middle">
                           {u.lastLoginAt ? (
                             <span className="text-xs text-muted-foreground/95 flex items-center gap-1 font-semibold">
                               <Clock className="h-3 w-3" />
-                              {formatDistanceToNow(new Date(u.lastLoginAt), {
-                                addSuffix: true,
-                              })}
+                              {formatDistanceToNow(new Date(u.lastLoginAt), { addSuffix: true })}
                             </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground italic font-medium">
-                              Never
-                            </span>
+                            <span className="text-xs text-muted-foreground italic font-medium">Never</span>
                           )}
                         </td>
                         <td className="px-4 py-3.5 hidden lg:table-cell align-middle">
-                          <span className="text-xs text-muted-foreground font-semibold">
-                            {u.createdByAdmin?.name || "—"}
-                          </span>
+                          <span className="text-xs text-muted-foreground font-semibold">{u.createdByAdmin?.name || "—"}</span>
                         </td>
                         <td className="px-4 py-3.5 text-right align-middle">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full"
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
                               <PermissionGate module="users" action="update">
-                                <DropdownMenuItem
-                                  onClick={() => openEdit(u)}
-                                  className="cursor-pointer font-semibold text-xs"
-                                >
-                                  <Pencil className="mr-2 h-3.5 w-3.5 text-blue-600" /> Edit
-                                  User
+                                <DropdownMenuItem onClick={() => openEdit(u)} className="cursor-pointer font-semibold text-xs">
+                                  <Pencil className="mr-2 h-3.5 w-3.5 text-blue-600" /> Edit User
                                 </DropdownMenuItem>
                               </PermissionGate>
                               <PermissionGate module="users" action="update">
                                 <DropdownMenuItem
-                                  onClick={() =>
-                                    setLocation(`/users/${u.id}/permissions`)
-                                  }
+                                  onClick={() => setLocation(`/users/${u.id}/permissions`)}
                                   className="cursor-pointer font-semibold text-xs"
                                 >
                                   <KeyRound className="mr-2 h-3.5 w-3.5 text-indigo-600" />{" "}
@@ -495,8 +484,7 @@ export default function UserManagement() {
                                       }}
                                       className="cursor-pointer text-destructive focus:text-destructive font-semibold text-xs"
                                     >
-                                      <UserX className="mr-2 h-3.5 w-3.5" />{" "}
-                                      Deactivate
+                                      <UserX className="mr-2 h-3.5 w-3.5" />{" "} Deactivate
                                     </DropdownMenuItem>
                                   </>
                                 )}
@@ -521,336 +509,298 @@ export default function UserManagement() {
                 of {pagination.total}
               </p>
               <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 rounded-xl border-border/60"
-                  disabled={!pagination.hasPrevPage}
-                  onClick={() => setPage((p) => p - 1)}
-                >
+                <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl border-border/60" disabled={!pagination.hasPrevPage} onClick={() => setPage((p) => p - 1)}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                {Array.from(
-                  { length: Math.min(pagination.totalPages, 5) },
-                  (_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={
-                          pageNum === pagination.page ? "default" : "outline"
-                        }
-                        size="icon"
-                        className="h-8 w-8 rounded-xl font-bold text-xs"
-                        onClick={() => setPage(pageNum)}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  },
-                )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 rounded-xl border-border/60"
-                  disabled={!pagination.hasNextPage}
-                  onClick={() => setPage((p) => p + 1)}
-                >
+                {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button key={pageNum} variant={pageNum === pagination.page ? "default" : "outline"} size="icon" className="h-8 w-8 rounded-xl font-bold text-xs" onClick={() => setPage(pageNum)}>
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl border-border/60" disabled={!pagination.hasNextPage} onClick={() => setPage((p) => p + 1)}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           )}
         </Card>
+      </div>
 
-        {/* ═══════════════════════════════════════════════ */}
-        {/* CREATE USER DIALOG                             */}
-        {/* ═══════════════════════════════════════════════ */}
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogContent className="sm:max-w-[480px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-primary" />
-                Create New User
-              </DialogTitle>
-              <DialogDescription>
-                The user will be required to change their password on first
-                login.
-              </DialogDescription>
-            </DialogHeader>
+      {/* Create User Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account with role-based permissions.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="create-name">Full Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="create-name"
+                {...createForm.register("name")}
+                placeholder="John Doe"
+              />
+              {createForm.formState.errors.name && (
+                <p className="text-xs text-destructive">{createForm.formState.errors.name.message}</p>
+              )}
+            </div>
 
-            <form
-              onSubmit={createForm.handleSubmit(handleCreate)}
-              className="space-y-4 mt-2"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="c-name">Full Name *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="create-email">Email Address <span className="text-destructive">*</span></Label>
+              <Input
+                id="create-email"
+                type="email"
+                {...createForm.register("email")}
+                placeholder="john.doe@example.com"
+              />
+              {createForm.formState.errors.email && (
+                <p className="text-xs text-destructive">{createForm.formState.errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-password">Password <span className="text-destructive">*</span></Label>
+              <div className="relative">
                 <Input
-                  id="c-name"
-                  placeholder="Rajesh Kumar"
-                  {...createForm.register("name")}
+                  id="create-password"
+                  type={showPassword ? "text" : "password"}
+                  {...createForm.register("password")}
+                  placeholder="••••••••"
                 />
-                {createForm.formState.errors.name && (
-                  <p className="text-xs text-destructive">
-                    {createForm.formState.errors.name.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="c-email">Email Address *</Label>
-                <Input
-                  id="c-email"
-                  type="email"
-                  placeholder="rajesh@constituency.gov.in"
-                  {...createForm.register("email")}
-                />
-                {createForm.formState.errors.email && (
-                  <p className="text-xs text-destructive">
-                    {createForm.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="c-password">Initial Password *</Label>
-                <div className="relative">
-                  <Input
-                    id="c-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Min 8 chars, uppercase, number"
-                    className="pr-10"
-                    {...createForm.register("password")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-muted-foreground"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                {createForm.formState.errors.password && (
-                  <p className="text-xs text-destructive">
-                    {createForm.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="c-phone">Phone Number</Label>
-                <Input
-                  id="c-phone"
-                  placeholder="9876543210"
-                  {...createForm.register("phone")}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Role *</Label>
-                <Select
-                  value={createForm.watch("role")}
-                  onValueChange={(v) =>
-                    createForm.setValue("role", v as any, {
-                      shouldValidate: true,
-                    })
-                  }
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                  {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                </Button>
+              </div>
+              {createForm.formState.errors.password && (
+                <p className="text-xs text-destructive">{createForm.formState.errors.password.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-phone">Phone Number</Label>
+                <Input
+                  id="create-phone"
+                  {...createForm.register("phone")}
+                  placeholder="10-digit mobile"
+                />
+                {createForm.formState.errors.phone && (
+                  <p className="text-xs text-destructive">{createForm.formState.errors.phone.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="create-designation">Designation</Label>
+                <Input
+                  id="create-designation"
+                  {...createForm.register("designation")}
+                  placeholder="e.g. Officer, Assistant"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Role <span className="text-destructive">*</span></Label>
+                <Select
+                  onValueChange={(val) => createForm.setValue("role", val as any, { shouldValidate: true })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select role" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OFFICE_STAFF">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                        Office Staff — Data entry, complaints, updates
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="MLA_MP">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-500" />
-                        MLA / MP — View dashboards, monitor, export
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="SYSTEM_ADMIN">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-slate-500" />
-                        System Admin — Full system control
-                      </div>
-                    </SelectItem>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="SYSTEM_ADMIN">System Admin</SelectItem>
+                    <SelectItem value="MLA_MP">MLA / MP</SelectItem>
+                    <SelectItem value="OFFICE_STAFF">Office Staff</SelectItem>
                   </SelectContent>
                 </Select>
                 {createForm.formState.errors.role && (
-                  <p className="text-xs text-destructive">
-                    {createForm.formState.errors.role.message}
-                  </p>
+                  <p className="text-xs text-destructive">{createForm.formState.errors.role.message}</p>
                 )}
               </div>
 
-              <DialogFooter className="pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCreateOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                      Creating...
-                    </>
-                  ) : (
-                    "Create User"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* ═══════════════════════════════════════════════ */}
-        {/* EDIT USER DIALOG                               */}
-        {/* ═══════════════════════════════════════════════ */}
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="sm:max-w-[480px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-primary" />
-                Edit User
-              </DialogTitle>
-              <DialogDescription>
-                Update {selectedUser?.name}'s account details.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form
-              onSubmit={editForm.handleSubmit(handleEdit)}
-              className="space-y-4 mt-2"
-            >
               <div className="space-y-2">
-                <Label>Email (read-only)</Label>
+                <Label>Department</Label>
+                <Select
+                  onValueChange={(val) => createForm.setValue("departmentId", val === "none" ? "" : val)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="none">— None —</SelectItem>
+                    {departments.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Create Account
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit User Details</DialogTitle>
+            <DialogDescription>
+              Update user details, role, department, and account status.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Full Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-name"
+                {...editForm.register("name")}
+              />
+              {editForm.formState.errors.name && (
+                <p className="text-xs text-destructive">{editForm.formState.errors.name.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone Number</Label>
                 <Input
-                  value={selectedUser?.email || ""}
-                  disabled
-                  className="bg-muted"
+                  id="edit-phone"
+                  {...editForm.register("phone")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="e-name">Full Name</Label>
-                <Input id="e-name" {...editForm.register("name")} />
-                {editForm.formState.errors.name && (
-                  <p className="text-xs text-destructive">
-                    {editForm.formState.errors.name.message}
-                  </p>
+                <Label htmlFor="edit-designation">Designation</Label>
+                <Input
+                  id="edit-designation"
+                  {...editForm.register("designation")}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Role <span className="text-destructive">*</span></Label>
+                <Select
+                  value={editForm.watch("role")}
+                  onValueChange={(val) => editForm.setValue("role", val as any, { shouldValidate: true })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="SYSTEM_ADMIN">System Admin</SelectItem>
+                    <SelectItem value="MLA_MP">MLA / MP</SelectItem>
+                    <SelectItem value="OFFICE_STAFF">Office Staff</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editForm.formState.errors.role && (
+                  <p className="text-xs text-destructive">{editForm.formState.errors.role.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="e-phone">Phone</Label>
-                <Input id="e-phone" {...editForm.register("phone")} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select
-                    value={editForm.watch("role")}
-                    onValueChange={(v) => editForm.setValue("role", v as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="OFFICE_STAFF">Office Staff</SelectItem>
-                      <SelectItem value="MLA_MP">MLA / MP</SelectItem>
-                      <SelectItem value="SYSTEM_ADMIN">System Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={editForm.watch("status")}
-                    onValueChange={(v) => editForm.setValue("status", v as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                      <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <DialogFooter className="pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditOpen(false)}
+                <Label>Department</Label>
+                <Select
+                  value={editForm.watch("departmentId") || "none"}
+                  onValueChange={(val) => editForm.setValue("departmentId", val === "none" ? "" : val)}
                 >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="none">— None —</SelectItem>
+                    {departments.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        {/* ═══════════════════════════════════════════════ */}
-        {/* DELETE CONFIRM DIALOG                          */}
-        {/* ═══════════════════════════════════════════════ */}
-        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Deactivate User</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to deactivate{" "}
-                <strong>{selectedUser?.name}</strong> ({selectedUser?.email})?
-                They will be logged out and unable to access the system. This
-                can be reversed by reactivating the account.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
-                disabled={deleteMutation.isPending}
+            <div className="space-y-2">
+              <Label>Account Status <span className="text-destructive">*</span></Label>
+              <Select
+                value={editForm.watch("status")}
+                onValueChange={(val) => editForm.setValue("status", val as any, { shouldValidate: true })}
               >
-                {deleteMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                    Deactivating...
-                  </>
-                ) : (
-                  "Deactivate"
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="INACTIVE">Inactive</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+              {editForm.formState.errors.status && (
+                <p className="text-xs text-destructive">{editForm.formState.errors.status.message}</p>
+              )}
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate User Dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate <strong>{selectedUser?.name}</strong>'s account?
+              This will block their access and change their status to INACTIVE.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

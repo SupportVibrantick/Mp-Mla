@@ -10,7 +10,6 @@ import {
   SCHEME_STATUSES,
   SCHEME_LEVELS,
 } from "@/hooks/useSchemes";
-import { useDepartments } from "@/hooks/useDepartments";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,13 +28,14 @@ import { ArrowLeft, Save, FileText, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name required"),
+  code: z.string().optional(),
   department: z.string().min(1, "Department required"),
-  level: z.string().default("Central"),
+  level: z.string().default("STATE"),
   description: z.string().optional(),
   eligibility: z.string().optional(),
   benefits: z.string().optional(),
+  requiredDocuments: z.string().optional(),
   applicationUrl: z.string().optional(),
-  budget: z.coerce.number().min(0).default(0),
   status: z.string().default("ACTIVE"),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -49,9 +49,7 @@ export default function SchemeFormPage() {
   const { data: sRes, isLoading } = useScheme(id);
   const createMut = useCreateScheme();
   const updateMut = useUpdateScheme();
-  const { data: deptsRes } = useDepartments();
   const s = sRes?.data;
-  const departments = (deptsRes?.data || []).filter((d: any) => d.isActive);
 
   const {
     register,
@@ -63,20 +61,23 @@ export default function SchemeFormPage() {
     control,
   } = useForm<FV>({
     resolver: zodResolver(formSchema),
-    defaultValues: { level: "Central", status: "ACTIVE", budget: 0 },
+    defaultValues: { level: "STATE", status: "ACTIVE" },
   });
 
   useEffect(() => {
     if (!s || !isEdit) return;
     reset({
       name: s.name,
+      code: s.code || "",
       department: s.department,
       level: s.level,
       description: s.description || "",
       eligibility: s.eligibility || "",
       benefits: s.benefits || "",
+      requiredDocuments: s.requiredDocuments
+        ? JSON.stringify(s.requiredDocuments)
+        : "",
       applicationUrl: s.applicationUrl || "",
-      budget: s.budget,
       status: s.status,
       startDate: s.startDate ? s.startDate.split("T")[0] : "",
       endDate: s.endDate ? s.endDate.split("T")[0] : "",
@@ -86,6 +87,10 @@ export default function SchemeFormPage() {
   const onSubmit = async (data: FV) => {
     const payload: any = {
       ...data,
+      code: data.code || undefined,
+      requiredDocuments: data.requiredDocuments
+        ? JSON.parse(data.requiredDocuments)
+        : undefined,
       applicationUrl: data.applicationUrl || undefined,
       startDate: data.startDate
         ? new Date(data.startDate).toISOString()
@@ -140,43 +145,31 @@ export default function SchemeFormPage() {
             <CardTitle className="text-base">Scheme Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>
-                Name <span className="text-destructive">*</span>
-              </Label>
-              <Input {...register("name")} placeholder="PM Awas Yojana" />
-              {errors.name && (
-                <p className="text-xs text-destructive">
-                  {errors.name.message}
-                </p>
-              )}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>
+                  Name <span className="text-destructive">*</span>
+                </Label>
+                <Input {...register("name")} placeholder="PM Awas Yojana" />
+                {errors.name && (
+                  <p className="text-xs text-destructive">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Code</Label>
+                <Input {...register("code")} placeholder="PM-AWAS-2024" />
+              </div>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>
                   Department <span className="text-destructive">*</span>
                 </Label>
-                <Controller
-                  name="department"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      key={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.map((d: any) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                <Input
+                  {...register("department")}
+                  placeholder="Housing & Urban Affairs"
                 />
                 {errors.department && (
                   <p className="text-xs text-destructive">
@@ -261,11 +254,15 @@ export default function SchemeFormPage() {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Required Documents (JSON)</Label>
+              <Textarea
+                {...register("requiredDocuments")}
+                placeholder='["Aadhaar Card", "Income Certificate"]'
+                rows={2}
+              />
+            </div>
             <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Budget (₹)</Label>
-                <Input type="number" {...register("budget")} />
-              </div>
               <div className="space-y-2">
                 <Label>Start Date</Label>
                 <Input type="date" {...register("startDate")} />
@@ -274,13 +271,13 @@ export default function SchemeFormPage() {
                 <Label>End Date</Label>
                 <Input type="date" {...register("endDate")} />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Application URL</Label>
-              <Input
-                {...register("applicationUrl")}
-                placeholder="https://scheme.gov.in/apply"
-              />
+              <div className="space-y-2">
+                <Label>Application URL</Label>
+                <Input
+                  {...register("applicationUrl")}
+                  placeholder="https://scheme.gov.in/apply"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

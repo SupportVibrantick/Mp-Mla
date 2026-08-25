@@ -88,3 +88,64 @@ export function useBulkCreateDepartments() {
     },
   });
 }
+
+export function useDepartmentUsers(id: string | undefined) {
+  return useQuery({
+    queryKey: ["departments", id, "users"],
+    queryFn: () => departmentsApi.getUsers(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+
+export function useDepartmentGrievances(id: string | undefined) {
+  return useQuery({
+    queryKey: ["departments", id, "grievances"],
+    queryFn: () => departmentsApi.getGrievances(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+
+export function useDepartmentTasks(id: string | undefined) {
+  return useQuery({
+    queryKey: ["departments", id, "tasks"],
+    queryFn: () => departmentsApi.getTasks(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+
+export function useDepartmentSlas(id: string | undefined) {
+  return useQuery({
+    queryKey: ["departments", id, "slas"],
+    queryFn: () => departmentsApi.getSlas(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+
+export function useUpdateDepartmentSlas() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      departmentsApi.updateSlas(id, data).then((r) => r.data),
+    onSuccess: (res, variables) => {
+      qc.invalidateQueries({ queryKey: ["departments", variables.id, "slas"] });
+      toast({ title: "SLAs Updated", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to update SLAs",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useSingleDepartmentStats(id: string | undefined) {
+  return useQuery({
+    queryKey: ["departments", id, "stats"],
+    queryFn: () => departmentsApi.getSingleStats(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}
+

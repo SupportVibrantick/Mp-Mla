@@ -36,9 +36,18 @@ import ProjectListPage from "./pages/projects/ProjectListPage";
 import ProjectFormPage from "./pages/projects/ProjectFormPage";
 import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
 import FundsPage from "./pages/funds/FundsPage";
-// import SchemeListPage from "./pages/schemes/SchemeListPage";
-// import SchemeFormPage from "./pages/schemes/SchemeFormPage";
-// import SchemeDetailPage from "./pages/schemes/SchemeDetailPage";
+import SchemeListPage from "./pages/schemes/SchemeListPage";
+import SchemeFormPage from "./pages/schemes/SchemeFormPage";
+import SchemeDetailPage from "./pages/schemes/SchemeDetailPage";
+import SchemeApplicationListPage from "./pages/schemes/SchemeApplicationListPage";
+import SchemeApplicationFormPage from "./pages/schemes/SchemeApplicationFormPage";
+import SchemeApplicationDetailPage from "./pages/schemes/SchemeApplicationDetailPage";
+import ContactListPage from "./pages/crm/ContactListPage";
+import ContactFormPage from "./pages/crm/ContactFormPage";
+import ContactDetailPage from "./pages/crm/ContactDetailPage";
+import DocumentListPage from "./pages/documents/DocumentListPage";
+import DocumentFormPage from "./pages/documents/DocumentFormPage";
+import DocumentDetailPage from "./pages/documents/DocumentDetailPage";
 import FundsOverviewPage from "./pages/funds/FundsOverviewPage";
 import FundDetailPage from "./pages/funds/FundDetailPage";
 import ReportsPage from "./pages/reports/ReportsPage";
@@ -54,15 +63,40 @@ import RegisterPublicFacilityPage from "./pages/public-facilities/RegisterPublic
 import PublicFacilityRequestsPage from "./pages/public-facilities/PublicFacilityRequestsPage";
 import MeetingListPage from "./pages/meetings/MeetingListPage";
 import MeetingFormPage from "./pages/meetings/MeetingFormPage";
+import AppointmentListPage from "./pages/appointments/AppointmentListPage";
+import AppointmentFormPage from "./pages/appointments/AppointmentFormPage";
 import ProfilePage from "./pages/ProfilePage";
 import BillingPage from "./pages/account/BillingPage";
 import PdfReportsPage from "./pages/reports/PdfReportsPage";
+import TasksPage from "./pages/tasks/TasksPage";
+
+// Events & Janata Darbar
+import EventListPage from "./pages/events/EventListPage";
+import EventFormPage from "./pages/events/EventFormPage";
+import EventDetailPage from "./pages/events/EventDetailPage";
+import JanataDarbarListPage from "./pages/janataDarbar/JanataDarbarListPage";
+import JanataDarbarFormPage from "./pages/janataDarbar/JanataDarbarFormPage";
+import JanataDarbarSessionPage from "./pages/janataDarbar/JanataDarbarSessionPage";
 
 import CompetitorListPage from "./pages/competitors/CompetitorListPage";
 import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
 import CompetitorDashboard from "./pages/competitors/CompetitorDashboard";
 import CompetitorDetailPage from "./pages/competitors/CompetitorDetailPage";
 import VoterListPage from "./pages/voterList/VoterListPage";
+
+// Geography management pages
+import GeographyPage from "./pages/geography/GeographyPage";
+import ConstituenciesPage from "./pages/geography/ConstituenciesPage";
+import RepresentativePage from "./pages/geography/RepresentativePage";
+import DistrictsPage from "./pages/geography/DistrictsPage";
+import BlocksPage from "./pages/geography/BlocksPage";
+import TownVillagesPage from "./pages/geography/TownVillagesPage";
+import PollingLocationsPage from "./pages/geography/PollingLocationsPage";
+import BoothsPage from "./pages/geography/BoothsPage";
+import BulkImportPage from "./pages/geography/BulkImportPage";
+import BoothDetailPage from "./pages/geography/BoothDetailPage";
+import TownVillageDetailPage from "./pages/geography/TownVillageDetailPage";
+import PollingLocationDetailPage from "./pages/geography/PollingLocationDetailPage";
 
 function Router() {
   return (
@@ -311,11 +345,112 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      {/* <Route path="/schemes">
-        <ProtectedRoute module="schemes" action="view">
-          <Schemes />
+      {/* Geography Management */}
+      <Route path="/geography">
+        <ProtectedRoute module="constituency" action="read">
+          <GeographyPage />
         </ProtectedRoute>
-      </Route> */}
+      </Route>
+      <Route path="/geography/constituencies/:id">
+        <ProtectedRoute module="constituency" action="read">
+          <ConstituenciesPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/constituencies">
+        <ProtectedRoute module="constituency" action="read">
+          <ConstituenciesPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/representative">
+        <ProtectedRoute module="constituency" action="read">
+          <RepresentativePage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/districts/:id">
+        <ProtectedRoute module="constituency" action="read">
+          <DistrictsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/districts">
+        <ProtectedRoute module="constituency" action="read">
+          <DistrictsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/geography/blocks">
+        <ProtectedRoute module="constituency" action="read">
+          <BlocksPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/town-villages">
+        <ProtectedRoute module="constituency" action="read">
+          <TownVillagesPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/town-villages/:id">
+        <ProtectedRoute module="constituency" action="read">
+          <TownVillageDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/wards">
+        <ProtectedRoute module="wards" action="read">
+          <WardsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/geography/wards/new">
+        <ProtectedRoute module="wards" action="create">
+          <WardFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/wards/:id/edit">
+        <ProtectedRoute module="wards" action="update">
+          <WardFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/wards/:id">
+        <ProtectedRoute module="wards" action="read">
+          <WardDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/polling-locations">
+        <ProtectedRoute module="constituency" action="read">
+          <PollingLocationsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/polling-locations/:id">
+        <ProtectedRoute module="constituency" action="read">
+          <PollingLocationDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/booths">
+        <ProtectedRoute module="constituency" action="read">
+          <BoothsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/booths/:id">
+        <ProtectedRoute module="constituency" action="read">
+          <BoothDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/geography/import">
+        <ProtectedRoute module="constituency" action="read">
+          <BulkImportPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Representative Profile Redirect for Compatibility */}
+      <Route path="/representative-profile">
+        <ProtectedRoute module="constituency" action="read">
+          <RepresentativePage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/schemes">
+        <ProtectedRoute module="schemes" action="read">
+          <SchemeListPage />
+        </ProtectedRoute>
+      </Route>
       {/* <Route path="/funds">
         <ProtectedRoute module="funds" action="read">
           <FundsPage />
@@ -332,11 +467,11 @@ function Router() {
           <FundDetailPage />
         </ProtectedRoute>
       </Route>
-      {/* <Route path="/schemes">
-        <ProtectedRoute module="schemes" action="read">
-          <SchemeListPage />
+      <Route path="/tasks">
+        <ProtectedRoute module="tasks" action="read">
+          <TasksPage />
         </ProtectedRoute>
-      </Route> */}
+      </Route>
       <Route path="/billing">
         <ProtectedRoute>
           <BillingPage />
@@ -357,7 +492,67 @@ function Router() {
           <AuditLogsPage />
         </ProtectedRoute>
       </Route>
-      {/* <Route path="/schemes/new">
+      <Route path="/documents/new">
+        <ProtectedRoute module="documents" action="create">
+          <DocumentFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/documents/:id/edit">
+        <ProtectedRoute module="documents" action="update">
+          <DocumentFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/documents/:id">
+        <ProtectedRoute module="documents" action="read">
+          <DocumentDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/documents">
+        <ProtectedRoute module="documents" action="read">
+          <DocumentListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/crm/contacts/new">
+        <ProtectedRoute module="crm" action="create">
+          <ContactFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/crm/contacts/:id/edit">
+        <ProtectedRoute module="crm" action="update">
+          <ContactFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/crm/contacts/:id">
+        <ProtectedRoute module="crm" action="read">
+          <ContactDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/crm/contacts">
+        <ProtectedRoute module="crm" action="read">
+          <ContactListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/applications/new">
+        <ProtectedRoute module="scheme_applications" action="create">
+          <SchemeApplicationFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/applications/:id/edit">
+        <ProtectedRoute module="scheme_applications" action="update">
+          <SchemeApplicationFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/applications/:id">
+        <ProtectedRoute module="scheme_applications" action="read">
+          <SchemeApplicationDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/applications">
+        <ProtectedRoute module="scheme_applications" action="read">
+          <SchemeApplicationListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schemes/new">
         <ProtectedRoute module="schemes" action="create">
           <SchemeFormPage />
         </ProtectedRoute>
@@ -371,7 +566,7 @@ function Router() {
         <ProtectedRoute module="schemes" action="read">
           <SchemeDetailPage />
         </ProtectedRoute>
-      </Route> */}
+      </Route>
       {/* <Route path="/wards">
         <ProtectedRoute module="wards" action="view">
           <Wards />
@@ -391,6 +586,64 @@ function Router() {
       <Route path="/meetings/:id/edit">
         <ProtectedRoute module="meeting" action="update">
           <MeetingFormPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/appointments">
+        <ProtectedRoute module="appointments" action="read">
+          <AppointmentListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/appointments/new">
+        <ProtectedRoute module="appointments" action="create">
+          <AppointmentFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/appointments/:id/edit">
+        <ProtectedRoute module="appointments" action="update">
+          <AppointmentFormPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/events">
+        <ProtectedRoute module="meeting" action="read">
+          <EventListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events/new">
+        <ProtectedRoute module="meeting" action="create">
+          <EventFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events/:id">
+        <ProtectedRoute module="meeting" action="read">
+          <EventDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events/:id/edit">
+        <ProtectedRoute module="meeting" action="update">
+          <EventFormPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/janata-darbar">
+        <ProtectedRoute module="meeting" action="read">
+          <JanataDarbarListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/janata-darbar/new">
+        <ProtectedRoute module="meeting" action="create">
+          <JanataDarbarFormPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/janata-darbar/:id">
+        <ProtectedRoute module="meeting" action="read">
+          <JanataDarbarSessionPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/janata-darbar/:id/edit">
+        <ProtectedRoute module="meeting" action="update">
+          <JanataDarbarFormPage />
         </ProtectedRoute>
       </Route>
 

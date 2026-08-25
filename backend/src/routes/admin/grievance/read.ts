@@ -17,7 +17,7 @@ export async function listGrievances(
       status,
       priority,
       category,
-      assignedDept,
+      departmentId,
       assignedToId,
       source,
       search,
@@ -30,8 +30,8 @@ export async function listGrievances(
     if (status && status !== "all") where.status = status;
     if (priority && priority !== "all") where.priority = priority;
     if (category && category !== "all") where.category = category;
-    if (assignedDept && assignedDept !== "all")
-      where.assignedDept = assignedDept;
+    if (departmentId && departmentId !== "all")
+      where.departmentId = departmentId;
     if (assignedToId) where.assignedToId = assignedToId;
     if (source && source !== "all") where.source = source;
     if (search) {
@@ -62,6 +62,9 @@ export async function listGrievances(
           },
           assignedTo: {
             select: { id: true, name: true, email: true },
+          },
+          department: {
+            select: { id: true, name: true, code: true },
           },
           createdBy: {
             select: { id: true, name: true },
@@ -123,6 +126,9 @@ export async function getGrievance(
             phone: true,
           },
         },
+        department: {
+          select: { id: true, name: true, code: true },
+        },
         createdBy: {
           select: { id: true, name: true, email: true },
         },
@@ -148,23 +154,11 @@ export async function getGrievance(
         (1000 * 60 * 60 * 24),
       );
     }
-    // Fetch department name if assigned
-    let departmentName: string | null = null;
-    if (grievance.assignedDept) {
-      const dept = await prisma.department.findFirst({
-        where: { id: grievance.assignedDept, tenantId },
-        select: { name: true },
-      });
-      departmentName = dept?.name || grievance.assignedDept;
-    }
-    // Use assignedDept directly as department name (stores string in this app)
-    // let departmentName: string | null = grievance.assignedDept || null;
-
     res.json({
       success: true,
       data: {
         ...grievance,
-        departmentName,
+        departmentName: grievance.department?.name || null,
         daysSinceCreated,
         resolutionDays,
       },
@@ -233,13 +227,13 @@ export async function getGrievanceStats(
         take: 10,
       }),
       prisma.grievance.groupBy({
-        by: ["assignedDept"],
+        by: ["departmentId"],
         where: {
           ...w,
-          assignedDept: { not: null },
+          departmentId: { not: null },
         },
         _count: true,
-        orderBy: { _count: { assignedDept: "desc" } },
+        orderBy: { _count: { departmentId: "desc" } },
       }),
       prisma.grievance.count({
         where: { ...w, createdAt: { gte: monthStart } },
@@ -261,7 +255,7 @@ export async function getGrievanceStats(
     const wardMap = Object.fromEntries(wards.map((w) => [w.id, w]));
     // Resolve department names
     const deptIds = byDept
-      .map((d) => d.assignedDept)
+      .map((d) => d.departmentId)
       .filter(Boolean) as string[];
     const depts = await prisma.department.findMany({
       where: { tenantId, id: { in: deptIds } },
@@ -316,8 +310,8 @@ export async function getGrievanceStats(
           count: w._count,
         })),
         byDepartment: byDept.map((d) => ({
-          departmentId: d.assignedDept,
-          departmentName: deptMap[d.assignedDept!]?.name || "Unassigned",
+          departmentId: d.departmentId,
+          departmentName: deptMap[d.departmentId!]?.name || "Unassigned",
           count: d._count,
         })),
       },

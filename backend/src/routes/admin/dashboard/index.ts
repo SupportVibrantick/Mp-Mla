@@ -75,13 +75,17 @@ router.get(
       scheduledMeetings,
     ] = await Promise.all([
       // ─── Counts
-      prisma.ward.count({ where: { tenantId, status: "ACTIVE", isDeleted: false } }),
+      prisma.ward.count({
+        where: { tenantId, status: "ACTIVE", isDeleted: false },
+      }),
       prisma.grievance.count({ where: { tenantId, isDeleted: false } }),
       prisma.project.count({ where: { tenantId, isDeleted: false } }),
       prisma.institution.count({
         where: { tenantId, status: "ACTIVE", isDeleted: false },
       }),
-      prisma.communityGroup.count({ where: { tenantId, isActive: true, isDeleted: false } }),
+      prisma.communityGroup.count({
+        where: { tenantId, isActive: true, isDeleted: false },
+      }),
 
       // ─── Grievances
       prisma.grievance.groupBy({
@@ -146,13 +150,10 @@ router.get(
       }),
 
       // ─── Demographics (Aggregate Voters)
-      prisma.demographics.aggregate({
-        where: { tenantId },
-        _sum: {
-          totalVoters: true,
-          maleVoters: true,
-          femaleVoters: true,
-        },
+      prisma.voter.groupBy({
+        by: ["gender"],
+        where: { tenantId, isDeleted: false },
+        _count: { id: true },
       }),
 
       // ─── Recent Grievances
@@ -251,6 +252,13 @@ router.get(
     const pStatus = Object.fromEntries(
       projectsByStatus.map((s) => [s.status, s._count]),
     );
+    const voterCounts = Object.fromEntries(
+      demographicsSummary.map((s) => [s.gender, s._count.id]),
+    );
+    const totalVoters = Object.values(voterCounts).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
 
     const openGrievances =
       (gStatus["OPEN"] || 0) +
@@ -286,9 +294,9 @@ router.get(
           budgetUsed: projectBudget._sum.budgetUsed || 0,
           totalInstitutions,
           totalCommunityGroups,
-          totalVoters: demographicsSummary._sum.totalVoters || 0,
-          maleVoters: demographicsSummary._sum.maleVoters || 0,
-          femaleVoters: demographicsSummary._sum.femaleVoters || 0,
+          totalVoters,
+          maleVoters: voterCounts.MALE || 0,
+          femaleVoters: voterCounts.FEMALE || 0,
           totalDepartments,
           scheduledMeetings,
           financialYear: fy,

@@ -47,7 +47,8 @@ export async function getMyPermissions(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const allPermissions = await getUserEffectivePermissions(req.user!.id);
+    const tenantId = requireTenantId(req);
+    const allPermissions = await getUserEffectivePermissions(req.user!.id, tenantId);
 
     // Only return granted ones to frontend
     const granted = allPermissions.filter((p) => p.granted);

@@ -7,6 +7,7 @@ import {
 import { ApiError } from "../../../utils/ApiError.js";
 import { generateTicketNumber } from "./helpers.js";
 import { requireTenantId } from "../../../utils/tenant.js";
+import { calculateGrievanceSla } from "../../../services/grievance/sla.service.js";
 
 export async function createGrievance(
   req: Request,
@@ -23,37 +24,51 @@ export async function createGrievance(
     });
     if (!ward) throw ApiError.notFound("Ward not found");
 
+    // Verify department
+    if (data.departmentId) {
+      const dept = await prisma.department.findFirst({
+        where: { id: data.departmentId, tenantId, isDeleted: false, isActive: true },
+      });
+      if (!dept) throw ApiError.notFound("Active department not found");
+    }
+
     // Verify assigned user
     if (data.assignedToId) {
       const user = await prisma.user.findFirst({
-        where: { id: data.assignedToId, tenantId },
+        where: { id: data.assignedToId, tenantId, status: "ACTIVE" },
       });
-      if (!user) throw ApiError.notFound("Assigned user not found");
-    }
-
-    // Verify department
-    if (data.assignedDept) {
-      const dept = await prisma.department.findFirst({
-        where: { id: data.assignedDept, tenantId },
-      });
-      if (!dept) throw ApiError.notFound("Department not found");
+      if (!user) throw ApiError.notFound("Active assigned user not found");
+      if (data.departmentId && user.departmentId !== data.departmentId) {
+        throw ApiError.badRequest("Assigned user does not belong to the selected department");
+      }
     }
 
     const ticketNumber = await generateTicketNumber(tenantId);
 
+    // Calculate SLA parameters
+    const slaDetails = await calculateGrievanceSla(
+      tenantId,
+      data.departmentId,
+      data.priority || "MEDIUM",
+      new Date()
+    );
+
     // Clean
     if (data.complainantEmail === "") delete data.complainantEmail;
-
 
     const grievance = await prisma.grievance.create({
       data: {
         ...data,
         tenantId,
         ticketNumber,
+        slaStartedAt: slaDetails.slaStartedAt,
+        slaHoursApplied: slaDetails.slaHoursApplied,
+        expectedResolutionDate: slaDetails.expectedResolutionDate,
         createdById: req.user!.id,
         // Create initial timeline
         timeline: {
           create: {
+            tenantId,
             action: "CREATED",
             toStatus: "OPEN",
             comment: `Grievance filed via ${(data.source || "OFFICE").toLowerCase().replace("_", " ")}`,
@@ -74,14 +89,14 @@ export async function createGrievance(
     });
 
     // If assigned, add assignment timeline entry
-    if (data.assignedToId || data.assignedDept) {
+    if (data.assignedToId || data.departmentId) {
       const parts: string[] = [];
       if (data.assignedToId && grievance.assignedTo) {
         parts.push(`to ${grievance.assignedTo.name}`);
       }
-      if (data.assignedDept) {
+      if (data.departmentId) {
         const dept = await prisma.department.findFirst({
-          where: { id: data.assignedDept, tenantId },
+          where: { id: data.departmentId, tenantId },
           select: { name: true },
         });
         if (dept) parts.push(`(Dept: ${dept.name})`);
@@ -89,6 +104,7 @@ export async function createGrievance(
 
       await prisma.grievanceTimeline.create({
         data: {
+          tenantId,
           grievanceId: grievance.id,
           action: "ASSIGNMENT",
           comment: `Assigned ${parts.join(" ")}`,
@@ -96,7 +112,7 @@ export async function createGrievance(
           changedById: req.user!.id,
           metadata: {
             assignedToId: data.assignedToId,
-            assignedDept: data.assignedDept,
+            departmentId: data.departmentId,
           },
         },
       });
@@ -114,6 +130,7 @@ export async function createGrievance(
         category: grievance.category,
         priority: grievance.priority,
         wardId: grievance.wardId,
+        departmentId: grievance.departmentId,
       },
       ...getRequestMeta(req),
     });

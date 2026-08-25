@@ -240,6 +240,7 @@ export async function bulkCreateInstitutions(
 
         // ── Collect incharges from all rows ──
         const inchargeInputs: {
+          tenantId: string;
           name: string;
           designation: string;
           contactNo: string;
@@ -264,6 +265,7 @@ export async function bulkCreateInstitutions(
           seenIncharges.add(dedupeKey);
 
           inchargeInputs.push({
+            tenantId,
             name: icName,
             designation: icDesignation,
             contactNo: icContact,

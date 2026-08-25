@@ -7,15 +7,12 @@ import {
   SCHEME_STATUSES,
   SCHEME_LEVELS,
 } from "@/hooks/useSchemes";
-import { useDepartments } from "@/hooks/useDepartments";
-import { formatCurrency } from "@/hooks/useFunds";
 import { PermissionGate } from "@/components/auth/PermissionGate";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -39,10 +36,11 @@ import {
   Eye,
   Edit,
   Users,
-  Target,
   ChevronLeft,
   ChevronRight,
+  Calendar,
 } from "lucide-react";
+import { format } from "date-fns";
 
 export default function SchemeListPage() {
   const [search, setSearch] = useState("");
@@ -89,36 +87,30 @@ export default function SchemeListPage() {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               {
                 label: "Total Schemes",
-                value: stats.total,
+                value: stats.totalSchemes,
                 icon: FileText,
                 color: "#6366f1",
               },
               {
                 label: "Active",
-                value: stats.active,
+                value: stats.activeSchemes,
                 icon: FileText,
                 color: "#22c55e",
               },
               {
-                label: "Beneficiaries",
-                value: stats.totalBeneficiaries.toLocaleString(),
+                label: "Applications",
+                value: stats.totalApplications,
                 icon: Users,
                 color: "#3b82f6",
               },
               {
-                label: "Disbursed",
-                value: formatCurrency(stats.totalDisbursed),
-                icon: Target,
-                color: "#f59e0b",
-              },
-              {
-                label: "Coverage",
-                value: `${stats.overallCoverage}%`,
-                icon: Target,
+                label: "Approved",
+                value: stats.approved,
+                icon: Users,
                 color: "#8b5cf6",
               },
             ].map((s, i) => (
@@ -210,11 +202,10 @@ export default function SchemeListPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Scheme</TableHead>
+                    <TableHead>Code</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Level</TableHead>
-                    <TableHead className="text-right">Budget</TableHead>
-                    <TableHead className="text-center">Beneficiaries</TableHead>
-                    <TableHead className="text-center">Coverage</TableHead>
+                    <TableHead className="text-center">Applications</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -223,7 +214,7 @@ export default function SchemeListPage() {
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 8 }).map((_, j) => (
+                        {Array.from({ length: 7 }).map((_, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -233,7 +224,7 @@ export default function SchemeListPage() {
                   ) : schemes.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={7}
                         className="text-center py-12 text-muted-foreground"
                       >
                         <FileText className="h-10 w-10 mx-auto mb-2 opacity-30" />
@@ -251,41 +242,29 @@ export default function SchemeListPage() {
                                 {s.name}
                               </span>
                             </Link>
-                            {s.wardCount > 0 && (
-                              <p className="text-[10px] text-muted-foreground">
-                                {s.wardCount} wards covered
+                            {s.startDate && (
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {format(new Date(s.startDate), "dd MMM yyyy")}
+                                {s.endDate && ` - ${format(new Date(s.endDate), "dd MMM yyyy")}`}
                               </p>
                             )}
                           </TableCell>
+                          <TableCell className="text-sm font-mono">
+                            {s.code || "—"}
+                          </TableCell>
                           <TableCell className="text-sm">
-                            {s.departmentName}
+                            {s.department}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-[10px]">
                               {s.level}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm">
-                            {formatCurrency(s.budget)}
-                          </TableCell>
                           <TableCell className="text-center">
                             <p className="font-mono text-sm">
-                              {s.totalBeneficiaries.toLocaleString()}
+                              {s._count?.applications?.toLocaleString() || 0}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">
-                              / {s.totalTarget.toLocaleString()}
-                            </p>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Progress
-                                value={s.coverage}
-                                className="h-1.5 w-16"
-                              />
-                              <span className="text-xs font-mono">
-                                {s.coverage}%
-                              </span>
-                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-[10px] ${stInfo.color}`}>

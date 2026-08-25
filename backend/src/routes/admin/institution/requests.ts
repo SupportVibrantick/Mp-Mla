@@ -175,6 +175,7 @@ export async function approveRequest(
         status: "ACTIVE",
         incharges: {
           create: {
+            tenantId,
             name: request.headName,
             designation: request.headDesignation,
             contactNo: request.headContact,

@@ -98,7 +98,7 @@ export async function createArea(
 
     // 1. Create the area record
     const area = await prisma.wardArea.create({
-      data: { ...areaData, wardId },
+      data: { tenantId, ...areaData, wardId },
     });
 
     // 2. Create area-level demographics (explicit or auto-estimated)

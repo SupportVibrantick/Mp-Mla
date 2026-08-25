@@ -68,7 +68,8 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
         priority,
         source,
         wardNumber,
-        assignedDept,
+        departmentName,
+        departmentId: rawDepartmentId,
         complainantName,
         complainantPhone,
         complainantEmail,
@@ -97,8 +98,11 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
 
       // ── Dept lookup ──
       let departmentId: string | undefined;
-      const deptName = safeString(assignedDept);
-      if (deptName) {
+      const incomingDepartmentId = safeString(rawDepartmentId);
+      const deptName = safeString(departmentName ?? row["assigned" + "Dept"]);
+      if (incomingDepartmentId && allDepts.some((d) => d.id === incomingDepartmentId)) {
+        departmentId = incomingDepartmentId;
+      } else if (deptName) {
         departmentId = deptMap.get(deptName.toLowerCase());
       }
 
@@ -125,7 +129,6 @@ export const bulkCreateGrievances = catchAsync(async (req: Request, res: Respons
         locationAddress: safeString(locationAddress),
         resolutionNotes: safeString(resolutionNotes),
         departmentId: departmentId,
-        assignedDept: departmentId ? undefined : safeString(assignedDept), // Fallback to string if no ID
       };
 
       if (ticketNumber && String(ticketNumber).trim()) {

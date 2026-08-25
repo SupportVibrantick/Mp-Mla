@@ -87,6 +87,7 @@ export default function GrievanceListPage() {
     searchParams.get("priority") || "all",
   );
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -99,8 +100,9 @@ export default function GrievanceListPage() {
     if (statusFilter !== "all") p.status = statusFilter;
     if (priorityFilter !== "all") p.priority = priorityFilter;
     if (categoryFilter !== "all") p.category = categoryFilter;
+    if (departmentFilter !== "all") p.departmentId = departmentFilter;
     return p;
-  }, [search, wardFilter, statusFilter, priorityFilter, categoryFilter, page]);
+  }, [search, wardFilter, statusFilter, priorityFilter, categoryFilter, departmentFilter, page]);
 
   const { data: gRes, isLoading } = useGrievances(params);
   const { data: statsRes } = useGrievanceStats(
@@ -287,6 +289,7 @@ export default function GrievanceListPage() {
     setStatusFilter("all");
     setPriorityFilter("all");
     setCategoryFilter("all");
+    setDepartmentFilter("all");
     setPage(1);
   };
 
@@ -544,6 +547,25 @@ export default function GrievanceListPage() {
                   </SelectContent>
                 </Select>
                 <Select
+                  value={departmentFilter}
+                  onValueChange={(v) => {
+                    setDepartmentFilter(v);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-40 bg-background/50 border-muted-foreground/20 rounded-xl text-xs">
+                    <SelectValue placeholder="Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    {departments.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name} ({d.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
                   value={wardFilter}
                   onValueChange={(v) => {
                     setWardFilter(v);
@@ -567,7 +589,8 @@ export default function GrievanceListPage() {
                   wardFilter !== "all" ||
                   statusFilter !== "all" ||
                   priorityFilter !== "all" ||
-                  categoryFilter !== "all") && (
+                  categoryFilter !== "all" ||
+                  departmentFilter !== "all") && (
                   <Button
                     variant="ghost"
                     size="sm"

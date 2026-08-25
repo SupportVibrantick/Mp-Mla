@@ -59,7 +59,7 @@ const formSchema = z.object({
     .or(z.literal("")),
   complainantAddress: z.string().optional(),
   locationAddress: z.string().optional(),
-  assignedDept: z.string().optional(),
+  departmentId: z.string().optional(),
   assignedToId: z.string().optional(),
 });
 
@@ -96,6 +96,11 @@ export default function GrievanceFormPage() {
     defaultValues: { priority: "MEDIUM", source: "OFFICE" },
   });
 
+  const selectedDept = watch("departmentId");
+  const filteredUsers = selectedDept && selectedDept !== "none"
+    ? users.filter((u: any) => u.departmentId === selectedDept)
+    : users;
+
   useEffect(() => {
     if (!g || !isEdit) return;
     reset({
@@ -111,7 +116,7 @@ export default function GrievanceFormPage() {
       complainantEmail: g.complainantEmail || "",
       complainantAddress: g.complainantAddress || "",
       locationAddress: g.locationAddress || "",
-      assignedDept: g.assignedDept || "",
+      departmentId: g.departmentId || "",
       assignedToId: g.assignedToId || "",
     });
   }, [g, isEdit, reset]);
@@ -121,10 +126,10 @@ export default function GrievanceFormPage() {
       const payload: any = { ...data };
       if (!payload.complainantEmail) delete payload.complainantEmail;
       
-      if (payload.assignedDept === "none") {
-        payload.assignedDept = null;
-      } else if (!payload.assignedDept) {
-        delete payload.assignedDept;
+      if (payload.departmentId === "none") {
+        payload.departmentId = null;
+      } else if (!payload.departmentId) {
+        delete payload.departmentId;
       }
 
       if (payload.assignedToId === "none") {
@@ -437,12 +442,25 @@ export default function GrievanceFormPage() {
 
                 <Controller
                   control={control}
-                  name="assignedDept"
+                  name="departmentId"
                   render={({ field }) => (
                     <Select
                       key={field.value}
                       value={field.value}
-                      onValueChange={field.onChange}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        const nextDeptId = val === "none" ? "" : val;
+                        const filtered = nextDeptId
+                          ? users.filter((u: any) => u.departmentId === nextDeptId)
+                          : users;
+                        const currentAssignee = watch("assignedToId");
+                        const stillValid = currentAssignee && currentAssignee !== "none"
+                          ? filtered.some((u: any) => u.id === currentAssignee)
+                          : true;
+                        if (!stillValid) {
+                          setValue("assignedToId", "none");
+                        }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Optional" />
@@ -471,7 +489,14 @@ export default function GrievanceFormPage() {
                     <Select
                       key={field.value}
                       value={field.value}
-                      onValueChange={field.onChange}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        const user = users.find((u: any) => u.id === val);
+                        const currentDept = watch("departmentId");
+                        if (user?.departmentId && (!currentDept || currentDept === "none")) {
+                          setValue("departmentId", user.departmentId);
+                        }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Optional" />
@@ -480,7 +505,7 @@ export default function GrievanceFormPage() {
                       <SelectContent>
                         <SelectItem value="none">— Unassigned —</SelectItem>
 
-                        {users.map((u: any) => (
+                        {filteredUsers.map((u: any) => (
                           <SelectItem key={u.id} value={u.id}>
                             {u.name || u.email}
                           </SelectItem>

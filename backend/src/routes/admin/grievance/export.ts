@@ -22,21 +22,12 @@ export const exportGrievances = catchAsync(async (req: Request, res: Response) =
     where,
     include: {
       ward: { select: { wardNumber: true, name: true } },
+      department: { select: { name: true } },
       assignedTo: { select: { name: true } },
       createdBy: { select: { name: true } },
     },
     orderBy: { createdAt: "desc" },
   });
-
-  // Resolve department names from assignedDept IDs
-  const deptIds = data
-    .map((item) => item.assignedDept)
-    .filter(Boolean) as string[];
-  const depts = await prisma.department.findMany({
-    where: { tenantId, id: { in: deptIds } },
-    select: { id: true, name: true },
-  });
-  const deptMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
 
   const exportData = data.map((item) => ({
     ticketNumber: item.ticketNumber,
@@ -49,9 +40,7 @@ export const exportGrievances = catchAsync(async (req: Request, res: Response) =
     source: item.source,
     wardNumber: item.ward?.wardNumber ?? "",
     wardName: item.ward?.name ?? "",
-    department: item.assignedDept
-      ? deptMap[item.assignedDept] || item.assignedDept
-      : "",
+    department: item.department?.name ?? "",
     assignedTo: item.assignedTo?.name ?? "",
     complainantName: item.complainantName ?? "",
     complainantPhone: item.complainantPhone ?? "",

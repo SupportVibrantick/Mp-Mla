@@ -19,13 +19,35 @@ export async function getWardDemographics(
   try {
     const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
-    const ward = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
+    const ward = await prisma.ward.findFirst({
+      where: { id: wardId, tenantId },
+    });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     const wardLevel = await prisma.demographics.findFirst({
       where: { tenantId, wardId, wardAreaId: null },
       orderBy: { surveyDate: "desc" },
     });
+
+    const voterStats = await prisma.voter.groupBy({
+      by: ["gender"],
+      where: { tenantId, wardId, isDeleted: false },
+      _count: { id: true },
+    });
+    const voterCounts = voterStats.reduce(
+      (counts, stat) => {
+        counts.total += stat._count.id;
+        if (stat.gender === "MALE") counts.male = stat._count.id;
+        if (stat.gender === "FEMALE") counts.female = stat._count.id;
+        return counts;
+      },
+      { total: 0, male: 0, female: 0 },
+    );
+    if (wardLevel) {
+      wardLevel.totalVoters = voterCounts.total;
+      wardLevel.maleVoters = voterCounts.male;
+      wardLevel.femaleVoters = voterCounts.female;
+    }
 
     const areaLevel = await prisma.demographics.findMany({
       where: { tenantId, wardId, wardAreaId: { not: null } },
@@ -39,51 +61,55 @@ export async function getWardDemographics(
 
     const charts = wardLevel
       ? {
-        genderDistribution: [
-          { label: "Male", value: wardLevel.maleCount, color: "#3b82f6" },
-          { label: "Female", value: wardLevel.femaleCount, color: "#ec4899" },
-        ],
-        ageDistribution: [
-          { label: "0-6", value: wardLevel.age0to6 },
-          { label: "7-18", value: wardLevel.age7to18 },
-          { label: "19-35", value: wardLevel.age19to35 },
-          { label: "36-60", value: wardLevel.age36to60 },
-          { label: "60+", value: wardLevel.age60plus },
-        ],
-        casteDistribution: [
-          { label: "General", value: wardLevel.generalCount },
-          { label: "OBC", value: wardLevel.obcCount },
-          { label: "SC", value: wardLevel.scCount },
-          { label: "ST", value: wardLevel.stCount },
-          { label: "Minority", value: wardLevel.minorityCount },
-        ],
-        religionDistribution: [
-          { label: "Hindu", value: wardLevel.hinduCount, color: "#f97316" },
-          { label: "Muslim", value: wardLevel.muslimCount, color: "#16a34a" },
-          { label: "Sikh", value: wardLevel.sikhCount, color: "#2563eb" },
-          {
-            label: "Christian",
-            value: wardLevel.christianCount,
-            color: "#ef4444",
-          },
-          {
-            label: "Buddhist",
-            value: wardLevel.buddhistCount,
-            color: "#ca8a04",
-          },
-          { label: "Jain", value: wardLevel.jainCount, color: "#9333ea" },
-          {
-            label: "Other",
-            value: wardLevel.otherReligionCount,
-            color: "#6b7280",
-          },
-        ].filter((r) => r.value > 0),
-        vitalStatistics: [
-          { label: "Births", value: wardLevel.totalBirths, color: "#22c55e" },
-          { label: "Deaths", value: wardLevel.totalDeaths, color: "#ef4444" },
-          { label: "New Voters", value: wardLevel.newVotersCount, color: "#3b82f6" },
-        ],
-      }
+          genderDistribution: [
+            { label: "Male", value: wardLevel.maleCount, color: "#3b82f6" },
+            { label: "Female", value: wardLevel.femaleCount, color: "#ec4899" },
+          ],
+          ageDistribution: [
+            { label: "0-6", value: wardLevel.age0to6 },
+            { label: "7-18", value: wardLevel.age7to18 },
+            { label: "19-35", value: wardLevel.age19to35 },
+            { label: "36-60", value: wardLevel.age36to60 },
+            { label: "60+", value: wardLevel.age60plus },
+          ],
+          casteDistribution: [
+            { label: "General", value: wardLevel.generalCount },
+            { label: "OBC", value: wardLevel.obcCount },
+            { label: "SC", value: wardLevel.scCount },
+            { label: "ST", value: wardLevel.stCount },
+            { label: "Minority", value: wardLevel.minorityCount },
+          ],
+          religionDistribution: [
+            { label: "Hindu", value: wardLevel.hinduCount, color: "#f97316" },
+            { label: "Muslim", value: wardLevel.muslimCount, color: "#16a34a" },
+            { label: "Sikh", value: wardLevel.sikhCount, color: "#2563eb" },
+            {
+              label: "Christian",
+              value: wardLevel.christianCount,
+              color: "#ef4444",
+            },
+            {
+              label: "Buddhist",
+              value: wardLevel.buddhistCount,
+              color: "#ca8a04",
+            },
+            { label: "Jain", value: wardLevel.jainCount, color: "#9333ea" },
+            {
+              label: "Other",
+              value: wardLevel.otherReligionCount,
+              color: "#6b7280",
+            },
+          ].filter((r) => r.value > 0),
+          vitalStatistics: [
+            { label: "Births", value: wardLevel.totalBirths, color: "#22c55e" },
+            { label: "Deaths", value: wardLevel.totalDeaths, color: "#ef4444" },
+            {
+              label: "New Voters",
+              value: wardLevel.newVotersCount,
+              color: "#3b82f6",
+            },
+          ],
+        }
       : null;
 
     res.json({ success: true, data: { wardLevel, areaLevel, charts } });
@@ -104,7 +130,9 @@ export async function upsertWardDemographics(
   try {
     const tenantId = requireTenantId(req);
     const wardId = req.params.wardId as string;
-    const ward = await prisma.ward.findFirst({ where: { id: wardId, tenantId } });
+    const ward = await prisma.ward.findFirst({
+      where: { id: wardId, tenantId },
+    });
     if (!ward) throw ApiError.notFound("Ward not found");
 
     const incoming = { ...req.body };
@@ -144,7 +172,12 @@ export async function upsertWardDemographics(
       });
     } else {
       const demographics = await prisma.demographics.create({
-        data: { tenantId, wardId, ...incoming, wardAreaId: incoming.wardAreaId || null },
+        data: {
+          tenantId,
+          wardId,
+          ...incoming,
+          wardAreaId: incoming.wardAreaId || null,
+        },
       });
       await createAuditLog({
         tenantId,

@@ -93,6 +93,7 @@ export async function sendGreeting(
 
     const greeting = await prisma.leaderGreeting.create({
       data: {
+        tenantId,
         leaderId: leader.id,
         type,
         channel,
@@ -185,6 +186,7 @@ export async function sendBulkGreeting(
 
       const greeting = await prisma.leaderGreeting.create({
         data: {
+          tenantId,
           leaderId: leader.id,
           type,
           channel,

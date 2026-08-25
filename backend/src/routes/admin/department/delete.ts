@@ -27,13 +27,29 @@ export const deleteDepartment = catchAsync(async (req, res) => {
   }
 
   // Check references
-  const [gCount, pCount] = await Promise.all([
-    prisma.grievance.count({ where: { tenantId, assignedDept: dept.id } }),
-    prisma.project.count({ where: { tenantId, department: dept.id } }),
+  const [gCount, pCount, userCount, taskCount] = await Promise.all([
+    prisma.grievance.count({
+      where: {
+        tenantId,
+        departmentId: dept.id,
+        status: { in: ["OPEN", "IN_PROGRESS", "ESCALATED"] },
+      },
+    }),
+    prisma.project.count({ where: { tenantId, departmentId: dept.id, isDeleted: false } }),
+    prisma.user.count({
+      where: { tenantId, departmentId: dept.id, status: "ACTIVE" },
+    }),
+    prisma.task.count({
+      where: {
+        tenantId,
+        departmentId: dept.id,
+        status: { notIn: ["COMPLETED", "CANCELLED"] },
+      },
+    }),
   ]);
-  if (gCount > 0 || pCount > 0) {
+  if (gCount > 0 || pCount > 0 || userCount > 0 || taskCount > 0) {
     throw ApiError.badRequest(
-      `Cannot delete: ${gCount} grievances, ${pCount} projects reference this department. Deactivate instead.`,
+      `Cannot delete: ${gCount} active grievances, ${pCount} projects, ${userCount} active users, ${taskCount} active tasks reference this department. Deactivate instead.`,
     );
   }
 

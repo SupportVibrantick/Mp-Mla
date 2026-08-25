@@ -33,6 +33,8 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
       role: true,
       status: true,
       phone: true,
+      designation: true,
+      departmentId: true,
     },
   });
 
@@ -51,8 +53,23 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
   const updateData: any = {};
   if (req.body.name !== undefined) updateData.name = req.body.name;
   if (req.body.phone !== undefined) updateData.phone = req.body.phone;
+  if (req.body.designation !== undefined) updateData.designation = req.body.designation;
+  if (req.body.departmentId !== undefined) updateData.departmentId = req.body.departmentId || null;
   if (req.body.role !== undefined) updateData.role = req.body.role;
   if (req.body.status !== undefined) updateData.status = req.body.status;
+
+  if (req.body.departmentId) {
+    const department = await prisma.department.findFirst({
+      where: {
+        id: req.body.departmentId,
+        tenantId,
+        isDeleted: false,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    if (!department) throw ApiError.notFound("Active department not found");
+  }
 
   if (
     req.body.phone !== undefined &&
@@ -103,6 +120,8 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
       phone: true,
       role: true,
       status: true,
+      designation: true,
+      departmentId: true,
       updatedAt: true,
     },
   });
@@ -127,6 +146,8 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
       name: oldUser.name,
       role: oldUser.role,
       status: oldUser.status,
+      designation: oldUser.designation,
+      departmentId: oldUser.departmentId,
     },
     newData: updateData,
     ...getRequestMeta(req),

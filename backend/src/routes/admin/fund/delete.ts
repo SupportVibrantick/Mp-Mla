@@ -1,17 +1,15 @@
 import prisma from "../../../lib/prisma.js";
-
 import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
-
 import catchAsync from "@/utils/catchAsync.js";
-import { recalculateFundTotals } from "./helper.js";
+import { recalculateFundTotals, recalcProjectBudget } from "./helper.js";
 
 /**
- * DELETE /api/admin/fund/:id
+ * DELETE /api/admin/funds/:id
  * Deletes a fund and all its transactions.
  */
 export const deleteFunds = catchAsync(async (req, res) => {
@@ -31,9 +29,9 @@ export const deleteFunds = catchAsync(async (req, res) => {
   await archiveToRecycleBin({
     tenantId,
     module: "funds",
-    entityType: "fund",
+    entityType: "fund" as any,
     recordId: fund.id,
-    recordLabel: `${fund.fundType} ${fund.financialYear}`,
+    recordLabel: `${fund.fundType} FY ${fund.financialYear}`,
     payload: fund,
     deletedById: req.user!.id,
   });
@@ -50,13 +48,25 @@ export const deleteFunds = catchAsync(async (req, res) => {
     data: { isDeleted: true },
   });
 
+  // Recalculate any linked project budgets after soft-deleting transactions
+  const linkedProjects = await prisma.fundTransaction.findMany({
+    where: { fundId, projectId: { not: null }, isDeleted: true },
+    select: { projectId: true },
+    distinct: ["projectId"],
+  });
+  for (const tp of linkedProjects) {
+    if (tp.projectId) {
+      await recalcProjectBudget(tp.projectId, tenantId);
+    }
+  }
+
   await createAuditLog({
     tenantId,
     userId: req.user!.id,
     action: "DELETE",
     module: "funds",
     recordId: fund.id,
-    description: `Deleted ${fund.fundType} ${fund.financialYear}`,
+    description: `Soft-deleted fund ${fund.fundType} FY ${fund.financialYear}`,
     ...getRequestMeta(req),
   });
 
@@ -66,9 +76,8 @@ export const deleteFunds = catchAsync(async (req, res) => {
   });
 });
 
-
 /**
- * DELETE /api/admin/fund/:id/transaction/:txnId
+ * DELETE /api/admin/funds/:id/transactions/:txnId
  * Deletes a transaction and reverses its effect.
  */
 export const deleteFundTransaction = catchAsync(async (req, res) => {
@@ -85,42 +94,35 @@ export const deleteFundTransaction = catchAsync(async (req, res) => {
   if (!txn) throw ApiError.notFound("Transaction not found");
 
   const projectId = txn.projectId;
+  const fundId = txn.fundId;
 
   await archiveToRecycleBin({
     tenantId,
     module: "funds",
-    entityType: "fund_transaction",
+    entityType: "fund_transaction" as any,
     recordId: txn.id,
     recordLabel: `Reversed ${txn.type} of ₹${txn.amount.toLocaleString()}`,
     payload: txn,
     deletedById: req.user!.id,
   });
 
-  await prisma.fundTransaction.update({
-    where: { id: txn.id },
-    data: { isDeleted: true },
+  // Soft-delete transaction + recalc fund + recalc project atomically
+  const totals = await prisma.$transaction(async (tx) => {
+    const newTxn = await tx.fundTransaction.update({
+      where: { id: txn.id },
+      data: { isDeleted: true },
+    });
+
+    // Recalculate fund totals
+    const fundTotals = await recalculateFundTotals(fundId, tx);
+
+    // Recalculate project budgets if linked
+    if (projectId) {
+      await recalcProjectBudget(projectId, tenantId, tx);
+    }
+
+    return { fundTotals, newTxn };
   });
-
-  // Recalculate fund totals
-  const totals = await recalculateFundTotals(txn.fundId);
-
-  // If was utilization linked to project, recalculate project
-  if (txn.type === "UTILIZATION" && projectId) {
-    const remaining = await prisma.fundTransaction.findMany({
-      where: {
-        projectId,
-        type: "UTILIZATION",
-        isDeleted: false,
-        fund: { tenantId },
-      },
-      select: { amount: true },
-    });
-    const totalProjectUsed = remaining.reduce((s, t) => s + t.amount, 0);
-    await prisma.project.update({
-      where: { id: projectId },
-      data: { budgetUsed: totalProjectUsed },
-    });
-  }
 
   await createAuditLog({
     tenantId,
@@ -128,13 +130,13 @@ export const deleteFundTransaction = catchAsync(async (req, res) => {
     action: "DELETE",
     module: "funds",
     recordId: txn.id,
-    description: `Reversed ${txn.type} of ₹${txn.amount.toLocaleString()}`,
+    description: `Reversed ${txn.type} of ₹${txn.amount.toLocaleString()} on fund ID ${fundId}${projectId ? ` and synced project budgets` : ""}`,
     ...getRequestMeta(req),
   });
 
   res.json({
     success: true,
     message: `₹${txn.amount.toLocaleString()} ${txn.type.toLowerCase()} reversed`,
-    data: { fundTotals: totals },
+    data: { fundTotals: totals.fundTotals },
   });
 });

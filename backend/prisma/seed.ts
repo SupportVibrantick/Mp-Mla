@@ -14,6 +14,13 @@ const ALL_PERMISSIONS = [
     description: "View overview dashboard",
   },
 
+  { module: "constituency", action: "create", description: "Create constituency geography data" },
+  { module: "constituency", action: "read", description: "View constituency geography data" },
+  { module: "constituency", action: "update", description: "Edit constituency geography data" },
+  { module: "constituency", action: "delete", description: "Delete/deactivate constituency geography data" },
+  { module: "representative", action: "read", description: "View representative profile" },
+  { module: "representative", action: "update", description: "Edit representative profile" },
+
   { module: "wards", action: "create", description: "Create ward" },
   { module: "wards", action: "read", description: "View wards" },
   { module: "wards", action: "update", description: "Edit ward" },
@@ -50,11 +57,25 @@ const ALL_PERMISSIONS = [
   { module: "projects", action: "delete", description: "Delete project" },
   { module: "projects", action: "export", description: "Export projects" },
 
-  // { module: "schemes", action: "create", description: "Add scheme" },
-  // { module: "schemes", action: "read", description: "View schemes" },
-  // { module: "schemes", action: "update", description: "Edit scheme" },
-  // { module: "schemes", action: "delete", description: "Delete scheme" },
-  // { module: "schemes", action: "export", description: "Export schemes" },
+  { module: "schemes", action: "create", description: "Add scheme" },
+  { module: "schemes", action: "read", description: "View schemes" },
+  { module: "schemes", action: "update", description: "Edit scheme" },
+  { module: "schemes", action: "delete", description: "Delete scheme" },
+  { module: "schemes", action: "export", description: "Export schemes" },
+  { module: "scheme_applications", action: "create", description: "Create scheme application" },
+  { module: "scheme_applications", action: "read", description: "View scheme applications" },
+  { module: "scheme_applications", action: "update", description: "Update scheme application" },
+  { module: "scheme_applications", action: "delete", description: "Delete scheme application" },
+  { module: "scheme_applications", action: "manage", description: "Manage scheme application status/assignment" },
+  { module: "crm", action: "create", description: "Create CRM contact" },
+  { module: "crm", action: "read", description: "View CRM contacts" },
+  { module: "crm", action: "update", description: "Update CRM contact" },
+  { module: "crm", action: "delete", description: "Delete CRM contact" },
+  { module: "documents", action: "create", description: "Upload document" },
+  { module: "documents", action: "read", description: "View documents" },
+  { module: "documents", action: "update", description: "Update document" },
+  { module: "documents", action: "delete", description: "Delete document" },
+  { module: "documents", action: "download", description: "Download document" },
 
   {
     module: "community_groups",
@@ -168,6 +189,16 @@ const ALL_PERMISSIONS = [
   { module: "meeting", action: "update", description: "Edit meeting details" },
   { module: "meeting", action: "delete", description: "Delete a meeting" },
 
+  { module: "appointments", action: "create", description: "Request an appointment" },
+  { module: "appointments", action: "read", description: "View appointments" },
+  { module: "appointments", action: "update", description: "Edit appointment details" },
+  { module: "appointments", action: "delete", description: "Delete an appointment request" },
+  { module: "appointments", action: "approve", description: "Approve an appointment request" },
+  { module: "appointments", action: "reject", description: "Reject an appointment request" },
+  { module: "appointments", action: "reschedule", description: "Reschedule an appointment" },
+  { module: "appointments", action: "complete", description: "Mark appointment as completed" },
+  { module: "appointments", action: "cancel", description: "Cancel an appointment" },
+
   {
     module: "competitors",
     action: "create",
@@ -183,7 +214,21 @@ const ALL_PERMISSIONS = [
     action: "update",
     description: "Edit competitor data",
   },
-  { module: "competitors", action: "delete", description: "Delete competitor" },
+  { module: "events", action: "create", description: "Create an event" },
+  { module: "events", action: "read", description: "View events" },
+  { module: "events", action: "update", description: "Edit event details" },
+  { module: "events", action: "delete", description: "Delete an event" },
+  { module: "events", action: "manage_team", description: "Manage event staff team" },
+  { module: "events", action: "manage_guests", description: "Manage event guest list" },
+  { module: "events", action: "manage_attendance", description: "Manage guest attendance" },
+  { module: "events", action: "manage_media", description: "Manage event gallery/media" },
+  { module: "events", action: "manage_report", description: "Manage event completion reports" },
+  { module: "events", action: "manage_tasks", description: "Manage event tasks" },
+
+  { module: "janata_darbar", action: "create", description: "Create Janata Darbar session" },
+  { module: "janata_darbar", action: "read", description: "View Janata Darbar sessions" },
+  { module: "janata_darbar", action: "update", description: "Edit/Transition Janata Darbar sessions" },
+  { module: "janata_darbar", action: "delete", description: "Delete Janata Darbar session" },
 
   { module: "voter_list", action: "create", description: "Add voter" },
   { module: "voter_list", action: "read", description: "View voter list" },
@@ -212,8 +257,15 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "grievances", action: "export" },
     { module: "projects", action: "read" },
     { module: "projects", action: "export" },
-    // { module: "schemes", action: "read" },
-    // { module: "schemes", action: "export" },
+    { module: "schemes", action: "read" },
+    { module: "schemes", action: "export" },
+    { module: "scheme_applications", action: "read" },
+    { module: "scheme_applications", action: "manage" },
+    { module: "crm", action: "read" },
+    { module: "crm", action: "create" },
+    { module: "crm", action: "update" },
+    { module: "documents", action: "read" },
+    { module: "documents", action: "download" },
     { module: "community_groups", action: "read" },
     { module: "demographics", action: "read" },
     { module: "demographics", action: "export" },
@@ -238,6 +290,32 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "meeting", action: "read" },
     { module: "meeting", action: "update" },
     { module: "meeting", action: "delete" },
+    // ── Events ──
+    { module: "events", action: "create" },
+    { module: "events", action: "read" },
+    { module: "events", action: "update" },
+    { module: "events", action: "delete" },
+    { module: "events", action: "manage_team" },
+    { module: "events", action: "manage_guests" },
+    { module: "events", action: "manage_attendance" },
+    { module: "events", action: "manage_media" },
+    { module: "events", action: "manage_report" },
+    { module: "events", action: "manage_tasks" },
+    // ── Janata Darbar ──
+    { module: "janata_darbar", action: "create" },
+    { module: "janata_darbar", action: "read" },
+    { module: "janata_darbar", action: "update" },
+    { module: "janata_darbar", action: "delete" },
+    // ── Appointments ──
+    { module: "appointments", action: "create" },
+    { module: "appointments", action: "read" },
+    { module: "appointments", action: "update" },
+    { module: "appointments", action: "delete" },
+    { module: "appointments", action: "approve" },
+    { module: "appointments", action: "reject" },
+    { module: "appointments", action: "reschedule" },
+    { module: "appointments", action: "complete" },
+    { module: "appointments", action: "cancel" },
     // ── Competitors ──
     { module: "competitors", action: "read" },
     { module: "competitors", action: "create" },
@@ -264,9 +342,22 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "projects", action: "read" },
     { module: "projects", action: "update" },
     { module: "projects", action: "export" },
-    // { module: "schemes", action: "create" },
-    // { module: "schemes", action: "read" },
-    // { module: "schemes", action: "update" },
+    { module: "schemes", action: "create" },
+    { module: "schemes", action: "read" },
+    { module: "schemes", action: "update" },
+    { module: "scheme_applications", action: "create" },
+    { module: "scheme_applications", action: "read" },
+    { module: "scheme_applications", action: "update" },
+    { module: "scheme_applications", action: "manage" },
+    { module: "crm", action: "create" },
+    { module: "crm", action: "read" },
+    { module: "crm", action: "update" },
+    { module: "crm", action: "delete" },
+    { module: "documents", action: "create" },
+    { module: "documents", action: "read" },
+    { module: "documents", action: "update" },
+    { module: "documents", action: "delete" },
+    { module: "documents", action: "download" },
     { module: "community_groups", action: "create" },
     { module: "community_groups", action: "read" },
     { module: "community_groups", action: "update" },
@@ -297,6 +388,32 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "meeting", action: "create" },
     { module: "meeting", action: "read" },
     { module: "meeting", action: "update" },
+    // ── Events ──
+    { module: "events", action: "create" },
+    { module: "events", action: "read" },
+    { module: "events", action: "update" },
+    { module: "events", action: "delete" },
+    { module: "events", action: "manage_team" },
+    { module: "events", action: "manage_guests" },
+    { module: "events", action: "manage_attendance" },
+    { module: "events", action: "manage_media" },
+    { module: "events", action: "manage_report" },
+    { module: "events", action: "manage_tasks" },
+    // ── Janata Darbar ──
+    { module: "janata_darbar", action: "create" },
+    { module: "janata_darbar", action: "read" },
+    { module: "janata_darbar", action: "update" },
+    { module: "janata_darbar", action: "delete" },
+    // ── Appointments ──
+    { module: "appointments", action: "create" },
+    { module: "appointments", action: "read" },
+    { module: "appointments", action: "update" },
+    { module: "appointments", action: "delete" },
+    { module: "appointments", action: "approve" },
+    { module: "appointments", action: "reject" },
+    { module: "appointments", action: "reschedule" },
+    { module: "appointments", action: "complete" },
+    { module: "appointments", action: "cancel" },
     // ── Competitors ──
     { module: "competitors", action: "create" },
     { module: "competitors", action: "read" },
@@ -412,22 +529,7 @@ async function main() {
 
   console.log("✨ Database cleanup complete!\n");
 
-  // ─── 1. Organization ─────────────────────────────────
-  await prisma.organization.upsert({
-    where: { id: "org-default" },
-    update: {},
-    create: {
-      id: "org-default",
-      name: "Constituency Management Portal",
-      constituencyName: "Chandni Chowk",
-      state: "Delhi",
-      district: "Central Delhi",
-      representativeName: "Shri Example Singh",
-      representativeTitle: "Member of Parliament",
-    },
-  });
-  console.log("✅ Organization created");
-
+  // ─── 1. Tenant ───────────────────────────────────────
   const tenant = await prisma.tenant.upsert({
     where: { id: "tenant-default" },
     update: {
@@ -449,6 +551,69 @@ async function main() {
     },
   });
   console.log("✅ Default tenant created");
+
+  // ─── 1a. Organization ────────────────────────────────
+  await prisma.organization.upsert({
+    where: { id: "org-default" },
+    update: {
+      name: "Constituency Management Portal",
+      tagline: "Serving the Citizens",
+      address: "Office of the MP/MLA, Chandni Chowk, New Delhi",
+      phone: "+91-11-23456789",
+      email: "contact@chandnichowk-mp.in",
+      website: "https://chandnichowk-mp.in",
+    },
+    create: {
+      id: "org-default",
+      tenantId: "tenant-default",
+      name: "Constituency Management Portal",
+      tagline: "Serving the Citizens",
+      address: "Office of the MP/MLA, Chandni Chowk, New Delhi",
+      phone: "+91-11-23456789",
+      email: "contact@chandnichowk-mp.in",
+      website: "https://chandnichowk-mp.in",
+    },
+  });
+  console.log("✅ Organization created");
+
+  // ─── 1b. Constituency ────────────────────────────────
+  await prisma.constituency.upsert({
+    where: { id: "constituency-default" },
+    update: {
+      name: "Chandni Chowk",
+      code: "DL-08",
+      type: "PARLIAMENTARY",
+      description: "Chandni Chowk Parliamentary Constituency, Delhi",
+    },
+    create: {
+      id: "constituency-default",
+      tenantId: "tenant-default",
+      name: "Chandni Chowk",
+      code: "DL-08",
+      type: "PARLIAMENTARY",
+      description: "Chandni Chowk Parliamentary Constituency, Delhi",
+    },
+  });
+  console.log("✅ Default constituency created");
+
+  // ─── 1c. Representative Profile ──────────────────────
+  await prisma.representativeProfile.upsert({
+    where: { constituencyId: "constituency-default" },
+    update: {
+      name: "Shri Example Singh",
+      title: "Member of Parliament",
+      partyName: "XYZ Party",
+    },
+    create: {
+      id: "rep-default",
+      tenantId: "tenant-default",
+      constituencyId: "constituency-default",
+      name: "Shri Example Singh",
+      title: "Member of Parliament",
+      partyName: "XYZ Party",
+    },
+  });
+  console.log("✅ Default representative profile created");
 
   // ─── 1b. SaaS Plans, Modules & Tenant Access ─────────
   const subscriptionPlans = [
@@ -633,6 +798,27 @@ async function main() {
       sortOrder: 15,
     },
     {
+      code: "appointments",
+      name: "Appointments",
+      description: "Manage public and official appointments.",
+      category: "engagement",
+      sortOrder: 25,
+    },
+    {
+      code: "events",
+      name: "Events",
+      description: "Manage constituency events, vip guest attendance, team scheduling, and completion reports.",
+      category: "engagement",
+      sortOrder: 26,
+    },
+    {
+      code: "janata_darbar",
+      name: "Janata Darbar",
+      description: "Manage public darbar sessions, visitor queue tokens, and direct integration with grievances and tasks.",
+      category: "engagement",
+      sortOrder: 27,
+    },
+    {
       code: "users",
       name: "Users",
       description: "Tenant user and role management.",
@@ -687,6 +873,41 @@ async function main() {
       description: "Constituent voter roll & bulk upload ingestion.",
       category: "core",
       sortOrder: 23,
+    },
+    {
+      code: "constituency",
+      name: "Constituency",
+      description: "Constituency geographic and electoral structures & master data.",
+      category: "core",
+      sortOrder: 24,
+    },
+    {
+      code: "schemes",
+      name: "Schemes",
+      description: "Government welfare schemes, beneficiary applications, and tracking.",
+      category: "core",
+      sortOrder: 28,
+    },
+    {
+      code: "scheme_applications",
+      name: "Scheme Applications",
+      description: "Beneficiary applications for government schemes with status workflow.",
+      category: "core",
+      sortOrder: 29,
+    },
+    {
+      code: "crm",
+      name: "CRM",
+      description: "Citizen relationship management - contacts, interactions, and follow-ups.",
+      category: "engagement",
+      sortOrder: 30,
+    },
+    {
+      code: "documents",
+      name: "Documents",
+      description: "Central document management with versioning and entity linking.",
+      category: "core",
+      sortOrder: 31,
     },
   ];
 
@@ -1019,6 +1240,13 @@ async function main() {
     });
   }
   console.log(`✅ ${departments.length} departments created`);
+  const seededDepartments = await prisma.department.findMany({
+    where: { tenantId: tenant.id },
+    select: { id: true, name: true },
+  });
+  const departmentIdByName = new Map(
+    seededDepartments.map((department) => [department.name, department.id]),
+  );
 
   // ─── 7. Wards ────────────────────────────────────────
   const wardsData = [
@@ -1290,12 +1518,13 @@ async function main() {
       await prisma.wardArea.upsert({
         where: { wardId_name: { wardId: ward.id, name: area.name } },
         update: {},
-        create: { wardId: ward.id, ...area },
+        create: { tenantId: tenant.id, wardId: ward.id, ...area },
       });
     }
 
     await prisma.wardCouncillor.create({
       data: {
+        tenantId: tenant.id,
         wardId: ward.id,
         name: wd.councillor.name,
         phone: wd.councillor.phone,
@@ -1387,6 +1616,7 @@ async function main() {
   for (const inst of allInstitutions.slice(0, 4)) {
     await prisma.incharge.create({
       data: {
+        tenantId: tenant.id,
         institutionId: inst.id,
         name: `Head of ${inst.name}`,
         designation: "Director",
@@ -1404,7 +1634,7 @@ async function main() {
       category: "Water Supply",
       description: "No water supply in Block C for 3 days.",
       wardId: wards[0].id,
-      assignedDept: "Jal Board",
+      departmentId: departmentIdByName.get("Jal Board"),
       status: "OPEN" as const,
       priority: "HIGH" as const,
       createdById: staff1.id,
@@ -1414,7 +1644,7 @@ async function main() {
       category: "Road Damage",
       description: "Large pothole on Main Road near market.",
       wardId: wards[0].id,
-      assignedDept: "Public Works Department",
+      departmentId: departmentIdByName.get("Public Works Department"),
       status: "IN_PROGRESS" as const,
       priority: "URGENT" as const,
       createdById: staff1.id,
@@ -1424,7 +1654,7 @@ async function main() {
       category: "Sanitation",
       description: "Garbage not collected in Lane 3.",
       wardId: wards[1].id,
-      assignedDept: "Sanitation",
+      departmentId: departmentIdByName.get("Sanitation"),
       status: "RESOLVED" as const,
       priority: "MEDIUM" as const,
       resolvedAt: new Date("2025-01-20"),
@@ -1435,7 +1665,7 @@ async function main() {
       category: "Electricity",
       description: "Frequent power cuts lasting 4-5 hours daily.",
       wardId: wards[2].id,
-      assignedDept: "Electricity Board",
+      departmentId: departmentIdByName.get("Electricity Board"),
       status: "OPEN" as const,
       priority: "HIGH" as const,
       createdById: staff2.id,
@@ -1445,7 +1675,7 @@ async function main() {
       category: "Street Light",
       description: "Street lights not working in Sector 5.",
       wardId: wards[3].id,
-      assignedDept: "Electricity Board",
+      departmentId: departmentIdByName.get("Electricity Board"),
       status: "IN_PROGRESS" as const,
       priority: "MEDIUM" as const,
       createdById: staff2.id,
@@ -1455,7 +1685,7 @@ async function main() {
       category: "Drainage",
       description: "Blocked drainage causing waterlogging.",
       wardId: wards[4].id,
-      assignedDept: "Public Works Department",
+      departmentId: departmentIdByName.get("Public Works Department"),
       status: "OPEN" as const,
       priority: "LOW" as const,
       createdById: staff1.id,
@@ -1468,6 +1698,7 @@ async function main() {
     });
     await prisma.grievanceTimeline.create({
       data: {
+        tenantId: tenant.id,
         grievanceId: created.id,
 
         action: "CREATED",
@@ -1490,7 +1721,7 @@ async function main() {
       projectCode: "PRJ-2025-00001",
       name: "Road Widening - Sadar Main Road",
       category: "Infrastructure",
-      department: "Public Works Department",
+      departmentId: departmentIdByName.get("Public Works Department"),
       contractor: "ABC Construction",
       wardId: wards[0].id,
       startDate: new Date("2025-01-15"),
@@ -1506,7 +1737,7 @@ async function main() {
       projectCode: "PRJ-2025-00002",
       name: "Community Park Development",
       category: "Green Space",
-      department: "Horticulture",
+      departmentId: departmentIdByName.get("Horticulture"),
       wardId: wards[1].id,
       startDate: new Date("2025-03-01"),
       budgetSanctioned: 2000000,
@@ -1520,7 +1751,7 @@ async function main() {
       projectCode: "PRJ-2025-00003",
       name: "Street Light Installation",
       category: "Infrastructure",
-      department: "Electricity Board",
+      departmentId: departmentIdByName.get("Electricity Board"),
       contractor: "Power Solutions Ltd",
       wardId: wards[2].id,
       startDate: new Date("2024-11-01"),
@@ -1537,7 +1768,7 @@ async function main() {
       projectCode: "PRJ-2025-00004",
       name: "Water Pipeline Extension",
       category: "Water Supply",
-      department: "Jal Board",
+      departmentId: departmentIdByName.get("Jal Board"),
       wardId: wards[3].id,
       budgetSanctioned: 3500000,
       budgetReleased: 0,
@@ -1563,56 +1794,225 @@ async function main() {
 
   console.log(`✅ ${projects.length} projects created`);
 
-  // // ─── 12. Schemes ─────────────────────────────────────
-  // const schemes = [
-  //   {
-  //     name: "PM Awas Yojana",
-  //     department: "Housing",
-  //     level: "Central",
-  //     description: "Housing for all under poverty line",
-  //     budget: 50000000,
-  //     status: "ACTIVE" as const,
-  //   },
-  //   {
-  //     name: "Swachh Bharat Mission",
-  //     department: "Sanitation",
-  //     level: "Central",
-  //     description: "Clean India initiative",
-  //     budget: 15000000,
-  //     status: "ACTIVE" as const,
-  //   },
-  //   {
-  //     name: "Ayushman Bharat",
-  //     department: "Health",
-  //     level: "Central",
-  //     description: "Free health insurance",
-  //     budget: 30000000,
-  //     status: "ACTIVE" as const,
-  //   },
-  //   {
-  //     name: "PM Kisan Samman",
-  //     department: "Agriculture",
-  //     level: "Central",
-  //     description: "Income support for farmers",
-  //     budget: 10000000,
-  //     status: "ACTIVE" as const,
-  //   },
-  // ];
+  // ─── 12. Schemes ─────────────────────────────────────
+  const schemes = [
+    {
+      name: "PM Awas Yojana",
+      code: "PMAY",
+      department: "Housing & Urban Affairs",
+      level: "CENTRAL" as const,
+      description: "Housing for all under poverty line",
+      eligibility: "Families with no pucca house and annual income below ₹3 lakh",
+      benefits: "Financial assistance up to ₹2.67 lakh for house construction",
+      requiredDocuments: ["Aadhaar Card", "Income Certificate", "Bank Passbook"],
+      applicationUrl: "https://pmaymis.gov.in",
+      status: "ACTIVE" as const,
+      startDate: new Date("2024-01-01"),
+      endDate: new Date("2026-12-31"),
+    },
+    {
+      name: "Swachh Bharat Mission",
+      code: "SBM",
+      department: "Sanitation",
+      level: "CENTRAL" as const,
+      description: "Clean India initiative",
+      eligibility: "All households without toilet facilities",
+      benefits: "Financial assistance for toilet construction",
+      requiredDocuments: ["Aadhaar Card", "Land Ownership Proof"],
+      applicationUrl: "https://swachhbharatmission.gov.in",
+      status: "ACTIVE" as const,
+      startDate: new Date("2024-01-01"),
+      endDate: new Date("2025-12-31"),
+    },
+    {
+      name: "Ayushman Bharat",
+      code: "AB-PMJAY",
+      department: "Health",
+      level: "CENTRAL" as const,
+      description: "Free health insurance up to ₹5 lakh per family per year",
+      eligibility: "Families listed in SECC database",
+      benefits: "Cashless health insurance coverage",
+      requiredDocuments: ["Aadhaar Card", "SECC Certificate"],
+      applicationUrl: "https://pmjay.gov.in",
+      status: "ACTIVE" as const,
+      startDate: new Date("2024-01-01"),
+      endDate: new Date("2026-12-31"),
+    },
+    {
+      name: "PM Kisan Samman Nidhi",
+      code: "PM-KISAN",
+      department: "Agriculture",
+      level: "CENTRAL" as const,
+      description: "Income support of ₹6000 per year for farmers",
+      eligibility: "All landholding farmer families",
+      benefits: "₹6000 per year in three installments",
+      requiredDocuments: ["Aadhaar Card", "Land Records"],
+      applicationUrl: "https://pmkisan.gov.in",
+      status: "ACTIVE" as const,
+      startDate: new Date("2024-01-01"),
+      endDate: new Date("2026-12-31"),
+    },
+    {
+      name: "State Health Scheme",
+      code: "SHS",
+      department: "Health Department",
+      level: "STATE" as const,
+      description: "State-level health insurance for below poverty line families",
+      eligibility: "BPL families in the state",
+      benefits: "Health insurance coverage up to ₹2 lakh",
+      requiredDocuments: ["Aadhaar Card", "BPL Certificate"],
+      status: "UPCOMING" as const,
+      startDate: new Date("2025-01-01"),
+      endDate: new Date("2027-12-31"),
+    },
+    {
+      name: "Local Skill Development Program",
+      code: "LSDP",
+      department: "Urban Development",
+      level: "LOCAL" as const,
+      description: "Skill training for local youth",
+      eligibility: "Youth aged 18-35 in the constituency",
+      benefits: "Free skill training and certification",
+      requiredDocuments: ["Aadhaar Card", "Educational Certificate"],
+      status: "ACTIVE" as const,
+      startDate: new Date("2024-06-01"),
+      endDate: new Date("2025-05-31"),
+    },
+  ];
 
-  // for (const s of schemes) {
-  //   const scheme = await prisma.scheme.create({ data: s });
-  //   for (const w of wards.slice(0, 3)) {
-  //     await prisma.schemeBeneficiary.create({
-  //       data: {
-  //         schemeId: scheme.id,
-  //         wardId: w.id,
-  //         beneficiaryCount: Math.floor(Math.random() * 500) + 50,
-  //         targetCount: Math.floor(Math.random() * 1000) + 200,
-  //       },
-  //     });
-  //   }
-  // }
-  // console.log(`✅ ${schemes.length} schemes created`);
+  const createdSchemes: any[] = [];
+  for (const s of schemes) {
+    const scheme = await prisma.scheme.upsert({
+      where: { tenantId_name: { tenantId: tenant.id, name: s.name } },
+      update: {},
+      create: { tenantId: tenant.id, ...s },
+    });
+    createdSchemes.push(scheme);
+  }
+  console.log(`✅ ${createdSchemes.length} schemes created`);
+
+  // ─── 12b. Scheme Applications ────────────────────────
+  const schemeApplications = [
+    {
+      schemeIdx: 0,
+      beneficiaryName: "Ramesh Kumar",
+      beneficiaryPhone: "9876500001",
+      beneficiaryEmail: "ramesh.kumar@email.com",
+      address: "12, Sector 1, Shivaji Nagar",
+      wardIdx: 0,
+      status: "APPROVED" as const,
+      notes: "Verified all documents",
+    },
+    {
+      schemeIdx: 0,
+      beneficiaryName: "Sunita Devi",
+      beneficiaryPhone: "9876500002",
+      address: "45, Old Town, Shivaji Nagar",
+      wardIdx: 0,
+      status: "UNDER_REVIEW" as const,
+      notes: "Documents under verification",
+    },
+    {
+      schemeIdx: 1,
+      beneficiaryName: "Mohd. Salim",
+      beneficiaryPhone: "9876500003",
+      address: "8, Market Area, Shivaji Nagar",
+      wardIdx: 0,
+      status: "SUBMITTED" as const,
+    },
+    {
+      schemeIdx: 2,
+      beneficiaryName: "Kavita Sharma",
+      beneficiaryPhone: "9876500004",
+      beneficiaryEmail: "kavita.sharma@email.com",
+      address: "23, Pocket A, Laxmi Nagar",
+      wardIdx: 2,
+      status: "APPROVED" as const,
+      notes: "Eligible under SECC",
+    },
+    {
+      schemeIdx: 2,
+      beneficiaryName: "Ravi Prakash",
+      beneficiaryPhone: "9876500005",
+      address: "56, Pocket B, Laxmi Nagar",
+      wardIdx: 2,
+      status: "DOCUMENT_PENDING" as const,
+      notes: "Income certificate pending",
+    },
+    {
+      schemeIdx: 3,
+      beneficiaryName: "Hari Singh",
+      beneficiaryPhone: "9876500006",
+      address: "Rajpur Village",
+      wardIdx: 4,
+      status: "COMPLETED" as const,
+      notes: "Benefit disbursed",
+    },
+    {
+      schemeIdx: 3,
+      beneficiaryName: "Gopal Yadav",
+      beneficiaryPhone: "9876500007",
+      address: "Kisan Colony, Rajpur",
+      wardIdx: 4,
+      status: "REJECTED" as const,
+      rejectionReason: "Land records not matching",
+    },
+    {
+      schemeIdx: 4,
+      beneficiaryName: "Meena Devi",
+      beneficiaryPhone: "9876500008",
+      address: "Nehru Block, Gandhi Colony",
+      wardIdx: 3,
+      status: "DRAFT" as const,
+    },
+    {
+      schemeIdx: 5,
+      beneficiaryName: "Vikram Singh",
+      beneficiaryPhone: "9876500009",
+      address: "Mall Road, Civil Lines",
+      wardIdx: 1,
+      status: "SUBMITTED" as const,
+    },
+    {
+      schemeIdx: 5,
+      beneficiaryName: "Priya Sharma",
+      beneficiaryPhone: "9876500010",
+      beneficiaryEmail: "priya.sharma@email.com",
+      address: "Govt Colony, Civil Lines",
+      wardIdx: 1,
+      status: "CANCELLED" as const,
+      notes: "Applicant withdrew",
+    },
+  ];
+
+  let appCount = 0;
+  for (const app of schemeApplications) {
+    const scheme = createdSchemes[app.schemeIdx];
+    if (!scheme) continue;
+    const ward = wards[app.wardIdx];
+    if (!ward) continue;
+
+    const applicationNumber = `SCM-${new Date().getFullYear()}-${String(appCount + 1).padStart(5, "0")}`;
+
+    await prisma.schemeApplication.create({
+      data: {
+        tenantId: tenant.id,
+        schemeId: scheme.id,
+        applicationNumber,
+        beneficiaryName: app.beneficiaryName,
+        beneficiaryPhone: app.beneficiaryPhone || null,
+        beneficiaryEmail: app.beneficiaryEmail || null,
+        address: app.address || null,
+        wardId: ward.id,
+        status: app.status,
+        notes: app.notes || null,
+        rejectionReason: (app as any).rejectionReason || null,
+        createdById: staff1.id,
+      },
+    });
+    appCount++;
+  }
+  console.log(`✅ ${appCount} scheme applications created`);
 
   // ─── 13. Demographics ────────────────────────────────
   for (const ward of wards) {
@@ -2218,6 +2618,7 @@ async function main() {
 
     await prisma.leaderGreeting.create({
       data: {
+        tenantId: tenant.id,
         leaderId: leader.id,
         type: gd.type,
         channel: gd.channel,

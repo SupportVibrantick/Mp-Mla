@@ -22,6 +22,11 @@ export const updateDepartment = catchAsync(async (req, res) => {
     where: { id: departmentId, tenantId },
   });
   if (!old) throw ApiError.notFound("Department not found");
+  if (old.isDeleted) {
+    throw ApiError.badRequest(
+      "Cannot update a deleted department. Please restore it first from the recycle bin.",
+    );
+  }
 
   const data = { ...req.body };
   if (data.headEmail === "") delete data.headEmail;
@@ -71,7 +76,11 @@ export const toggleDepartment = catchAsync(async (req, res) => {
     where: { id: departmentId, tenantId },
   });
   if (!dept) throw ApiError.notFound("Department not found");
-
+  if (dept.isDeleted) {
+    throw ApiError.badRequest(
+      "Cannot change status of a deleted department. Please restore it first from the recycle bin.",
+    );
+  }
   const updated = await prisma.department.update({
     where: { id: departmentId },
     data: { isActive: !dept.isActive },
@@ -91,5 +100,61 @@ export const toggleDepartment = catchAsync(async (req, res) => {
     success: true,
     message: `"${dept.name}" ${updated.isActive ? "activated" : "deactivated"}`,
     data: updated,
+  });
+});
+
+export const upsertDepartmentSlas = catchAsync(async (req, res) => {
+  const tenantId = requireTenantId(req);
+  const departmentId = req.params.id as string;
+
+  const dept = await prisma.department.findFirst({
+    where: { id: departmentId, tenantId, isDeleted: false },
+  });
+  if (!dept) throw ApiError.notFound("Department not found");
+
+  const existing = await prisma.departmentSLA.findMany({
+    where: { tenantId, departmentId },
+  });
+
+  const data = await prisma.$transaction(
+    req.body.slas.map((sla: any) =>
+      prisma.departmentSLA.upsert({
+        where: {
+          departmentId_priority: {
+            departmentId,
+            priority: sla.priority,
+          },
+        },
+        create: {
+          tenantId,
+          departmentId,
+          priority: sla.priority,
+          slaHours: sla.slaHours,
+          isActive: sla.isActive ?? true,
+        },
+        update: {
+          slaHours: sla.slaHours,
+          isActive: sla.isActive ?? true,
+        },
+      }),
+    ),
+  );
+
+  await createAuditLog({
+    tenantId,
+    userId: req.user!.id,
+    action: "UPDATE",
+    module: "departments",
+    recordId: dept.id,
+    description: `Updated SLA configuration for "${dept.name}"`,
+    oldData: existing,
+    newData: data,
+    ...getRequestMeta(req),
+  });
+
+  res.json({
+    success: true,
+    message: `SLA configuration updated for "${dept.name}"`,
+    data,
   });
 });

@@ -12,12 +12,13 @@ import logger from "../utils/logger.js";
  */
 export async function checkPermission(
   userId: string,
+  tenantId: string,
   module: string,
   action: string,
 ): Promise<boolean> {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: { id: userId, tenantId },
       select: { role: true },
     });
 
@@ -38,12 +39,11 @@ export async function checkPermission(
     }
 
     // 1. Check user-level override
-    const userOverride = await prisma.userPermission.findUnique({
+    const userOverride = await prisma.userPermission.findFirst({
       where: {
-        userId_permissionId: {
-          userId,
-          permissionId: permission.id,
-        },
+        userId,
+        permissionId: permission.id,
+        user: { tenantId },
       },
     });
 
@@ -64,7 +64,7 @@ export async function checkPermission(
     return roleDefault?.granted ?? false;
   } catch (error) {
     logger.error(
-      `Permission check failed for ${userId} ${module}:${action}: ${error}`,
+      `Permission check failed for ${userId} in tenant ${tenantId} ${module}:${action}: ${error}`,
     );
     return false;
   }
@@ -75,9 +75,10 @@ export async function checkPermission(
  */
 export async function getUserEffectivePermissions(
   userId: string,
+  tenantId: string,
 ): Promise<{ module: string; action: string; granted: boolean }[]> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const user = await prisma.user.findFirst({
+    where: { id: userId, tenantId },
     select: { role: true },
   });
 
@@ -95,7 +96,7 @@ export async function getUserEffectivePermissions(
   );
 
   const userOverrides = await prisma.userPermission.findMany({
-    where: { userId },
+    where: { userId, user: { tenantId } },
   });
   const overrideMap = new Map(
     userOverrides.map((uo) => [uo.permissionId, uo.granted]),

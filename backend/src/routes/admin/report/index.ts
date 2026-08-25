@@ -13,7 +13,10 @@ import { z } from "zod";
 import catchAsync from "@/utils/catchAsync.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 import { ApiError } from "../../../utils/ApiError.js";
-import { createReportPdfStream, generateReportReference } from "../../../services/pdfReportService.js";
+import {
+  createReportPdfStream,
+  generateReportReference,
+} from "../../../services/pdfReportService.js";
 
 const router = Router();
 
@@ -52,51 +55,44 @@ router.get(
     const w: any = { ...where, tenantId, isDeleted: false };
     if (wardId) w.wardId = wardId;
 
-    const [
-      total,
-      byStatus,
-      byPriority,
-      byCategory,
-      bySource,
-      byWard,
-      rows,
-    ] = await Promise.all([
-      prisma.grievance.count({ where: w }),
-      prisma.grievance.groupBy({ by: ["status"], where: w, _count: true }),
-      prisma.grievance.groupBy({ by: ["priority"], where: w, _count: true }),
-      prisma.grievance.groupBy({
-        by: ["category"],
-        where: w,
-        _count: true,
-        orderBy: { _count: { category: "desc" } },
-      }),
-      prisma.grievance.groupBy({ by: ["source"], where: w, _count: true }),
-      prisma.grievance.groupBy({
-        by: ["wardId"],
-        where: w,
-        _count: true,
-        orderBy: { _count: { wardId: "desc" } },
-      }),
-      prisma.grievance.findMany({
-        where: w,
-        select: {
-          id: true,
-          ticketNumber: true,
-          subject: true,
-          category: true,
-          priority: true,
-          status: true,
-          source: true,
-          complainantName: true,
-          complainantPhone: true,
-          createdAt: true,
-          resolvedAt: true,
-          ward: { select: { name: true, wardNumber: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 500,
-      }),
-    ]);
+    const [total, byStatus, byPriority, byCategory, bySource, byWard, rows] =
+      await Promise.all([
+        prisma.grievance.count({ where: w }),
+        prisma.grievance.groupBy({ by: ["status"], where: w, _count: true }),
+        prisma.grievance.groupBy({ by: ["priority"], where: w, _count: true }),
+        prisma.grievance.groupBy({
+          by: ["category"],
+          where: w,
+          _count: true,
+          orderBy: { _count: { category: "desc" } },
+        }),
+        prisma.grievance.groupBy({ by: ["source"], where: w, _count: true }),
+        prisma.grievance.groupBy({
+          by: ["wardId"],
+          where: w,
+          _count: true,
+          orderBy: { _count: { wardId: "desc" } },
+        }),
+        prisma.grievance.findMany({
+          where: w,
+          select: {
+            id: true,
+            ticketNumber: true,
+            subject: true,
+            category: true,
+            priority: true,
+            status: true,
+            source: true,
+            complainantName: true,
+            complainantPhone: true,
+            createdAt: true,
+            resolvedAt: true,
+            ward: { select: { name: true, wardNumber: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 500,
+        }),
+      ]);
 
     // Resolve ward names (scope to tenantId)
     const wardIds = byWard.map((x) => x.wardId);
@@ -238,7 +234,7 @@ router.get(
             startDate: true,
             expectedEndDate: true,
             actualEndDate: true,
-            department: true,
+            departmentId: true,
             ward: { select: { name: true, wardNumber: true } },
           },
           orderBy: { createdAt: "desc" },
@@ -247,7 +243,9 @@ router.get(
       ]);
 
     // Resolve department names (scope to tenantId)
-    const deptIds = [...new Set(rows.map((r) => r.department).filter(Boolean))];
+    const deptIds = [
+      ...new Set(rows.map((r) => r.departmentId).filter(Boolean)),
+    ] as string[];
     const depts = await prisma.department.findMany({
       where: { id: { in: deptIds }, tenantId, isDeleted: false },
       select: { id: true, name: true },
@@ -255,7 +253,7 @@ router.get(
     const deptMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
     const rowsEnriched = rows.map((r) => ({
       ...r,
-      departmentName: deptMap[r.department] || r.department,
+      departmentName: r.departmentId ? deptMap[r.departmentId] || "" : "",
     }));
 
     const sm = Object.fromEntries(byStatus.map((s) => [s.status, s._count]));
@@ -460,13 +458,15 @@ router.get(
     });
 
     const demographics = await prisma.demographics.findMany({
-      where: { tenantId },
+      where: { tenantId, wardAreaId: null },
       select: {
         wardId: true,
         totalPopulation: true,
         maleCount: true,
         femaleCount: true,
         totalVoters: true,
+        maleVoters: true,
+        femaleVoters: true,
         totalHouseholds: true,
         bplHouseholds: true,
         generalCount: true,
@@ -484,9 +484,37 @@ router.get(
       orderBy: { surveyDate: "desc" },
     });
 
+    const voterStats = await prisma.voter.groupBy({
+      by: ["wardId", "gender"],
+      where: { tenantId, isDeleted: false },
+      _count: { id: true },
+    });
+    const voterCountsByWard = new Map<
+      string,
+      { total: number; male: number; female: number }
+    >();
+    for (const stat of voterStats) {
+      const counts = voterCountsByWard.get(stat.wardId) || {
+        total: 0,
+        male: 0,
+        female: 0,
+      };
+      counts.total += stat._count.id;
+      if (stat.gender === "MALE") counts.male = stat._count.id;
+      if (stat.gender === "FEMALE") counts.female = stat._count.id;
+      voterCountsByWard.set(stat.wardId, counts);
+    }
+
     // Latest demographic per ward
     const demoMap: Record<string, any> = {};
-    demographics.forEach((d) => {
+    demographics.forEach((d: any) => {
+      const voterCounts = voterCountsByWard.get(d.wardId);
+      if (voterCounts) {
+        const voterDemo = d as any;
+        voterDemo.totalVoters = voterCounts.total;
+        voterDemo.maleVoters = voterCounts.male;
+        voterDemo.femaleVoters = voterCounts.female;
+      }
       if (!demoMap[d.wardId]) demoMap[d.wardId] = d;
     });
 
@@ -528,41 +556,57 @@ router.get(
       fundData,
       deptPerformance,
     ] = await Promise.all([
-      prisma.grievance.count({ where: { tenantId, isDeleted: false, createdAt: { gte: monthStart } } }),
       prisma.grievance.count({
-        where: { tenantId, isDeleted: false, createdAt: { gte: lastMonthStart, lt: monthStart } },
+        where: { tenantId, isDeleted: false, createdAt: { gte: monthStart } },
       }),
-      prisma.grievance.count({ where: { tenantId, isDeleted: false, resolvedAt: { gte: monthStart } } }),
+      prisma.grievance.count({
+        where: {
+          tenantId,
+          isDeleted: false,
+          createdAt: { gte: lastMonthStart, lt: monthStart },
+        },
+      }),
+      prisma.grievance.count({
+        where: { tenantId, isDeleted: false, resolvedAt: { gte: monthStart } },
+      }),
       prisma.grievance.count({ where: { tenantId, isDeleted: false } }),
-      prisma.project.count({ where: { tenantId, isDeleted: false, status: "RUNNING" } }),
-      prisma.project.count({ where: { tenantId, isDeleted: false, status: "COMPLETED" } }),
+      prisma.project.count({
+        where: { tenantId, isDeleted: false, status: "RUNNING" },
+      }),
+      prisma.project.count({
+        where: { tenantId, isDeleted: false, status: "COMPLETED" },
+      }),
       prisma.project.count({ where: { tenantId, isDeleted: false } }),
-      prisma.institution.count({ where: { tenantId, isDeleted: false, status: "ACTIVE" } }),
-      prisma.fund.findMany({ where: { tenantId, financialYear: fy, isDeleted: false } }),
+      prisma.institution.count({
+        where: { tenantId, isDeleted: false, status: "ACTIVE" },
+      }),
+      prisma.fund.findMany({
+        where: { tenantId, financialYear: fy, isDeleted: false },
+      }),
       // Department performance: grievances assigned per dept, resolved count
       prisma.grievance.groupBy({
-        by: ["assignedDept"],
-        where: { tenantId, isDeleted: false, assignedDept: { not: null } },
+        by: ["departmentId"],
+        where: { tenantId, isDeleted: false, departmentId: { not: null } },
         _count: true,
       }),
     ]);
 
     // Department resolution rates
     const deptIds = deptPerformance
-      .map((d) => d.assignedDept)
+      .map((d) => d.departmentId)
       .filter(Boolean) as string[];
     const deptResolvedCounts = await prisma.grievance.groupBy({
-      by: ["assignedDept"],
+      by: ["departmentId"],
       where: {
         tenantId,
         isDeleted: false,
-        assignedDept: { in: deptIds },
+        departmentId: { in: deptIds },
         status: { in: ["RESOLVED", "CLOSED"] },
       },
       _count: true,
     });
     const deptResMap = Object.fromEntries(
-      deptResolvedCounts.map((d) => [d.assignedDept!, d._count]),
+      deptResolvedCounts.map((d) => [d.departmentId!, d._count]),
     );
     const depts = await prisma.department.findMany({
       where: { tenantId, id: { in: deptIds }, isDeleted: false },
@@ -571,14 +615,14 @@ router.get(
     const deptNameMap = Object.fromEntries(depts.map((d) => [d.id, d.name]));
 
     const deptScores = deptPerformance
-      .filter((d) => d.assignedDept)
+      .filter((d) => d.departmentId)
       .map((d) => ({
-        dept: deptNameMap[d.assignedDept!] || "Unknown",
+        dept: deptNameMap[d.departmentId!] || "Unknown",
         total: d._count,
-        resolved: deptResMap[d.assignedDept!] || 0,
+        resolved: deptResMap[d.departmentId!] || 0,
         score:
           d._count > 0
-            ? Math.round(((deptResMap[d.assignedDept!] || 0) / d._count) * 100)
+            ? Math.round(((deptResMap[d.departmentId!] || 0) / d._count) * 100)
             : 0,
       }))
       .sort((a, b) => b.score - a.score);
@@ -768,7 +812,13 @@ router.get(
   requirePermission("reports", "read"),
   catchAsync(async (req, res) => {
     const tenantId = requireTenantId(req);
-    const { type = "consolidated", wardId, status, dateFrom, dateTo } = req.query as Record<string, string>;
+    const {
+      type = "consolidated",
+      wardId,
+      status,
+      dateFrom,
+      dateTo,
+    } = req.query as Record<string, string>;
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
@@ -796,7 +846,12 @@ router.get(
     }
 
     let reportData: any = {};
-    let dateRangeText = dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : dateFrom ? `From ${dateFrom}` : undefined;
+    let dateRangeText =
+      dateFrom && dateTo
+        ? `${dateFrom} to ${dateTo}`
+        : dateFrom
+          ? `From ${dateFrom}`
+          : undefined;
 
     if (type === "consolidated" || type === "ward" || type === "demographic") {
       const [
@@ -805,6 +860,7 @@ router.get(
         pByWard,
         iByWard,
         allDemographics,
+        voterStats,
         grievances,
         projects,
         departments,
@@ -816,26 +872,73 @@ router.get(
         pByStatus,
         gDeptCounts,
       ] = await Promise.all([
-        prisma.ward.findMany({ where: { tenantId, isDeleted: false }, orderBy: { wardNumber: "asc" } }),
-        prisma.grievance.groupBy({ by: ["wardId"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.ward.findMany({
+          where: { tenantId, isDeleted: false },
+          orderBy: { wardNumber: "asc" },
+        }),
+        prisma.grievance.groupBy({
+          by: ["wardId"],
+          where: { tenantId, isDeleted: false },
+          _count: true,
+        }),
         prisma.project.groupBy({
           by: ["wardId"],
           where: { tenantId, isDeleted: false },
           _count: true,
           _sum: { budgetSanctioned: true },
         }),
-        prisma.institution.groupBy({ by: ["wardId"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.institution.groupBy({
+          by: ["wardId"],
+          where: { tenantId, isDeleted: false },
+          _count: true,
+        }),
         prisma.demographics.findMany({ where: { tenantId, wardAreaId: null } }),
-        prisma.grievance.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
-        prisma.project.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
-        prisma.department.findMany({ where: { tenantId, isDeleted: false }, orderBy: { name: "asc" } }),
-        prisma.institution.findMany({ where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" } }),
+        prisma.voter.groupBy({
+          by: ["wardId", "gender"],
+          where: { tenantId, isDeleted: false },
+          _count: { id: true },
+        }),
+        prisma.grievance.findMany({
+          where,
+          include: { ward: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.project.findMany({
+          where,
+          include: { ward: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.department.findMany({
+          where: { tenantId, isDeleted: false },
+          orderBy: { name: "asc" },
+        }),
+        prisma.institution.findMany({
+          where: { tenantId, isDeleted: false },
+          include: { ward: true },
+          orderBy: { name: "asc" },
+        }),
         prisma.fund.findMany({ where: { tenantId, isDeleted: false } }),
-        prisma.leader.findMany({ where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" } }),
+        prisma.leader.findMany({
+          where: { tenantId, isDeleted: false },
+          include: { ward: true },
+          orderBy: { name: "asc" },
+        }),
         // Chart aggregations
-        prisma.grievance.groupBy({ by: ["status"], where: { tenantId, isDeleted: false }, _count: true }),
-        prisma.grievance.groupBy({ by: ["category"], where: { tenantId, isDeleted: false }, _count: true }),
-        prisma.project.groupBy({ by: ["status"], where: { tenantId, isDeleted: false }, _count: true }),
+        prisma.grievance.groupBy({
+          by: ["status"],
+          where: { tenantId, isDeleted: false },
+          _count: true,
+        }),
+        prisma.grievance.groupBy({
+          by: ["category"],
+          where: { tenantId, isDeleted: false },
+          _count: true,
+        }),
+        prisma.project.groupBy({
+          by: ["status"],
+          where: { tenantId, isDeleted: false },
+          _count: true,
+        }),
         prisma.grievance.groupBy({
           by: ["departmentId"],
           where: { tenantId, isDeleted: false, departmentId: { not: null } },
@@ -846,17 +949,47 @@ router.get(
       // Build ward data maps
       const gMap = Object.fromEntries(gByWard.map((g) => [g.wardId, g._count]));
       const pMap = Object.fromEntries(
-        pByWard.map((p) => [p.wardId, { count: p._count, budget: p._sum.budgetSanctioned || 0 }]),
+        pByWard.map((p) => [
+          p.wardId,
+          { count: p._count, budget: p._sum.budgetSanctioned || 0 },
+        ]),
       );
       const iMap = Object.fromEntries(iByWard.map((i) => [i.wardId, i._count]));
       const demoMap: Record<string, any> = {};
-      allDemographics.forEach((d) => {
+      const voterCountsByWard = new Map<
+        string,
+        { total: number; male: number; female: number }
+      >();
+      for (const stat of voterStats) {
+        const counts = voterCountsByWard.get(stat.wardId) || {
+          total: 0,
+          male: 0,
+          female: 0,
+        };
+        counts.total += stat._count.id;
+        if (stat.gender === "MALE") counts.male = stat._count.id;
+        if (stat.gender === "FEMALE") counts.female = stat._count.id;
+        voterCountsByWard.set(stat.wardId, counts);
+      }
+      allDemographics.forEach((d: any) => {
+        const voterCounts = voterCountsByWard.get(d.wardId);
+        if (voterCounts) {
+          const voterDemo = d as any;
+          voterDemo.totalVoters = voterCounts.total;
+          voterDemo.maleVoters = voterCounts.male;
+          voterDemo.femaleVoters = voterCounts.female;
+        }
         if (!demoMap[d.wardId]) demoMap[d.wardId] = d;
       });
 
       // Dept grievance map
-      const deptGMap = Object.fromEntries(gDeptCounts.map((g) => [g.departmentId!, g._count]));
-      const deptData = departments.map((d) => ({ ...d, totalGrievances: deptGMap[d.id] || 0 }));
+      const deptGMap = Object.fromEntries(
+        gDeptCounts.map((g) => [g.departmentId!, g._count]),
+      );
+      const deptData = departments.map((d) => ({
+        ...d,
+        totalGrievances: deptGMap[d.id] || 0,
+      }));
 
       // Enrich ward data
       const wardData = wards.map((w) => ({
@@ -865,18 +998,40 @@ router.get(
         projects: pMap[w.id]?.count || 0,
         projectBudget: pMap[w.id]?.budget || 0,
         institutions: iMap[w.id] || 0,
-        totalVoters: demoMap[w.id]?.totalVoters || Math.round((w.totalPopulation || 0) * 0.65),
+        totalVoters:
+          demoMap[w.id]?.totalVoters ||
+          Math.round((w.totalPopulation || 0) * 0.65),
       }));
 
       // Aggregate demographics
       const demoAgg = {
-        totalPopulation: 0, maleCount: 0, femaleCount: 0, transgenderCount: 0,
-        age0to6: 0, age7to18: 0, age19to35: 0, age36to60: 0, age60plus: 0,
-        totalHouseholds: 0, bplHouseholds: 0, aplHouseholds: 0,
-        generalCount: 0, obcCount: 0, scCount: 0, stCount: 0, minorityCount: 0, otherCount: 0,
-        totalVoters: 0, maleVoters: 0, femaleVoters: 0, newVotersCount: 0,
-        literacyRate: 0, maleLiteracyRate: 0, femaleLiteracyRate: 0,
-        totalBirths: 0, totalDeaths: 0,
+        totalPopulation: 0,
+        maleCount: 0,
+        femaleCount: 0,
+        transgenderCount: 0,
+        age0to6: 0,
+        age7to18: 0,
+        age19to35: 0,
+        age36to60: 0,
+        age60plus: 0,
+        totalHouseholds: 0,
+        bplHouseholds: 0,
+        aplHouseholds: 0,
+        generalCount: 0,
+        obcCount: 0,
+        scCount: 0,
+        stCount: 0,
+        minorityCount: 0,
+        otherCount: 0,
+        totalVoters: 0,
+        maleVoters: 0,
+        femaleVoters: 0,
+        newVotersCount: 0,
+        literacyRate: 0,
+        maleLiteracyRate: 0,
+        femaleLiteracyRate: 0,
+        totalBirths: 0,
+        totalDeaths: 0,
       };
       let litCount = 0;
       allDemographics.forEach((d) => {
@@ -904,9 +1059,13 @@ router.get(
         demoAgg.newVotersCount += d.newVotersCount || 0;
         demoAgg.totalBirths += d.totalBirths || 0;
         demoAgg.totalDeaths += d.totalDeaths || 0;
-        if (d.literacyRate) { demoAgg.literacyRate += d.literacyRate; litCount++; }
+        if (d.literacyRate) {
+          demoAgg.literacyRate += d.literacyRate;
+          litCount++;
+        }
         if (d.maleLiteracyRate) demoAgg.maleLiteracyRate += d.maleLiteracyRate;
-        if (d.femaleLiteracyRate) demoAgg.femaleLiteracyRate += d.femaleLiteracyRate;
+        if (d.femaleLiteracyRate)
+          demoAgg.femaleLiteracyRate += d.femaleLiteracyRate;
       });
       if (litCount > 0) {
         demoAgg.literacyRate /= litCount;
@@ -916,31 +1075,66 @@ router.get(
 
       // Use ward-level totals as fallback if no demographics records exist
       if (demoAgg.totalPopulation === 0) {
-        demoAgg.totalPopulation = wardData.reduce((s, w) => s + (w.totalPopulation || 0), 0);
-        demoAgg.maleCount = wardData.reduce((s, w) => s + (w.totalMale || 0), 0);
-        demoAgg.femaleCount = wardData.reduce((s, w) => s + (w.totalFemale || 0), 0);
-        demoAgg.totalHouseholds = wardData.reduce((s, w) => s + (w.totalHouseholds || 0), 0);
-        demoAgg.totalVoters = wardData.reduce((s, w) => s + (w.totalVoters || 0), 0);
+        demoAgg.totalPopulation = wardData.reduce(
+          (s, w) => s + (w.totalPopulation || 0),
+          0,
+        );
+        demoAgg.maleCount = wardData.reduce(
+          (s, w) => s + (w.totalMale || 0),
+          0,
+        );
+        demoAgg.femaleCount = wardData.reduce(
+          (s, w) => s + (w.totalFemale || 0),
+          0,
+        );
+        demoAgg.totalHouseholds = wardData.reduce(
+          (s, w) => s + (w.totalHouseholds || 0),
+          0,
+        );
+        demoAgg.totalVoters = wardData.reduce(
+          (s, w) => s + (w.totalVoters || 0),
+          0,
+        );
       }
 
       // Build chart data
       const chartData: any = {};
-      chartData.grievanceByStatus = gByStatus.map((g) => ({ label: g.status, value: g._count }));
-      chartData.grievanceByCategory = gByCategory.map((g) => ({ label: g.category, value: g._count }));
-      chartData.projectByStatus = pByStatus.map((p) => ({ label: p.status, value: p._count }));
+      chartData.grievanceByStatus = gByStatus.map((g) => ({
+        label: g.status,
+        value: g._count,
+      }));
+      chartData.grievanceByCategory = gByCategory.map((g) => ({
+        label: g.category,
+        value: g._count,
+      }));
+      chartData.projectByStatus = pByStatus.map((p) => ({
+        label: p.status,
+        value: p._count,
+      }));
       chartData.populationByWard = wardData
         .filter((w) => w.totalPopulation > 0)
-        .map((w) => ({ label: `Ward ${w.wardNumber} - ${w.name}`, value: w.totalPopulation || 0 }));
+        .map((w) => ({
+          label: `Ward ${w.wardNumber} - ${w.name}`,
+          value: w.totalPopulation || 0,
+        }));
       chartData.budgetByWard = wardData
         .filter((w) => w.projectBudget > 0)
-        .map((w) => ({ label: `Ward ${w.wardNumber} - ${w.name}`, value: w.projectBudget }));
+        .map((w) => ({
+          label: `Ward ${w.wardNumber} - ${w.name}`,
+          value: w.projectBudget,
+        }));
 
       const totalPop = demoAgg.totalPopulation;
       const totalHouseholds = demoAgg.totalHouseholds;
       const totalVoters = demoAgg.totalVoters;
-      const totalBudget = wardData.reduce((s, w) => s + (w.projectBudget || 0), 0);
+      const totalBudget = wardData.reduce(
+        (s, w) => s + (w.projectBudget || 0),
+        0,
+      );
       const totalGrievances = grievances.length;
-      const resolvedGrievances = grievances.filter((g) => g.status === "RESOLVED" || g.status === "CLOSED").length;
+      const resolvedGrievances = grievances.filter(
+        (g) => g.status === "RESOLVED" || g.status === "CLOSED",
+      ).length;
 
       reportData = {
         summary: {
@@ -967,66 +1161,132 @@ router.get(
       };
     } else if (type === "grievance") {
       const [grievances, gByStatus, gByCategory] = await Promise.all([
-        prisma.grievance.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
-        prisma.grievance.groupBy({ by: ["status"], where: { ...where }, _count: true }),
-        prisma.grievance.groupBy({ by: ["category"], where: { ...where }, _count: true }),
+        prisma.grievance.findMany({
+          where,
+          include: { ward: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.grievance.groupBy({
+          by: ["status"],
+          where: { ...where },
+          _count: true,
+        }),
+        prisma.grievance.groupBy({
+          by: ["category"],
+          where: { ...where },
+          _count: true,
+        }),
       ]);
-      const resolved = grievances.filter((g) => g.status === "RESOLVED" || g.status === "CLOSED").length;
-      const urgent = grievances.filter((g) => g.priority === "URGENT" || g.priority === "HIGH").length;
+      const resolved = grievances.filter(
+        (g) => g.status === "RESOLVED" || g.status === "CLOSED",
+      ).length;
+      const urgent = grievances.filter(
+        (g) => g.priority === "URGENT" || g.priority === "HIGH",
+      ).length;
       reportData = {
-        summary: { totalGrievances: grievances.length, resolvedGrievances: resolved, urgentGrievances: urgent },
+        summary: {
+          totalGrievances: grievances.length,
+          resolvedGrievances: resolved,
+          urgentGrievances: urgent,
+        },
         chartData: {
-          grievanceByStatus: gByStatus.map((g) => ({ label: g.status, value: g._count })),
-          grievanceByCategory: gByCategory.map((g) => ({ label: g.category, value: g._count })),
+          grievanceByStatus: gByStatus.map((g) => ({
+            label: g.status,
+            value: g._count,
+          })),
+          grievanceByCategory: gByCategory.map((g) => ({
+            label: g.category,
+            value: g._count,
+          })),
         },
         grievances,
       };
     } else if (type === "project") {
       const [projects, pByStatus] = await Promise.all([
-        prisma.project.findMany({ where, include: { ward: true }, orderBy: { createdAt: "desc" } }),
-        prisma.project.groupBy({ by: ["status"], where: { ...where }, _count: true }),
+        prisma.project.findMany({
+          where,
+          include: { ward: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.project.groupBy({
+          by: ["status"],
+          where: { ...where },
+          _count: true,
+        }),
       ]);
-      const budgetSanctioned = projects.reduce((s, p) => s + (p.budgetSanctioned || 0), 0);
+      const budgetSanctioned = projects.reduce(
+        (s, p) => s + (p.budgetSanctioned || 0),
+        0,
+      );
       const budgetUsed = projects.reduce((s, p) => s + (p.budgetUsed || 0), 0);
       const completed = projects.filter((p) => p.status === "COMPLETED").length;
       reportData = {
         summary: {
-          totalProjects: projects.length, completedProjects: completed,
-          totalBudgetSanctioned: budgetSanctioned, totalBudgetUsed: budgetUsed,
+          totalProjects: projects.length,
+          completedProjects: completed,
+          totalBudgetSanctioned: budgetSanctioned,
+          totalBudgetUsed: budgetUsed,
         },
         chartData: {
-          projectByStatus: pByStatus.map((p) => ({ label: p.status, value: p._count })),
+          projectByStatus: pByStatus.map((p) => ({
+            label: p.status,
+            value: p._count,
+          })),
         },
         projects,
       };
     } else if (type === "department") {
       const [departments, gDepts] = await Promise.all([
-        prisma.department.findMany({ where: { tenantId, isDeleted: false }, orderBy: { name: "asc" } }),
+        prisma.department.findMany({
+          where: { tenantId, isDeleted: false },
+          orderBy: { name: "asc" },
+        }),
         prisma.grievance.groupBy({
           by: ["departmentId"],
           where: { tenantId, isDeleted: false, departmentId: { not: null } },
           _count: true,
         }),
       ]);
-      const gMap = Object.fromEntries(gDepts.map((g) => [g.departmentId!, g._count]));
-      const deptData = departments.map((d) => ({ ...d, totalGrievances: gMap[d.id] || 0 }));
-      reportData = { summary: { totalDepartments: departments.length }, departments: deptData };
+      const gMap = Object.fromEntries(
+        gDepts.map((g) => [g.departmentId!, g._count]),
+      );
+      const deptData = departments.map((d) => ({
+        ...d,
+        totalGrievances: gMap[d.id] || 0,
+      }));
+      reportData = {
+        summary: { totalDepartments: departments.length },
+        departments: deptData,
+      };
     } else if (type === "institution") {
       const institutions = await prisma.institution.findMany({
-        where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" },
+        where: { tenantId, isDeleted: false },
+        include: { ward: true },
+        orderBy: { name: "asc" },
       });
-      reportData = { summary: { totalInstitutions: institutions.length }, institutions };
+      reportData = {
+        summary: { totalInstitutions: institutions.length },
+        institutions,
+      };
     } else if (type === "fund") {
-      const funds = await prisma.fund.findMany({ where: { tenantId, isDeleted: false } });
+      const funds = await prisma.fund.findMany({
+        where: { tenantId, isDeleted: false },
+      });
       const allocated = funds.reduce((s, f) => s + (f.totalAllocated || 0), 0);
       const utilized = funds.reduce((s, f) => s + (f.totalUtilized || 0), 0);
       reportData = {
-        summary: { totalFunds: funds.length, totalAllocated: allocated, totalUtilized: utilized },
+        summary: {
+          totalFunds: funds.length,
+          totalAllocated: allocated,
+          totalUtilized: utilized,
+        },
         funds,
       };
     } else if (type === "leader") {
       const leaders = await prisma.leader.findMany({
-        where: { tenantId, isDeleted: false }, include: { ward: true }, orderBy: { name: "asc" },
+        where: { tenantId, isDeleted: false },
+        include: { ward: true },
+        orderBy: { name: "asc" },
       });
       reportData = { summary: { totalLeaders: leaders.length }, leaders };
     } else {

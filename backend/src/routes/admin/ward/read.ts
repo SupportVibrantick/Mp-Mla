@@ -35,6 +35,13 @@ export const listWards = catchAsync(async (req: Request, res: Response) => {
     prisma.ward.findMany({
       where,
       include: {
+        constituency: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         areas: {
           where: { isDeleted: false },
           select: {
@@ -106,6 +113,7 @@ export const getWard = catchAsync(async (req: Request, res: Response) => {
   const ward = await prisma.ward.findFirst({
     where: { id: wardId, tenantId, isDeleted: false },
     include: {
+      constituency: true,
       areas: { where: { isDeleted: false }, orderBy: { name: "asc" } },
       councillors: { orderBy: { isCurrent: "desc" } },
       _count: {

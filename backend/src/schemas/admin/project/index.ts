@@ -1,56 +1,96 @@
 import { z } from "zod";
+import { ProjectStatus, FundType } from "@prisma/client";
 
 export const createProjectSchema = z.object({
   name: z.string().min(1, "Name required"),
   category: z.string().min(1, "Category required"),
-  department: z.string().min(1, "Department required"),
+  departmentId: z.string().optional().nullable(),
   wardId: z.string().min(1, "Ward required"),
-  contractor: z.string().optional(),
-  contractorPhone: z.string().optional(),
-  startDate: z.string().datetime().optional(),
-  expectedEndDate: z.string().datetime().optional(),
+  contractor: z.string().optional().nullable(),
+  contractorPhone: z.string().optional().nullable(),
+  startDate: z
+    .string()
+    .transform((val) => (val ? new Date(val) : null))
+    .or(z.date())
+    .optional()
+    .nullable(),
+  expectedEndDate: z
+    .string()
+    .transform((val) => (val ? new Date(val) : null))
+    .or(z.date())
+    .optional()
+    .nullable(),
   budgetSanctioned: z.number().min(0).default(0),
   budgetReleased: z.number().min(0).default(0),
   budgetUsed: z.number().min(0).default(0),
-  fundType: z
-    .enum(["MPLAD", "MLALAD", "STATE_FUND", "CENTRAL_FUND", "CSR", "OTHER"])
-    .default("OTHER"),
-  description: z.string().optional(),
-  address: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  fundType: z.nativeEnum(FundType).default(FundType.OTHER),
+  description: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
   milestones: z
     .array(
       z.object({
         title: z.string().min(1),
-        description: z.string().optional(),
-        targetDate: z.string().datetime().optional(),
-      }),
+        description: z.string().optional().nullable(),
+        targetDate: z
+          .string()
+          .transform((val) => (val ? new Date(val) : null))
+          .or(z.date())
+          .optional()
+          .nullable(),
+      })
     )
     .optional(),
 });
 
+export const updateProjectSchema = createProjectSchema
+  .omit({ milestones: true })
+  .extend({
+    completionPercent: z.number().int().min(0).max(100).optional(),
+  })
+  .partial();
+
 export const updateEntrySchema = z.object({
   updateText: z.string().min(1, "Update text required"),
-  photoUrl: z.string().optional(),
+  photoUrl: z.string().optional().nullable(),
 });
+
 export const milestoneSchema = z.object({
   title: z.string().min(1),
-  description: z.string().optional(),
-  targetDate: z.string().datetime().optional(),
+  description: z.string().optional().nullable(),
+  targetDate: z
+    .string()
+    .transform((val) => (val ? new Date(val) : null))
+    .or(z.date())
+    .optional()
+    .nullable(),
 });
 
 export const statusSchema = z.object({
-  status: z.enum(["PENDING", "RUNNING", "COMPLETED", "ON_HOLD", "CANCELLED"]),
+  status: z.nativeEnum(ProjectStatus),
+  comment: z.string().optional(),
   completionPercent: z.number().int().min(0).max(100).optional(),
-  actualEndDate: z.string().datetime().optional(),
+  actualEndDate: z
+    .string()
+    .transform((val) => (val ? new Date(val) : null))
+    .or(z.date())
+    .optional()
+    .nullable(),
 });
-export const updateProjectSchema = createProjectSchema
-  .omit({ milestones: true })
-  .partial();
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type milestoneInput = z.infer<typeof milestoneSchema>;
 export type updateEntryInput = z.infer<typeof updateEntrySchema>;
 export type statusInput = z.infer<typeof statusSchema>;
+export type ProjectAttachmentClassification =
+  | "SANCTION_DOCUMENT"
+  | "WORK_ORDER"
+  | "ESTIMATE"
+  | "BEFORE_PHOTO"
+  | "PROGRESS_PHOTO"
+  | "AFTER_PHOTO"
+  | "BILL"
+  | "COMPLETION_CERTIFICATE"
+  | "OTHER";

@@ -74,6 +74,7 @@ export async function createOrder(params: CreateOrderParams) {
   // Create payment record with CREATED status
   const payment = await prisma.payment.create({
     data: {
+      tenantId: subscription.tenantId,
       subscriptionId,
       amount: orderAmount,
       currency,
@@ -531,6 +532,7 @@ export async function recordManualPayment(params: ManualPaymentParams) {
     // 1. Create payment
     const payment = await tx.payment.create({
       data: {
+        tenantId: subscription.tenantId,
         subscriptionId,
         amount,
         currency,

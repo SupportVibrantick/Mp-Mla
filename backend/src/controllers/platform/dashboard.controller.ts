@@ -90,6 +90,12 @@ export const getDashboardStats = async (
               },
             },
           },
+          constituencies: {
+            select: {
+              type: true,
+              code: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
@@ -247,6 +253,16 @@ export const getDashboardStats = async (
       value,
     }));
 
+    const mappedRecentTenants = recentTenants.map((t: any) => {
+      const constituency = t.constituencies?.[0];
+      return {
+        ...t,
+        constituencies: undefined,
+        constituencyType: constituency?.type || "ASSEMBLY",
+        constituencyCode: constituency?.code || null,
+      };
+    });
+
     res.status(200).json(
       ApiResponse.success({
         summary: {
@@ -260,7 +276,7 @@ export const getDashboardStats = async (
           totalRevenue: revenueAggregate._sum.amount || 0,
           monthlyRecurringRevenue: mrr,
         },
-        recentTenants,
+        recentTenants: mappedRecentTenants,
         recentPayments,
         charts: {
           revenueTrend,
