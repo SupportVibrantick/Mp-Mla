@@ -127,27 +127,27 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
               href: "/geography/blocks",
               group: "Administrative",
             },
-            {
-              label: "Towns / Villages",
-              href: "/geography/town-villages",
-              group: "Administrative",
-            },
+            // {
+            //   label: "Towns / Villages",
+            //   href: "/geography/town-villages",
+            //   group: "Administrative",
+            // },
             {
               label: "Wards",
               href: "/geography/wards",
               group: "Administrative",
               module: "wards",
             },
-            {
-              label: "Polling Locations",
-              href: "/geography/polling-locations",
-              group: "Polling & Elections",
-            },
-            {
-              label: "Booths",
-              href: "/geography/booths",
-              group: "Polling & Elections",
-            },
+            // {
+            //   label: "Polling Locations",
+            //   href: "/geography/polling-locations",
+            //   group: "Polling & Elections",
+            // },
+            // {
+            //   label: "Booths",
+            //   href: "/geography/booths",
+            //   group: "Polling & Elections",
+            // },
             {
               label: "Bulk Import",
               href: "/geography/import",
