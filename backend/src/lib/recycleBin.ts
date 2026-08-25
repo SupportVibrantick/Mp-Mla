@@ -724,31 +724,78 @@ async function restoreGeographyRecord(
   payload: unknown,
 ) {
   const record = ensureObject(payload, entity);
-  const model =
+
+  const recordId = record.id;
+
+  if (typeof recordId !== "string" || !recordId.trim()) {
+    throw ApiError.badRequest(`Cannot restore ${entity}: invalid record id`);
+  }
+
+  /**
+   * Dynamic Prisma delegate.
+   *
+   * We deliberately cast only this delegate to `any`
+   * because Constituency, Block and TownVillage have
+   * different generated Prisma delegate signatures.
+   */
+  const model = (
     entity === "constituency"
       ? prisma.constituency
       : entity === "block"
         ? prisma.block
-        : prisma.townVillage;
+        : prisma.townVillage
+  ) as any;
+
+  /**
+   * Remove fields that must not be blindly restored.
+   *
+   * ID is handled separately because we want to preserve
+   * the original record ID if the record was permanently
+   * removed before restoration.
+   */
+  const {
+    id: _id,
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    _count: _count,
+    isDeleted: _isDeleted,
+    deletedAt: _deletedAt,
+    ...restoreData
+  } = record;
+
   const existing = await model.findUnique({
-    where: { id: record.id as string },
-    select: { id: true },
+    where: {
+      id: recordId,
+    },
+    select: {
+      id: true,
+    },
   });
 
   if (existing) {
     await model.update({
-      where: { id: record.id as string },
+      where: {
+        id: recordId,
+      },
+
       data: {
-        ...(omitSystemFields(record) as any),
+        ...restoreData,
         isDeleted: false,
         deletedAt: null,
       },
     });
-  } else {
-    await model.create({
-      data: { ...record, isDeleted: false, deletedAt: null } as any,
-    });
+
+    return;
   }
+
+  await model.create({
+    data: {
+      id: recordId,
+      ...restoreData,
+      isDeleted: false,
+      deletedAt: null,
+    },
+  });
 }
 
 export async function restoreRecycleBinEntry(entry: {
