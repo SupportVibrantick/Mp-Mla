@@ -407,6 +407,11 @@ router.post(
   importController.uploadImportData,
 );
 router.get(
+  "/import/template",
+  requirePermission("constituency", "read"),
+  importController.downloadGeographyTemplate,
+);
+router.get(
   "/import/:id",
   requirePermission("constituency", "read"),
   importController.getImportStatus,

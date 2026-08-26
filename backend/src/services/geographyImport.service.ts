@@ -119,6 +119,15 @@ export async function startValidationJob(
         const row = rows[i];
         const rowIndex = i + 1;
 
+        // Skip empty rows (all values are null/undefined/empty string)
+        const rowValues = Object.values(row).map(v => String(v ?? "").trim());
+        if (rowValues.every(v => v === "" || v === "undefined" || v === "null")) continue;
+
+        // Skip instruction helper rows (contain keywords like "Required", "Optional", "Dropdown")
+        const INSTRUCTION_WORDS = ["required", "optional", "dropdown", "yyyy-mm-dd", "number (", "integer"];
+        const lowerJoined = rowValues.join(" ").toLowerCase();
+        if (INSTRUCTION_WORDS.some(kw => lowerJoined.includes(kw))) continue;
+
         try {
           const validatedRow: any = {};
 
