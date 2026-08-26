@@ -359,6 +359,66 @@ export default function Dashboard() {
       label: "Collectives",
       desc: "Active groups",
     },
+    {
+      id: "schemes",
+      module: "schemes",
+      to: "/schemes",
+      icon: FileText,
+      color: "text-indigo-600 dark:text-indigo-400",
+      bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
+      borderTopColor: "border-t-indigo-600 dark:border-t-indigo-500",
+      value: s.totalSchemes,
+      label: "Public Schemes",
+      desc: `${s.totalSchemeApplications} applications`,
+    },
+    {
+      id: "appointments",
+      module: "appointments",
+      to: "/appointments",
+      icon: Calendar,
+      color: "text-teal-600 dark:text-teal-400",
+      bgColor: "bg-teal-50 dark:bg-teal-950/40",
+      borderTopColor: "border-t-teal-600 dark:border-t-teal-500",
+      value: s.pendingAppointments,
+      label: "Pending Appointments",
+      desc: `of ${s.totalAppointments} total`,
+    },
+    {
+      id: "janata-darbar",
+      module: "meeting",
+      to: "/janata-darbar",
+      icon: Users,
+      color: "text-orange-600 dark:text-orange-400",
+      bgColor: "bg-orange-50 dark:bg-orange-950/40",
+      borderTopColor: "border-t-orange-600 dark:border-t-orange-500",
+      value: s.totalJanataSessions,
+      label: "Janata Sessions",
+      desc: `${s.totalJanataTokens} citizen tokens`,
+    },
+    {
+      id: "crm-contacts",
+      module: "crm",
+      to: "/crm/contacts",
+      icon: Users,
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-950/40",
+      borderTopColor: "border-t-amber-600 dark:border-t-amber-500",
+      value: s.totalContacts,
+      label: "CRM Contacts",
+      desc: "Citizen directory",
+    },
+    // {
+    //   id: "documents",
+    //   module: "documents",
+    //   to: "/documents",
+    //   icon: FolderKanban,
+    //   color: "text-sky-600 dark:text-sky-400",
+    //   bgColor: "bg-sky-50 dark:bg-sky-950/40",
+    //   borderTopColor: "border-t-sky-600 dark:border-t-sky-500",
+    //   value: s.totalDocuments,
+    //   label: "Documents",
+    //   desc: "Digital repository",
+    // },
   ];
 
   return (
@@ -1170,6 +1230,157 @@ export default function Dashboard() {
                       No projects yet
                     </p>
                   )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* ═══ Row 6: Janata Darbar & Appointments (Left) + Scheme Applications (Right) ═══ */}
+        {(hasModule("meeting") || hasModule("appointments") || hasModule("schemes")) && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            {(hasModule("meeting") || hasModule("appointments")) && (
+              <Card className={hasModule("schemes") ? "lg:col-span-2" : "lg:col-span-3"}>
+                <CardHeader className="pb-3 px-3 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm sm:text-base font-semibold">
+                        Appointments & Janata Darbar
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Upcoming slots and citizen token status
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      {hasModule("appointments") && (
+                        <Link href="/appointments">
+                          <Button variant="outline" size="sm" className="text-xs h-8">
+                            Appointments
+                          </Button>
+                        </Link>
+                      )}
+                      {hasModule("meeting") && (
+                        <Link href="/janata-darbar">
+                          <Button variant="outline" size="sm" className="text-xs h-8">
+                            Janata Darbar
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-3 sm:px-6 pb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Left Sub-Column: Recent Janata Sessions */}
+                    {hasModule("meeting") && (
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          Janata Sessions
+                        </h4>
+                        {(d.janataDarbar?.recentSessions || []).map((session: any) => (
+                          <div key={session.id} className="p-3 rounded-xl border border-border/40 bg-card hover:bg-muted/30 transition-all duration-200">
+                            <div className="flex justify-between items-start">
+                              <span className="font-semibold text-xs text-foreground truncate max-w-[120px]">
+                                {session.title}
+                              </span>
+                              <Badge className="text-[9px] font-bold">
+                                {session.status}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center mt-2 text-[10px] text-muted-foreground">
+                              <span>{new Date(session.date).toLocaleDateString("en-IN", { day: '2-digit', month: 'short' })}</span>
+                              <span className="bg-muted px-1.5 py-0.5 rounded font-bold text-primary">
+                                {session._count?.tokens || 0} Tokens
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {(!d.janataDarbar?.recentSessions || d.janataDarbar.recentSessions.length === 0) && (
+                          <p className="text-xs text-muted-foreground text-center py-6 border border-dashed rounded-xl">
+                            No active sessions
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Right Sub-Column: Recent Appointments */}
+                    {hasModule("appointments") && (
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          Upcoming Appointments
+                        </h4>
+                        {(d.appointments?.recent || []).map((app: any) => (
+                          <div key={app.id} className="p-3 rounded-xl border border-border/40 bg-card hover:bg-muted/30 transition-all duration-200">
+                            <div className="flex justify-between items-start">
+                              <span className="font-semibold text-xs text-foreground truncate max-w-[120px]">
+                                {app.requesterName}
+                              </span>
+                              <Badge className="text-[9px] font-bold" variant="outline">
+                                {app.status}
+                              </Badge>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground mt-1 truncate">
+                              {app.title}
+                            </div>
+                            <div className="flex justify-between items-center mt-1 text-[10px] text-muted-foreground">
+                              <span>{new Date(app.date).toLocaleDateString("en-IN", { day: '2-digit', month: 'short' })}</span>
+                              <span>{app.startTime}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {(!d.appointments?.recent || d.appointments.recent.length === 0) && (
+                          <p className="text-xs text-muted-foreground text-center py-6 border border-dashed rounded-xl">
+                            No appointments scheduled
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Scheme Applications status card */}
+            {hasModule("schemes") && (
+              <Card className={!(hasModule("meeting") || hasModule("appointments")) ? "lg:col-span-3" : ""}>
+                <CardHeader className="pb-2 px-3 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+                        Scheme Applications
+                      </CardTitle>
+                      <CardDescription className="text-[11px] sm:text-xs">
+                        Outreach and approval rates
+                      </CardDescription>
+                    </div>
+                    <Link href="/schemes/applications">
+                      <Button variant="ghost" size="sm" className="text-xs hover:bg-muted font-semibold h-8 rounded-full border border-slate-200/60 dark:border-slate-800">
+                        Details →
+                      </Button>
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-3 sm:px-6 pb-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Total Applications</span>
+                      <span className="text-sm font-bold">{s.totalSchemeApplications}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Approved Applications</span>
+                      <span className="text-sm font-bold text-emerald-600">{s.approvedSchemeApplications}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>Approval Rate</span>
+                        <span>{s.totalSchemeApplications > 0 ? Math.round((s.approvedSchemeApplications / s.totalSchemeApplications) * 100) : 0}%</span>
+                      </div>
+                      <Progress value={s.totalSchemeApplications > 0 ? (s.approvedSchemeApplications / s.totalSchemeApplications) * 100 : 0} className="h-1.5" />
+                    </div>
+                    <div className="pt-2 border-t text-[10px] text-muted-foreground">
+                      Citizen benefits directory covers <strong>{s.totalSchemes}</strong> active schemes.
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}

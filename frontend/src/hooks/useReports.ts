@@ -28,14 +28,14 @@ export function useWardReport() {
 
   });
 }
-// export function useSchemeReport(params?: Record<string, any>) {
-//   return useQuery({
-//     queryKey: ["reports", "scheme", params],
-//     queryFn: () =>
-//       api.get("/admin/reports/scheme", { params }).then((r) => r.data),
-//     enabled: !!params,
-//   });
-// }
+export function useSchemeReport(params?: Record<string, any>) {
+  return useQuery({
+    queryKey: ["reports", "scheme", params],
+    queryFn: () =>
+      api.get("/admin/reports/scheme", { params }).then((r) => r.data),
+    enabled: !!params,
+  });
+}
 export function useInstitutionReport(params?: Record<string, any>) {
   return useQuery({
     queryKey: ["reports", "institution", params],

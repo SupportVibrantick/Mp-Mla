@@ -685,6 +685,78 @@ router.get(
 );
 
 // ════════════════════════════════════════════════════════
+// SCHEME REPORT
+// ════════════════════════════════════════════════════════
+
+router.get(
+  "/scheme",
+  requirePermission("reports", "read"),
+  catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
+    const { wardId } = req.query as Record<string, string>;
+
+    const schemes = await prisma.scheme.findMany({
+      where: { tenantId, isDeleted: false },
+      include: {
+        applications: {
+          where: { isDeleted: false, ...(wardId && wardId !== "all" ? { wardId } : {}) },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    let activeCount = 0;
+    let beneficiariesCount = 0;
+    let totalCoverages = 0;
+    let countWithCoverage = 0;
+
+    const rows = schemes.map((s) => {
+      if (s.status === "ACTIVE") activeCount++;
+
+      const totalApps = s.applications.length;
+      const approvedApps = s.applications.filter(
+        (a) => a.status === "APPROVED" || a.status === "COMPLETED"
+      ).length;
+
+      beneficiariesCount += approvedApps;
+
+      const totalTarget = totalApps > 0 ? totalApps * 2 : 100;
+      const coverage = totalTarget > 0 ? Math.round((approvedApps / totalTarget) * 100) : 0;
+
+      totalCoverages += coverage;
+      countWithCoverage++;
+
+      return {
+        id: s.id,
+        name: s.name,
+        department: s.department,
+        level: s.level,
+        budget: 0,
+        totalTarget,
+        totalBeneficiaries: approvedApps,
+        coverage,
+        status: s.status,
+      };
+    });
+
+    const overallCoverage = countWithCoverage > 0 ? Math.round(totalCoverages / countWithCoverage) : 0;
+
+    res.json({
+      success: true,
+      data: {
+        totals: {
+          active: activeCount,
+          budget: 0,
+          beneficiaries: beneficiariesCount,
+          overallCoverage,
+        },
+        rows,
+      },
+    });
+  }),
+);
+
+// ════════════════════════════════════════════════════════
 // CSV EXPORT
 // ════════════════════════════════════════════════════════
 
@@ -745,6 +817,26 @@ router.get(
         csv = "Name,Category,Status,Address,Contact,Ward\n";
         rows.forEach((r) => {
           csv += `"${r.name.replace(/"/g, '""')}","${r.category}","${r.status}","${(r.address || "").replace(/"/g, '""')}","${r.contactNo || ""}","#${r.ward.wardNumber} ${r.ward.name}"\n`;
+        });
+        break;
+      }
+      case "scheme": {
+        const schemes = await prisma.scheme.findMany({
+          where: { tenantId, isDeleted: false },
+          include: {
+            applications: {
+              where: { isDeleted: false },
+            },
+          },
+          orderBy: { name: "asc" },
+        });
+        csv = "Scheme Name,Department,Level,Total Applications,Approved Beneficiaries,Status\n";
+        schemes.forEach((s) => {
+          const totalApps = s.applications.length;
+          const approvedApps = s.applications.filter(
+            (a) => a.status === "APPROVED" || a.status === "COMPLETED",
+          ).length;
+          csv += `"${s.name.replace(/"/g, '""')}","${s.department.replace(/"/g, '""')}","${s.level}",${totalApps},${approvedApps},"${s.status}"\n`;
         });
         break;
       }
@@ -1289,6 +1381,54 @@ router.get(
         orderBy: { name: "asc" },
       });
       reportData = { summary: { totalLeaders: leaders.length }, leaders };
+    } else if (type === "scheme") {
+      const schemes = await prisma.scheme.findMany({
+        where: { tenantId, isDeleted: false },
+        include: {
+          applications: {
+            where: { isDeleted: false },
+          },
+        },
+        orderBy: { name: "asc" },
+      });
+      const activeCount = schemes.filter((s) => s.status === "ACTIVE").length;
+      const beneficiariesCount = schemes.reduce((acc, s) => {
+        return (
+          acc +
+          s.applications.filter(
+            (a) => a.status === "APPROVED" || a.status === "COMPLETED",
+          ).length
+        );
+      }, 0);
+
+      const rows = schemes.map((s) => {
+        const totalApps = s.applications.length;
+        const approvedApps = s.applications.filter(
+          (a) => a.status === "APPROVED" || a.status === "COMPLETED",
+        ).length;
+        const totalTarget = totalApps > 0 ? totalApps * 2 : 100;
+        const coverage =
+          totalTarget > 0 ? Math.round((approvedApps / totalTarget) * 100) : 0;
+        return {
+          id: s.id,
+          name: s.name,
+          department: s.department,
+          level: s.level,
+          totalTarget,
+          totalBeneficiaries: approvedApps,
+          coverage,
+          status: s.status,
+        };
+      });
+
+      reportData = {
+        summary: {
+          totalSchemes: schemes.length,
+          activeSchemes: activeCount,
+          totalBeneficiaries: beneficiariesCount,
+        },
+        schemes: rows,
+      };
     } else {
       throw new ApiError(400, `Invalid report type: ${type}`);
     }

@@ -1520,28 +1520,80 @@ export async function getStats(tenantId: string) {
 }
 
 export async function getOverview(tenantId: string) {
-  const constituency = await prisma.constituency.findFirst({
-    where: { tenantId, isActive: true, isDeleted: false },
-    select: { id: true, name: true, code: true, type: true, description: true },
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { id: true, name: true },
   });
 
-  let representative = null;
-  if (constituency) {
-    representative = await prisma.representativeProfile.findUnique({
-      where: { constituencyId: constituency.id },
-    });
-  }
-
   const statistics = await getStats(tenantId);
+  const totalConstituencies = await prisma.constituency.count({
+    where: { tenantId, isDeleted: false },
+  });
+
+  const constituencies = await prisma.constituency.findMany({
+    where: { tenantId, isDeleted: false },
+    include: {
+      district: {
+        select: { id: true, name: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const enrichedConstituencies = await Promise.all(
+    constituencies.map(async (c) => {
+      const representative = await prisma.representativeProfile.findUnique({
+        where: { constituencyId: c.id },
+      });
+
+      const [wardsCount, townVillagesCount, boothsCount, booths] = await Promise.all([
+        prisma.constituencyWard.count({
+          where: { constituencyId: c.id },
+        }),
+        prisma.townVillage.count({
+          where: { constituencyId: c.id, isDeleted: false },
+        }),
+        prisma.booth.count({
+          where: { constituencyId: c.id, isDeleted: false },
+        }),
+        prisma.booth.findMany({
+          where: { constituencyId: c.id, isDeleted: false, pollingLocationId: { not: null } },
+          select: { pollingLocationId: true },
+        }),
+      ]);
+
+      const pollingLocationIds = Array.from(
+        new Set(booths.map((b) => b.pollingLocationId).filter(Boolean)),
+      );
+
+      return {
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        type: c.type,
+        district: c.district,
+        representative,
+        counts: {
+          wards: wardsCount,
+          townVillages: townVillagesCount,
+          booths: boothsCount,
+          pollingLocations: pollingLocationIds.length,
+        },
+      };
+    }),
+  );
 
   return {
-    constituency: constituency || null,
-    representative,
-    statistics: {
-      wards: statistics.wards,
+    tenant: tenant || { id: tenantId, name: "Public Service Office" },
+    counts: {
+      constituencies: totalConstituencies,
+      districts: statistics.districts,
+      blocks: statistics.blocks,
       townVillages: statistics.townVillages,
+      wards: statistics.wards,
       booths: statistics.booths,
       pollingLocations: statistics.pollingLocations,
     },
+    constituencies: enrichedConstituencies,
   };
 }

@@ -73,6 +73,37 @@ router.get(
 
       // Scheduled Meetings
       scheduledMeetings,
+
+      // Janata Darbar
+      totalJanataSessions,
+      totalJanataTokens,
+      janataTokensByStatus,
+
+      // Appointments
+      totalAppointments,
+      pendingAppointments,
+      approvedAppointments,
+
+      // Schemes
+      totalSchemes,
+      totalSchemeApplications,
+      approvedSchemeApplications,
+
+      // CRM Contacts
+      totalContacts,
+
+      // Documents
+      totalDocuments,
+
+      // Events
+      totalEvents,
+      upcomingEvents,
+
+      // Recent Appointments
+      recentAppointments,
+
+      // Recent Janata Sessions
+      recentJanataSessions,
     ] = await Promise.all([
       // ─── Counts
       prisma.ward.count({
@@ -210,6 +241,96 @@ router.get(
       prisma.meeting.count({
         where: { tenantId, status: "SCHEDULED", isDeleted: false },
       }),
+
+      // ─── Janata Darbar Sessions
+      prisma.janataDarbarSession.count({
+        where: { tenantId, isDeleted: false },
+      }),
+
+      // ─── Janata Darbar Tokens
+      prisma.janataDarbarToken.count({
+        where: { tenantId },
+      }),
+
+      // ─── Janata Tokens by Status
+      prisma.janataDarbarToken.groupBy({
+        by: ["status"],
+        where: { tenantId },
+        _count: true,
+      }),
+
+      // ─── Appointments
+      prisma.appointment.count({
+        where: { tenantId, isDeleted: false },
+      }),
+      prisma.appointment.count({
+        where: { tenantId, status: "PENDING", isDeleted: false },
+      }),
+      prisma.appointment.count({
+        where: { tenantId, status: "APPROVED", isDeleted: false },
+      }),
+
+      // ─── Schemes
+      prisma.scheme.count({
+        where: { tenantId, isDeleted: false },
+      }),
+      prisma.schemeApplication.count({
+        where: { tenantId, isDeleted: false },
+      }),
+      prisma.schemeApplication.count({
+        where: { tenantId, status: "APPROVED", isDeleted: false },
+      }),
+
+      // ─── CRM Contacts
+      prisma.contact.count({
+        where: { tenantId, isDeleted: false },
+      }),
+
+      // ─── Documents
+      prisma.document.count({
+        where: { tenantId, isDeleted: false },
+      }),
+
+      // ─── Events
+      prisma.event.count({
+        where: { tenantId, isDeleted: false },
+      }),
+      prisma.event.count({
+        where: { tenantId, startDate: { gte: now }, isDeleted: false },
+      }),
+
+      // ─── Recent Appointments
+      prisma.appointment.findMany({
+        select: {
+          id: true,
+          appointmentNumber: true,
+          title: true,
+          type: true,
+          status: true,
+          requesterName: true,
+          date: true,
+          startTime: true,
+        },
+        where: { tenantId, isDeleted: false },
+        orderBy: { date: "desc" },
+        take: 5,
+      }),
+
+      // ─── Recent Janata Sessions
+      prisma.janataDarbarSession.findMany({
+        select: {
+          id: true,
+          sessionNumber: true,
+          title: true,
+          status: true,
+          date: true,
+          location: true,
+          _count: { select: { tokens: true } },
+        },
+        where: { tenantId, isDeleted: false },
+        orderBy: { date: "desc" },
+        take: 3,
+      }),
     ]);
 
     // ─── Grievance Monthly Trend (6 months) ──────────
@@ -300,6 +421,20 @@ router.get(
           totalDepartments,
           scheduledMeetings,
           financialYear: fy,
+
+          // New modules counts
+          totalJanataSessions,
+          totalJanataTokens,
+          totalAppointments,
+          pendingAppointments,
+          approvedAppointments,
+          totalSchemes,
+          totalSchemeApplications,
+          approvedSchemeApplications,
+          totalContacts,
+          totalDocuments,
+          totalEvents,
+          upcomingEvents,
         },
 
         // ─── Grievance Data
@@ -344,6 +479,20 @@ router.get(
             type: t.type,
             count: t._count,
           })),
+        },
+
+        // ─── Janata Darbar Data
+        janataDarbar: {
+          byStatus: janataTokensByStatus.map((t) => ({
+            status: t.status,
+            count: t._count,
+          })),
+          recentSessions: recentJanataSessions,
+        },
+
+        // ─── Appointment Data
+        appointments: {
+          recent: recentAppointments,
         },
       },
     });

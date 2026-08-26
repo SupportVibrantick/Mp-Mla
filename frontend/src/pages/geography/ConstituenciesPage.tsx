@@ -99,6 +99,33 @@ const constituencySchema = z.object({
     .max(500, "Description must be at most 500 characters")
     .optional()
     .or(z.literal("")),
+
+  latitude: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val ? parseFloat(val) : null)),
+
+  longitude: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val ? parseFloat(val) : null)),
+
+  boundary: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => {
+      if (!val) return true;
+      try {
+        JSON.parse(val);
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Boundary must be a valid GeoJSON string")
+    .transform((val) => (val ? JSON.parse(val) : null)),
 });
 
 type ConstituencyForm = z.infer<typeof constituencySchema>;
@@ -109,6 +136,9 @@ const emptyForm = {
   type: "ASSEMBLY",
   districtId: "",
   description: "",
+  latitude: "",
+  longitude: "",
+  boundary: "",
 };
 
 export default function ConstituenciesPage() {
@@ -148,6 +178,9 @@ export default function ConstituenciesPage() {
       type: "ASSEMBLY",
       districtId: "",
       description: "",
+      latitude: "" as any,
+      longitude: "" as any,
+      boundary: "" as any,
     },
   });
 
@@ -175,6 +208,9 @@ export default function ConstituenciesPage() {
       type: "ASSEMBLY",
       districtId: "",
       description: "",
+      latitude: "" as any,
+      longitude: "" as any,
+      boundary: "" as any,
     });
 
     setDlg(true);
@@ -189,6 +225,9 @@ export default function ConstituenciesPage() {
       type: c.type || "ASSEMBLY",
       districtId: c.districtId || "",
       description: c.description || "",
+      latitude: c.latitude !== null && c.latitude !== undefined ? String(c.latitude) : "" as any,
+      longitude: c.longitude !== null && c.longitude !== undefined ? String(c.longitude) : "" as any,
+      boundary: c.boundary ? JSON.stringify(c.boundary, null, 2) : "" as any,
     });
 
     setDlg(true);
@@ -822,6 +861,89 @@ export default function ConstituenciesPage() {
                 {constituencyForm.formState.errors.description && (
                   <p className="text-xs font-medium text-destructive">
                     {constituencyForm.formState.errors.description.message}
+                  </p>
+                )}
+              </div>
+
+              {/* ───────────────── LATITUDE + LONGITUDE ───────────────── */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* LATITUDE */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="constituency-latitude"
+                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                  >
+                    Latitude
+                  </Label>
+                  <Input
+                    id="constituency-latitude"
+                    placeholder="E.g., 30.7333"
+                    {...constituencyForm.register("latitude")}
+                    className={cn(
+                      "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                      constituencyForm.formState.errors.latitude &&
+                        "border-destructive focus-visible:ring-destructive/20",
+                    )}
+                  />
+                  {constituencyForm.formState.errors.latitude && (
+                    <p className="text-xs font-medium text-destructive">
+                      {constituencyForm.formState.errors.latitude.message as string}
+                    </p>
+                  )}
+                </div>
+
+                {/* LONGITUDE */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="constituency-longitude"
+                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                  >
+                    Longitude
+                  </Label>
+                  <Input
+                    id="constituency-longitude"
+                    placeholder="E.g., 76.7794"
+                    {...constituencyForm.register("longitude")}
+                    className={cn(
+                      "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                      constituencyForm.formState.errors.longitude &&
+                        "border-destructive focus-visible:ring-destructive/20",
+                    )}
+                  />
+                  {constituencyForm.formState.errors.longitude && (
+                    <p className="text-xs font-medium text-destructive">
+                      {constituencyForm.formState.errors.longitude.message as string}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ───────────────── BOUNDARY GEOJSON ───────────────── */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="constituency-boundary"
+                  className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
+                  Boundary (GeoJSON String)
+                </Label>
+                <Textarea
+                  id="constituency-boundary"
+                  placeholder='E.g., { "type": "Polygon", "coordinates": [...] }'
+                  rows={4}
+                  {...constituencyForm.register("boundary")}
+                  className={cn(
+                    "bg-muted/20 border-border/60 focus-visible:ring-primary/20 font-mono text-xs resize-none",
+                    constituencyForm.formState.errors.boundary &&
+                      "border-destructive focus-visible:ring-destructive/20",
+                  )}
+                />
+                {constituencyForm.formState.errors.boundary ? (
+                  <p className="text-xs font-medium text-destructive">
+                    {constituencyForm.formState.errors.boundary.message as string}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">
+                    Must be a valid GeoJSON object (Polygon or MultiPolygon).
                   </p>
                 )}
               </div>

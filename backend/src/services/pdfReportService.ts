@@ -541,6 +541,11 @@ export function createReportPdfStream(options: PdfReportOptions): Readable {
     if (s.totalLeaders !== undefined) cards.push({ label: "Leaders", value: formatNum(s.totalLeaders) });
     if (s.totalDepartments !== undefined) cards.push({ label: "Departments", value: formatNum(s.totalDepartments) });
     if (s.totalFunds !== undefined) cards.push({ label: "Funds", value: formatNum(s.totalFunds) });
+    if (s.totalSchemes !== undefined) {
+      cards.push({ label: "Total Schemes", value: formatNum(s.totalSchemes) });
+      if (s.activeSchemes !== undefined) cards.push({ label: "Active", value: formatNum(s.activeSchemes) });
+      if (s.totalBeneficiaries !== undefined) cards.push({ label: "Beneficiaries", value: formatNum(s.totalBeneficiaries) });
+    }
 
     // Render cards in rows of max 5
     while (cards.length > 0) {
@@ -874,6 +879,37 @@ export function createReportPdfStream(options: PdfReportOptions): Readable {
         case 4: return l.organization || l.partyName || "-";
         case 5: return l.ward ? `Ward ${l.ward.wardNumber}` : "-";
         case 6: return l.phone || "-";
+        default: return "";
+      }
+    });
+  }
+
+  // 8. SCHEMES
+  if (type === "scheme") {
+    const schemes = data.schemes || [];
+    drawSectionTitle(`Public Schemes & Applications (${schemes.length})`);
+
+    const cols = [
+      { header: "S.No", width: 26, align: "center" as const },
+      { header: "Scheme Name", width: 140 },
+      { header: "Department", width: 90 },
+      { header: "Level", width: 60 },
+      { header: "Target", width: 55, align: "right" as const },
+      { header: "Beneficiaries", width: 75, align: "right" as const },
+      { header: "Coverage", width: 55, align: "center" as const },
+      { header: "Status", width: 50, align: "center" as const },
+    ];
+
+    renderTable(cols, schemes, (s, ci) => {
+      switch (ci) {
+        case 0: return String(schemes.indexOf(s) + 1);
+        case 1: return s.name || "-";
+        case 2: return s.department || "-";
+        case 3: return s.level || "-";
+        case 4: return formatNum(s.totalTarget);
+        case 5: return formatNum(s.totalBeneficiaries);
+        case 6: return `${s.coverage || 0}%`;
+        case 7: return s.status || "ACTIVE";
         default: return "";
       }
     });

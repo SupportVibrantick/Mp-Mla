@@ -18,9 +18,10 @@ import {
   useAllTownVillagesOptions,
   useDistricts,
 } from "@/hooks/useConstituencies";
+import { useBlocks } from "@/hooks/useBlocks";
 import { useToast } from "@/hooks/use-toast";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -61,12 +62,13 @@ import {
   Sparkles,
   ToggleLeft,
   ToggleRight,
+  Globe,
+  Navigation,
 } from "lucide-react";
 
 const emptyRepForm = {
   name: "",
   title: "",
-  // photoUrl: "",
   partyName: "",
   termStartDate: "",
   termEndDate: "",
@@ -84,25 +86,16 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
   const deleteMut = useDeleteConstituency();
 
   // Representative
-  // Representative
   const { data: repRes, isLoading: repLoading } = useRepresentative(id);
-
   const representative = repRes?.data;
-
   const upsertRep = useUpsertRepresentative(id);
-
   const uploadRepresentativePhoto = useUploadRepresentativePhoto(id);
-
   const deleteRepresentativePhoto = useDeleteRepresentativePhoto(id);
 
   const [repEditing, setRepEditing] = useState(false);
-
   const [repForm, setRepForm] = useState({ ...emptyRepForm });
-
   const [repPhoto, setRepPhoto] = useState<File | null>(null);
-
   const [repPhotoPreview, setRepPhotoPreview] = useState("");
-
   const [repPhotoError, setRepPhotoError] = useState("");
 
   // Wards
@@ -129,14 +122,31 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
   const [selectedTownVillageId, setSelectedTownVillageId] = useState("");
 
   // Booths
-  const { data: boothsRes, isLoading: boothsLoading } =
-    useConstituencyBooths(id);
+  const { data: boothsRes, isLoading: boothsLoading } = useConstituencyBooths(id);
   const booths = boothsRes?.data?.items || boothsRes?.data || [];
 
+  // Districts
   const { data: districtsRes } = useDistricts();
   const districts = Array.isArray(districtsRes?.data)
     ? districtsRes.data
     : districtsRes?.data?.items || [];
+
+  // Blocks (belonging to district)
+  const { data: blocksRes, isLoading: blocksLoading } = useBlocks();
+  const blocksList = blocksRes?.items || [];
+  const filteredBlocks = blocksList.filter((b: any) => b.districtId === c?.districtId);
+
+  // Polling Locations
+  const pollingLocations = booths
+    .map((b: any) => b.pollingLocation)
+    .filter(Boolean)
+    .filter((loc: any, index: number, self: any[]) =>
+      self.findIndex((l) => l.id === loc.id) === index
+    );
+
+  const getBoothsForLocation = (locId: string) => {
+    return booths.filter((b: any) => b.pollingLocationId === locId);
+  };
 
   useEffect(() => {
     return () => {
@@ -163,9 +173,9 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
         <p className="text-sm text-muted-foreground font-medium">
           Constituency not found.
         </p>
-        <Link to="/geography/constituencies">
+        <Link to="/geography">
           <Button variant="outline" size="sm">
-            Back to list
+            Back to overview
           </Button>
         </Link>
       </div>
@@ -177,26 +187,20 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
       name: representative?.name || "",
       title: representative?.title || "",
       partyName: representative?.partyName || "",
-
       termStartDate: representative?.termStartDate
         ? representative.termStartDate.split("T")[0]
         : "",
-
       termEndDate: representative?.termEndDate
         ? representative.termEndDate.split("T")[0]
         : "",
-
       officePhone: representative?.officePhone || "",
-
       officeEmail: representative?.officeEmail || "",
-
       officeAddress: representative?.officeAddress || "",
     });
 
     setRepPhoto(null);
     setRepPhotoPreview("");
     setRepPhotoError("");
-
     setRepEditing(true);
   };
 
@@ -204,7 +208,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
-
     setRepPhotoError("");
 
     if (!file) {
@@ -214,33 +217,25 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
     }
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
     if (!allowedTypes.includes(file.type)) {
       setRepPhotoError("Only JPG, PNG, and WEBP images are allowed.");
-
       event.target.value = "";
       setRepPhoto(null);
       setRepPhotoPreview("");
-
       return;
     }
 
     const maxSize = 5 * 1024 * 1024;
-
     if (file.size > maxSize) {
       setRepPhotoError("Representative photo must be 5MB or smaller.");
-
       event.target.value = "";
       setRepPhoto(null);
       setRepPhotoPreview("");
-
       return;
     }
 
     setRepPhoto(file);
-
     const previewUrl = URL.createObjectURL(file);
-
     setRepPhotoPreview(previewUrl);
   };
 
@@ -254,7 +249,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
         description: "Representative name is required.",
         variant: "destructive",
       });
-
       return;
     }
 
@@ -264,7 +258,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
         description: "Representative title is required.",
         variant: "destructive",
       });
-
       return;
     }
 
@@ -274,58 +267,36 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
         description: repPhotoError,
         variant: "destructive",
       });
-
       return;
     }
 
     try {
-      // --------------------------------------------------
-      // 1. Save profile information
-      // --------------------------------------------------
-
       await upsertRep.mutateAsync({
         name,
         title,
-
         partyName: repForm.partyName.trim() || undefined,
-
         termStartDate: repForm.termStartDate || undefined,
-
         termEndDate: repForm.termEndDate || undefined,
-
         officePhone: repForm.officePhone.trim() || undefined,
-
         officeEmail: repForm.officeEmail.trim() || undefined,
-
         officeAddress: repForm.officeAddress.trim() || undefined,
       });
 
-      // --------------------------------------------------
-      // 2. Upload photo only when user selected one
-      // --------------------------------------------------
-
       if (repPhoto) {
         const formData = new FormData();
-
         formData.append("file", repPhoto);
-
         await uploadRepresentativePhoto.mutateAsync(formData);
       }
-
-      // --------------------------------------------------
-      // 3. Reset
-      // --------------------------------------------------
 
       setRepPhoto(null);
       setRepPhotoPreview("");
       setRepPhotoError("");
       setRepEditing(false);
     } catch (error) {
-      // Mutation already displays the API error.
-      // Keep the form open so user can correct/retry.
       console.error("Failed to save representative:", error);
     }
   };
+
   return (
     <MainLayout title={`${c.name} Details`}>
       <div className="space-y-6">
@@ -336,7 +307,7 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
               variant="outline"
               size="icon"
               className="rounded-full h-9 w-9 border-border/60 hover:bg-muted"
-              onClick={() => navigate("/geography/constituencies")}
+              onClick={() => navigate("/geography")}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -425,10 +396,10 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                     Cancel
                   </AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+                     className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
                     onClick={async () => {
                       await deleteMut.mutateAsync(c.id);
-                      navigate("/geography/constituencies");
+                      navigate("/geography");
                     }}
                   >
                     Delete
@@ -439,39 +410,29 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Scrollable Tabs List */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 max-w-2xl bg-muted/40 p-1 rounded-xl h-11">
-            <TabsTrigger
-              value="overview"
-              className="rounded-lg text-xs font-semibold py-1.5"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="representative"
-              className="rounded-lg text-xs font-semibold py-1.5"
-            >
-              Representative
-            </TabsTrigger>
-            <TabsTrigger
-              value="wards"
-              className="rounded-lg text-xs font-semibold py-1.5"
-            >
-              Wards
-            </TabsTrigger>
-            <TabsTrigger
-              value="town-villages"
-              className="rounded-lg text-xs font-semibold py-1.5"
-            >
-              Towns/Villages
-            </TabsTrigger>
-            <TabsTrigger
-              value="booths"
-              className="rounded-lg text-xs font-semibold py-1.5"
-            >
-              Booths
-            </TabsTrigger>
+          <TabsList className="flex w-full overflow-x-auto bg-muted/40 p-1 rounded-xl h-11 gap-1 select-none scrollbar-none">
+            {[
+              { value: "overview", label: "Overview" },
+              { value: "representative", label: "Representative" },
+              { value: "district", label: "District" },
+              { value: "blocks", label: "Blocks" },
+              { value: "wards", label: "Wards" },
+              { value: "town-villages", label: "Towns/Villages" },
+              { value: "booths", label: "Booths" },
+              { value: "polling-locations", label: "Polling Stations" },
+              { value: "map", label: "Map" },
+              { value: "statistics", label: "Statistics" },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="rounded-lg text-xs font-semibold py-1.5 px-3 whitespace-nowrap shrink-0"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           {/* Overview */}
@@ -611,7 +572,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                     <Label>Representative Photo</Label>
 
                     <div className="flex items-start gap-4">
-                      {/* Preview */}
                       <div className="shrink-0">
                         {repPhotoPreview || representative?.photoUrl ? (
                           <img
@@ -629,7 +589,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                         )}
                       </div>
 
-                      {/* Upload */}
                       <div className="flex-1 space-y-2">
                         <Input
                           type="file"
@@ -647,14 +606,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                             JPG, PNG or WEBP. Maximum 5MB.
                           </p>
                         )}
-
-                        {representative?.photoUrl &&
-                          !repPhoto &&
-                          !repPhotoPreview && (
-                            <p className="text-[11px] text-muted-foreground">
-                              Select a new image to replace the current photo.
-                            </p>
-                          )}
                       </div>
                     </div>
                   </div>
@@ -874,6 +825,98 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                 </Button>
               </Card>
             )}
+          </TabsContent>
+
+          {/* District */}
+          <TabsContent value="district" className="mt-4">
+            <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+              <CardContent className="p-6 space-y-4">
+                <h3 className="font-bold text-foreground text-sm border-b pb-2 flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-sky-500" /> District Information
+                </h3>
+                {c.district ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                    <div>
+                      <span className="text-muted-foreground font-semibold text-xs block">
+                        District Name
+                      </span>
+                      <span className="text-foreground font-bold mt-1 block">
+                        {c.district.name}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground font-semibold text-xs block">
+                        District Code
+                      </span>
+                      <span className="text-foreground font-mono font-bold mt-1 block">
+                        {c.district.code || "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground font-semibold text-xs block">
+                        Status
+                      </span>
+                      <Badge className="mt-1 bg-emerald-50 text-emerald-700 border-emerald-200/30 dark:bg-emerald-950/20 dark:text-emerald-400">
+                        Active
+                      </Badge>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No district linked to this constituency.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Blocks */}
+          <TabsContent value="blocks" className="mt-4">
+            <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Navigation className="h-4 w-4 text-indigo-500" /> Administrative Blocks
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Blocks belonging to the constituency's district: {c.district?.name || "N/A"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {blocksLoading ? (
+                  <div className="p-4 space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : filteredBlocks.length === 0 ? (
+                  <div className="p-10 text-center text-xs text-muted-foreground">
+                    No blocks found for this district.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent bg-muted/20">
+                        <TableHead>Block Name</TableHead>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBlocks.map((b: any) => (
+                        <TableRow key={b.id} className="hover:bg-muted/10">
+                          <TableCell className="font-semibold">{b.name}</TableCell>
+                          <TableCell className="font-mono text-xs">{b.code || "-"}</TableCell>
+                          <TableCell>
+                            <Badge variant={b.isActive ? "default" : "secondary"}>
+                              {b.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Wards */}
@@ -1115,6 +1158,123 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                   </TableBody>
                 </Table>
               )}
+            </Card>
+          </TabsContent>
+
+          {/* Polling Stations */}
+          <TabsContent value="polling-locations" className="mt-4">
+            <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-amber-500" /> Polling Stations
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Locations hosting voting booths in this constituency
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {boothsLoading ? (
+                  <div className="p-4 space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : pollingLocations.length === 0 ? (
+                  <div className="p-10 text-center text-xs text-muted-foreground">
+                    No polling stations mapped to booths in this constituency yet.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent bg-muted/20">
+                        <TableHead>Name</TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead className="text-center">Associated Booths</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pollingLocations.map((loc: any) => {
+                        const assocBooths = getBoothsForLocation(loc.id);
+                        return (
+                          <TableRow key={loc.id} className="hover:bg-muted/10">
+                            <TableCell className="font-semibold">{loc.name}</TableCell>
+                            <TableCell className="text-xs">{loc.address || "-"}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-bold">
+                                {assocBooths.length} Booths
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Map */}
+          <TabsContent value="map" className="mt-4">
+            <Card className="border border-border/50 bg-card rounded-2xl shadow-sm">
+              <CardContent className="p-6 space-y-6">
+                <h3 className="font-bold text-foreground text-sm border-b pb-2 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-rose-500" /> Geographical Coordinates
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                  <div>
+                    <span className="text-muted-foreground font-semibold text-xs block">
+                      Latitude
+                    </span>
+                    <span className="text-foreground font-mono font-bold mt-1 block">
+                      {c.latitude || "Not Configured"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-semibold text-xs block">
+                      Longitude
+                    </span>
+                    <span className="text-foreground font-mono font-bold mt-1 block">
+                      {c.longitude || "Not Configured"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <span className="text-muted-foreground font-semibold text-xs block mb-2">
+                    Boundary Data (GIS)
+                  </span>
+                  {c.boundary ? (
+                    <pre className="text-[10px] leading-relaxed bg-muted/30 p-4 rounded-xl border font-mono overflow-x-auto max-h-48 text-muted-foreground">
+                      {JSON.stringify(c.boundary, null, 2)}
+                    </pre>
+                  ) : (
+                    <p className="text-xs text-muted-foreground bg-muted/20 p-4 rounded-xl border border-dashed text-center">
+                      No GIS boundaries or polygon data defined for this constituency.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Statistics */}
+          <TabsContent value="statistics" className="mt-4">
+            <Card className="border border-border/50 bg-card rounded-2xl shadow-sm p-6">
+              <h3 className="font-bold text-foreground text-sm border-b pb-4 mb-4 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-500" /> Constituency Statistics
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { label: "Wards", value: wards.length },
+                  { label: "Towns/Villages", value: townVillages.length },
+                  { label: "Booths", value: booths.length },
+                  { label: "Polling Stations", value: pollingLocations.length },
+                ].map((stat) => (
+                  <div key={stat.label} className="p-4 rounded-xl border bg-muted/5 text-center space-y-1">
+                    <span className="text-xs text-muted-foreground font-semibold block">{stat.label}</span>
+                    <h4 className="text-2xl font-extrabold text-foreground">{stat.value}</h4>
+                  </div>
+                ))}
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
