@@ -225,6 +225,16 @@ export async function deleteDistrict(tenantId: string, id: string) {
     );
   }
 
+  await archiveToRecycleBin({
+    tenantId,
+    module: "constituency",
+    entityType: "district",
+    recordId: district.id,
+    recordLabel: district.name,
+    payload: district,
+    deletedById: undefined,
+  });
+
   return prisma.district.update({
     where: { id },
     data: { isDeleted: true, deletedAt: new Date(), isActive: false },

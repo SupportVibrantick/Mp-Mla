@@ -7,6 +7,7 @@ import {
 import { buildDemographicsData } from "./helpers.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 import { assertCanCreateWard } from "../../../lib/quota.js";
+import { ApiError } from "../../../utils/ApiError.js";
 
 
 
@@ -23,6 +24,35 @@ export async function createWard(
     const tenantId = requireTenantId(req);
     await assertCanCreateWard(tenantId);
     const { areas, councillor, demographics, ...wardData } = req.body;
+
+    if (wardData.constituencyId === "") wardData.constituencyId = null;
+    if (wardData.townVillageId === "") wardData.townVillageId = null;
+
+    if (wardData.constituencyId) {
+      const constituency = await prisma.constituency.findFirst({
+        where: { id: wardData.constituencyId, tenantId, isDeleted: false },
+      });
+      if (!constituency) {
+        return next(
+          ApiError.badRequest(
+            "Selected constituency does not belong to this organization or is deleted.",
+          ),
+        );
+      }
+    }
+
+    if (wardData.townVillageId) {
+      const townVillage = await prisma.townVillage.findFirst({
+        where: { id: wardData.townVillageId, tenantId, isDeleted: false },
+      });
+      if (!townVillage) {
+        return next(
+          ApiError.badRequest(
+            "Selected Town/Village does not belong to this organization or is deleted.",
+          ),
+        );
+      }
+    }
 
     // Step 1: Compute aggregates
     let totalPop = 0,

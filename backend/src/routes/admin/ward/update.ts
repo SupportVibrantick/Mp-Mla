@@ -24,6 +24,32 @@ export async function updateWard(
     if (!old) throw ApiError.notFound("Ward not found");
 
     const updateData: any = { ...req.body };
+
+    if (updateData.constituencyId === "") updateData.constituencyId = null;
+    if (updateData.townVillageId === "") updateData.townVillageId = null;
+
+    if (updateData.constituencyId) {
+      const constituency = await prisma.constituency.findFirst({
+        where: { id: updateData.constituencyId, tenantId, isDeleted: false },
+      });
+      if (!constituency) {
+        throw ApiError.badRequest(
+          "Selected constituency does not belong to this organization or is deleted.",
+        );
+      }
+    }
+
+    if (updateData.townVillageId) {
+      const townVillage = await prisma.townVillage.findFirst({
+        where: { id: updateData.townVillageId, tenantId, isDeleted: false },
+      });
+      if (!townVillage) {
+        throw ApiError.badRequest(
+          "Selected Town/Village does not belong to this organization or is deleted.",
+        );
+      }
+    }
+
     if (updateData.establishedDate) {
       updateData.establishedDate = new Date(updateData.establishedDate);
     }

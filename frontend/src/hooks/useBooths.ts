@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 type MutationFn<T = any> = (data: T) => Promise<any>;
 
 function useBoothMutation<T>(fn: MutationFn<T>, successMessage: string) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: fn,
@@ -27,15 +28,21 @@ function useBoothMutation<T>(fn: MutationFn<T>, successMessage: string) {
         queryKey: ["constituency-booths"],
       });
 
-      toast.success(res?.message || successMessage);
+      toast({
+        title: "Success",
+        description: res?.message || successMessage,
+      });
     },
 
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message ||
+      toast({
+        title: "Error",
+        description:
+          error?.response?.data?.message ||
           error?.message ||
           "Something went wrong.",
-      );
+        variant: "destructive",
+      });
     },
   });
 }
@@ -119,6 +126,7 @@ export function useDeleteBooth() {
 
 export function useToggleBooth() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: (id: string) =>
@@ -139,13 +147,19 @@ export function useToggleBooth() {
         queryKey: ["constituency-booths"],
       });
 
-      toast.success(res?.message || "Booth status updated successfully.");
+      toast({
+        title: "Success",
+        description: res?.message || "Booth status updated successfully.",
+      });
     },
 
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message || "Failed to update booth status.",
-      );
+      toast({
+        title: "Error",
+        description:
+          error?.response?.data?.message || "Failed to update booth status.",
+        variant: "destructive",
+      });
     },
   });
 }

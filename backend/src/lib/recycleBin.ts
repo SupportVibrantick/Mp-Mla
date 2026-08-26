@@ -24,7 +24,8 @@ export type RecycleEntityType =
   | "correspondence"
   | "constituency"
   | "block"
-  | "town_village";
+  | "town_village"
+  | "district";
 
 interface ArchiveInput {
   tenantId?: string;
@@ -720,7 +721,7 @@ async function restoreCorrespondence(payload: unknown) {
 }
 
 async function restoreGeographyRecord(
-  entity: "constituency" | "block" | "town_village",
+  entity: "constituency" | "block" | "town_village" | "district",
   payload: unknown,
 ) {
   const record = ensureObject(payload, entity);
@@ -743,7 +744,9 @@ async function restoreGeographyRecord(
       ? prisma.constituency
       : entity === "block"
         ? prisma.block
-        : prisma.townVillage
+        : entity === "town_village"
+          ? prisma.townVillage
+          : prisma.district
   ) as any;
 
   /**
@@ -873,6 +876,9 @@ export async function restoreRecycleBinEntry(entry: {
     case "town_village":
       await restoreGeographyRecord("town_village", entry.payload);
       break;
+    case "district":
+      await restoreGeographyRecord("district", entry.payload);
+      break;
     default:
       throw ApiError.badRequest(
         `Restore not supported for entity type: ${entry.entityType}`,
@@ -961,6 +967,9 @@ export async function permanentlyDeleteRecycledRecord(entry: {
       break;
     case "town_village":
       await prisma.townVillage.deleteMany({ where: { id: entry.recordId } });
+      break;
+    case "district":
+      await prisma.district.deleteMany({ where: { id: entry.recordId } });
       break;
     default:
       break;

@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
 import { cn } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import {
   useBooths,
@@ -16,6 +19,7 @@ import {
 
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PermissionGate } from "@/components/auth/PermissionGate";
+import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -78,19 +82,64 @@ import {
   Navigation,
 } from "lucide-react";
 
-// import BoothDetailPage from "./BoothDetailPage";
+const boothFormSchema = z.object({
+  constituencyId: z
+    .string()
+    .trim()
+    .min(1, "Constituency is required"),
 
-const emptyForm = {
-  boothNumber: "",
-  boothName: "",
-  code: "",
-  constituencyId: "",
-  wardId: "",
-  townVillageId: "",
-  pollingLocationId: "",
-  latitude: "",
-  longitude: "",
-};
+  wardId: z
+    .string()
+    .optional()
+    .or(z.literal("")),
+
+  townVillageId: z
+    .string()
+    .optional()
+    .or(z.literal("")),
+
+  pollingLocationId: z
+    .string()
+    .optional()
+    .or(z.literal("")),
+
+  boothNumber: z
+    .string()
+    .trim()
+    .min(1, "Booth number is required")
+    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+      message: "Booth number must be a positive integer",
+    })
+    .transform((val) => parseInt(val, 10)),
+
+  boothName: z
+    .string()
+    .trim()
+    .min(1, "Booth name is required")
+    .min(2, "Booth name must be at least 2 characters")
+    .max(100, "Booth name must be at most 100 characters"),
+
+  code: z
+    .string()
+    .trim()
+    .max(50, "Code must be at most 50 characters")
+    .optional()
+    .or(z.literal("")),
+
+  latitude: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val ? parseFloat(val) : null)),
+
+  longitude: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val ? parseFloat(val) : null)),
+});
+
+type BoothFormValues = z.infer<typeof boothFormSchema>;
 
 function extractItems(result: any): any[] {
   if (Array.isArray(result)) {
@@ -101,21 +150,30 @@ function extractItems(result: any): any[] {
 }
 
 export default function BoothsPage() {
-  // const params = useParams<{ id?: string }>();
-
-  // if (params.id) {
-  //   return <BoothDetailPage id={params.id} />;
-  // }
-
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
 
   const [dialogOpen, setDialogOpen] = useState(false);
-
   const [editing, setEditing] = useState<any>(null);
 
-  const [form, setForm] = useState({ ...emptyForm });
+  const boothForm = useForm<BoothFormValues>({
+    resolver: zodResolver(boothFormSchema),
+    defaultValues: {
+      constituencyId: "",
+      wardId: "",
+      townVillageId: "",
+      pollingLocationId: "",
+      boothNumber: "" as any,
+      boothName: "",
+      code: "",
+      latitude: "" as any,
+      longitude: "" as any,
+    },
+  });
+
+  const selectedConstituencyId = boothForm.watch("constituencyId");
 
   /* =====================================================
      QUERIES
@@ -139,13 +197,10 @@ export default function BoothsPage() {
   }, [page, search, statusFilter]);
 
   const { data: boothRes, isLoading } = useBooths(queryParams);
-
   const { data: constituencyRes } = useBoothConstituencies();
-
   const constituencies = extractItems(constituencyRes?.data);
 
   const result = boothRes?.data;
-
   const booths = extractItems(result);
 
   const pagination =
@@ -174,75 +229,47 @@ export default function BoothsPage() {
 
   const openAdd = () => {
     setEditing(null);
-
-    setForm({
-      ...emptyForm,
+    boothForm.reset({
+      constituencyId: "",
+      wardId: "",
+      townVillageId: "",
+      pollingLocationId: "",
+      boothNumber: "" as any,
+      boothName: "",
+      code: "",
+      latitude: "" as any,
+      longitude: "" as any,
     });
-
     setDialogOpen(true);
   };
 
   const openEdit = (booth: any) => {
     setEditing(booth);
-
-    setForm({
-      boothNumber: booth.boothNumber?.toString() || "",
-
-      boothName: booth.boothName || "",
-
-      code: booth.code || "",
-
+    boothForm.reset({
       constituencyId: booth.constituencyId || booth.constituency?.id || "",
-
       wardId: booth.wardId || booth.ward?.id || "",
-
       townVillageId: booth.townVillageId || booth.townVillage?.id || "",
-
-      pollingLocationId:
-        booth.pollingLocationId || booth.pollingLocation?.id || "",
-
-      latitude: booth.latitude?.toString() || "",
-
-      longitude: booth.longitude?.toString() || "",
+      pollingLocationId: booth.pollingLocationId || booth.pollingLocation?.id || "",
+      boothNumber: booth.boothNumber?.toString() || "" as any,
+      boothName: booth.boothName || "",
+      code: booth.code || "",
+      latitude: booth.latitude !== null && booth.latitude !== undefined ? booth.latitude.toString() : "" as any,
+      longitude: booth.longitude !== null && booth.longitude !== undefined ? booth.longitude.toString() : "" as any,
     });
-
     setDialogOpen(true);
   };
 
-  const save = async () => {
-    const boothNumber = Number(form.boothNumber);
-
-    if (!Number.isInteger(boothNumber) || boothNumber <= 0) {
-      return;
-    }
-
-    if (!form.boothName.trim()) {
-      return;
-    }
-
-    if (!form.constituencyId) {
-      return;
-    }
-
-    const payload: any = {
-      boothNumber,
-      boothName: form.boothName.trim(),
-      code: form.code.trim() || undefined,
-      constituencyId: form.constituencyId,
-      wardId: form.wardId || undefined,
-      townVillageId: form.townVillageId || undefined,
-      pollingLocationId: form.pollingLocationId || undefined,
-    };
-
-    if (form.latitude.trim()) {
-      payload.latitude = Number(form.latitude);
-    }
-
-    if (form.longitude.trim()) {
-      payload.longitude = Number(form.longitude);
-    }
-
+  const save = async (formData: BoothFormValues) => {
     try {
+      const payload = {
+        ...formData,
+        boothName: formData.boothName.trim(),
+        code: formData.code?.trim() || null,
+        wardId: formData.wardId || null,
+        townVillageId: formData.townVillageId || null,
+        pollingLocationId: formData.pollingLocationId || null,
+      };
+
       if (editing) {
         await updateMut.mutateAsync({
           id: editing.id,
@@ -253,43 +280,38 @@ export default function BoothsPage() {
       }
 
       setDialogOpen(false);
+      boothForm.reset();
+      setEditing(null);
     } catch {
-      // handled by mutation
+      // handled by hooks onError toasts
     }
-  };
-
-  const resetFilters = () => {
-    setSearch("");
-    setStatusFilter("all");
-    setPage(1);
   };
 
   const isSaving = createMut.isPending || updateMut.isPending;
 
   return (
-    <MainLayout title="Booths">
+    <MainLayout title="Polling Booths">
       <div className="space-y-6">
-        {/* =================================================
+        {/* =====================================================
             HEADER
-        ================================================= */}
+        ===================================================== */}
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">
+            <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
               <MapPin className="h-7 w-7 text-primary" />
-              Booths
+              Polling Booths
             </h1>
 
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
-              Manage polling booths across constituencies, wards, towns/villages
-              and polling locations.
+            <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
+              Manage polling booths, assign them to wards/villages, and map coordinates.
             </p>
           </div>
 
           <PermissionGate module="constituency" action="create">
             <Button
               onClick={openAdd}
-              className="gap-2 w-full sm:w-auto h-9 text-xs bg-linear-to-r from-slate-900 via-slate-950 to-indigo-950 text-white"
+              className="h-9 w-full gap-2 border-none bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 px-4 text-xs font-semibold text-white shadow-md transition-all hover:shadow-lg sm:w-auto"
             >
               <Plus className="h-4 w-4" />
               Add Booth
@@ -297,278 +319,130 @@ export default function BoothsPage() {
           </PermissionGate>
         </div>
 
-        {/* =================================================
-            STATS
-        ================================================= */}
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card className="rounded-2xl border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/30">
-                  <MapPin className="h-5 w-5 text-sky-500" />
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    Booths
-                  </p>
-
-                  <h3 className="text-xl font-bold">
-                    {pagination?.total ?? booths.length}
-                  </h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/30">
-                  <Landmark className="h-5 w-5 text-indigo-500" />
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    Constituencies
-                  </p>
-
-                  <h3 className="text-xl font-bold">{constituencies.length}</h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30">
-                  <Building2 className="h-5 w-5 text-emerald-500" />
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    Linked Wards
-                  </p>
-
-                  <h3 className="text-xl font-bold">
-                    {
-                      new Set(booths.map((b: any) => b.wardId).filter(Boolean))
-                        .size
-                    }
-                  </h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30">
-                  <Navigation className="h-5 w-5 text-amber-500" />
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    With Location
-                  </p>
-
-                  <h3 className="text-xl font-bold">
-                    {booths.filter((b: any) => b.pollingLocationId).length}
-                  </h3>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* =================================================
+        {/* =====================================================
             FILTERS
-        ================================================= */}
+        ===================================================== */}
 
-        <Card className="border-border/50 rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-
-                <Input
-                  placeholder="Search booth number, name or code..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="pl-9 h-10 bg-muted/30"
-                />
-              </div>
-
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => {
-                  setStatusFilter(value);
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm">
+          <CardContent className="p-4 flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
                   setPage(1);
                 }}
-              >
-                <SelectTrigger className="w-full lg:w-40 h-10">
-                  <SelectValue />
-                </SelectTrigger>
-
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-
-                  <SelectItem value="INACTIVE">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {(search || statusFilter !== "all") && (
-                <Button
-                  variant="ghost"
-                  className="h-10 text-xs"
-                  onClick={resetFilters}
-                >
-                  Clear
-                </Button>
-              )}
+                placeholder="Search booths by name or number..."
+                className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20"
+              />
             </div>
+
+            <Select
+              value={statusFilter}
+              onValueChange={(val) => {
+                setStatusFilter(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full md:w-48 h-10 border-border/60 bg-muted/10">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 
-        {/* =================================================
+        {/* =====================================================
             TABLE
-        ================================================= */}
+        ===================================================== */}
 
-        <Card className="border-border/50 rounded-2xl overflow-hidden">
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/20">
-                    <TableHead>Booth</TableHead>
-
-                    <TableHead>Code</TableHead>
-
-                    <TableHead>Constituency</TableHead>
-
-                    <TableHead>Ward / Town/Village</TableHead>
-
-                    <TableHead>Status</TableHead>
-
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Booth</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Constituency</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Town / Village</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Polling Location</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
                   {isLoading ? (
-                    Array.from({
-                      length: 5,
-                    }).map((_, index) => (
-                      <TableRow key={index}>
-                        {Array.from({
-                          length: 6,
-                        }).map((_, cell) => (
-                          <TableCell key={cell}>
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index} className="border-b border-border/40">
+                        {Array.from({ length: 7 }).map((_, idx) => (
+                          <TableCell key={idx} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : booths.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-16 text-center">
-                        <MapPin className="h-10 w-10 mx-auto mb-3 opacity-30" />
-
-                        <p className="font-medium text-sm">No booths found.</p>
-
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Try changing your filters or create a new booth.
-                        </p>
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={7} className="h-32 text-center text-xs text-muted-foreground">
+                        No booths found.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    booths.map((booth: any) => (
-                      <TableRow
-                        key={booth.id}
-                        className={cn(
-                          "border-b border-border/40",
-                          !booth.isActive && "opacity-50",
-                        )}
-                      >
-                        {/* Booth */}
-
-                        <TableCell>
-                          <Link to={`/geography/booths/${booth.id}`}>
-                            <div className="cursor-pointer">
-                              <p className="font-semibold text-primary hover:underline flex items-center gap-2 text-sm">
-                                <MapPin className="h-3.5 w-3.5 text-sky-500" />
-                                Booth {booth.boothNumber}
-                              </p>
-
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {booth.boothName}
-                              </p>
+                    booths.map((booth) => (
+                      <TableRow key={booth.id} className="hover:bg-muted/10 border-b border-border/40">
+                        {/* Name & Number */}
+                        <TableCell className="py-4 px-4 align-middle">
+                          <div className="flex items-center gap-2">
+                            <div className="rounded-lg bg-primary/10 p-2 font-mono text-xs font-bold text-primary">
+                              #{booth.boothNumber}
                             </div>
-                          </Link>
-                        </TableCell>
-
-                        {/* Code */}
-
-                        <TableCell>
-                          {booth.code ? (
-                            <Badge
-                              variant="outline"
-                              className="font-mono text-[10px]"
-                            >
-                              {booth.code}
-                            </Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              —
-                            </span>
-                          )}
-                        </TableCell>
-
-                        {/* Constituency */}
-
-                        <TableCell className="text-xs font-semibold">
-                          {booth.constituency?.name ||
-                            booth.constituencyName ||
-                            "—"}
-                        </TableCell>
-
-                        {/* Ward/Village */}
-
-                        <TableCell>
-                          <div className="text-xs">
-                            {booth.ward?.name && (
-                              <p className="font-semibold">{booth.ward.name}</p>
-                            )}
-
-                            {booth.townVillage?.name && (
-                              <p className="text-muted-foreground">
-                                {booth.townVillage.name}
-                              </p>
-                            )}
-
-                            {!booth.ward?.name &&
-                              !booth.townVillage?.name &&
-                              "—"}
+                            <div>
+                              <div className="font-bold text-foreground">{booth.boothName}</div>
+                              {booth.code && (
+                                <div className="text-[10px] font-mono text-muted-foreground">
+                                  {booth.code}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
 
-                        {/* Status */}
+                        {/* Constituency */}
+                        <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">
+                          {booth.constituency?.name || "—"}
+                        </TableCell>
 
-                        <TableCell>
+                        {/* Ward */}
+                        <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">
+                          {booth.ward
+                            ? `Ward ${booth.ward.wardNumber}: ${booth.ward.name}`
+                            : "—"}
+                        </TableCell>
+
+                        {/* Town / Village */}
+                        <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">
+                          {booth.townVillage?.name || "—"}
+                        </TableCell>
+
+                        {/* Polling Location */}
+                        <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">
+                          {booth.pollingLocation?.name || "—"}
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell className="py-4 px-4 align-middle">
                           <Badge
                             className={cn(
-                              "text-[10px]",
                               booth.isActive
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                                : "bg-muted text-muted-foreground",
+                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100/80 border-none dark:bg-emerald-950/30 dark:text-emerald-400"
+                                : "bg-secondary text-secondary-foreground"
                             )}
                           >
                             {booth.isActive ? "Active" : "Inactive"}
@@ -576,76 +450,59 @@ export default function BoothsPage() {
                         </TableCell>
 
                         {/* Actions */}
-
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Link to={`/geography/booths/${booth.id}`}>
+                        <TableCell className="py-4 px-4 align-middle text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <PermissionGate module="constituency" action="update">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>
-
-                            <PermissionGate
-                              module="constituency"
-                              action="update"
-                            >
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 rounded-lg hover:bg-muted"
                                 disabled={toggleMut.isPending}
                                 onClick={() => toggleMut.mutate(booth.id)}
+                                title={booth.isActive ? "Deactivate" : "Activate"}
                               >
                                 {booth.isActive ? (
                                   <ToggleRight className="h-4 w-4 text-emerald-600" />
                                 ) : (
-                                  <ToggleLeft className="h-4 w-4" />
+                                  <ToggleLeft className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </Button>
 
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 rounded-lg hover:bg-muted"
                                 onClick={() => openEdit(booth)}
+                                title="Edit"
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                               </Button>
                             </PermissionGate>
 
-                            <PermissionGate
-                              module="constituency"
-                              action="delete"
-                            >
+                            <PermissionGate module="constituency" action="delete">
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 hover:bg-destructive/10"
+                                    className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                                    title="Delete"
                                   >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </AlertDialogTrigger>
 
                                 <AlertDialogContent className="rounded-2xl">
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Delete Booth {booth.boothNumber}?
+                                    <AlertDialogTitle className="font-extrabold text-foreground">
+                                      Delete Booth #{booth.boothNumber}?
                                     </AlertDialogTitle>
                                   </AlertDialogHeader>
 
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                      Cancel
-                                    </AlertDialogCancel>
-
+                                  <AlertDialogFooter className="gap-2 sm:gap-0">
+                                    <AlertDialogCancel className="border-border/60 hover:bg-muted">Cancel</AlertDialogCancel>
                                     <AlertDialogAction
-                                      className="bg-destructive text-white"
+                                      className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
                                       onClick={() => deleteMut.mutate(booth.id)}
                                     >
                                       Delete
@@ -664,19 +521,17 @@ export default function BoothsPage() {
             </div>
 
             {/* Pagination */}
-
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t px-4 py-3">
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
                 <p className="text-xs text-muted-foreground font-semibold">
-                  Page {pagination.page} of {pagination.totalPages} (
-                  {pagination.total} total)
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
                 </p>
 
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasPrevPage}
                     onClick={() => setPage((p) => p - 1)}
                   >
@@ -686,7 +541,7 @@ export default function BoothsPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
                     disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >
@@ -704,87 +559,90 @@ export default function BoothsPage() {
       =================================================== */}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-2xl rounded-2xl">
+        <DialogContent className="sm:max-w-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base font-bold text-foreground">
               {editing ? "Edit Booth" : "Add New Booth"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-5 py-2">
+          <form onSubmit={boothForm.handleSubmit(save)} className="space-y-5 py-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>
+                <Label htmlFor="booth-number" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Booth Number <span className="text-destructive">*</span>
                 </Label>
-
                 <Input
-                  type="number"
-                  min="1"
-                  value={form.boothNumber}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      boothNumber: e.target.value,
-                    }))
-                  }
+                  id="booth-number"
                   placeholder="E.g. 101"
+                  {...boothForm.register("boothNumber")}
+                  className={cn(
+                    "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                    boothForm.formState.errors.boothNumber && "border-destructive focus-visible:ring-destructive/20"
+                  )}
                 />
+                {boothForm.formState.errors.boothNumber && (
+                  <p className="text-xs font-medium text-destructive">
+                    {boothForm.formState.errors.boothNumber.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label>
+                <Label htmlFor="booth-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Booth Name <span className="text-destructive">*</span>
                 </Label>
-
                 <Input
-                  value={form.boothName}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      boothName: e.target.value,
-                    }))
-                  }
+                  id="booth-name"
                   placeholder="E.g. Government School"
+                  {...boothForm.register("boothName")}
+                  className={cn(
+                    "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                    boothForm.formState.errors.boothName && "border-destructive focus-visible:ring-destructive/20"
+                  )}
                 />
+                {boothForm.formState.errors.boothName && (
+                  <p className="text-xs font-medium text-destructive">
+                    {boothForm.formState.errors.boothName.message}
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Booth Code</Label>
-
+              <Label htmlFor="booth-code" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Booth Code</Label>
               <Input
-                value={form.code}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    code: e.target.value.toUpperCase(),
-                  }))
-                }
+                id="booth-code"
                 placeholder="E.g. BOOTH-101"
+                {...boothForm.register("code")}
+                onChange={(e) => boothForm.setValue("code", e.target.value.toUpperCase())}
+                className={cn(
+                  "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                  boothForm.formState.errors.code && "border-destructive focus-visible:ring-destructive/20"
+                )}
               />
+              {boothForm.formState.errors.code && (
+                <p className="text-xs font-medium text-destructive">
+                  {boothForm.formState.errors.code.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Constituency <span className="text-destructive">*</span>
               </Label>
-
               <select
                 className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm"
-                value={form.constituencyId}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    constituencyId: e.target.value,
-                    wardId: "",
-                    townVillageId: "",
-                    pollingLocationId: "",
-                  }))
-                }
+                value={boothForm.watch("constituencyId")}
+                onChange={(e) => {
+                  boothForm.setValue("constituencyId", e.target.value, { shouldValidate: true });
+                  boothForm.setValue("wardId", "");
+                  boothForm.setValue("townVillageId", "");
+                  boothForm.setValue("pollingLocationId", "");
+                }}
               >
                 <option value="">Select constituency</option>
-
                 {constituencies.map((c: any) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -792,103 +650,88 @@ export default function BoothsPage() {
                   </option>
                 ))}
               </select>
+              {boothForm.formState.errors.constituencyId && (
+                <p className="text-xs font-medium text-destructive">
+                  {boothForm.formState.errors.constituencyId.message}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Ward</Label>
-
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ward</Label>
                 <BoothWardSelect
-                  constituencyId={form.constituencyId}
-                  value={form.wardId}
-                  onChange={(value) =>
-                    setForm((p) => ({
-                      ...p,
-                      wardId: value,
-                    }))
-                  }
+                  constituencyId={selectedConstituencyId}
+                  value={boothForm.watch("wardId") || ""}
+                  onChange={(val) => boothForm.setValue("wardId", val)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Town/Village</Label>
-
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Town/Village</Label>
                 <BoothTownVillageSelect
-                  constituencyId={form.constituencyId}
-                  value={form.townVillageId}
-                  onChange={(value) =>
-                    setForm((p) => ({
-                      ...p,
-                      townVillageId: value,
-                    }))
-                  }
+                  constituencyId={selectedConstituencyId}
+                  value={boothForm.watch("townVillageId") || ""}
+                  onChange={(val) => boothForm.setValue("townVillageId", val)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Polling Location</Label>
-
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Polling Location</Label>
                 <BoothPollingLocationSelect
-                  constituencyId={form.constituencyId}
-                  value={form.pollingLocationId}
-                  onChange={(value) =>
-                    setForm((p) => ({
-                      ...p,
-                      pollingLocationId: value,
-                    }))
-                  }
+                  constituencyId={selectedConstituencyId}
+                  value={boothForm.watch("pollingLocationId") || ""}
+                  onChange={(val) => boothForm.setValue("pollingLocationId", val)}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Latitude</Label>
-
+                <Label htmlFor="booth-latitude" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Latitude</Label>
                 <Input
-                  type="number"
-                  step="any"
-                  value={form.latitude}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      latitude: e.target.value,
-                    }))
-                  }
+                  id="booth-latitude"
                   placeholder="30.7046"
+                  {...boothForm.register("latitude")}
+                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Longitude</Label>
-
+                <Label htmlFor="booth-longitude" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Longitude</Label>
                 <Input
-                  type="number"
-                  step="any"
-                  value={form.longitude}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      longitude: e.target.value,
-                    }))
-                  }
+                  id="booth-longitude"
                   placeholder="76.7179"
+                  {...boothForm.register("longitude")}
+                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
                 />
               </div>
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
-            </Button>
+            <DialogFooter className="gap-2 sm:gap-0 mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  boothForm.reset();
+                  setEditing(null);
+                  setDialogOpen(false);
+                }}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
 
-            <Button onClick={save} disabled={isSaving} className="text-white">
-              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-
-              {editing ? "Update Booth" : "Create Booth"}
-            </Button>
-          </DialogFooter>
+              <Button
+                type="submit"
+                disabled={isSaving}
+                className="bg-primary hover:bg-primary/95 text-white"
+              >
+                {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editing ? "Update Booth" : "Create Booth"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </MainLayout>

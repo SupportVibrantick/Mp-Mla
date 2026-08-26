@@ -54,11 +54,41 @@ export async function deleteWard(
       },
     });
 
+    const activeCommunityGroups = await prisma.communityGroup.count({
+      where: {
+        wardId,
+        tenantId,
+        isDeleted: false,
+      },
+    });
+
+    const activeVoters = await prisma.voter.count({
+      where: {
+        wardId,
+        tenantId,
+        isDeleted: false,
+      },
+    });
+
     const total =
-      ward._count.grievances + activeProjectCount + ward._count.institutions;
+      ward._count.grievances +
+      activeProjectCount +
+      ward._count.institutions +
+      activeCommunityGroups +
+      activeVoters;
+
     if (total > 0) {
+      const parts = [];
+      if (ward._count.grievances > 0) parts.push(`${ward._count.grievances} grievances`);
+      if (activeProjectCount > 0) parts.push(`${activeProjectCount} projects`);
+      if (ward._count.institutions > 0) parts.push(`${ward._count.institutions} institutions`);
+      if (activeCommunityGroups > 0) parts.push(`${activeCommunityGroups} community groups`);
+      if (activeVoters > 0) parts.push(`${activeVoters} voters`);
+
       throw ApiError.badRequest(
-        `Cannot delete ward with ${ward._count.grievances} grievances, ${activeProjectCount} projects, and ${ward._count.institutions} institutions. Deactivate instead.`,
+        `Cannot delete ward. It has active dependent records: ` +
+        parts.join(", ") +
+        `. Deactivate instead.`,
       );
     }
 

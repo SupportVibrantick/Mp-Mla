@@ -146,7 +146,10 @@ export default function ConstituenciesPage() {
   if (params.id) {
     return <ConstituencyDetailPage id={params.id} />;
   }
+  return <ConstituenciesList />;
+}
 
+function ConstituenciesList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");

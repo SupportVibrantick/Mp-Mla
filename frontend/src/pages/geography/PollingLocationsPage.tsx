@@ -282,9 +282,7 @@ export default function PollingLocationsPage({
 
   if (id) {
     return (
-      <PollingLocationDetailPage
-        id={id}
-      />
+      <PollingLocationDetailPage />
     );
   }
 

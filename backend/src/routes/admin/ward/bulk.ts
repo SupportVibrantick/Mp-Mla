@@ -214,6 +214,7 @@ export async function bulkCreateWards(
                             } else {
                                 await tx.demographics.create({
                                     data: {
+                                        tenantId,
                                         wardId: currentWardId,
                                         wardAreaId: currentAreaId,
                                         ...adUpdate
@@ -234,6 +235,7 @@ export async function bulkCreateWards(
                         } else {
                             await tx.demographics.create({
                                 data: {
+                                    tenantId,
                                     wardId: currentWardId,
                                     wardAreaId: null,
                                     ...wardDemographicsUpdate

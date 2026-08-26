@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 import {
   useTownVillages,
@@ -17,6 +17,7 @@ import {
   type TownVillage,
   type TownVillagePayload,
 } from "@/hooks/useTownVillages";
+import { useGeographyStats } from "@/hooks/useConstituencies";
 
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PermissionGate } from "@/components/auth/PermissionGate";
@@ -65,6 +66,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 import {
   Map,
@@ -82,6 +84,9 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCcw,
+  Globe,
+  Building,
+  Vote,
 } from "lucide-react";
 
 /* =========================================================
@@ -207,6 +212,7 @@ function blockName(item: TownVillage) {
 ========================================================= */
 
 export default function TownVillagesPage() {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -274,10 +280,9 @@ export default function TownVillagesPage() {
   } = useTownVillages(queryParams);
 
   const { data: districtsRes } = useTownVillageDistricts();
-
   const { data: blocksRes } = useTownVillageBlocks(selectedDistrictId);
-
   const { data: constituenciesRes } = useTownVillageConstituencies();
+  const { data: geoStatsRes } = useGeographyStats();
 
   /* =========================================================
      MUTATIONS
@@ -293,12 +298,10 @@ export default function TownVillagesPage() {
   ========================================================= */
 
   const items = extractItems(townVillagesRes);
-
   const districts = extractItems(districtsRes);
-
   const blocks = extractItems(blocksRes);
-
   const constituencyResult = constituenciesRes?.data;
+  const geoStats = geoStatsRes?.data;
 
   const constituencies = Array.isArray(constituencyResult)
     ? constituencyResult
@@ -312,9 +315,7 @@ export default function TownVillagesPage() {
 
   const openAdd = () => {
     setEditing(null);
-
     form.reset(defaultValues);
-
     setDialogOpen(true);
   };
 
@@ -357,25 +358,15 @@ export default function TownVillagesPage() {
   const save = async (values: TownVillageForm) => {
     const payload: TownVillagePayload = {
       name: values.name.trim(),
-
       code: values.code?.trim() || null,
-
       districtId: values.districtId,
-
       blockId: values.blockId || null,
-
       constituencyId: values.constituencyId || null,
-
       type: values.type,
-
       nature: values.nature,
-
       description: values.description?.trim() || null,
-
       pincode: values.pincode?.trim() || null,
-
       latitude: values.latitude?.trim() ? Number(values.latitude) : null,
-
       longitude: values.longitude?.trim() ? Number(values.longitude) : null,
     };
 
@@ -407,10 +398,6 @@ export default function TownVillagesPage() {
     setDistrictFilter("all");
     setPage(1);
   };
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
 
   return (
     <MainLayout title="Towns & Villages">
@@ -446,92 +433,84 @@ export default function TownVillagesPage() {
             SUMMARY CARDS
         ===================================================== */}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="flex items-center justify-between p-5">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Total
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  {pagination?.total ?? items.length}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-primary/10 p-3">
-                <MapPin className="h-5 w-5 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center justify-between p-5">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Towns
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  {items.filter((x) => x.type === "TOWN").length}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-blue-500/10 p-3">
-                <Building2 className="h-5 w-5 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center justify-between p-5">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Villages
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  {items.filter((x) => x.type === "VILLAGE").length}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-emerald-500/10 p-3">
-                <Home className="h-5 w-5 text-emerald-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center justify-between p-5">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Active
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  {items.filter((x) => x.isActive).length}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-green-500/10 p-3">
-                <ToggleRight className="h-5 w-5 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {geoStats && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[
+              {
+                label: "Districts",
+                value: geoStats.districts || 0,
+                Icon: Globe,
+                color: "text-sky-500",
+                bgColor: "bg-sky-50 dark:bg-sky-950/30",
+                borderColor: "border-sky-100 dark:border-sky-950/50",
+              },
+              {
+                label: "Blocks",
+                value: geoStats.blocks || 0,
+                Icon: Map,
+                color: "text-amber-500",
+                bgColor: "bg-amber-50 dark:bg-amber-950/30",
+                borderColor: "border-amber-100 dark:border-amber-950/50",
+              },
+              {
+                label: "Towns & Villages",
+                value: geoStats.townVillages || 0,
+                Icon: Building,
+                color: "text-indigo-500",
+                bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+                borderColor: "border-indigo-100 dark:border-indigo-950/50",
+              },
+              {
+                label: "Wards",
+                value: geoStats.wards || 0,
+                Icon: MapPin,
+                color: "text-emerald-500",
+                bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+                borderColor: "border-emerald-100 dark:border-emerald-950/50",
+              },
+              {
+                label: "Booths",
+                value: geoStats.booths || 0,
+                Icon: Vote,
+                color: "text-violet-500",
+                bgColor: "bg-violet-50 dark:bg-violet-950/30",
+                borderColor: "border-violet-100 dark:border-violet-950/50",
+              },
+            ].map((s, i) => (
+              <Card
+                key={i}
+                className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl"
+              >
+                <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
+                      <s.Icon className={cn("h-4 w-4", s.color)} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                      {s.label}
+                    </p>
+                    <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                      {s.value}
+                    </h3>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* =====================================================
             FILTERS
         ===================================================== */}
 
-        <Card>
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl">
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-6">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-6 items-center">
               {/* Search */}
-
-              <div className="relative lg:col-span-2">
+              <div className="relative lg:col-span-2 w-full">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
                 <Input
                   value={search}
                   onChange={(e) => {
@@ -539,12 +518,11 @@ export default function TownVillagesPage() {
                     setPage(1);
                   }}
                   placeholder="Search town / village..."
-                  className="pl-9"
+                  className="pl-9 h-10 bg-muted/30 border-border/60 focus-visible:ring-primary/20"
                 />
               </div>
 
               {/* Type */}
-
               <Select
                 value={typeFilter}
                 onValueChange={(value) => {
@@ -552,21 +530,17 @@ export default function TownVillagesPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 border-border/60 bg-muted/10">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
-
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-
                   <SelectItem value="TOWN">Town</SelectItem>
-
                   <SelectItem value="VILLAGE">Village</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Nature */}
-
               <Select
                 value={natureFilter}
                 onValueChange={(value) => {
@@ -574,21 +548,17 @@ export default function TownVillagesPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 border-border/60 bg-muted/10">
                   <SelectValue placeholder="Nature" />
                 </SelectTrigger>
-
                 <SelectContent>
                   <SelectItem value="all">All Nature</SelectItem>
-
                   <SelectItem value="URBAN">Urban</SelectItem>
-
                   <SelectItem value="RURAL">Rural</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Status */}
-
               <Select
                 value={statusFilter}
                 onValueChange={(value) => {
@@ -596,21 +566,17 @@ export default function TownVillagesPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 border-border/60 bg-muted/10">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-
                   <SelectItem value="ACTIVE">Active</SelectItem>
-
                   <SelectItem value="INACTIVE">Inactive</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* District */}
-
               <Select
                 value={districtFilter}
                 onValueChange={(value) => {
@@ -618,13 +584,11 @@ export default function TownVillagesPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 border-border/60 bg-muted/10">
                   <SelectValue placeholder="District" />
                 </SelectTrigger>
-
                 <SelectContent>
                   <SelectItem value="all">All Districts</SelectItem>
-
                   {districts.map((district: any) => (
                     <SelectItem key={district.id} value={district.id}>
                       {district.name}
@@ -634,17 +598,19 @@ export default function TownVillagesPage() {
               </Select>
             </div>
 
-            <div className="mt-3 flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetFilters}
-                className="gap-2"
-              >
-                <RefreshCcw className="h-3.5 w-3.5" />
-                Reset Filters
-              </Button>
-            </div>
+            {(search || statusFilter !== "all" || typeFilter !== "all" || natureFilter !== "all" || districtFilter !== "all") && (
+              <div className="mt-3 flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="text-xs h-8 px-3 text-muted-foreground hover:text-foreground gap-2"
+                >
+                  <RefreshCcw className="h-3 w-3" />
+                  Clear Filters
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -652,63 +618,49 @@ export default function TownVillagesPage() {
             TABLE
         ===================================================== */}
 
-        <Card>
+        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="px-4">Town / Village</TableHead>
-
-                    <TableHead>Type</TableHead>
-
-                    <TableHead>Nature</TableHead>
-
-                    <TableHead>District</TableHead>
-
-                    <TableHead>Block</TableHead>
-
-                    <TableHead>Code</TableHead>
-
-                    <TableHead>Status</TableHead>
-
-                    <TableHead className="px-4 text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Town / Village</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Nature</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">District</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Block</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Code</TableHead>
+                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 8 }).map((_, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={index} className="border-b border-border/40">
                         {Array.from({ length: 8 }).map((_, cellIndex) => (
-                          <TableCell key={cellIndex}>
-                            <Skeleton className="h-5 w-full" />
+                          <TableCell key={cellIndex} className="py-4 px-4">
+                            <Skeleton className="h-4 w-full" />
                           </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : items.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-32 text-center">
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={8} className="h-32 text-center text-xs text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <MapPin className="h-8 w-8 text-muted-foreground/40" />
-
-                          <p className="font-medium">
-                            No towns or villages found
-                          </p>
-
-                          <p className="text-sm text-muted-foreground">
-                            Try changing your filters or add a new one.
-                          </p>
+                          <p className="font-semibold">No towns or villages found</p>
+                          <p className="text-muted-foreground">Try changing your filters or add a new one.</p>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     items.map((item) => (
-                      <TableRow key={item.id} className="group">
+                      <TableRow key={item.id} className="hover:bg-muted/10 border-b border-border/40">
                         {/* Name */}
-
-                        <TableCell className="px-4">
+                        <TableCell className="py-4 px-4 align-middle">
                           <div className="flex items-center gap-3">
                             <div className="rounded-lg bg-primary/10 p-2">
                               {item.type === "TOWN" ? (
@@ -717,10 +669,8 @@ export default function TownVillagesPage() {
                                 <Home className="h-4 w-4 text-primary" />
                               )}
                             </div>
-
                             <div>
-                              <div className="font-semibold">{item.name}</div>
-
+                              <div className="font-bold text-foreground">{item.name}</div>
                               {item.pincode && (
                                 <div className="text-xs text-muted-foreground">
                                   PIN: {item.pincode}
@@ -731,14 +681,13 @@ export default function TownVillagesPage() {
                         </TableCell>
 
                         {/* Type */}
-
-                        <TableCell>
+                        <TableCell className="py-4 px-4 align-middle">
                           <Badge
                             variant="outline"
                             className={
                               item.type === "TOWN"
-                                ? "border-blue-200 bg-blue-50 text-blue-700"
-                                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                ? "border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400"
+                                : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
                             }
                           >
                             {item.type === "TOWN" ? "Town" : "Village"}
@@ -746,49 +695,40 @@ export default function TownVillagesPage() {
                         </TableCell>
 
                         {/* Nature */}
-
-                        <TableCell>
-                          <Badge variant="secondary">
+                        <TableCell className="py-4 px-4 align-middle">
+                          <Badge variant="secondary" className="text-xs font-semibold">
                             {item.nature === "URBAN" ? "Urban" : "Rural"}
                           </Badge>
                         </TableCell>
 
                         {/* District */}
-
-                        <TableCell>{districtName(item)}</TableCell>
+                        <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">{districtName(item)}</TableCell>
 
                         {/* Block */}
-
-                        <TableCell>{blockName(item)}</TableCell>
+                        <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-muted-foreground">{blockName(item)}</TableCell>
 
                         {/* Code */}
-
-                        <TableCell>
-                          <span className="font-mono text-xs">
-                            {item.code || "—"}
-                          </span>
+                        <TableCell className="py-4 px-4 align-middle font-mono text-xs">
+                          {item.code || "—"}
                         </TableCell>
 
                         {/* Status */}
-
-                        <TableCell>
+                        <TableCell className="py-4 px-4 align-middle">
                           <Badge
-                            className={
+                            className={cn(
                               item.isActive
-                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                                : "bg-muted text-muted-foreground"
-                            }
+                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100/80 border-none dark:bg-emerald-950/30 dark:text-emerald-400"
+                                : "bg-secondary text-secondary-foreground"
+                            )}
                           >
                             {item.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
 
                         {/* Actions */}
-
-                        <TableCell className="px-4 text-right">
+                        <TableCell className="py-4 px-4 align-middle text-right">
                           <div className="flex items-center justify-end gap-1">
                             {/* View */}
-
                             <Link to={`/geography/town-villages/${item.id}`}>
                               <Button
                                 variant="ghost"
@@ -796,12 +736,11 @@ export default function TownVillagesPage() {
                                 className="h-8 w-8 rounded-lg hover:bg-muted"
                                 title="View details"
                               >
-                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                               </Button>
                             </Link>
 
                             {/* Update */}
-
                             <PermissionGate
                               module="constituency"
                               action="update"
@@ -809,7 +748,7 @@ export default function TownVillagesPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-lg"
+                                className="h-8 w-8 rounded-lg hover:bg-muted"
                                 disabled={toggleMut.isPending}
                                 onClick={() => toggleMut.mutate(item.id)}
                                 title={
@@ -826,16 +765,15 @@ export default function TownVillagesPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-lg"
+                                className="h-8 w-8 rounded-lg hover:bg-muted"
                                 onClick={() => openEdit(item)}
                                 title="Edit"
                               >
-                                <Edit className="h-4 w-4 text-muted-foreground" />
+                                <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                               </Button>
                             </PermissionGate>
 
                             {/* Delete */}
-
                             <PermissionGate
                               module="constituency"
                               action="delete"
@@ -845,48 +783,30 @@ export default function TownVillagesPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 rounded-lg"
+                                    className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                                     title="Delete"
                                   >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </AlertDialogTrigger>
 
-                                <AlertDialogContent>
+                                <AlertDialogContent className="rounded-2xl">
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Delete{" "}
-                                      {item.type === "TOWN"
-                                        ? "Town"
-                                        : "Village"}{" "}
-                                      "{item.name}"?
+                                    <AlertDialogTitle className="font-extrabold text-foreground">
+                                      Delete Town/Village "{item.name}"?
                                     </AlertDialogTitle>
                                   </AlertDialogHeader>
 
-                                  <p className="text-sm text-muted-foreground">
-                                    This action cannot be undone from this
-                                    screen. Any related records protected by the
-                                    backend will prevent unsafe deletion.
-                                  </p>
-
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>
+                                  <AlertDialogFooter className="gap-2 sm:gap-0">
+                                    <AlertDialogCancel className="border-border/60 hover:bg-muted">
                                       Cancel
                                     </AlertDialogCancel>
 
                                     <AlertDialogAction
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      disabled={deleteMut.isPending}
+                                      className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
                                       onClick={() => deleteMut.mutate(item.id)}
                                     >
-                                      {deleteMut.isPending ? (
-                                        <>
-                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                          Deleting...
-                                        </>
-                                      ) : (
-                                        "Delete"
-                                      )}
+                                      Delete
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -901,408 +821,280 @@ export default function TownVillagesPage() {
               </Table>
             </div>
 
-            {/* =================================================
-                PAGINATION
-            ================================================= */}
-
-            {pagination && (
-              <div className="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Showing page{" "}
-                  <span className="font-medium text-foreground">
-                    {pagination.page}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-medium text-foreground">
-                    {pagination.totalPages}
-                  </span>{" "}
-                  · {pagination.total} records
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/40">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div className="flex gap-1.5">
                   <Button
                     variant="outline"
-                    size="sm"
-                    disabled={!pagination.hasPrevPage || isFetching}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    size="icon"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
+                    disabled={!pagination.hasPrevPage}
+                    onClick={() => setPage((p) => p - 1)}
                   >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Previous
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
 
                   <Button
                     variant="outline"
-                    size="sm"
-                    disabled={!pagination.hasNextPage || isFetching}
+                    size="icon"
+                    className="h-8 w-8 rounded-lg border-border/60 hover:bg-muted"
+                    disabled={!pagination.hasNextPage}
                     onClick={() => setPage((p) => p + 1)}
                   >
-                    Next
-                    <ChevronRight className="ml-1 h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* =====================================================
-            CREATE / EDIT DIALOG
-        ===================================================== */}
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={closeDialog}>
+        <DialogContent className="sm:max-w-lg rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-foreground">
+              {editing ? "Edit Town / Village" : "Add New Town / Village"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <Dialog
-          open={dialogOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              closeDialog();
-            }
-          }}
-        >
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editing ? "Edit Town / Village" : "Add Town / Village"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <form onSubmit={form.handleSubmit(save)} className="space-y-5">
-              {/* =================================================
-                  BASIC INFORMATION
-              ================================================= */}
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Name */}
-
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>
-                    Name <span className="text-destructive">*</span>
-                  </Label>
-
-                  <Input
-                    {...form.register("name")}
-                    placeholder="Enter town or village name"
-                  />
-
-                  {form.formState.errors.name && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Code */}
-
-                <div className="space-y-2">
-                  <Label>Code</Label>
-
-                  <Input
-                    {...form.register("code")}
-                    placeholder="Optional code"
-                  />
-
-                  {form.formState.errors.code && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.code.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Type */}
-
-                <div className="space-y-2">
-                  <Label>
-                    Type <span className="text-destructive">*</span>
-                  </Label>
-
-                  <Select
-                    value={form.watch("type")}
-                    onValueChange={(value) =>
-                      form.setValue("type", value as "TOWN" | "VILLAGE", {
-                        shouldValidate: true,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      <SelectItem value="VILLAGE">Village</SelectItem>
-
-                      <SelectItem value="TOWN">Town</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {form.formState.errors.type && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.type.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Nature */}
-
-                <div className="space-y-2">
-                  <Label>
-                    Nature <span className="text-destructive">*</span>
-                  </Label>
-
-                  <Select
-                    value={form.watch("nature")}
-                    onValueChange={(value) =>
-                      form.setValue("nature", value as "URBAN" | "RURAL", {
-                        shouldValidate: true,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      <SelectItem value="RURAL">Rural</SelectItem>
-
-                      <SelectItem value="URBAN">Urban</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {form.formState.errors.nature && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.nature.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Pincode */}
-
-                <div className="space-y-2">
-                  <Label>Pincode</Label>
-
-                  <Input
-                    {...form.register("pincode")}
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="e.g. 160001"
-                  />
-
-                  {form.formState.errors.pincode && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.pincode.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* =================================================
-                  HIERARCHY
-              ================================================= */}
-
-              <div className="rounded-xl border bg-muted/20 p-4">
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold">Geography Hierarchy</h3>
-
-                  <p className="text-xs text-muted-foreground">
-                    Select the administrative hierarchy for this town/village.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {/* District */}
-
-                  <div className="space-y-2">
-                    <Label>
-                      District <span className="text-destructive">*</span>
-                    </Label>
-
-                    <Select
-                      value={form.watch("districtId") || undefined}
-                      onValueChange={(value) => {
-                        form.setValue("districtId", value, {
-                          shouldValidate: true,
-                        });
-
-                        form.setValue("blockId", "");
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select district" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        {districts.map((district: any) => (
-                          <SelectItem key={district.id} value={district.id}>
-                            {district.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {form.formState.errors.districtId && (
-                      <p className="text-xs text-destructive">
-                        {form.formState.errors.districtId.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Block */}
-
-                  <div className="space-y-2">
-                    <Label>Block</Label>
-
-                    <Select
-                      value={form.watch("blockId") || undefined}
-                      onValueChange={(value) => form.setValue("blockId", value)}
-                      disabled={!selectedDistrictId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            selectedDistrictId
-                              ? "Select block"
-                              : "Select district first"
-                          }
-                        />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        {blocks.map((block: any) => (
-                          <SelectItem key={block.id} value={block.id}>
-                            {block.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Constituency */}
-
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label>Constituency</Label>
-
-                    <Select
-                      value={form.watch("constituencyId") || undefined}
-                      onValueChange={(value) =>
-                        form.setValue("constituencyId", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select constituency" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        {constituencies.map((constituency: any) => (
-                          <SelectItem
-                            key={constituency.id}
-                            value={constituency.id}
-                          >
-                            {constituency.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* =================================================
-                  LOCATION
-              ================================================= */}
-
-              <div className="rounded-xl border bg-muted/20 p-4">
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold">Location</h3>
-
-                  <p className="text-xs text-muted-foreground">
-                    Optional geographical coordinates.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Latitude</Label>
-
-                    <Input
-                      {...form.register("latitude")}
-                      placeholder="e.g. 30.7333"
-                    />
-
-                    {form.formState.errors.latitude && (
-                      <p className="text-xs text-destructive">
-                        {form.formState.errors.latitude.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Longitude</Label>
-
-                    <Input
-                      {...form.register("longitude")}
-                      placeholder="e.g. 76.7794"
-                    />
-
-                    {form.formState.errors.longitude && (
-                      <p className="text-xs text-destructive">
-                        {form.formState.errors.longitude.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* =================================================
-                  DESCRIPTION
-              ================================================= */}
-
+          <form onSubmit={form.handleSubmit(save)} className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Description</Label>
-
-                <Textarea
-                  {...form.register("description")}
-                  placeholder="Enter description..."
-                  rows={4}
+                <Label htmlFor="tv-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="tv-name"
+                  placeholder="E.g., Rampur"
+                  {...form.register("name")}
+                  className={cn(
+                    "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                    form.formState.errors.name && "border-destructive focus-visible:ring-destructive/20"
+                  )}
                 />
-
-                {form.formState.errors.description && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.description.message}
+                {form.formState.errors.name && (
+                  <p className="text-xs font-medium text-destructive">
+                    {form.formState.errors.name.message}
                   </p>
                 )}
               </div>
 
-              {/* =================================================
-                  FOOTER
-              ================================================= */}
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeDialog}
-                  disabled={createMut.isPending || updateMut.isPending}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  type="submit"
-                  disabled={createMut.isPending || updateMut.isPending}
-                >
-                  {createMut.isPending || updateMut.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : editing ? (
-                    "Update Town / Village"
-                  ) : (
-                    "Create Town / Village"
+              <div className="space-y-2">
+                <Label htmlFor="tv-code" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Code</Label>
+                <Input
+                  id="tv-code"
+                  placeholder="E.g., RPR"
+                  {...form.register("code")}
+                  onChange={(e) => form.setValue("code", e.target.value.toUpperCase())}
+                  className={cn(
+                    "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                    form.formState.errors.code && "border-destructive focus-visible:ring-destructive/20"
                   )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                />
+                {form.formState.errors.code && (
+                  <p className="text-xs font-medium text-destructive">
+                    {form.formState.errors.code.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.watch("type")}
+                  onValueChange={(val: any) => form.setValue("type", val, { shouldValidate: true })}
+                >
+                  <SelectTrigger className="h-10 border-border/60 bg-muted/10">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="TOWN">Town</SelectItem>
+                    <SelectItem value="VILLAGE">Village</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.type && (
+                  <p className="text-xs font-medium text-destructive">
+                    {form.formState.errors.type.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Geography Nature <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.watch("nature")}
+                  onValueChange={(val: any) => form.setValue("nature", val, { shouldValidate: true })}
+                >
+                  <SelectTrigger className="h-10 border-border/60 bg-muted/10">
+                    <SelectValue placeholder="Select nature" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="URBAN">Urban</SelectItem>
+                    <SelectItem value="RURAL">Rural</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.nature && (
+                  <p className="text-xs font-medium text-destructive">
+                    {form.formState.errors.nature.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">District <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.watch("districtId")}
+                  onValueChange={(val) => {
+                    form.setValue("districtId", val, { shouldValidate: true });
+                    form.setValue("blockId", ""); // Reset block on district change
+                  }}
+                >
+                  <SelectTrigger className="h-10 border-border/60 bg-muted/10">
+                    <SelectValue placeholder="Select district" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {districts.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.districtId && (
+                  <p className="text-xs font-medium text-destructive">
+                    {form.formState.errors.districtId.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Block</Label>
+                <Select
+                  value={form.watch("blockId") || ""}
+                  onValueChange={(val) => form.setValue("blockId", val)}
+                  disabled={!selectedDistrictId}
+                >
+                  <SelectTrigger className="h-10 border-border/60 bg-muted/10">
+                    <SelectValue placeholder={selectedDistrictId ? "Select block" : "Select district first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No Block (Urban / Town)</SelectItem>
+                    {blocks.map((b: any) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Constituency</Label>
+              <Select
+                value={form.watch("constituencyId") || ""}
+                onValueChange={(val) => form.setValue("constituencyId", val)}
+              >
+                <SelectTrigger className="h-10 border-border/60 bg-muted/10">
+                  <SelectValue placeholder="Select constituency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {constituencies.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name} ({c.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tv-pincode" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pincode</Label>
+                <Input
+                  id="tv-pincode"
+                  placeholder="140301"
+                  {...form.register("pincode")}
+                  className={cn(
+                    "h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20",
+                    form.formState.errors.pincode && "border-destructive focus-visible:ring-destructive/20"
+                  )}
+                />
+                {form.formState.errors.pincode && (
+                  <p className="text-xs font-medium text-destructive">
+                    {form.formState.errors.pincode.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tv-lat" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Latitude</Label>
+                <Input
+                  id="tv-lat"
+                  placeholder="30.7"
+                  {...form.register("latitude")}
+                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tv-lng" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Longitude</Label>
+                <Input
+                  id="tv-lng"
+                  placeholder="76.7"
+                  {...form.register("longitude")}
+                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tv-description" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</Label>
+              <Textarea
+                id="tv-description"
+                placeholder="Notes or description..."
+                rows={2}
+                {...form.register("description")}
+                className="bg-muted/20 border-border/60 focus-visible:ring-primary/20 resize-none text-xs"
+              />
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0 mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-border/60 hover:bg-muted"
+                onClick={closeDialog}
+                disabled={createMut.isPending || updateMut.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-primary hover:bg-primary/95 text-white"
+                disabled={createMut.isPending || updateMut.isPending}
+              >
+                {(createMut.isPending || updateMut.isPending) && (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                )}
+                {editing ? "Update" : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

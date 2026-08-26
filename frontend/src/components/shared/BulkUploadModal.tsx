@@ -18,7 +18,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface BulkUploadModalProps {
     open: boolean;
@@ -41,6 +41,7 @@ export function BulkUploadModal({
     sampleFileName = "template.csv",
     onDownloadSample,
 }: BulkUploadModalProps) {
+    const { toast } = useToast();
     const [file, setFile] = useState<File | null>(null);
     const [dataPreview, setDataPreview] = useState<any[]>([]);
     const [columns, setColumns] = useState<string[]>([]);
@@ -64,12 +65,20 @@ export function BulkUploadModal({
                 setColumns(Object.keys(json[0] as object));
                 setDataPreview(json);
             } else {
-                toast.error("The uploaded file is empty.");
+                toast({
+                    title: "Empty File",
+                    description: "The uploaded file is empty.",
+                    variant: "destructive",
+                });
                 resetState();
             }
         } catch (error) {
             console.error("Error parsing file:", error);
-            toast.error("Failed to parse the file. Please ensure it's a valid Excel or CSV.");
+            toast({
+                title: "Parsing Failed",
+                description: "Failed to parse the file. Please ensure it's a valid Excel or CSV.",
+                variant: "destructive",
+            });
             resetState();
         }
     };
@@ -96,11 +105,18 @@ export function BulkUploadModal({
         setIsUploading(true);
         try {
             await onUpload(dataPreview);
-            toast.success(`Successfully processed ${dataPreview.length} records.`);
+            toast({
+                title: "Import Success",
+                description: `Successfully processed ${dataPreview.length} records.`,
+            });
             handleOpenChange(false);
         } catch (error: any) {
             console.error("Upload failed:", error);
-            toast.error(error.message || "Failed to upload data. Please try again.");
+            toast({
+                title: "Import Failed",
+                description: error.message || "Failed to upload data. Please try again.",
+                variant: "destructive",
+            });
         } finally {
             setIsUploading(false);
         }

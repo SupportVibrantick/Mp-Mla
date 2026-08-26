@@ -1,18 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 function useGeoMut(fn: (d: any) => Promise<any>, title: string) {
   const qc = useQueryClient();
+  const { toast } = useToast();
+
   return useMutation({
     mutationFn: fn,
+
     onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ["districts"] });
       qc.invalidateQueries({ queryKey: ["geography-stats"] });
-      toast.success(title, { description: res?.message });
+      toast({
+        title,
+        description: res?.message || "Operation completed successfully.",
+      });
     },
+
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Something went wrong.");
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Something went wrong.",
+        variant: "destructive",
+      });
     },
   });
 }
@@ -61,20 +72,39 @@ export function useDeleteDistrict() {
   );
 }
 
+export function useRestoreDistrict() {
+  return useGeoMut(
+    (id: string) =>
+      api.post(`/admin/constituency/districts/${id}/restore`).then((r) => r.data),
+    "District restored successfully.",
+  );
+}
+
 export function useToggleDistrict() {
   const qc = useQueryClient();
+  const { toast } = useToast();
+
   return useMutation({
     mutationFn: (id: string) =>
       api
         .patch(`/admin/constituency/districts/${id}/toggle`)
         .then((r) => r.data),
+
     onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ["districts"] });
       qc.invalidateQueries({ queryKey: ["district"] });
-      toast.success(res?.message || "District status updated successfully.");
+      toast({
+        title: "Success",
+        description: res?.message || "District status updated successfully.",
+      });
     },
+
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Failed to toggle status.");
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to toggle status.",
+        variant: "destructive",
+      });
     },
   });
 }
