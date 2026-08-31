@@ -65,6 +65,8 @@ export const updateTenantSchema = z.object({
   status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]).optional(),
   constituencyType: z.enum(["ASSEMBLY", "PARLIAMENTARY"]).optional(),
   constituencyCode: z.string().optional(),
+  planId: z.string().optional(),
+  billingCycle: z.enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"]).optional(),
 });
 
 // ─── List Tenants Query ────────────────────────────────

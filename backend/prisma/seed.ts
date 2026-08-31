@@ -909,6 +909,13 @@ async function main() {
       category: "core",
       sortOrder: 31,
     },
+    {
+      code: "correspondence",
+      name: "Correspondence",
+      description: "Manage official citizen and department correspondence letters and files.",
+      category: "engagement",
+      sortOrder: 32,
+    },
   ];
 
   const savedModules = [];

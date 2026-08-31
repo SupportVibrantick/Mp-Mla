@@ -255,13 +255,13 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           label: "Events",
           icon: CalendarDays,
           href: "/events",
-          module: "meeting",
+          module: "events",
         },
         {
           label: "Janata Darbar",
           icon: Users,
           href: "/janata-darbar",
-          module: "meeting",
+          module: "janata_darbar",
         },
         {
           label: "Appointments",

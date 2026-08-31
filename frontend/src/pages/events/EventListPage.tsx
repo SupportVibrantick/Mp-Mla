@@ -84,7 +84,7 @@ export default function EventListPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Events & Rallies</h1>
           <p className="text-muted-foreground">Manage constituency events, rallies, meetings, and public forums.</p>
         </div>
-        <PermissionGate module="meeting" action="create">
+        <PermissionGate module="events" action="create">
           <Link href="/events/new">
             <Button className="gap-2 font-bold rounded-xl shadow-sm h-11 bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90">
               <Plus className="h-4 w-4" /> Create Event
@@ -233,7 +233,7 @@ export default function EventListPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
-                        <PermissionGate module="meeting" action="update">
+                        <PermissionGate module="events" action="update">
                           <DropdownMenuItem className="cursor-pointer text-xs font-semibold">
                             <Link href={`/events/${event.id}/edit`}>
                               <span className="flex items-center"><Edit className="h-4 w-4 mr-2 text-blue-600" /> Edit Details</span>
@@ -255,7 +255,7 @@ export default function EventListPage() {
                             </>
                           )}
                         </PermissionGate>
-                        <PermissionGate module="meeting" action="delete">
+                        <PermissionGate module="events" action="delete">
                           <DropdownMenuItem className="cursor-pointer text-xs font-semibold text-red-600" onClick={() => handleDelete(event.id)}>
                             <Trash2 className="h-4 w-4 mr-2" /> Delete Event
                           </DropdownMenuItem>
@@ -340,14 +340,14 @@ export default function EventListPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
-                          <PermissionGate module="meeting" action="update">
+                          <PermissionGate module="events" action="update">
                             <DropdownMenuItem className="cursor-pointer text-xs font-semibold">
                               <Link href={`/events/${event.id}/edit`}>
                                 <span className="flex items-center"><Edit className="h-4 w-4 mr-2 text-blue-600" /> Edit Details</span>
                               </Link>
                             </DropdownMenuItem>
                           </PermissionGate>
-                          <PermissionGate module="meeting" action="delete">
+                          <PermissionGate module="events" action="delete">
                             <DropdownMenuItem className="cursor-pointer text-xs font-semibold text-red-600" onClick={() => handleDelete(event.id)}>
                               <Trash2 className="h-4 w-4 mr-2" /> Delete Event
                             </DropdownMenuItem>

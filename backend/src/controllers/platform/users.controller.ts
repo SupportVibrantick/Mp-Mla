@@ -77,6 +77,22 @@ export async function updatePlatformUser(
     const id = getParamId(req);
     const { name, email, role, isActive, password } = req.body;
 
+    const target = await prisma.platformUser.findUnique({ where: { id } });
+    if (!target) throw ApiError.notFound("User not found");
+
+    if (isActive === false && id === req.platformUser?.id) {
+      throw ApiError.badRequest("You cannot deactivate your own account");
+    }
+
+    if (target.role === "SUPER_ADMIN" && (isActive === false || (role !== undefined && role !== "SUPER_ADMIN"))) {
+      const activeSuperAdminCount = await prisma.platformUser.count({
+        where: { role: "SUPER_ADMIN", isActive: true },
+      });
+      if (activeSuperAdminCount <= 1) {
+        throw ApiError.badRequest("Cannot deactivate or demote the last active super admin");
+      }
+    }
+
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email;

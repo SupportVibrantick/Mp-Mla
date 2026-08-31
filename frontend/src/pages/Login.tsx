@@ -319,6 +319,19 @@ export default function Login() {
                   )}
                 </Button>
               </form>
+
+              {/* Citizen Voter Verification Link */}
+              <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                  Are you a citizen?{" "}
+                  <Link
+                    to="/voter-verification"
+                    className="font-bold text-[#13538A] dark:text-[#38bdf8] hover:underline"
+                  >
+                    Verify Voter Details
+                  </Link>
+                </p>
+              </div>
             </CardContent>
           </Card>
 

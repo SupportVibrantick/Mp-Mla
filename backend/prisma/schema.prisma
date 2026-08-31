@@ -422,6 +422,7 @@ model Tenant {
 
   geographyImportJobs GeographyImportJob[]
   constituencyWards   ConstituencyWard[]
+  voterIdentityVerifications VoterIdentityVerification[]
 
   @@index([status])
   @@map("tenants")
@@ -2103,6 +2104,7 @@ model Voter {
   relationType String? // "F" (Father), "H" (Husband), "M" (Mother)
   gender       VoterGender
   age          Int?
+  photoUrl     String?
 
   // Address
   houseNo  String?
@@ -2124,11 +2126,12 @@ model Voter {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ward        Ward           @relation(fields: [wardId], references: [id])
-  wardArea    WardArea?      @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
-  uploadBatch BulkUploadJob? @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
-  booth       Booth?         @relation(fields: [boothId], references: [id], onDelete: SetNull)
+  tenant      Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward        Ward                        @relation(fields: [wardId], references: [id])
+  wardArea    WardArea?                   @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
+  uploadBatch BulkUploadJob?              @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
+  booth       Booth?                      @relation(fields: [boothId], references: [id], onDelete: SetNull)
+  identityVerifications VoterIdentityVerification[]
 
   @@unique([tenantId, voterIdNumber])
   @@index([tenantId])
@@ -2144,6 +2147,37 @@ model Voter {
   @@index([tenantId, wardId, boothNo])
   @@index([tenantId, wardId, sectionNo])
   @@map("voters")
+}
+
+model VoterIdentityVerification {
+  id            String                  @id @default(cuid())
+  tenantId      String
+  voterId       String
+  method        VoterVerificationMethod
+  status        VoterVerificationStatus
+  provider      String?
+  referenceId   String?
+  verifiedAt    DateTime?
+  failureReason String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  voter  Voter  @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, voterId])
+  @@index([tenantId, status])
+  @@map("voter_identity_verifications")
+}
+
+enum VoterVerificationMethod {
+  AADHAAR_OTP
+}
+
+enum VoterVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
 }
 
 model BulkUploadJob {

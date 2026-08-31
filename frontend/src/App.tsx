@@ -77,6 +77,7 @@ import EventDetailPage from "./pages/events/EventDetailPage";
 import JanataDarbarListPage from "./pages/janataDarbar/JanataDarbarListPage";
 import JanataDarbarFormPage from "./pages/janataDarbar/JanataDarbarFormPage";
 import JanataDarbarSessionPage from "./pages/janataDarbar/JanataDarbarSessionPage";
+import VoterVerificationPage from "./pages/voterVerification/VoterVerificationPage";
 
 import CompetitorListPage from "./pages/competitors/CompetitorListPage";
 import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
@@ -606,43 +607,43 @@ function Router() {
       </Route>
 
       <Route path="/events">
-        <ProtectedRoute module="meeting" action="read">
+        <ProtectedRoute module="events" action="read">
           <EventListPage />
         </ProtectedRoute>
       </Route>
       <Route path="/events/new">
-        <ProtectedRoute module="meeting" action="create">
+        <ProtectedRoute module="events" action="create">
           <EventFormPage />
         </ProtectedRoute>
       </Route>
       <Route path="/events/:id">
-        <ProtectedRoute module="meeting" action="read">
+        <ProtectedRoute module="events" action="read">
           <EventDetailPage />
         </ProtectedRoute>
       </Route>
       <Route path="/events/:id/edit">
-        <ProtectedRoute module="meeting" action="update">
+        <ProtectedRoute module="events" action="update">
           <EventFormPage />
         </ProtectedRoute>
       </Route>
 
       <Route path="/janata-darbar">
-        <ProtectedRoute module="meeting" action="read">
+        <ProtectedRoute module="janata_darbar" action="read">
           <JanataDarbarListPage />
         </ProtectedRoute>
       </Route>
       <Route path="/janata-darbar/new">
-        <ProtectedRoute module="meeting" action="create">
+        <ProtectedRoute module="janata_darbar" action="create">
           <JanataDarbarFormPage />
         </ProtectedRoute>
       </Route>
       <Route path="/janata-darbar/:id">
-        <ProtectedRoute module="meeting" action="read">
+        <ProtectedRoute module="janata_darbar" action="read">
           <JanataDarbarSessionPage />
         </ProtectedRoute>
       </Route>
       <Route path="/janata-darbar/:id/edit">
-        <ProtectedRoute module="meeting" action="update">
+        <ProtectedRoute module="janata_darbar" action="update">
           <JanataDarbarFormPage />
         </ProtectedRoute>
       </Route>
@@ -652,6 +653,8 @@ function Router() {
           <RecycleBinPage />
         </ProtectedRoute>
       </Route>
+
+      <Route path="/voter-verification" component={VoterVerificationPage} />
 
       <Route path="/change-password" component={ChangePassword} />
 

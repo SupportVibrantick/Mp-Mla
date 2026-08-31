@@ -135,6 +135,8 @@ const updateTenantSchema = z.object({
   termEndDate: z.string().optional(),
 
   status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]),
+  planId: z.string().optional(),
+  billingCycle: z.enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"]).optional(),
 });
 
 const createTenantUserSchema = z.object({
@@ -415,6 +417,8 @@ export default function TenantsPage() {
       termStartDate: tenant.termStartDate ? new Date(tenant.termStartDate).toISOString().split("T")[0] : "",
       termEndDate: tenant.termEndDate ? new Date(tenant.termEndDate).toISOString().split("T")[0] : "",
       status: tenant.status,
+      planId: tenant.subscription?.planId || tenant.subscription?.plan?.id || "",
+      billingCycle: tenant.subscription?.billingCycle || "MONTHLY",
     });
     setEditOpen(true);
   };
@@ -1275,6 +1279,43 @@ export default function TenantsPage() {
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Subscription Plan</Label>
+                  <Select
+                    value={editForm.watch("planId") || "none"}
+                    onValueChange={(val) => editForm.setValue("planId", val === "none" ? "" : val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="No Plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Plan</SelectItem>
+                      {plans.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} (₹{p.priceMonthly}/mo)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Billing Cycle</Label>
+                  <Select
+                    value={editForm.watch("billingCycle") || "MONTHLY"}
+                    onValueChange={(val) => editForm.setValue("billingCycle", val as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MONTHLY">Monthly</SelectItem>
+                      <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                      <SelectItem value="HALF_YEARLY">Half Yearly</SelectItem>
+                      <SelectItem value="YEARLY">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <DialogFooter className="pt-4 border-t">

@@ -3,6 +3,14 @@ import prisma from "../../lib/prisma.js";
 import { createUploader, getUploadPath } from "../../lib/upload.js";
 import { sendEmail, buildInstitutionRequestEmailHtml } from "../../lib/email.js";
 import { getSetting } from "../../lib/settings.js";
+import {
+  searchVoter,
+  startAadhaarVerification,
+  confirmAadhaarVerification,
+  updateVoterDetails,
+} from "../../controllers/public/voterVerification.controller.js";
+
+const voterUploader = createUploader("voters");
 
 
 const router = Router();
@@ -260,6 +268,12 @@ router.post(
     }
   },
 );
+
+// ─── Voter Identity Verification ─────────────────────────────
+router.post("/verify/search", searchVoter);
+router.post("/verify/aadhaar/start", startAadhaarVerification);
+router.post("/verify/aadhaar/confirm", confirmAadhaarVerification);
+router.put("/verify/update/:voterId", voterUploader.single("photo"), updateVoterDetails);
 
 export default router;
 

@@ -96,7 +96,7 @@ export default function JanataDarbarListPage() {
               grievances queue.
             </p>
           </div>
-          <PermissionGate module="meeting" action="create">
+          <PermissionGate module="janata_darbar" action="create">
             <Link href="/janata-darbar/new">
               <Button className="gap-2 font-bold rounded-xl shadow-sm h-11 bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90">
                 <Plus className="h-4 w-4" /> Start New Session
@@ -183,7 +183,7 @@ export default function JanataDarbarListPage() {
             <p className="text-sm font-semibold text-muted-foreground">
               No Janata Darbar sessions created yet.
             </p>
-            <PermissionGate module="meeting" action="create">
+            <PermissionGate module="janata_darbar" action="create">
               <Link href="/janata-darbar/new">
                 <Button size="sm" className="mt-4 font-bold rounded-xl">
                   Create First Session
@@ -289,7 +289,7 @@ export default function JanataDarbarListPage() {
                             align="end"
                             className="rounded-xl"
                           >
-                            <PermissionGate module="meeting" action="update">
+                            <PermissionGate module="janata_darbar" action="update">
                               <DropdownMenuItem className="cursor-pointer text-xs font-semibold">
                                 <Link href={`/janata-darbar/${s.id}/edit`}>
                                   <span className="flex items-center">
@@ -308,7 +308,7 @@ export default function JanataDarbarListPage() {
                                 </DropdownMenuItem>
                               )}
                             </PermissionGate>
-                            <PermissionGate module="meeting" action="delete">
+                            <PermissionGate module="janata_darbar" action="delete">
                               <DropdownMenuItem
                                 className="cursor-pointer text-xs font-semibold text-red-600"
                                 onClick={() => handleDelete(s.id)}

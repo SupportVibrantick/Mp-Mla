@@ -354,7 +354,7 @@ export default function EventDetailPage() {
           <Badge className={`${statusInfo.color} font-bold text-xs uppercase px-3 py-1 border rounded-lg mr-2`}>
             {statusInfo.label}
           </Badge>
-          <PermissionGate module="meeting" action="update">
+          <PermissionGate module="events" action="update">
             {event.status === "SCHEDULED" && (
               <Button onClick={() => handleStatusChange("ACTIVE")} className="bg-amber-600 hover:bg-amber-700 font-bold text-xs rounded-xl h-10">
                 Start Event
@@ -413,7 +413,7 @@ export default function EventDetailPage() {
             <TabsContent value="agenda" className="mt-4 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Event Agenda</h3>
-                <PermissionGate module="meeting" action="update">
+                <PermissionGate module="events" action="update">
                   <Button size="sm" onClick={() => openAgendaDlg()} className="gap-1 text-xs font-bold rounded-lg h-9">
                     <Plus className="h-3.5 w-3.5" /> Add Slot
                   </Button>
@@ -436,7 +436,7 @@ export default function EventDetailPage() {
                           <h4 className="font-bold text-sm text-foreground">{item.title}</h4>
                           <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
                         </div>
-                        <PermissionGate module="meeting" action="update">
+                        <PermissionGate module="events" action="update">
                           <div className="flex items-center gap-1.5">
                             <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-blue-600" onClick={() => openAgendaDlg(item)}>
                               <Edit className="h-3.5 w-3.5" />
@@ -457,7 +457,7 @@ export default function EventDetailPage() {
             <TabsContent value="guests" className="mt-4 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Guest Registry</h3>
-                <PermissionGate module="meeting" action="update">
+                <PermissionGate module="events" action="update">
                   <Button size="sm" onClick={() => openGuestDlg()} className="gap-1 text-xs font-bold rounded-lg h-9">
                     <Plus className="h-3.5 w-3.5" /> Add Guest
                   </Button>
@@ -507,7 +507,7 @@ export default function EventDetailPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <PermissionGate module="meeting" action="update">
+                            <PermissionGate module="events" action="update">
                               <div className="flex items-center gap-1.5">
                                 <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-blue-600" onClick={() => openGuestDlg(g)}>
                                   <Edit className="h-3.5 w-3.5" />
@@ -530,7 +530,7 @@ export default function EventDetailPage() {
             <TabsContent value="attendance" className="mt-4 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Guest Attendance log</h3>
-                <PermissionGate module="meeting" action="update">
+                <PermissionGate module="events" action="update">
                   <Button size="sm" onClick={() => setAttendanceDlg(true)} className="gap-1 text-xs font-bold rounded-lg h-9">
                     <Plus className="h-3.5 w-3.5" /> Record Attendance
                   </Button>
@@ -571,7 +571,7 @@ export default function EventDetailPage() {
                             {att.checkedOutAt ? format(new Date(att.checkedOutAt), "p") : "-"}
                           </TableCell>
                           <TableCell>
-                            <PermissionGate module="meeting" action="update">
+                            <PermissionGate module="events" action="update">
                               <div className="flex gap-1.5">
                                 {!att.checkedInAt ? (
                                   <Button size="sm" onClick={() => checkInMut.mutateAsync({ id, attendanceId: att.id })} className="text-[10px] h-7 px-2 font-bold bg-green-600 hover:bg-green-700 text-white">
@@ -599,7 +599,7 @@ export default function EventDetailPage() {
             <TabsContent value="team" className="mt-4 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Staff Assignment</h3>
-                <PermissionGate module="meeting" action="update">
+                <PermissionGate module="events" action="update">
                   <Button size="sm" onClick={() => setTeamDlg(true)} className="gap-1 text-xs font-bold rounded-lg h-9">
                     <UserPlus className="h-3.5 w-3.5" /> Assign Staff
                   </Button>
@@ -633,7 +633,7 @@ export default function EventDetailPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <PermissionGate module="meeting" action="update">
+                            <PermissionGate module="events" action="update">
                               <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-red-600" onClick={() => handleRemoveTeamMember(m.userId)}>
                                 <UserX className="h-3.5 w-3.5" />
                               </Button>
@@ -651,7 +651,7 @@ export default function EventDetailPage() {
             <TabsContent value="media" className="mt-4 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Media & Attachments</h3>
-                <PermissionGate module="meeting" action="update">
+                <PermissionGate module="events" action="update">
                   <Button size="sm" onClick={() => setMediaDlg(true)} className="gap-1 text-xs font-bold rounded-lg h-9">
                     <Plus className="h-3.5 w-3.5" /> Add Media
                   </Button>
@@ -677,7 +677,7 @@ export default function EventDetailPage() {
                           </a>
                         </div>
                       </div>
-                      <PermissionGate module="meeting" action="update">
+                      <PermissionGate module="events" action="update">
                         <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full text-red-600" onClick={() => handleDeleteMedia(m.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -698,7 +698,7 @@ export default function EventDetailPage() {
                 <CardTitle className="text-sm font-bold uppercase tracking-wider text-foreground">Post-Event Report</CardTitle>
                 <CardDescription className="text-xs">Outcomes, decisions, and outcomes.</CardDescription>
               </div>
-              <PermissionGate module="meeting" action="update">
+              <PermissionGate module="events" action="update">
                 {!isEditingReport && (
                   <Button size="sm" variant="outline" className="h-8 rounded-lg text-[10px] font-bold" onClick={handleStartEditReport}>
                     Edit Report

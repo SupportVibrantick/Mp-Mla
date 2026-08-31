@@ -555,6 +555,37 @@ export const updateTenant = async (
         },
       });
 
+      // 5. Create or update tenant subscription if planId is provided
+      if (updateData.planId) {
+        const plan = await tx.subscriptionPlan.findUnique({
+          where: { id: updateData.planId },
+        });
+        if (plan) {
+          const currentPeriodStart = new Date();
+          const currentPeriodEnd = calculatePeriodEnd(updateData.billingCycle || "MONTHLY");
+
+          await tx.tenantSubscription.upsert({
+            where: { tenantId: id },
+            create: {
+              tenantId: id,
+              planId: updateData.planId,
+              status: "ACTIVE",
+              billingCycle: updateData.billingCycle || "MONTHLY",
+              currentPeriodStart,
+              currentPeriodEnd,
+              nextPaymentDue: currentPeriodEnd,
+            },
+            update: {
+              planId: updateData.planId,
+              billingCycle: updateData.billingCycle || "MONTHLY",
+            },
+          });
+
+          // Sync modules to plan
+          await syncTenantModulesToPlan(id, updateData.planId, tx);
+        }
+      }
+
       return tenant;
     });
 

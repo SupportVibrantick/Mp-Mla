@@ -56,6 +56,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { platformUsersApi } from "@/lib/api";
 
 const createUserSchema = z.object({
@@ -108,6 +109,7 @@ function getRoleLabel(role: string) {
 
 export default function PlatformUsersPage() {
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -400,6 +402,7 @@ export default function PlatformUsersPage() {
                               <DropdownMenuItem
                                 onClick={() => setToggleStatusAlert(user)}
                                 className={user.isActive ? "text-destructive focus:text-destructive" : "text-emerald-700 focus:text-emerald-700"}
+                                disabled={user.isActive && (user.id === currentUser?.id || user.role === "SUPER_ADMIN")}
                               >
                                 {user.isActive ? (
                                   <>
@@ -579,7 +582,12 @@ export default function PlatformUsersPage() {
                 <Label>Role</Label>
                 <Select
                   value={editForm.watch("role")}
-                  onValueChange={(val) => editForm.setValue("role", val as any, { shouldValidate: true })}
+                  onValueChange={(val) => {
+                    editForm.setValue("role", val as any, { shouldValidate: true });
+                    if (val === "SUPER_ADMIN") {
+                      editForm.setValue("isActive", true);
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -601,6 +609,7 @@ export default function PlatformUsersPage() {
                 <Switch
                   checked={editForm.watch("isActive")}
                   onCheckedChange={(checked) => editForm.setValue("isActive", checked)}
+                  disabled={(editForm.watch("role") === "SUPER_ADMIN" && editForm.watch("isActive")) || selectedUser?.id === currentUser?.id}
                 />
               </div>
 
