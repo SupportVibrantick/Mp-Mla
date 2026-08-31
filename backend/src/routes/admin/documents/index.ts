@@ -33,6 +33,9 @@ import {
   uploadVersionSchema,
   linkDocumentSchema,
 } from "../../../schemas/admin/document/index.js";
+import { createUploader, enforceStorageAndTrack } from "../../../lib/upload.js";
+
+const documentsUploader = createUploader("documents");
 
 const router = Router();
 
@@ -41,7 +44,14 @@ router.get("/stats", requirePermission("documents", "read"), getDocumentStats);
 
 // Document CRUD
 router.get("/", requirePermission("documents", "read"), listDocuments);
-router.post("/", requirePermission("documents", "create"), validate(createDocumentSchema), createDocument);
+router.post(
+  "/",
+  requirePermission("documents", "create"),
+  documentsUploader.single("file"),
+  enforceStorageAndTrack,
+  validate(createDocumentSchema),
+  createDocument
+);
 router.get("/:id", requirePermission("documents", "read"), getDocument);
 router.put("/:id", requirePermission("documents", "update"), validate(updateDocumentSchema), updateDocument);
 router.delete("/:id", requirePermission("documents", "delete"), deleteDocument);

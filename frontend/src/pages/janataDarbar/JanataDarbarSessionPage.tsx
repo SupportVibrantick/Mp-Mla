@@ -92,7 +92,7 @@ export default function JanataDarbarSessionPage() {
     referred: 0,
     absent: 0,
   };
-  const departments = deptsRes?.data?.departments || [];
+  const departments = deptsRes?.data || [];
   const officers = usersRes?.data?.users || [];
 
   // Mutations
@@ -157,7 +157,10 @@ export default function JanataDarbarSessionPage() {
     await registerTokenMut.mutateAsync({
       id,
       payload: {
-        ...tokenForm,
+        visitorName: tokenForm.visitorName,
+        phone: tokenForm.visitorPhone || null,
+        address: tokenForm.visitorAddress || null,
+        purpose: tokenForm.issueSummary || null,
         departmentId:
           tokenForm.departmentId === "none" ? null : tokenForm.departmentId,
       },
@@ -230,8 +233,8 @@ export default function JanataDarbarSessionPage() {
       state: {
         openCreate: true,
         citizenName: token.visitorName,
-        citizenPhone: token.visitorPhone,
-        issue: token.issueSummary,
+        citizenPhone: token.phone,
+        issue: token.purpose,
         departmentId: token.departmentId || "",
         janataSessionId: id,
         janataTokenId: token.id,
@@ -244,7 +247,7 @@ export default function JanataDarbarSessionPage() {
       state: {
         openCreate: true,
         title: `Janata Darbar action - ${token.visitorName}`,
-        description: token.issueSummary,
+        description: token.purpose,
         departmentId: token.departmentId || "",
         janataSessionId: id,
         janataTokenId: token.id,
@@ -370,7 +373,7 @@ export default function JanataDarbarSessionPage() {
                           {currentToken.visitorName}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {currentToken.visitorPhone ||
+                          {currentToken.phone ||
                             "No contact info provided"}
                         </p>
                       </div>
@@ -422,7 +425,7 @@ export default function JanataDarbarSessionPage() {
                         Issue Summary
                       </Label>
                       <p className="text-foreground leading-relaxed mt-1 font-medium">
-                        {currentToken.issueSummary}
+                        {currentToken.purpose}
                       </p>
                     </div>
 
@@ -495,7 +498,7 @@ export default function JanataDarbarSessionPage() {
                           Issue
                         </TableHead>
                         <TableHead className="font-bold text-xs">
-                          Priority
+                          Concern Department
                         </TableHead>
                         <TableHead className="w-[100px]"></TableHead>
                       </TableRow>
@@ -512,15 +515,15 @@ export default function JanataDarbarSessionPage() {
                           <TableCell className="font-semibold text-xs text-foreground">
                             {t.visitorName}
                             <p className="text-[10px] text-muted-foreground font-normal mt-0.5">
-                              {t.visitorPhone || ""}
+                              {t.phone || ""}
                             </p>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                            {t.issueSummary}
+                            {t.purpose}
                           </TableCell>
                           <TableCell>
-                            <Badge className="font-bold text-[9px] border">
-                              {t.priority}
+                            <Badge className="font-bold text-[9px] border bg-slate-50 text-slate-800 dark:bg-slate-900/50 dark:text-slate-200">
+                              {t.department?.name || "General"}
                             </Badge>
                           </TableCell>
                           <TableCell className="pr-6">
@@ -598,7 +601,7 @@ export default function JanataDarbarSessionPage() {
                               {t.visitorName}
                             </h4>
                             <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
-                              {t.issueSummary}
+                              {t.purpose}
                             </p>
                           </div>
                         </div>

@@ -16,6 +16,7 @@ import {
   useUpdateEventGuest,
   useDeleteEventGuest,
   useEventAttendance,
+  useRecordEventAttendance,
   useCheckInEventAttendee,
   useCheckOutEventAttendee,
   useEventMedia,
@@ -25,6 +26,14 @@ import {
   useUpsertEventReport,
   getEventStatusInfo
 } from "@/hooks/useEvents";
+import { API_BASE_URL } from "@/lib/api";
+
+const getFileUrl = (url: string) => {
+  if (!url) return "#";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const backendBase = API_BASE_URL.replace("/api", "");
+  return `${backendBase}${url}`;
+};
 import { useUsers } from "@/hooks/useUsers";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -63,7 +72,8 @@ import {
   UserX,
   ExternalLink,
   ShieldCheck,
-  CheckSquare
+  CheckSquare,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -107,6 +117,7 @@ export default function EventDetailPage() {
   const addMediaMut = useAddEventMedia();
   const deleteMediaMut = useDeleteEventMedia();
   const upsertReportMut = useUpsertEventReport();
+  const recordAttendanceMut = useRecordEventAttendance();
 
   // Modal / Dialog States
   const [agendaDlg, setAgendaDlg] = useState(false);
@@ -115,14 +126,19 @@ export default function EventDetailPage() {
 
   const [guestDlg, setGuestDlg] = useState(false);
   const [editingGuest, setEditingGuest] = useState<any>(null);
-  const [guestForm, setGuestForm] = useState({ name: "", phone: "", email: "", isVip: false, designation: "" });
+  const [guestForm, setGuestForm] = useState({ name: "", phone: "", email: "", isVip: false, designation: "", invitationStatus: "PENDING" });
+  const [guestErrors, setGuestErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
 
   const [teamDlg, setTeamDlg] = useState(false);
   const [selectedOfficerId, setSelectedOfficerId] = useState("");
   const [teamRole, setTeamRole] = useState("COORDINATOR");
 
   const [mediaDlg, setMediaDlg] = useState(false);
-  const [mediaForm, setMediaForm] = useState({ title: "", url: "", type: "IMAGE" as "IMAGE" | "VIDEO" });
+  const [mediaForm, setMediaForm] = useState({ title: "", url: "", type: "PHOTO" as "PHOTO" | "VIDEO" });
+  const [selectedMediaFile, setSelectedMediaFile] = useState<File | null>(null);
+
+  const [attendanceDlg, setAttendanceDlg] = useState(false);
+  const [attendanceForm, setAttendanceForm] = useState({ name: "", phone: "", category: "GENERAL" });
 
   const [reportForm, setReportForm] = useState({ summary: "", keyDecisions: "", actionPoints: "", outcomes: "" });
   const [isEditingReport, setIsEditingReport] = useState(false);
@@ -193,20 +209,35 @@ export default function EventDetailPage() {
         phone: item.phone || "",
         email: item.email || "",
         isVip: !!item.isVip,
-        designation: item.designation || ""
+        designation: item.designation || "",
+        invitationStatus: item.invitationStatus || "PENDING"
       });
     } else {
       setEditingGuest(null);
-      setGuestForm({ name: "", phone: "", email: "", isVip: false, designation: "" });
+      setGuestForm({ name: "", phone: "", email: "", isVip: false, designation: "", invitationStatus: "PENDING" });
     }
+    setGuestErrors({});
     setGuestDlg(true);
   };
 
   const handleSaveGuest = async () => {
-    if (!guestForm.name) {
-      toast.error("Guest Name is required.");
+    const errs: { name?: string; email?: string; phone?: string } = {};
+    if (!guestForm.name.trim()) {
+      errs.name = "Guest Name is required.";
+    }
+    if (guestForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestForm.email)) {
+      errs.email = "Please enter a valid email address.";
+    }
+    if (guestForm.phone && !/^\+?[0-9]{10,15}$/.test(guestForm.phone)) {
+      errs.phone = "Please enter a valid phone number (10-15 digits).";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setGuestErrors(errs);
       return;
     }
+    setGuestErrors({});
+
     if (editingGuest) {
       await updateGuestMut.mutateAsync({ id, guestId: editingGuest.id, payload: guestForm });
     } else {
@@ -239,16 +270,43 @@ export default function EventDetailPage() {
 
   // Media handlers
   const handleAddMedia = async () => {
-    if (!mediaForm.title || !mediaForm.url) return;
-    await addMediaMut.mutateAsync({ id, payload: mediaForm });
+    if (!mediaForm.title || !selectedMediaFile) {
+      toast.error("Please fill in title and select a media file.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", selectedMediaFile);
+    formData.append("type", mediaForm.type);
+    formData.append("fileName", selectedMediaFile.name);
+    formData.append("caption", mediaForm.title);
+
+    await addMediaMut.mutateAsync({ id, payload: formData });
     setMediaDlg(false);
-    setMediaForm({ title: "", url: "", type: "IMAGE" });
+    setSelectedMediaFile(null);
+    setMediaForm({ title: "", url: "", type: "PHOTO" });
   };
 
   const handleDeleteMedia = async (mediaId: string) => {
     if (confirm("Remove this media link?")) {
       await deleteMediaMut.mutateAsync({ id, mediaId });
     }
+  };
+
+  const handleSaveAttendance = async () => {
+    if (!attendanceForm.name) {
+      toast.error("Name is required.");
+      return;
+    }
+    if (attendanceForm.phone && !/^\+?[0-9]{10,15}$/.test(attendanceForm.phone)) {
+      toast.error("Please enter a valid phone number (10-15 digits).");
+      return;
+    }
+    await recordAttendanceMut.mutateAsync({
+      id,
+      payload: attendanceForm
+    });
+    setAttendanceDlg(false);
+    setAttendanceForm({ name: "", phone: "", category: "GENERAL" });
   };
 
   // Report handlers
@@ -437,9 +495,15 @@ export default function EventDetailPage() {
                             )}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">{g.designation || "N/A"}</TableCell>
-                          <TableCell>
-                            <Badge className="font-bold text-[9px] border">
-                              {g.rsvpStatus || "PENDING"}
+                           <TableCell>
+                            <Badge className={`${
+                              g.invitationStatus === "ACCEPTED" 
+                                ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-950/20 dark:text-green-400" 
+                                : g.invitationStatus === "DECLINED" 
+                                ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/20 dark:text-red-400" 
+                                : "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400"
+                            } font-bold text-[9px] border`}>
+                              {g.invitationStatus || "PENDING"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -464,7 +528,14 @@ export default function EventDetailPage() {
 
             {/* TAB: Attendance */}
             <TabsContent value="attendance" className="mt-4 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Guest Attendance log</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Guest Attendance log</h3>
+                <PermissionGate module="meeting" action="update">
+                  <Button size="sm" onClick={() => setAttendanceDlg(true)} className="gap-1 text-xs font-bold rounded-lg h-9">
+                    <Plus className="h-3.5 w-3.5" /> Record Attendance
+                  </Button>
+                </PermissionGate>
+              </div>
 
               {attendanceList.length === 0 ? (
                 <div className="text-center py-10 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-border/30">
@@ -486,27 +557,27 @@ export default function EventDetailPage() {
                       {attendanceList.map((att: any) => (
                         <TableRow key={att.id}>
                           <TableCell className="font-semibold text-xs text-foreground">
-                            {att.guestName || "Invited Guest"}
+                            {att.name || "Invited Guest"}
                           </TableCell>
                           <TableCell>
-                            <Badge className={`${att.attended ? "bg-green-50 text-green-700 border-green-200" : "bg-slate-50 text-slate-700 border-slate-200"} font-bold text-[9px] border`}>
-                              {att.attended ? "PRESENT" : "ABSENT"}
+                            <Badge className={`${att.checkedInAt ? "bg-green-50 text-green-700 border-green-200" : "bg-slate-50 text-slate-700 border-slate-200"} font-bold text-[9px] border`}>
+                              {att.checkedInAt ? "PRESENT" : "ABSENT"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            {att.checkInTime ? format(new Date(att.checkInTime), "p") : "-"}
+                            {att.checkedInAt ? format(new Date(att.checkedInAt), "p") : "-"}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            {att.checkOutTime ? format(new Date(att.checkOutTime), "p") : "-"}
+                            {att.checkedOutAt ? format(new Date(att.checkedOutAt), "p") : "-"}
                           </TableCell>
                           <TableCell>
                             <PermissionGate module="meeting" action="update">
                               <div className="flex gap-1.5">
-                                {!att.checkInTime ? (
+                                {!att.checkedInAt ? (
                                   <Button size="sm" onClick={() => checkInMut.mutateAsync({ id, attendanceId: att.id })} className="text-[10px] h-7 px-2 font-bold bg-green-600 hover:bg-green-700 text-white">
                                     Check In
                                   </Button>
-                                ) : !att.checkOutTime ? (
+                                ) : !att.checkedOutAt ? (
                                   <Button size="sm" onClick={() => checkOutMut.mutateAsync({ id, attendanceId: att.id })} className="text-[10px] h-7 px-2 font-bold bg-rose-600 hover:bg-rose-700 text-white">
                                     Check Out
                                   </Button>
@@ -600,9 +671,9 @@ export default function EventDetailPage() {
                           {m.type === "VIDEO" ? <Video className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
                         </div>
                         <div>
-                          <h4 className="font-bold text-xs text-foreground line-clamp-1">{m.title}</h4>
-                          <a href={m.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
-                            Open Link <ExternalLink className="h-2.5 w-2.5" />
+                          <h4 className="font-bold text-xs text-foreground line-clamp-1">{m.caption || m.fileName}</h4>
+                          <a href={getFileUrl(m.fileUrl)} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
+                            Open File <ExternalLink className="h-2.5 w-2.5" />
                           </a>
                         </div>
                       </div>
@@ -771,10 +842,16 @@ export default function EventDetailPage() {
               <Label className="text-xs font-semibold">Guest Name</Label>
               <Input
                 placeholder="e.g. MLA Shri Mayank Goyal"
-                className="rounded-xl border-border/50 text-xs h-10"
+                className={`rounded-xl border-border/50 text-xs h-10 ${guestErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 value={guestForm.name}
-                onChange={(e) => setGuestForm({ ...guestForm, name: e.target.value })}
+                onChange={(e) => {
+                  setGuestForm({ ...guestForm, name: e.target.value });
+                  if (guestErrors.name) setGuestErrors({ ...guestErrors, name: undefined });
+                }}
               />
+              {guestErrors.name && (
+                <p className="text-[10px] text-destructive font-semibold mt-0.5">{guestErrors.name}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Designation</Label>
@@ -790,20 +867,44 @@ export default function EventDetailPage() {
                 <Label className="text-xs font-semibold">Phone</Label>
                 <Input
                   placeholder="Phone"
-                  className="rounded-xl border-border/50 text-xs h-10"
+                  className={`rounded-xl border-border/50 text-xs h-10 ${guestErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   value={guestForm.phone}
-                  onChange={(e) => setGuestForm({ ...guestForm, phone: e.target.value })}
+                  onChange={(e) => {
+                    setGuestForm({ ...guestForm, phone: e.target.value });
+                    if (guestErrors.phone) setGuestErrors({ ...guestErrors, phone: undefined });
+                  }}
                 />
+                {guestErrors.phone && (
+                  <p className="text-[10px] text-destructive font-semibold mt-0.5">{guestErrors.phone}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Email</Label>
                 <Input
                   placeholder="Email"
-                  className="rounded-xl border-border/50 text-xs h-10"
+                  className={`rounded-xl border-border/50 text-xs h-10 ${guestErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   value={guestForm.email}
-                  onChange={(e) => setGuestForm({ ...guestForm, email: e.target.value })}
+                  onChange={(e) => {
+                    setGuestForm({ ...guestForm, email: e.target.value });
+                    if (guestErrors.email) setGuestErrors({ ...guestErrors, email: undefined });
+                  }}
                 />
+                {guestErrors.email && (
+                  <p className="text-[10px] text-destructive font-semibold mt-0.5">{guestErrors.email}</p>
+                )}
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">RSVP / Invitation Status</Label>
+              <select
+                className="w-full bg-background border border-border/50 rounded-xl px-3 h-10 text-xs font-medium focus:outline-none"
+                value={guestForm.invitationStatus || "PENDING"}
+                onChange={(e) => setGuestForm({ ...guestForm, invitationStatus: e.target.value })}
+              >
+                <option value="PENDING">Pending</option>
+                <option value="ACCEPTED">Accepted</option>
+                <option value="DECLINED">Declined</option>
+              </select>
             </div>
             <div className="flex items-center gap-2 pt-1.5">
               <input
@@ -876,25 +977,42 @@ export default function EventDetailPage() {
       <Dialog open={mediaDlg} onOpenChange={setMediaDlg}>
         <DialogContent className="rounded-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-foreground">Add Event Media / Photo URL</DialogTitle>
+            <DialogTitle className="text-sm font-bold text-foreground">Add Event Media / Attachment</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Media Title</Label>
+              <Label className="text-xs font-semibold">Select File <span className="text-destructive">*</span></Label>
+              <div className="border-2 border-dashed border-border/80 hover:border-primary/50 bg-muted/15 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 relative hover:bg-muted/20">
+                <input
+                  type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file) {
+                      setSelectedMediaFile(file);
+                      setMediaForm((prev) => ({
+                        ...prev,
+                        title: prev.title || file.name,
+                      }));
+                    }
+                  }}
+                />
+                <Upload className="h-7 w-7 text-muted-foreground animate-bounce mt-1" />
+                <span className="text-xs font-bold text-foreground text-center max-w-[250px] truncate">
+                  {selectedMediaFile ? selectedMediaFile.name : "Choose File or Drag & Drop"}
+                </span>
+                <span className="text-[10px] text-muted-foreground font-semibold">
+                  {selectedMediaFile ? `${(selectedMediaFile.size / 1024).toFixed(1)} KB` : "Supports Images, Videos, PDFs, Docs up to 50MB"}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Media Title / Caption <span className="text-destructive">*</span></Label>
               <Input
                 placeholder="e.g. Inauguration photo, News clipping"
                 className="rounded-xl border-border/50 text-xs h-10"
                 value={mediaForm.title}
                 onChange={(e) => setMediaForm({ ...mediaForm, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Attachment / URL</Label>
-              <Input
-                placeholder="https://..."
-                className="rounded-xl border-border/50 text-xs h-10"
-                value={mediaForm.url}
-                onChange={(e) => setMediaForm({ ...mediaForm, url: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
@@ -904,7 +1022,7 @@ export default function EventDetailPage() {
                 value={mediaForm.type}
                 onChange={(e) => setMediaForm({ ...mediaForm, type: e.target.value as any })}
               >
-                <option value="IMAGE">Image / Photo</option>
+                <option value="PHOTO">Image / Photo</option>
                 <option value="VIDEO">Video Link</option>
               </select>
             </div>
@@ -913,8 +1031,59 @@ export default function EventDetailPage() {
             <Button size="sm" variant="outline" className="rounded-xl h-9 text-xs font-bold" onClick={() => setMediaDlg(false)}>
               Cancel
             </Button>
-            <Button size="sm" className="rounded-xl h-9 text-xs font-bold bg-slate-900 text-white" onClick={handleAddMedia}>
-              Add Media Link
+            <Button size="sm" disabled={!selectedMediaFile || !mediaForm.title} className="rounded-xl h-9 text-xs font-bold bg-slate-900 text-white" onClick={handleAddMedia}>
+              Upload Media
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG: Record Attendance */}
+      <Dialog open={attendanceDlg} onOpenChange={setAttendanceDlg}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold text-foreground">Record Attendance / Check In</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Attendee Name <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="e.g. Rahul Sharma"
+                className="rounded-xl border-border/50 text-xs h-10"
+                value={attendanceForm.name}
+                onChange={(e) => setAttendanceForm({ ...attendanceForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Phone Number</Label>
+              <Input
+                placeholder="e.g. 9876543210"
+                className="rounded-xl border-border/50 text-xs h-10"
+                value={attendanceForm.phone}
+                onChange={(e) => setAttendanceForm({ ...attendanceForm, phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Category</Label>
+              <select
+                className="w-full bg-background border border-border/50 rounded-xl px-3 h-10 text-xs font-medium focus:outline-none"
+                value={attendanceForm.category}
+                onChange={(e) => setAttendanceForm({ ...attendanceForm, category: e.target.value })}
+              >
+                <option value="GENERAL">General Invitee</option>
+                <option value="VIP">VIP Guest</option>
+                <option value="MEDIA">Media / Press</option>
+                <option value="STAFF">Staff / Coordinator</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button size="sm" variant="outline" className="rounded-xl h-9 text-xs font-bold" onClick={() => setAttendanceDlg(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" disabled={!attendanceForm.name} className="rounded-xl h-9 text-xs font-bold bg-slate-900 text-white" onClick={handleSaveAttendance}>
+              Record & Check In
             </Button>
           </DialogFooter>
         </DialogContent>

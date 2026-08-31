@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import path from "path";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { requireTenantId } from "../../../utils/tenant.js";
@@ -479,12 +480,24 @@ export async function uploadApplicationDocument(
   try {
     const tenantId = requireTenantId(req);
     const appId = req.params.id as string;
-    const { fileName, fileUrl, fileType, fileSize, documentType } = req.body;
+    
+    let { fileName, fileUrl, fileType, fileSize, documentType } = req.body;
+
+    if (req.file) {
+      fileUrl = `/uploads/documents/${req.file.filename}`;
+      if (!fileName) fileName = req.file.originalname;
+      if (!fileType) fileType = path.extname(req.file.originalname).replace(".", "");
+      if (!fileSize) fileSize = Math.round(req.file.size / 1024); // Store in KB as standard in codebase
+    }
 
     const app = await prisma.schemeApplication.findFirst({
       where: { id: appId, tenantId, isDeleted: false },
     });
     if (!app) throw ApiError.notFound("Application not found");
+
+    if (!fileUrl || !fileName) {
+      throw ApiError.badRequest("File upload or fileUrl and fileName are required");
+    }
 
     const doc = await prisma.schemeApplicationDocument.create({
       data: {
@@ -493,7 +506,7 @@ export async function uploadApplicationDocument(
         fileName,
         fileUrl,
         fileType: fileType || null,
-        fileSize: fileSize ? parseInt(fileSize, 10) : null,
+        fileSize: fileSize ? parseInt(String(fileSize), 10) : null,
         documentType: documentType || null,
       },
     });

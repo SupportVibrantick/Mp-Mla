@@ -1,5 +1,13 @@
 import { useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
+import { API_BASE_URL } from "@/lib/api";
+
+const getFileUrl = (url: string) => {
+  if (!url) return "#";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const backendBase = API_BASE_URL.replace("/api", "");
+  return `${backendBase}${url}`;
+};
 import {
   useSchemeApplication,
   useUpdateSchemeApplicationStatus,
@@ -96,6 +104,7 @@ export default function SchemeApplicationDetailPage() {
   const [grievanceForm, setGrievanceForm] = useState({ subject: "", description: "", category: "GENERAL", priority: "MEDIUM" });
   const [docDlg, setDocDlg] = useState(false);
   const [docForm, setDocForm] = useState({ fileName: "", fileUrl: "", fileType: "", fileSize: "", documentType: "" });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const s = res?.data;
   const wards = wardsRes?.data?.wards || wardsRes?.data || [];
@@ -174,12 +183,20 @@ export default function SchemeApplicationDetailPage() {
   };
 
   const openDocDlg = () => {
+    setSelectedFile(null);
     setDocForm({ fileName: "", fileUrl: "", fileType: "", fileSize: "", documentType: "" });
     setDocDlg(true);
   };
   const saveDoc = async () => {
-    if (!docForm.fileName || !docForm.fileUrl) return;
-    await uploadDocMut.mutateAsync({ id: s.id, data: docForm });
+    if (!docForm.fileName || !selectedFile) return;
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("fileName", docForm.fileName);
+    formData.append("documentType", docForm.documentType);
+    formData.append("fileType", docForm.fileType);
+    formData.append("fileSize", docForm.fileSize);
+    
+    await uploadDocMut.mutateAsync({ id: s.id, data: formData });
     setDocDlg(false);
   };
 
@@ -363,7 +380,7 @@ export default function SchemeApplicationDetailPage() {
                   documents.map((d: any) => (
                     <TableRow key={d.id}>
                       <TableCell>
-                        <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        <a href={getFileUrl(d.fileUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           {d.fileName}
                         </a>
                       </TableCell>
@@ -700,58 +717,101 @@ export default function SchemeApplicationDetailPage() {
 
       {/* Document Dialog */}
       <Dialog open={docDlg} onOpenChange={setDocDlg}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl max-w-md">
           <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
+            <DialogTitle className="font-extrabold text-foreground">Upload Document</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>File Name <span className="text-destructive">*</span></Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Select Document File <span className="text-destructive">*</span>
+              </Label>
+              <div className="border-2 border-dashed border-border/80 hover:border-primary/50 bg-muted/15 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 relative hover:bg-muted/20">
+                <input
+                  type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file) {
+                      setSelectedFile(file);
+                      setDocForm((prev) => ({
+                        ...prev,
+                        fileName: prev.fileName || file.name,
+                        fileType: file.type,
+                        fileSize: String(file.size),
+                        documentType: prev.documentType || "OTHER",
+                      }));
+                    }
+                  }}
+                />
+                <Upload className="h-7 w-7 text-muted-foreground animate-bounce mt-1" />
+                <span className="text-xs font-bold text-foreground text-center max-w-[250px] truncate">
+                  {selectedFile ? selectedFile.name : "Choose File or Drag & Drop"}
+                </span>
+                <span className="text-[10px] text-muted-foreground font-semibold">
+                  {selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB` : "Supports Images, PDFs, Docs up to 10MB"}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Document Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 value={docForm.fileName}
                 onChange={(e) => setDocForm((p) => ({ ...p, fileName: e.target.value }))}
                 placeholder="Aadhaar Card.pdf"
+                className="h-10 rounded-lg"
               />
             </div>
+
             <div className="space-y-2">
-              <Label>File URL <span className="text-destructive">*</span></Label>
-              <Input
-                value={docForm.fileUrl}
-                onChange={(e) => setDocForm((p) => ({ ...p, fileUrl: e.target.value }))}
-                placeholder="https://..."
-              />
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Document Type <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={docForm.documentType || "OTHER"}
+                onValueChange={(val) => setDocForm((p) => ({ ...p, documentType: val }))}
+              >
+                <SelectTrigger className="h-10 rounded-lg">
+                  <SelectValue placeholder="Select Document Type" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="AADHAAR">Aadhaar Card</SelectItem>
+                  <SelectItem value="PAN">PAN Card</SelectItem>
+                  <SelectItem value="INCOME">Income Certificate</SelectItem>
+                  <SelectItem value="CASTE">Caste Certificate</SelectItem>
+                  <SelectItem value="RESIDENCE">Residence / Address Proof</SelectItem>
+                  <SelectItem value="OTHER">Other Document</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Document Type</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">File Type</Label>
                 <Input
-                  value={docForm.documentType}
-                  onChange={(e) => setDocForm((p) => ({ ...p, documentType: e.target.value }))}
-                  placeholder="AADHAAR"
+                  disabled
+                  value={docForm.fileType}
+                  placeholder="e.g. application/pdf"
+                  className="h-10 rounded-lg bg-muted/50 cursor-not-allowed"
                 />
               </div>
               <div className="space-y-2">
-                <Label>File Type</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Size (bytes)</Label>
                 <Input
-                  value={docForm.fileType}
-                  onChange={(e) => setDocForm((p) => ({ ...p, fileType: e.target.value }))}
-                  placeholder="application/pdf"
+                  disabled
+                  value={docForm.fileSize}
+                  placeholder="e.g. 1024"
+                  className="h-10 rounded-lg bg-muted/50 cursor-not-allowed"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>File Size (bytes)</Label>
-              <Input
-                type="number"
-                value={docForm.fileSize}
-                onChange={(e) => setDocForm((p) => ({ ...p, fileSize: e.target.value }))}
-                placeholder="102400"
-              />
-            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDocDlg(false)}>Cancel</Button>
-            <Button disabled={!docForm.fileName || !docForm.fileUrl || uploadDocMut.isPending} onClick={saveDoc}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="border-border/60 hover:bg-muted" onClick={() => setDocDlg(false)}>Cancel</Button>
+            <Button disabled={!docForm.fileName || !selectedFile || uploadDocMut.isPending} onClick={saveDoc}>
               {uploadDocMut.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Upload
             </Button>

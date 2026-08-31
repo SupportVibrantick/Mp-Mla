@@ -26,6 +26,10 @@ import {
   eventReportSchema,
 } from "../../../schemas/admin/event/index.js";
 
+import { createUploader, enforceStorageAndTrack } from "../../../lib/upload.js";
+
+const eventMediaUploader = createUploader("documents");
+
 const router = Router();
 
 // Stats, calendar, export routes registered BEFORE parameterized :id routes
@@ -66,7 +70,14 @@ router.post("/:id/attendance/:attendanceId/check-out", requirePermission("events
 
 // Media sub-routes
 router.get("/:id/media", requirePermission("events", "manage_media"), getMedia);
-router.post("/:id/media", requirePermission("events", "manage_media"), validate(eventMediaSchema), addMedia);
+router.post(
+  "/:id/media",
+  requirePermission("events", "manage_media"),
+  eventMediaUploader.single("file"),
+  enforceStorageAndTrack,
+  validate(eventMediaSchema),
+  addMedia
+);
 router.delete("/:id/media/:mediaId", requirePermission("events", "manage_media"), deleteMedia);
 
 // Report sub-routes

@@ -5,10 +5,10 @@ export const createDocumentSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional().nullable(),
   category: z.nativeEnum(DocumentCategory).default(DocumentCategory.GENERAL),
-  fileName: z.string().min(1, "fileName is required"),
-  fileUrl: z.string().min(1, "fileUrl is required"),
+  fileName: z.string().optional().nullable(),
+  fileUrl: z.string().optional().nullable(),
   fileType: z.string().optional().nullable(),
-  fileSize: z.number().int().optional().nullable(),
+  fileSize: z.coerce.number().int().optional().nullable(),
 });
 
 export const updateDocumentSchema = z.object({
@@ -21,7 +21,7 @@ export const uploadVersionSchema = z.object({
   fileName: z.string().min(1, "fileName is required"),
   fileUrl: z.string().min(1, "fileUrl is required"),
   fileType: z.string().optional().nullable(),
-  fileSize: z.number().int().optional().nullable(),
+  fileSize: z.coerce.number().int().optional().nullable(),
 });
 
 export const linkDocumentSchema = z.object({

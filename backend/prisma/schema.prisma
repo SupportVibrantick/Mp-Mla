@@ -2656,6 +2656,7 @@ model EventGuest {
   email            String?
   invitationStatus String?
   attendanceStatus String?
+  isVip            Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

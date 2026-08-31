@@ -61,6 +61,44 @@ export async function sendEmail(
   }
 }
 
+export async function sendEmailWithAttachment(
+  tenantId: string,
+  to: string,
+  subject: string,
+  html: string,
+  attachments: { filename: string; content: any }[],
+): Promise<boolean> {
+  try {
+    const enabled = await getSettingBoolean("email_enabled", tenantId);
+    if (!enabled) {
+      logger.debug("Email disabled via settings, skipping send");
+      return false;
+    }
+
+    const transport = await createTransport(tenantId);
+    if (!transport) {
+      logger.warn("SMTP not configured, skipping email");
+      return false;
+    }
+
+    const emailFrom = await getSetting("email_from", tenantId);
+    const smtpUser = await getSetting("smtp_user", tenantId);
+    const from = emailFrom || smtpUser;
+    if (!from) {
+      logger.warn("sendEmail: No from address configured");
+      return false;
+    }
+
+    await transport.sendMail({ from, to, subject, html, attachments });
+    logger.info(`Email with attachment sent to ${to}: ${subject}`);
+    return true;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Email send failed: ${message}`);
+    return false;
+  }
+}
+
 export async function sendAdminNotification(
   tenantId: string,
   subject: string,

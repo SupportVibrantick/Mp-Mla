@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,14 +23,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ArrowLeft, Save, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, FileText, Loader2, Upload } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name required"),
   description: z.string().optional(),
   category: z.string().default("GENERAL"),
-  fileName: z.string().min(1, "File name required"),
-  fileUrl: z.string().min(1, "File URL required"),
+  fileName: z.string().optional(),
+  fileUrl: z.string().optional(),
   fileType: z.string().optional(),
   fileSize: z.coerce.number().optional(),
 });
@@ -46,12 +46,15 @@ export default function DocumentFormPage() {
 
   const d = dRes?.data;
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
     control,
+    setValue,
   } = useForm<FV>({
     resolver: zodResolver(formSchema),
     defaultValues: { category: "GENERAL" },
@@ -71,12 +74,6 @@ export default function DocumentFormPage() {
   }, [d, isEdit, reset]);
 
   const onSubmit = async (data: FV) => {
-    const payload: any = {
-      ...data,
-      description: data.description || undefined,
-      fileType: data.fileType || undefined,
-      fileSize: data.fileSize || undefined,
-    };
     if (isEdit && id) {
       // Update only metadata fields
       await updateMut.mutateAsync({
@@ -89,7 +86,26 @@ export default function DocumentFormPage() {
       });
       navigate(`/documents/${id}`);
     } else {
-      const res = await createMut.mutateAsync(payload);
+      if (!selectedFile) return;
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("name", data.name);
+      if (data.description) {
+        formData.append("description", data.description);
+      }
+      formData.append("category", data.category);
+      if (data.fileName) {
+        formData.append("fileName", data.fileName);
+      }
+      if (data.fileType) {
+        formData.append("fileType", data.fileType);
+      }
+      if (data.fileSize) {
+        formData.append("fileSize", String(data.fileSize));
+      }
+
+      const res = await createMut.mutateAsync(formData);
       navigate(`/documents/${res.data.id}`);
     }
   };
@@ -180,15 +196,44 @@ export default function DocumentFormPage() {
               />
             </div>
             {!isEdit && (
-              <>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Select Document File <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="border-2 border-dashed border-border/80 hover:border-primary/50 bg-muted/15 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 relative hover:bg-muted/20">
+                    <input
+                      type="file"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file) {
+                          setSelectedFile(file);
+                          setValue("fileName", file.name);
+                          setValue("fileType", file.type || file.name.split(".").pop() || "");
+                          setValue("fileSize", file.size);
+                          setValue("fileUrl", "placeholder"); // satisfy field checks
+                        }
+                      }}
+                    />
+                    <Upload className="h-8 w-8 text-muted-foreground animate-bounce mt-1" />
+                    <span className="text-sm font-bold text-foreground text-center max-w-[300px] truncate">
+                      {selectedFile ? selectedFile.name : "Choose File or Drag & Drop"}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">
+                      {selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB` : "Supports PDF, DOC, DOCX, XLS, XLSX, Images up to 50MB"}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       File Name <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       {...register("fileName")}
-                      placeholder="report-2024.pdf"
+                      placeholder="e.g. Report.pdf"
                     />
                     {errors.fileName && (
                       <p className="text-xs text-destructive">
@@ -197,38 +242,27 @@ export default function DocumentFormPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>File Type</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">File Type</Label>
                     <Input
+                      disabled
                       {...register("fileType")}
-                      placeholder="application/pdf"
+                      placeholder="e.g. application/pdf"
+                      className="bg-muted/50 cursor-not-allowed"
                     />
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>
-                      File URL <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      {...register("fileUrl")}
-                      placeholder="https://storage.example.com/file.pdf"
-                    />
-                    {errors.fileUrl && (
-                      <p className="text-xs text-destructive">
-                        {errors.fileUrl.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>File Size (bytes)</Label>
-                    <Input
-                      type="number"
-                      {...register("fileSize")}
-                      placeholder="102400"
-                    />
-                  </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">File Size (bytes)</Label>
+                  <Input
+                    type="number"
+                    disabled
+                    {...register("fileSize")}
+                    placeholder="e.g. 102400"
+                    className="bg-muted/50 cursor-not-allowed"
+                  />
                 </div>
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -241,7 +275,7 @@ export default function DocumentFormPage() {
           </Link>
           <Button
             type="submit"
-            disabled={saving}
+            disabled={saving || (!isEdit && !selectedFile)}
             className="gap-2 min-w-[160px]"
           >
             {saving ? (

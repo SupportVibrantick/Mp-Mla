@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import path from "path";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { requireTenantId } from "../../../utils/tenant.js";
@@ -33,6 +34,22 @@ export async function addMedia(
     const eventId = req.params.id as string;
     const data = req.body;
 
+    let fileUrl = data.fileUrl;
+    let fileName = data.fileName;
+    let fileType = data.fileType;
+    let fileSize = data.fileSize;
+
+    if (req.file) {
+      fileUrl = `/uploads/documents/${req.file.filename}`;
+      if (!fileName) fileName = req.file.originalname;
+      if (!fileType) fileType = path.extname(req.file.originalname).replace(".", "");
+      if (!fileSize) fileSize = req.file.size;
+    }
+
+    if (!fileUrl || !fileName) {
+      throw ApiError.badRequest("File upload or fileUrl and fileName are required");
+    }
+
     const event = await prisma.event.findFirst({
       where: { id: eventId, tenantId, isDeleted: false },
     });
@@ -42,11 +59,11 @@ export async function addMedia(
       data: {
         tenantId,
         eventId,
-        type: data.type,
-        fileUrl: data.fileUrl,
-        fileName: data.fileName,
-        fileType: data.fileType || null,
-        fileSize: data.fileSize ? parseInt(String(data.fileSize), 10) : null,
+        type: data.type || "IMAGE",
+        fileUrl,
+        fileName,
+        fileType: fileType || null,
+        fileSize: fileSize ? parseInt(String(fileSize), 10) : null,
         caption: data.caption || null,
         uploadedById: req.user!.id,
       },

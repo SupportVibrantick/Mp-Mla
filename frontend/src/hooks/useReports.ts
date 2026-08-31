@@ -133,3 +133,31 @@ export function useDownloadPdfReport() {
   };
 }
 
+export function useEmailPdfReport() {
+  const { toast } = useToast();
+  return async (
+    type: string = "consolidated",
+    email: string,
+    params?: Record<string, any>,
+  ) => {
+    try {
+      const response = await api.get(`/admin/reports/pdf`, {
+        params: { type, email, ...params },
+      });
+      toast({
+        title: "Email Sent Successfully",
+        description: response.data.message || `Report emailed to ${email}.`,
+      });
+      return true;
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Failed to email PDF report.";
+      toast({
+        title: "Email Delivery Error",
+        description: message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+}
+

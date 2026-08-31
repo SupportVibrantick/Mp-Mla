@@ -6,8 +6,8 @@ const VALID_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   PENDING: ["RUNNING", "CANCELLED"],
   RUNNING: ["ON_HOLD", "COMPLETED", "CANCELLED"],
   ON_HOLD: ["RUNNING", "CANCELLED"],
-  COMPLETED: [],
-  CANCELLED: [],
+  COMPLETED: ["ON_HOLD", "RUNNING"],
+  CANCELLED: ["ON_HOLD", "RUNNING"],
 };
 
 export function canTransition(from: ProjectStatus, to: ProjectStatus): boolean {
@@ -16,9 +16,14 @@ export function canTransition(from: ProjectStatus, to: ProjectStatus): boolean {
   return allowed ? allowed.includes(to) : false;
 }
 
-export function validateTransition(from: ProjectStatus, to: ProjectStatus): void {
+export function validateTransition(
+  from: ProjectStatus,
+  to: ProjectStatus,
+): void {
   if (!canTransition(from, to)) {
-    throw ApiError.badRequest(`Cannot transition project status from "${from}" to "${to}".`);
+    throw ApiError.badRequest(
+      `Cannot transition project status from "${from}" to "${to}".`,
+    );
   }
 }
 
@@ -31,7 +36,7 @@ export async function applyTransition(
   projectId: string,
   tenantId: string,
   targetStatus: ProjectStatus,
-  options: TransitionOptions
+  options: TransitionOptions,
 ) {
   const { comment, user } = options;
 
@@ -55,7 +60,9 @@ export async function applyTransition(
     updateData.actualEndDate = now;
     updateData.completionPercent = 100;
   } else if (targetStatus === "CANCELLED" && !comment) {
-    throw ApiError.badRequest("A cancellation reason is required to cancel a project.");
+    throw ApiError.badRequest(
+      "A cancellation reason is required to cancel a project.",
+    );
   }
 
   // Update Project
@@ -69,7 +76,9 @@ export async function applyTransition(
   });
 
   const transitionLabel = `Status changed from ${project.status} to ${targetStatus}`;
-  const displayComment = comment ? `${transitionLabel}. Reason/Comment: ${comment}` : transitionLabel;
+  const displayComment = comment
+    ? `${transitionLabel}. Reason/Comment: ${comment}`
+    : transitionLabel;
 
   // Log in project updates (visible to users)
   await prisma.projectUpdate.create({

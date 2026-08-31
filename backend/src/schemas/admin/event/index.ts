@@ -78,6 +78,7 @@ export const eventGuestSchema = z.object({
   email: z.string().email("Invalid email format").optional().nullable().or(z.literal("")),
   invitationStatus: z.string().optional().nullable(),
   attendanceStatus: z.string().optional().nullable(),
+  isVip: z.boolean().optional().default(false),
 });
 
 export const eventAttendanceSchema = z.object({
@@ -88,8 +89,8 @@ export const eventAttendanceSchema = z.object({
 
 export const eventMediaSchema = z.object({
   type: z.nativeEnum(EventMediaType),
-  fileUrl: z.string().url("Must be a valid URL"),
-  fileName: z.string().min(1, "File name is required"),
+  fileUrl: z.string().optional().nullable(),
+  fileName: z.string().optional().nullable(),
   fileType: z.string().optional().nullable(),
   fileSize: z.number().optional().nullable(),
   caption: z.string().optional().nullable(),

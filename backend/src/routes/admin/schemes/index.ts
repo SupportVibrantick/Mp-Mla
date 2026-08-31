@@ -27,6 +27,9 @@ import {
   schemeApplicationStatusSchema,
   schemeApplicationAssignSchema,
 } from "../../../schemas/admin/scheme/index.js";
+import { createUploader, enforceStorageAndTrack } from "../../../lib/upload.js";
+
+const schemeUploader = createUploader("documents");
 
 const router = Router();
 
@@ -56,7 +59,13 @@ router.post("/applications/:id/create-task", requirePermission("scheme_applicati
 router.post("/applications/:id/create-grievance", requirePermission("scheme_applications", "manage"), createGrievanceFromApplication);
 
 // Documents
-router.post("/applications/:id/documents", requirePermission("scheme_applications", "update"), uploadApplicationDocument);
+router.post(
+  "/applications/:id/documents",
+  requirePermission("scheme_applications", "update"),
+  schemeUploader.single("file"),
+  enforceStorageAndTrack,
+  uploadApplicationDocument
+);
 router.get("/applications/:id/documents", requirePermission("scheme_applications", "read"), listApplicationDocuments);
 router.delete("/applications/documents/:documentId", requirePermission("scheme_applications", "delete"), deleteApplicationDocument);
 

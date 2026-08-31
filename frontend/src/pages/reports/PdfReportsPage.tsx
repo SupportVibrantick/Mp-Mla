@@ -17,9 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useWards } from "@/hooks/useWards";
-import { useDownloadPdfReport } from "@/hooks/useReports";
+import { useDownloadPdfReport, useEmailPdfReport } from "@/hooks/useReports";
 import { useAuth } from "@/hooks/useAuth";
 import { useSystemSettings } from "@/contexts/SettingsContext";
+import { Input } from "@/components/ui/input";
 import {
   FileText,
   Download,
@@ -36,6 +37,7 @@ import {
   Loader2,
   Calendar,
   ChevronRight,
+  Mail,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -98,12 +100,16 @@ export default function PdfReportsPage() {
   const settings = settingsCtx?.settings;
   const { data: wardsRes } = useWards({ limit: 100 });
   const downloadPdf = useDownloadPdfReport();
+  const emailPdf = useEmailPdfReport();
 
   const [selectedModule, setSelectedModule] = useState("consolidated");
   const [wardFilter, setWardFilter] = useState("all");
   const [dateRange, setDateRange] = useState("this_month");
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null);
+  
+  const [emailAddress, setEmailAddress] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const repName = settings?.representative_name || user?.name || "Shri Representative";
   const constituencyName = settings?.constituency_name || settings?.org_name || "Constituency Administration Portal";
@@ -122,6 +128,19 @@ export default function PdfReportsPage() {
     } finally {
       setIsGenerating(false);
       setActiveDownloadId(null);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailAddress) return;
+    setIsSendingEmail(true);
+    try {
+      await emailPdf(selectedModule, emailAddress, {
+        wardId: wardFilter !== "all" ? wardFilter : undefined,
+        dateRange,
+      });
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -286,40 +305,75 @@ export default function PdfReportsPage() {
             </div>
 
             {/* Action Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 gap-4 transition-all">
-              <div className="flex items-center gap-3">
-                {selectedInfo && (
-                  <div className="p-2.5 rounded-lg bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8] shrink-0">
-                    <selectedInfo.icon className="h-6 w-6 shrink-0" />
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 transition-all">
+                <div className="flex items-center gap-3">
+                  {selectedInfo && (
+                    <div className="p-2.5 rounded-lg bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8] shrink-0">
+                      <selectedInfo.icon className="h-6 w-6 shrink-0" />
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                      {selectedInfo?.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {selectedInfo?.desc}
+                    </p>
                   </div>
-                )}
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">
-                    {selectedInfo?.title}
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {selectedInfo?.desc}
-                  </p>
                 </div>
+
+                <Button
+                  onClick={() => handleDownload(selectedModule)}
+                  disabled={isGenerating}
+                  className="w-full sm:w-auto bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold h-11 cursor-pointer shrink-0 px-6 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  {isGenerating && activeDownloadId === selectedModule ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating PDF...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Generate & Download PDF
+                    </>
+                  )}
+                </Button>
               </div>
 
-              <Button
-                onClick={() => handleDownload(selectedModule)}
-                disabled={isGenerating}
-                className="w-full sm:w-auto bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold h-11 cursor-pointer shrink-0 px-6 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                {isGenerating && activeDownloadId === selectedModule ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Generate & Download PDF
-                  </>
-                )}
-              </Button>
+              {/* Email Delivery Options */}
+              <div className="border-t border-slate-200 dark:border-slate-800/80 pt-4 flex flex-col sm:flex-row items-end gap-3">
+                <div className="space-y-1.5 flex-1 w-full">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Recipient Email Address
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="e.g. administrator@constituency.in"
+                    className="h-11 border-slate-200 dark:border-slate-800 focus:ring-[#13538A] bg-white dark:bg-slate-950 text-xs rounded-lg"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={handleSendEmail}
+                  disabled={isSendingEmail || !emailAddress}
+                  className="w-full sm:w-auto bg-[#5D28A8] hover:bg-[#5D28A8]/90 text-white font-bold h-11 cursor-pointer shrink-0 px-6 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all gap-1.5"
+                >
+                  {isSendingEmail ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Sending Email...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4" />
+                      Email Report
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

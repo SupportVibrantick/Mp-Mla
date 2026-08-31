@@ -198,10 +198,10 @@ export function useRegisterVisitorToken() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "queue"],
+        queryKey: ["janataSessions", variables.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "stats"],
+        queryKey: ["janataSessions"],
       });
       toast.success("Visitor token registered successfully");
     },
@@ -224,7 +224,10 @@ export function useCallVisitorToken() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "queue"],
+        queryKey: ["janataSessions", variables.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["janataSessions"],
       });
       toast.success("Token called");
     },
@@ -245,7 +248,10 @@ export function useStartVisitorToken() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "queue"],
+        queryKey: ["janataSessions", variables.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["janataSessions"],
       });
       toast.success("Interview started");
     },
@@ -266,10 +272,10 @@ export function useResolveVisitorToken() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "queue"],
+        queryKey: ["janataSessions", variables.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "stats"],
+        queryKey: ["janataSessions"],
       });
       toast.success("Token resolved");
     },
@@ -299,10 +305,10 @@ export function useReferVisitorToken() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "queue"],
+        queryKey: ["janataSessions", variables.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "stats"],
+        queryKey: ["janataSessions"],
       });
       toast.success("Token referred successfully");
     },
@@ -323,10 +329,10 @@ export function useMarkVisitorAbsent() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "queue"],
+        queryKey: ["janataSessions", variables.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["janataSessions", variables.id, "stats"],
+        queryKey: ["janataSessions"],
       });
       toast.success("Visitor marked absent");
     },
@@ -338,6 +344,7 @@ export function useMarkVisitorAbsent() {
 
 // ─── Actions integration ─────────────────────────────────
 export function useCreateGrievanceFromToken() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, tokenId }: { id: string; tokenId: string }) => {
       const { data } = await api.post(
@@ -345,7 +352,13 @@ export function useCreateGrievanceFromToken() {
       );
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["janataSessions", variables.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["janataSessions"],
+      });
       toast.success("Grievance created from token successfully");
     },
     onError: (error: any) => {
@@ -355,6 +368,7 @@ export function useCreateGrievanceFromToken() {
 }
 
 export function useCreateTaskFromToken() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       id,
@@ -371,7 +385,13 @@ export function useCreateTaskFromToken() {
       );
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["janataSessions", variables.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["janataSessions"],
+      });
       toast.success("Task created from token successfully");
     },
     onError: (error: any) => {

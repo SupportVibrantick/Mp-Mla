@@ -49,6 +49,7 @@ export async function createGuest(
         email: data.email || null,
         invitationStatus: data.invitationStatus || "PENDING",
         attendanceStatus: data.attendanceStatus || "PENDING",
+        isVip: !!data.isVip,
       },
     });
 
@@ -94,6 +95,7 @@ export async function updateGuest(
         email: data.email,
         invitationStatus: data.invitationStatus,
         attendanceStatus: data.attendanceStatus,
+        isVip: data.isVip !== undefined ? !!data.isVip : undefined,
       },
     });
 

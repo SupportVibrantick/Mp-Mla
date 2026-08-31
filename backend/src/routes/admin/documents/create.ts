@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
+import path from "path";
 import prisma from "../../../lib/prisma.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 import { createAuditLog, getRequestMeta } from "../../../middleware/auditLog.js";
 import { validateFileProperties } from "./helpers.js";
+import { ApiError } from "../../../utils/ApiError.js";
 
 /**
  * POST /api/admin/documents
@@ -17,8 +19,24 @@ export async function createDocument(
     const tenantId = requireTenantId(req);
     const data = req.body;
 
+    let fileName = data.fileName;
+    let fileUrl = data.fileUrl;
+    let fileType = data.fileType;
+    let fileSize = data.fileSize;
+
+    if (req.file) {
+      fileUrl = `/uploads/documents/${req.file.filename}`;
+      if (!fileName) fileName = req.file.originalname;
+      if (!fileType) fileType = path.extname(req.file.originalname).replace(".", "");
+      if (!fileSize) fileSize = req.file.size;
+    }
+
+    if (!fileName || !fileUrl) {
+      throw ApiError.badRequest("File upload or fileUrl and fileName are required");
+    }
+
     // Validate size and extensions
-    validateFileProperties(data.fileName, data.fileSize);
+    validateFileProperties(fileName, fileSize);
 
     // Create Document and its first version in a transaction
     const document = await prisma.$transaction(async (tx) => {
@@ -28,10 +46,10 @@ export async function createDocument(
           name: data.name,
           description: data.description || null,
           category: data.category || "GENERAL",
-          fileName: data.fileName,
-          fileUrl: data.fileUrl,
-          fileType: data.fileType || null,
-          fileSize: data.fileSize || null,
+          fileName: fileName,
+          fileUrl: fileUrl,
+          fileType: fileType || null,
+          fileSize: fileSize ? parseInt(String(fileSize), 10) : null,
           version: 1,
           uploadedById: req.user!.id,
         },
@@ -41,10 +59,10 @@ export async function createDocument(
         data: {
           documentId: doc.id,
           version: 1,
-          fileName: data.fileName,
-          fileUrl: data.fileUrl,
-          fileType: data.fileType || null,
-          fileSize: data.fileSize || null,
+          fileName: fileName,
+          fileUrl: fileUrl,
+          fileType: fileType || null,
+          fileSize: fileSize ? parseInt(String(fileSize), 10) : null,
           uploadedById: req.user!.id,
         },
       });
