@@ -337,7 +337,7 @@ export default function Login() {
 
           {/* Copyright notice below card */}
           <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-6 font-semibold">
-            © {new Date().getFullYear()} {orgName}. All rights reserved.
+            © {new Date().getFullYear()}  {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All rights reserved.
           </p>
         </div>
       </div>
