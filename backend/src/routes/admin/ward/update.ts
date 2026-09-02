@@ -59,7 +59,7 @@ export async function updateWard(
       data: updateData,
       include: {
         areas: true,
-        councillors: { where: { isCurrent: true }, take: 1 },
+        councillors: { where: { isCurrent: true }, orderBy: { sinceDate: "desc" } },
       },
     });
 

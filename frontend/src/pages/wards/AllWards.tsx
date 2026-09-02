@@ -632,7 +632,9 @@ export default function WardsPage() {
                     </TableRow>
                   ) : (
                     wards.map((ward: any) => {
-                      const councillor = ward.councillors?.[0];
+                      const councillors = ward.councillors || [];
+                      const primary = councillors[0];
+                      const extraCount = councillors.length > 1 ? councillors.length - 1 : 0;
                       return (
                         <TableRow key={ward.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
                           <TableCell className="font-mono text-muted-foreground py-4 px-4 font-semibold text-xs">
@@ -672,11 +674,18 @@ export default function WardsPage() {
                             {ward.totalAreas}
                           </TableCell>
                           <TableCell className="py-4 px-4 align-middle text-xs font-semibold text-foreground">
-                            {councillor ? (
+                            {primary ? (
                               <div className="space-y-0.5">
-                                <p className="text-xs font-semibold text-foreground">{councillor.name}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-xs font-semibold text-foreground">{primary.name}</p>
+                                  {extraCount > 0 && (
+                                    <Badge variant="secondary" className="text-[9px] px-1 py-0 font-bold">
+                                      +{extraCount} more
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="text-[10px] text-muted-foreground font-medium">
-                                  {councillor.phone}
+                                  {primary.phone}
                                 </p>
                               </div>
                             ) : (

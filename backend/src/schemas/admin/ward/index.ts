@@ -119,6 +119,8 @@ export const createWardSchema = z.object({
     })
     .optional(),
 
+  councillors: z.array(createCouncillorSchema).optional(),
+
   demographics: demographicsZodSchema,
 });
 

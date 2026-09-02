@@ -321,6 +321,26 @@ export function useUpdateCouncillor() {
   });
 }
 
+export function useDeleteCouncillor() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ wardId, councillorId }: { wardId: string; councillorId: string }) =>
+      api.delete(`/admin/wards/${wardId}/councillors/${councillorId}`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wards"] });
+      toast({ title: "Councillor Removed" });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 // ─── Ward Demographics ──────────────────────────────────
 
 export function useWardDemographics(wardId: string | undefined) {

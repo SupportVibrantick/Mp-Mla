@@ -23,8 +23,7 @@ export async function createWard(
   try {
     const tenantId = requireTenantId(req);
     await assertCanCreateWard(tenantId);
-    const { areas, councillor, demographics, ...wardData } = req.body;
-
+    const { areas, councillor, councillors, demographics, ...wardData } = req.body;
     if (wardData.constituencyId === "") wardData.constituencyId = null;
     if (wardData.townVillageId === "") wardData.townVillageId = null;
 
@@ -54,6 +53,18 @@ export async function createWard(
       }
     }
 
+    const rawCouncillors = councillors || (councillor ? [councillor] : []);
+    const councillorsForDb = rawCouncillors.map((c: any) => ({
+      tenantId,
+      name: c.name,
+      phone: c.phone || null,
+      email: c.email || null,
+      partyName: c.partyName || null,
+      designation: c.designation || "Ward Councillor",
+      sinceDate: c.sinceDate ? new Date(c.sinceDate) : null,
+      isCurrent: c.isCurrent ?? true,
+    }));
+
     // Step 1: Compute aggregates
     let totalPop = 0,
       totalHH = 0,
@@ -79,7 +90,7 @@ export async function createWard(
     const areasForDb =
       areas?.map(({ demographics: _d, ...rest }: any) => rest) || [];
 
-    // Step 3: Create ward + areas + councillor
+    // Step 3: Create ward + areas + councillors
     const ward = await prisma.ward.create({
       data: {
         ...wardData,
@@ -95,18 +106,14 @@ export async function createWard(
         ...(areasForDb.length > 0
           ? { areas: { createMany: { data: areasForDb } } }
           : {}),
-        ...(councillor
+        ...(councillorsForDb.length > 0
           ? {
-            councillors: {
-              create: {
-                ...councillor,
-                sinceDate: councillor.sinceDate
-                  ? new Date(councillor.sinceDate)
-                  : undefined,
-                isCurrent: true,
+              councillors: {
+                createMany: {
+                  data: councillorsForDb,
+                },
               },
-            },
-          }
+            }
           : {}),
       },
       include: {

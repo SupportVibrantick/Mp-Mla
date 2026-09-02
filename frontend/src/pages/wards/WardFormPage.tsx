@@ -13,6 +13,7 @@ import {
   useDeleteArea,
   useCreateCouncillor,
   useUpdateCouncillor,
+  useDeleteCouncillor,
   useWardDemographics,
 } from "@/hooks/useWards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,6 +137,25 @@ const emptyArea: AreaFormData = {
   pincode: "",
   landmark: "",
   description: "",
+};
+
+interface CouncillorFormData {
+  id?: string;
+  name: string;
+  phone: string;
+  email: string;
+  partyName: string;
+  designation: string;
+  sinceDate: string;
+}
+
+const emptyCouncillor: CouncillorFormData = {
+  name: "",
+  phone: "",
+  email: "",
+  partyName: "",
+  designation: "Ward Councillor",
+  sinceDate: "",
 };
 
 // ─── Demographics type ──────────────────────────────────
@@ -283,6 +303,7 @@ export default function WardFormPage() {
   const deleteAreaMut = useDeleteArea();
   const createCouncillorMut = useCreateCouncillor();
   const updateCouncillorMut = useUpdateCouncillor();
+  const deleteCouncillorMut = useDeleteCouncillor();
 
   const ward = wardRes?.data;
 
@@ -312,15 +333,15 @@ export default function WardFormPage() {
 
   // ─── Councillor State ─────────────────────────────────
 
-  const [councillorForm, setCouncillorForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    partyName: "",
-    designation: "Ward Councillor",
-    sinceDate: "",
-  });
-  const [councillorId, setCouncillorId] = useState<string | null>(null);
+  const [localCouncillors, setLocalCouncillors] = useState<CouncillorFormData[]>([]);
+  const [councillorDialogOpen, setCouncillorDialogOpen] = useState(false);
+  const [editingCouncillorIdx, setEditingCouncillorIdx] = useState<number | null>(null);
+  const [councillorForm, setCouncillorForm] = useState<CouncillorFormData>({ ...emptyCouncillor });
+  const [deleteCouncillorDialog, setDeleteCouncillorDialog] = useState<{
+    open: boolean;
+    idx: number | null;
+  }>({ open: false, idx: null });
+  const [deletedCouncillorIds, setDeletedCouncillorIds] = useState<string[]>([]);
 
   // ─── Areas State ──────────────────────────────────────
 
@@ -386,20 +407,71 @@ export default function WardFormPage() {
       })),
     );
 
-    // Councillor
-    const current = ward.councillors?.find((c: any) => c.isCurrent);
-    if (current) {
-      setCouncillorId(current.id);
-      setCouncillorForm({
-        name: current.name || "",
-        phone: current.phone || "",
-        email: current.email || "",
-        partyName: current.partyName || "",
-        designation: current.designation || "Ward Councillor",
-        sinceDate: current.sinceDate ? current.sinceDate.split("T")[0] : "",
-      });
+    // Councillors
+    if (ward.councillors && ward.councillors.length > 0) {
+      setLocalCouncillors(
+        ward.councillors.map((c: any) => ({
+          id: c.id,
+          name: c.name || "",
+          phone: c.phone || "",
+          email: c.email || "",
+          partyName: c.partyName || "",
+          designation: c.designation || "Ward Councillor",
+          sinceDate: c.sinceDate ? c.sinceDate.split("T")[0] : "",
+        }))
+      );
+    } else if (ward.currentCouncillor) {
+      const c = ward.currentCouncillor;
+      setLocalCouncillors([
+        {
+          id: c.id,
+          name: c.name || "",
+          phone: c.phone || "",
+          email: c.email || "",
+          partyName: c.partyName || "",
+          designation: c.designation || "Ward Councillor",
+          sinceDate: c.sinceDate ? c.sinceDate.split("T")[0] : "",
+        },
+      ]);
     }
   }, [ward, isEdit, reset]);
+
+  // Councillor helper handlers
+  const openAddCouncillor = () => {
+    setEditingCouncillorIdx(null);
+    setCouncillorForm({ ...emptyCouncillor });
+    setCouncillorDialogOpen(true);
+  };
+
+  const openEditCouncillor = (idx: number) => {
+    setEditingCouncillorIdx(idx);
+    setCouncillorForm({ ...localCouncillors[idx] });
+    setCouncillorDialogOpen(true);
+  };
+
+  const saveCouncillorLocal = () => {
+    if (!councillorForm.name.trim()) return;
+    if (editingCouncillorIdx !== null) {
+      setLocalCouncillors((prev) =>
+        prev.map((c, i) => (i === editingCouncillorIdx ? { ...councillorForm } : c))
+      );
+    } else {
+      setLocalCouncillors((prev) => [...prev, { ...councillorForm }]);
+    }
+    setCouncillorDialogOpen(false);
+  };
+
+  const confirmDeleteCouncillor = async () => {
+    if (deleteCouncillorDialog.idx === null) return;
+    const target = localCouncillors[deleteCouncillorDialog.idx];
+    if (target?.id) {
+      setDeletedCouncillorIds((prev) => [...prev, target.id!]);
+    }
+    setLocalCouncillors((prev) =>
+      prev.filter((_, i) => i !== deleteCouncillorDialog.idx)
+    );
+    setDeleteCouncillorDialog({ open: false, idx: null });
+  };
 
   // Populate demographics from API when editing
   useEffect(() => {
@@ -544,18 +616,23 @@ export default function WardFormPage() {
           }
         }
 
-        // 3. Sync councillor
-        if (councillorForm.name.trim()) {
+        // 3. Sync councillors
+        for (const c of localCouncillors) {
+          if (!c.name.trim()) continue;
           const cPayload = {
-            ...councillorForm,
-            sinceDate: councillorForm.sinceDate
-              ? new Date(councillorForm.sinceDate).toISOString()
+            name: c.name.trim(),
+            phone: c.phone || undefined,
+            email: c.email || undefined,
+            partyName: c.partyName || undefined,
+            designation: c.designation || "Ward Councillor",
+            sinceDate: c.sinceDate
+              ? new Date(c.sinceDate).toISOString()
               : undefined,
           };
-          if (councillorId) {
+          if (c.id) {
             await updateCouncillorMut.mutateAsync({
               wardId: id,
-              councillorId,
+              councillorId: c.id,
               data: cPayload,
             });
           } else {
@@ -564,6 +641,12 @@ export default function WardFormPage() {
               data: cPayload,
             });
           }
+        }
+        for (const delId of deletedCouncillorIds) {
+          await deleteCouncillorMut.mutateAsync({
+            wardId: id,
+            councillorId: delId,
+          });
         }
 
         // 4. Update demographics via ward demographics endpoint
@@ -587,13 +670,21 @@ export default function WardFormPage() {
           landmark: a.landmark || undefined,
         }));
 
-        if (councillorForm.name.trim()) {
-          wardPayload.councillor = {
-            ...councillorForm,
-            sinceDate: councillorForm.sinceDate
-              ? new Date(councillorForm.sinceDate).toISOString()
+        const validCouncillors = localCouncillors
+          .filter((c) => c.name.trim())
+          .map((c) => ({
+            name: c.name.trim(),
+            phone: c.phone || undefined,
+            email: c.email || undefined,
+            partyName: c.partyName || undefined,
+            designation: c.designation || "Ward Councillor",
+            sinceDate: c.sinceDate
+              ? new Date(c.sinceDate).toISOString()
               : undefined,
-          };
+          }));
+
+        if (validCouncillors.length > 0) {
+          wardPayload.councillors = validCouncillors;
         }
 
         // Attach demographics (backend auto-estimates if omitted)
@@ -864,73 +955,70 @@ export default function WardFormPage() {
 
         {/* ═══ Councillor ════════════════════════════════ */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" /> Ward Councillor
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" /> Ward Councillors
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
+                {localCouncillors.length} councillor(s) assigned to this ward
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={openAddCouncillor}
+              className="gap-1.5"
+            >
+              <Plus className="h-4 w-4" /> Add Councillor
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Councillor Name</Label>
-                <Input
-                  value={councillorForm.name}
-                  onChange={(e) =>
-                    setCouncillorForm((p) => ({ ...p, name: e.target.value }))
-                  }
-                  placeholder="Full name"
-                />
+            {localCouncillors.length === 0 ? (
+              <div className="p-6 text-center border border-dashed rounded-xl bg-muted/10 text-xs text-muted-foreground font-medium">
+                No councillors assigned yet. Click <strong>Add Councillor</strong> above to assign councillors to this ward.
               </div>
-              <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input
-                  value={councillorForm.phone}
-                  onChange={(e) =>
-                    setCouncillorForm((p) => ({ ...p, phone: e.target.value }))
-                  }
-                  placeholder="9876000001"
-                />
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {localCouncillors.map((c, idx) => (
+                  <div key={idx} className="p-4 border rounded-xl bg-card shadow-xs flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-foreground">{c.name}</span>
+                        <Badge variant="secondary" className="text-[10px] font-semibold">
+                          {c.designation || "Ward Councillor"}
+                        </Badge>
+                      </div>
+                      {c.phone && <p className="text-xs text-muted-foreground font-medium">📞 {c.phone}</p>}
+                      {c.email && <p className="text-xs text-muted-foreground font-medium">✉️ {c.email}</p>}
+                      {c.partyName && <p className="text-xs text-muted-foreground font-semibold">Party: {c.partyName}</p>}
+                      {c.sinceDate && <p className="text-[10px] text-muted-foreground font-medium">Since: {c.sinceDate}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => openEditCouncillor(idx)}
+                      >
+                        <Edit className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteCouncillorDialog({ open: true, idx })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={councillorForm.email}
-                  onChange={(e) =>
-                    setCouncillorForm((p) => ({ ...p, email: e.target.value }))
-                  }
-                  placeholder="councillor@email.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Party Name</Label>
-                <Input
-                  value={councillorForm.partyName}
-                  onChange={(e) =>
-                    setCouncillorForm((p) => ({
-                      ...p,
-                      partyName: e.target.value,
-                    }))
-                  }
-                  placeholder="e.g. ..........."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Since Date</Label>
-                <Input
-                  type="date"
-                  value={councillorForm.sinceDate}
-                  onChange={(e) =>
-                    setCouncillorForm((p) => ({
-                      ...p,
-                      sinceDate: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -1191,7 +1279,7 @@ export default function WardFormPage() {
                     <Input
                       type="number"
                       placeholder="0"
-                      value={demoForm[f.key] || ""}
+                      value={(demoForm as any)[f.key] || ""}
                       onChange={(e) =>
                         setDemoForm((p) => ({
                           ...p,
@@ -1545,6 +1633,127 @@ export default function WardFormPage() {
               ) : (
                 "Delete"
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ═══ Add/Edit Councillor Dialog ════════════════════ */}
+      <Dialog
+        open={councillorDialogOpen}
+        onOpenChange={setCouncillorDialogOpen}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCouncillorIdx !== null ? "Edit Councillor" : "Add Councillor"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Councillor Name <span className="text-destructive">*</span></Label>
+                <Input
+                  value={councillorForm.name}
+                  onChange={(e) =>
+                    setCouncillorForm((p) => ({ ...p, name: e.target.value }))
+                  }
+                  placeholder="Full name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Designation</Label>
+                <Input
+                  value={councillorForm.designation}
+                  onChange={(e) =>
+                    setCouncillorForm((p) => ({ ...p, designation: e.target.value }))
+                  }
+                  placeholder="e.g. Ward Councillor"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Phone Number</Label>
+                <Input
+                  value={councillorForm.phone}
+                  onChange={(e) =>
+                    setCouncillorForm((p) => ({ ...p, phone: e.target.value }))
+                  }
+                  placeholder="9876000001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={councillorForm.email}
+                  onChange={(e) =>
+                    setCouncillorForm((p) => ({ ...p, email: e.target.value }))
+                  }
+                  placeholder="councillor@email.com"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Party Name</Label>
+                <Input
+                  value={councillorForm.partyName}
+                  onChange={(e) =>
+                    setCouncillorForm((p) => ({ ...p, partyName: e.target.value }))
+                  }
+                  placeholder="e.g. Party Name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Since Date</Label>
+                <Input
+                  type="date"
+                  value={councillorForm.sinceDate}
+                  onChange={(e) =>
+                    setCouncillorForm((p) => ({ ...p, sinceDate: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCouncillorDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={saveCouncillorLocal}>
+              {editingCouncillorIdx !== null ? "Update" : "Add"} Councillor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ Delete Councillor Dialog ════════════════════ */}
+      <AlertDialog
+        open={deleteCouncillorDialog.open}
+        onOpenChange={(open) => setDeleteCouncillorDialog({ open, idx: null })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Councillor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this councillor from the ward?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCouncillor}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

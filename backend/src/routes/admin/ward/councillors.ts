@@ -53,13 +53,8 @@ export async function createCouncillor(
     });
     if (!ward) throw ApiError.notFound("Ward not found");
 
-    // Mark previous councillor as not current
-    await prisma.wardCouncillor.updateMany({
-      where: { wardId, isCurrent: true },
-      data: { isCurrent: false, untilDate: new Date() },
-    });
-
-    const data: any = { tenantId, ...req.body, wardId, isCurrent: true };
+    // Allow multiple current councillors per ward
+    const data: any = { tenantId, ...req.body, wardId, isCurrent: req.body.isCurrent ?? true };
     if (data.sinceDate) data.sinceDate = new Date(data.sinceDate);
 
     const councillor = await prisma.wardCouncillor.create({ data });
@@ -70,14 +65,14 @@ export async function createCouncillor(
       action: "CREATE",
       module: "wards",
       recordId: councillor.id,
-      description: `Set ${councillor.name} as councillor of ward "${ward.name}"`,
+      description: `Added ${councillor.name} as councillor of ward "${ward.name}"`,
       newData: req.body,
       ...getRequestMeta(req),
     });
 
     res.status(201).json({
       success: true,
-      message: "Councillor assigned",
+      message: "Councillor added",
       data: councillor,
     });
   } catch (error) {
@@ -131,6 +126,51 @@ export async function updateCouncillor(
       success: true,
       message: "Councillor updated",
       data: councillor,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * DELETE /api/admin/ward/:wardId/councillors/:councillorId
+ * Deletes a councillor for a ward.
+ */
+export async function deleteCouncillor(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const councillorId = req.params.councillorId as string;
+
+    const councillor = await prisma.wardCouncillor.findFirst({
+      where: {
+        id: councillorId,
+        ward: { tenantId },
+      },
+    });
+    if (!councillor) throw ApiError.notFound("Councillor not found");
+
+    await prisma.wardCouncillor.delete({
+      where: { id: councillorId },
+    });
+
+    await createAuditLog({
+      tenantId,
+      userId: req.user!.id,
+      action: "DELETE",
+      module: "wards",
+      recordId: councillorId,
+      description: `Deleted councillor ${councillor.name}`,
+      oldData: { name: councillor.name },
+      ...getRequestMeta(req),
+    });
+
+    res.json({
+      success: true,
+      message: "Councillor deleted",
     });
   } catch (error) {
     next(error);

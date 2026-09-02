@@ -16,6 +16,7 @@ import {
   listCouncillors,
   createCouncillor,
   updateCouncillor,
+  deleteCouncillor,
 } from "./councillors.js";
 import {
   getWardDemographics,
@@ -93,6 +94,11 @@ router.put(
   requirePermission("wards", "update"),
   validate(updateCouncillorSchema),
   updateCouncillor,
+);
+router.delete(
+  "/:wardId/councillors/:councillorId",
+  requirePermission("wards", "delete"),
+  deleteCouncillor,
 );
 
 // ─── Ward Demographics ──────────────────────────────────

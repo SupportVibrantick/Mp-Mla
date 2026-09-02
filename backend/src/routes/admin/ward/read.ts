@@ -59,12 +59,14 @@ export const listWards = catchAsync(async (req: Request, res: Response) => {
             id: true,
             name: true,
             phone: true,
+            email: true,
             partyName: true,
+            designation: true,
             sinceDate: true,
             photoUrl: true,
             isCurrent: true,
           },
-          take: 1,
+          orderBy: { sinceDate: "desc" },
         },
         _count: {
           select: {

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import * as xlsx from "xlsx";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { useDeleteWard, useWard, useWardDemographics } from "@/hooks/useWards";
+import { useDeleteWard, useWard, useWardDemographics, useCreateCouncillor, useUpdateCouncillor, useDeleteCouncillor } from "@/hooks/useWards";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,6 +137,12 @@ export default function WardDetailPage() {
     );
   }
 
+  const councillorsList =
+    ward.councillors && ward.councillors.length > 0
+      ? ward.councillors
+      : ward.currentCouncillor
+      ? [ward.currentCouncillor]
+      : [];
   const councillor =
     ward.currentCouncillor || ward.councillors?.find((c: any) => c.isCurrent);
   const grievanceOpen =
@@ -309,38 +315,54 @@ export default function WardDetailPage() {
 
         {/* Councillor Card */}
         <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden">
-          <CardHeader className="pb-3 border-b border-border/30">
+          <CardHeader className="pb-3 border-b border-border/30 flex flex-row items-center justify-between">
             <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" /> Ward Councillor Details
+              <User className="h-4 w-4 text-primary" /> Ward Councillor Details ({councillorsList.length})
             </CardTitle>
+            <PermissionGate module="constituency" action="update">
+              <Link to={`/wards/${ward.id}/edit`}>
+                <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary gap-1">
+                  <Edit className="h-3.5 w-3.5" /> Manage Councillors
+                </Button>
+              </Link>
+            </PermissionGate>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
-            {councillor ? (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-900 to-indigo-950 text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0">
-                  {councillor.name.charAt(0)}
-                </div>
-                <div className="flex-1 space-y-1">
-                  <p className="font-bold text-base text-foreground">{councillor.name}</p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap font-medium">
-                    {councillor.phone && (
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground/60" /> {councillor.phone}
-                      </span>
-                    )}
-                    {councillor.partyName && (
-                      <Badge variant="outline" className="text-[10px] font-bold border-border/80 px-2 py-0.5">
-                        {councillor.partyName}
-                      </Badge>
-                    )}
-                    {councillor.sinceDate && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
-                        Since {format(new Date(councillor.sinceDate), "yyyy-MM-dd")}
-                      </span>
-                    )}
+            {councillorsList.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {councillorsList.map((c: any, index: number) => (
+                  <div key={c.id || index} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-2xl bg-card/60 backdrop-blur-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-900 to-indigo-950 text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0">
+                      {c.name ? c.name.charAt(0) : "C"}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-base text-foreground">{c.name}</p>
+                        <Badge variant="secondary" className="text-[10px] font-semibold">
+                          {c.designation || "Ward Councillor"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap font-medium">
+                        {c.phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3.5 w-3.5 text-muted-foreground/60" /> {c.phone}
+                          </span>
+                        )}
+                        {c.partyName && (
+                          <Badge variant="outline" className="text-[10px] font-bold border-border/80 px-2 py-0.5">
+                            {c.partyName}
+                          </Badge>
+                        )}
+                        {c.sinceDate && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
+                            Since {format(new Date(c.sinceDate), "yyyy-MM-dd")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground italic font-medium">
