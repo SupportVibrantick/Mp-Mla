@@ -283,6 +283,7 @@ function DistrictsList() {
                 color: "text-sky-500",
                 bgColor: "bg-sky-50 dark:bg-sky-950/30",
                 borderColor: "border-sky-100 dark:border-sky-950/50",
+                href: "/geography/districts",
               },
               {
                 label: "Blocks",
@@ -291,6 +292,7 @@ function DistrictsList() {
                 color: "text-amber-500",
                 bgColor: "bg-amber-50 dark:bg-amber-950/30",
                 borderColor: "border-amber-100 dark:border-amber-950/50",
+                href: "/geography/blocks",
               },
               {
                 label: "Towns & Villages",
@@ -299,6 +301,7 @@ function DistrictsList() {
                 color: "text-indigo-500",
                 bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
                 borderColor: "border-indigo-100 dark:border-indigo-950/50",
+                href: "/geography/town-villages",
               },
               {
                 label: "Wards",
@@ -307,6 +310,7 @@ function DistrictsList() {
                 color: "text-emerald-500",
                 bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
                 borderColor: "border-emerald-100 dark:border-emerald-950/50",
+                href: "/geography/wards",
               },
               {
                 label: "Booths",
@@ -315,28 +319,30 @@ function DistrictsList() {
                 color: "text-violet-500",
                 bgColor: "bg-violet-50 dark:bg-violet-950/30",
                 borderColor: "border-violet-100 dark:border-violet-950/50",
+                href: "/geography/booths",
               },
             ].map((s, i) => (
-              <Card
-                key={i}
-                className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl"
-              >
-                <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
-                      <s.Icon className={cn("h-4 w-4", s.color)} />
+              <Link key={i} href={s.href}>
+                <Card
+                  className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border border-border/50 bg-card hover:border-primary/30 rounded-2xl h-full"
+                >
+                  <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className={cn("p-2 rounded-xl border", s.bgColor, s.borderColor)}>
+                        <s.Icon className={cn("h-4 w-4", s.color)} />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
-                      {s.label}
-                    </p>
-                    <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
-                      {s.value}
-                    </h3>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div>
+                      <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                        {s.label}
+                      </p>
+                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                        {s.value}
+                      </h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

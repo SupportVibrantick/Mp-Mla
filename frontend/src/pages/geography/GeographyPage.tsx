@@ -77,6 +77,7 @@ export default function GeographyPage() {
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-950/40",
       borderColor: "border-t-blue-600 dark:border-t-blue-500",
+      href: "/geography/constituencies",
     },
     {
       id: "districts",
@@ -86,6 +87,7 @@ export default function GeographyPage() {
       color: "text-sky-600 dark:text-sky-400",
       bgColor: "bg-sky-50 dark:bg-sky-950/40",
       borderColor: "border-t-sky-600 dark:border-t-sky-500",
+      href: "/geography/districts",
     },
     {
       id: "blocks",
@@ -95,6 +97,7 @@ export default function GeographyPage() {
       color: "text-indigo-600 dark:text-indigo-400",
       bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
       borderColor: "border-t-indigo-600 dark:border-t-indigo-500",
+      href: "/geography/blocks",
     },
   ];
 
@@ -107,6 +110,7 @@ export default function GeographyPage() {
       color: "text-rose-600 dark:text-rose-400",
       bgColor: "bg-rose-50 dark:bg-rose-950/40",
       borderColor: "border-t-rose-600 dark:border-t-rose-500",
+      href: "/geography/town-villages",
     },
     {
       id: "wards",
@@ -116,6 +120,7 @@ export default function GeographyPage() {
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
       borderColor: "border-t-emerald-600 dark:border-t-emerald-500",
+      href: "/geography/wards",
     },
     {
       id: "booths",
@@ -125,6 +130,7 @@ export default function GeographyPage() {
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-50 dark:bg-orange-950/40",
       borderColor: "border-t-orange-600 dark:border-t-orange-500",
+      href: "/geography/booths",
     },
     {
       id: "pollingLocations",
@@ -134,6 +140,7 @@ export default function GeographyPage() {
       color: "text-amber-600 dark:text-amber-400",
       bgColor: "bg-amber-50 dark:bg-amber-950/40",
       borderColor: "border-t-amber-600 dark:border-t-amber-500",
+      href: "/geography/polling-locations",
     },
   ];
 
@@ -187,25 +194,26 @@ export default function GeographyPage() {
             {row1Stats.map((s) => {
               const Icon = s.icon;
               return (
-                <Card
-                  key={s.id}
-                  className={cn(
-                    "border-t-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-card/60 backdrop-blur-md border-border/45",
-                    s.borderColor
-                  )}
-                >
-                  <CardContent className="p-5 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        {s.label}
-                      </p>
-                      <h3 className="text-2xl font-extrabold text-foreground">{s.value}</h3>
-                    </div>
-                    <div className={cn("p-2.5 rounded-xl shrink-0", s.bgColor, s.color)}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link key={s.id} href={s.href}>
+                  <Card
+                    className={cn(
+                      "border-t-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer bg-card/60 backdrop-blur-md border-border/45 hover:border-primary/40",
+                      s.borderColor
+                    )}
+                  >
+                    <CardContent className="p-5 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          {s.label}
+                        </p>
+                        <h3 className="text-2xl font-extrabold text-foreground">{s.value}</h3>
+                      </div>
+                      <div className={cn("p-2.5 rounded-xl shrink-0 transition-transform group-hover:scale-110", s.bgColor, s.color)}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               );
             })}
           </div>
@@ -214,25 +222,26 @@ export default function GeographyPage() {
             {row2Stats.map((s) => {
               const Icon = s.icon;
               return (
-                <Card
-                  key={s.id}
-                  className={cn(
-                    "border-t-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-card/60 backdrop-blur-md border-border/45",
-                    s.borderColor
-                  )}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        {s.label}
-                      </p>
-                      <h3 className="text-xl font-extrabold text-foreground">{s.value}</h3>
-                    </div>
-                    <div className={cn("p-2 rounded-lg shrink-0", s.bgColor, s.color)}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link key={s.id} href={s.href}>
+                  <Card
+                    className={cn(
+                      "border-t-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer bg-card/60 backdrop-blur-md border-border/45 hover:border-primary/40",
+                      s.borderColor
+                    )}
+                  >
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          {s.label}
+                        </p>
+                        <h3 className="text-xl font-extrabold text-foreground">{s.value}</h3>
+                      </div>
+                      <div className={cn("p-2 rounded-lg shrink-0 transition-transform group-hover:scale-110", s.bgColor, s.color)}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               );
             })}
           </div>

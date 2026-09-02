@@ -921,38 +921,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
 
           {/* Wards */}
           <TabsContent value="wards" className="mt-4 space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-end">
-              <div className="space-y-1.5 flex-1 max-w-sm w-full">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Select Ward to Link
-                </Label>
-                <select
-                  className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus-visible:ring-primary focus-visible:outline-none"
-                  value={selectedWardId}
-                  onChange={(e) => setSelectedWardId(e.target.value)}
-                >
-                  <option value="">Choose unlinked ward...</option>
-                  {availableWards.map((w: any) => (
-                    <option key={w.id} value={w.id}>
-                      Ward {w.wardNumber}: {w.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button
-                size="sm"
-                className="h-9 text-xs bg-primary hover:bg-primary/95 text-white gap-1.5"
-                disabled={!selectedWardId || wardLink.link.isPending}
-                onClick={() =>
-                  wardLink.link
-                    .mutateAsync(selectedWardId)
-                    .then(() => setSelectedWardId(""))
-                }
-              >
-                <LinkIcon className="h-3.5 w-3.5" /> Link Ward
-              </Button>
-            </div>
-
             <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden">
               {wardsLoading ? (
                 <div className="space-y-2 p-4">
@@ -997,15 +965,11 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-rose-500 hover:text-rose-600"
-                            disabled={wardLink.unlink.isPending}
-                            onClick={() => wardLink.unlink.mutate(w.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Link href={`/geography/wards/${w.id}`}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold text-primary">
+                              View Details
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1017,40 +981,6 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
 
           {/* Towns / Villages */}
           <TabsContent value="town-villages" className="mt-4 space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-end">
-              <div className="space-y-1.5 flex-1 max-w-sm w-full">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Select Town/Village to Link
-                </Label>
-                <select
-                  className="w-full h-9 px-3 rounded-lg border border-border bg-background text-xs text-foreground focus-visible:ring-primary focus-visible:outline-none"
-                  value={selectedTownVillageId}
-                  onChange={(e) => setSelectedTownVillageId(e.target.value)}
-                >
-                  <option value="">Choose unlinked town/village...</option>
-                  {availableTownVillages.map((v: any) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} ({v.type || "Town/Village"})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button
-                size="sm"
-                className="h-9 text-xs bg-primary hover:bg-primary/95 text-white gap-1.5"
-                disabled={
-                  !selectedTownVillageId || townVillageLink.link.isPending
-                }
-                onClick={() =>
-                  townVillageLink.link
-                    .mutateAsync(selectedTownVillageId)
-                    .then(() => setSelectedTownVillageId(""))
-                }
-              >
-                <LinkIcon className="h-3.5 w-3.5" /> Link Town/Village
-              </Button>
-            </div>
-
             <Card className="border border-border/50 bg-card rounded-2xl shadow-sm overflow-hidden">
               {townVillagesLoading ? (
                 <div className="space-y-2 p-4">
@@ -1095,15 +1025,11 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-rose-500 hover:text-rose-600"
-                            disabled={townVillageLink.unlink.isPending}
-                            onClick={() => townVillageLink.unlink.mutate(v.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Link href={`/geography/town-villages/${v.id}`}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold text-primary">
+                              View Details
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -306,6 +306,7 @@ function ConstituenciesList() {
                 color: "text-indigo-500",
                 bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
                 borderColor: "border-indigo-100 dark:border-indigo-950/50",
+                href: "/geography/constituencies",
               },
               {
                 label: "Districts",
@@ -314,6 +315,7 @@ function ConstituenciesList() {
                 color: "text-blue-500",
                 bgColor: "bg-blue-50 dark:bg-blue-950/30",
                 borderColor: "border-blue-100 dark:border-blue-950/50",
+                href: "/geography/districts",
               },
               {
                 label: "Wards",
@@ -322,14 +324,16 @@ function ConstituenciesList() {
                 color: "text-emerald-500",
                 bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
                 borderColor: "border-emerald-100 dark:border-emerald-950/50",
+                href: "/geography/wards",
               },
               {
                 label: "Villages",
-                value: geoStats.villages || 0,
+                value: geoStats.townVillages || geoStats.villages || 0,
                 Icon: MapPin,
                 color: "text-amber-500",
                 bgColor: "bg-amber-50 dark:bg-amber-950/30",
                 borderColor: "border-amber-100 dark:border-amber-950/50",
+                href: "/geography/town-villages",
               },
               {
                 label: "Booths",
@@ -338,21 +342,22 @@ function ConstituenciesList() {
                 color: "text-violet-500",
                 bgColor: "bg-violet-50 dark:bg-violet-950/30",
                 borderColor: "border-violet-100 dark:border-violet-950/50",
+                href: "/geography/booths",
               },
             ].map((s, i) => (
-              <Card
-                key={i}
-                className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl"
-              >
-                <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div
-                      className={cn(
-                        "p-2 rounded-xl border",
-                        s.bgColor,
-                        s.borderColor,
-                      )}
-                    >
+              <Link key={i} href={s.href}>
+                <Card
+                  className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border border-border/50 bg-card hover:border-primary/30 rounded-2xl h-full"
+                >
+                  <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div
+                        className={cn(
+                          "p-2 rounded-xl border",
+                          s.bgColor,
+                          s.borderColor,
+                        )}
+                      >
                       <s.Icon className={cn("h-4 w-4", s.color)} />
                     </div>
                   </div>
@@ -366,6 +371,7 @@ function ConstituenciesList() {
                   </div>
                 </CardContent>
               </Card>
+            </Link>
             ))}
           </div>
         )}

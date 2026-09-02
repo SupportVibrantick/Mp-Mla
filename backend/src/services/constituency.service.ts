@@ -500,23 +500,46 @@ export async function getConstituencyWards(
 ) {
   await getConstituency(tenantId, constituencyId);
 
-  const mappings = await prisma.constituencyWard.findMany({
-    where: { tenantId, constituencyId },
-    include: {
-      ward: {
-        select: {
-          id: true,
-          name: true,
-          wardNumber: true,
-          townVillage: { select: { id: true, name: true, type: true } },
-          status: true,
+  const [mappings, directWards] = await Promise.all([
+    prisma.constituencyWard.findMany({
+      where: { tenantId, constituencyId },
+      include: {
+        ward: {
+          select: {
+            id: true,
+            name: true,
+            wardNumber: true,
+            townVillage: { select: { id: true, name: true, type: true } },
+            status: true,
+            constituencyId: true,
+          },
         },
       },
-    },
-    orderBy: { ward: { wardNumber: "asc" } },
-  });
+      orderBy: { ward: { wardNumber: "asc" } },
+    }),
+    prisma.ward.findMany({
+      where: { tenantId, constituencyId, isDeleted: false },
+      select: {
+        id: true,
+        name: true,
+        wardNumber: true,
+        townVillage: { select: { id: true, name: true, type: true } },
+        status: true,
+        constituencyId: true,
+      },
+      orderBy: { wardNumber: "asc" },
+    }),
+  ]);
 
-  return mappings.map((m) => m.ward);
+  const mapWards = mappings.map((m) => m.ward).filter(Boolean);
+  const wardMap = new Map<string, any>();
+  for (const w of [...mapWards, ...directWards]) {
+    if (w && !wardMap.has(w.id)) {
+      wardMap.set(w.id, w);
+    }
+  }
+
+  return Array.from(wardMap.values()).sort((a, b) => a.wardNumber - b.wardNumber);
 }
 
 export async function linkWardToConstituency(
@@ -530,6 +553,11 @@ export async function linkWardToConstituency(
     where: { id: wardId, tenantId, isDeleted: false },
   });
   if (!ward) throw ApiError.notFound("Ward not found.");
+
+  await prisma.ward.update({
+    where: { id: wardId },
+    data: { constituencyId },
+  });
 
   return prisma.constituencyWard.upsert({
     where: { constituencyId_wardId: { constituencyId, wardId } },
@@ -545,8 +573,13 @@ export async function unlinkWardFromConstituency(
 ) {
   await getConstituency(tenantId, constituencyId);
 
-  return prisma.constituencyWard.delete({
-    where: { constituencyId_wardId: { constituencyId, wardId } },
+  await prisma.ward.updateMany({
+    where: { id: wardId, constituencyId },
+    data: { constituencyId: null },
+  });
+
+  return prisma.constituencyWard.deleteMany({
+    where: { constituencyId, wardId },
   });
 }
 

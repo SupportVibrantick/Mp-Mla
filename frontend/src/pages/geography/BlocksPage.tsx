@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
 import {
@@ -360,47 +361,51 @@ export default function BlocksPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {/* Total */}
 
-          <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl">
-            <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="p-2 rounded-xl border border-indigo-100 dark:border-indigo-950/50 bg-indigo-50 dark:bg-indigo-950/30">
-                  <Map className="h-4 w-4 text-indigo-500" />
+          <Link href="/geography/blocks">
+            <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border border-border/50 bg-card hover:border-primary/30 rounded-2xl h-full">
+              <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="p-2 rounded-xl border border-indigo-100 dark:border-indigo-950/50 bg-indigo-50 dark:bg-indigo-950/30">
+                    <Map className="h-4 w-4 text-indigo-500" />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
-                  Blocks
-                </p>
+                <div>
+                  <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                    Blocks
+                  </p>
 
-                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
-                  {isLoading ? <Skeleton className="h-7 w-16" /> : total}
-                </h3>
-              </div>
-            </CardContent>
-          </Card>
+                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                    {isLoading ? <Skeleton className="h-7 w-16" /> : total}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Districts */}
 
-          <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border/50 bg-card hover:border-primary/20 rounded-2xl">
-            <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="p-2 rounded-xl border border-blue-100 dark:border-blue-950/50 bg-blue-50 dark:bg-blue-950/30">
-                  <Building2 className="h-4 w-4 text-blue-500" />
+          <Link href="/geography/districts">
+            <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border border-border/50 bg-card hover:border-primary/30 rounded-2xl h-full">
+              <CardContent className="p-4 flex flex-col justify-between h-full space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="p-2 rounded-xl border border-blue-100 dark:border-blue-950/50 bg-blue-50 dark:bg-blue-950/30">
+                    <Building2 className="h-4 w-4 text-blue-500" />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
-                  Districts
-                </p>
+                <div>
+                  <p className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground">
+                    Districts
+                  </p>
 
-                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
-                  {districts.length}
-                </h3>
-              </div>
-            </CardContent>
-          </Card>
+                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-1">
+                    {districts.length}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Active */}
 

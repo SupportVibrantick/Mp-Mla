@@ -1500,22 +1500,22 @@ export async function getStats(tenantId: string) {
   const [districts, blocks, townVillages, wards, booths, pollingLocations] =
     await Promise.all([
       prisma.district.count({
-        where: { tenantId, isActive: true, isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.block.count({
-        where: { tenantId, isActive: true, isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.townVillage.count({
-        where: { tenantId, isActive: true, isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.ward.count({
-        where: { tenantId, isDeleted: false, status: "ACTIVE" },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.booth.count({
-        where: { tenantId, isActive: true, isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
       prisma.pollingLocation.count({
-        where: { tenantId, isActive: true, isDeleted: false },
+        where: { tenantId, isDeleted: false },
       }),
     ]);
 
@@ -1557,8 +1557,15 @@ export async function getOverview(tenantId: string) {
       });
 
       const [wardsCount, townVillagesCount, boothsCount, booths] = await Promise.all([
-        prisma.constituencyWard.count({
-          where: { constituencyId: c.id },
+        prisma.ward.count({
+          where: {
+            tenantId,
+            isDeleted: false,
+            OR: [
+              { constituencyId: c.id },
+              { constituencyWards: { some: { constituencyId: c.id } } },
+            ],
+          },
         }),
         prisma.townVillage.count({
           where: { constituencyId: c.id, isDeleted: false },

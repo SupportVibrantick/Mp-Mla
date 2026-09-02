@@ -140,7 +140,7 @@ export default function TownVillageDetailPage() {
 
           <div className="flex gap-2">
             <PermissionGate module="constituency" action="update">
-              <Button
+              {/* <Button
                 variant="outline"
                 onClick={() =>
                   navigate(`/geography/town-villages/${item.id}?edit=true`)
@@ -148,7 +148,7 @@ export default function TownVillageDetailPage() {
               >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
-              </Button>
+              </Button> */}
 
               <Button
                 variant="outline"

@@ -352,7 +352,7 @@ export default function Login() {
                     <span>WhatsApp us</span>
                   </a>
                   <a
-                    href="tel:+917353230500"
+                    href="tel:+919870443528"
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <Phone className="h-4.5 w-4.5 text-slate-800 dark:text-white" />
