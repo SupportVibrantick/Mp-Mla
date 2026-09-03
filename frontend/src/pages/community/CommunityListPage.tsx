@@ -133,77 +133,109 @@ export default function CommunityListPage() {
   };
 
   const downloadSampleTemplate = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Community Groups");
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Community Groups");
+      const dropdownSheet = workbook.addWorksheet("DropdownData", {
+        state: "hidden",
+      });
 
-    const columns = [
-      { header: "name", key: "name", width: 30 },
-      { header: "type", key: "type", width: 20 },
-      { header: "wardNumber", key: "wardNumber", width: 15 },
-      { header: "address", key: "address", width: 30 },
-      { header: "description", key: "description", width: 40 },
-      { header: "memberCount", key: "memberCount", width: 15 },
-      { header: "maleMembers", key: "maleMembers", width: 15 },
-      { header: "femaleMembers", key: "femaleMembers", width: 15 },
-      { header: "headName", key: "headName", width: 25 },
-      { header: "headPhone", key: "headPhone", width: 20 },
-      { header: "headEmail", key: "headEmail", width: 30 },
-      { header: "headDesignation", key: "headDesignation", width: 20 },
-      { header: "registrationNo", key: "registrationNo", width: 20 },
-      { header: "isActive", key: "isActive", width: 15 },
-    ];
+      const columns = [
+        { header: "name", key: "name", width: 30 },
+        { header: "type", key: "type", width: 20 },
+        { header: "wardNumber", key: "wardNumber", width: 15 },
+        { header: "address", key: "address", width: 30 },
+        { header: "description", key: "description", width: 40 },
+        { header: "memberCount", key: "memberCount", width: 15 },
+        { header: "maleMembers", key: "maleMembers", width: 15 },
+        { header: "femaleMembers", key: "femaleMembers", width: 15 },
+        { header: "headName", key: "headName", width: 25 },
+        { header: "headPhone", key: "headPhone", width: 20 },
+        { header: "headEmail", key: "headEmail", width: 30 },
+        { header: "headDesignation", key: "headDesignation", width: 20 },
+        { header: "registrationNo", key: "registrationNo", width: 20 },
+        { header: "isActive", key: "isActive", width: 15 },
+      ];
 
-    worksheet.columns = columns;
+      worksheet.columns = columns;
 
-    worksheet.addRow({
-      name: "Sample Market Association",
-      type: "MARKET",
-      wardNumber: 1,
-      address: "Main Market Area",
-      description: "Association of local traders",
-      memberCount: 150,
-      maleMembers: 100,
-      femaleMembers: 50,
-      headName: "John Trader",
-      headPhone: "9876543210",
-      headEmail: "head@market.org",
-      headDesignation: "President",
-      registrationNo: "MK/2023/001",
-      isActive: "TRUE",
-    });
+      worksheet.addRow({
+        name: "Sample Market Association",
+        type: "MARKET",
+        wardNumber: wards[0]?.wardNumber || 1,
+        address: "Main Market Area",
+        description: "Association of local traders",
+        memberCount: 150,
+        maleMembers: 100,
+        femaleMembers: 50,
+        headName: "John Trader",
+        headPhone: "9876543210",
+        headEmail: "head@market.org",
+        headDesignation: "President",
+        registrationNo: "MK/2023/001",
+        isActive: "TRUE",
+      });
 
-    const types = COMMUNITY_TYPES.map((t) => t.value);
+      const types = COMMUNITY_TYPES.map((t) => t.value);
+      const wardList = wards
+        .map((w: any) => String(w.wardNumber))
+        .filter(Boolean)
+        .sort((a: string, b: string) => Number(a) - Number(b));
+      const booleanList = ["TRUE", "FALSE"];
 
-    for (let i = 2; i <= 51; i++) {
-      worksheet.getCell(`B${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`"${types.join(",")}"`],
+      dropdownSheet.getColumn(1).values = ["Types", ...types];
+      dropdownSheet.getColumn(2).values = ["WardNumbers", ...wardList];
+      dropdownSheet.getColumn(3).values = ["Booleans", ...booleanList];
+
+      for (let i = 2; i <= 501; i++) {
+        // Type Dropdown (Column B)
+        worksheet.getCell(`B${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$A$2:$A$${types.length + 1}`],
+          showErrorMessage: true,
+        };
+
+        // WardNumber Dropdown (Column C)
+        worksheet.getCell(`C${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [
+            `=DropdownData!$B$2:$B$${Math.max(wardList.length + 1, 2)}`,
+          ],
+          showErrorMessage: true,
+        };
+
+        // IsActive Dropdown (Column N)
+        worksheet.getCell(`N${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$C$2:$C$3`],
+          showErrorMessage: true,
+        };
+      }
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
       };
-      worksheet.getCell(`N${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: ['"TRUE,FALSE"'],
-      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "community_groups_template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate Community Groups sample template", err);
+      toast.error("Failed to generate Excel template");
     }
-
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFE0E0E0" },
-    };
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "community_groups_template.xlsx";
-    a.click();
-    window.URL.revokeObjectURL(url);
   };
 
   return (

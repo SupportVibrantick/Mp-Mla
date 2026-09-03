@@ -136,10 +136,10 @@ export default function LeaderListPage() {
   const stats = statsRes?.data;
   const wards = wardsRes?.data?.wards || [];
 
-  const topCategories = (stats?.byCategory || []).slice(0, 6);
+  const allCategories = stats?.byCategory || [];
   const maxCatCount =
-    topCategories.length > 0
-      ? Math.max(...topCategories.map((c: any) => c.count))
+    allCategories.length > 0
+      ? Math.max(...allCategories.map((c: any) => c.count))
       : 1;
 
   // ── Export ──
@@ -494,14 +494,26 @@ export default function LeaderListPage() {
         )}
 
         {/* ─── Category Breakdown ──────────────────────── */}
-        {topCategories.length > 0 && (
+        {allCategories.length > 0 && (
           <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
-            <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30">
-              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Representative Breakdown</CardTitle>
+            <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30 flex flex-row items-center justify-between">
+              <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Representative Breakdown ({allCategories.length} Categories • {allCategories.reduce((acc: number, curr: any) => acc + curr.count, 0)} Total)
+              </CardTitle>
+              {categoryFilter !== "all" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCategoryFilter("all")}
+                  className="h-6 text-[11px] px-2 font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  Clear Filter
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {topCategories.map((c: any) => {
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {allCategories.map((c: any) => {
                   const info = getCategoryInfo(c.category);
                   const CategoryIcon = info.icon;
                   const pct = Math.round((c.count / maxCatCount) * 100);
@@ -526,7 +538,7 @@ export default function LeaderListPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-bold text-foreground truncate">
+                          <span className="text-xs font-bold text-foreground truncate" title={info.label}>
                             {info.label}
                           </span>
                           <span className="text-xs font-extrabold text-foreground ml-2">

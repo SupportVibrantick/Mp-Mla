@@ -369,15 +369,17 @@ export default function DemographicsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={charts.age}
-                  margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
+                  margin={{ top: 10, right: 15, left: 10, bottom: 0 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                   <XAxis dataKey="label" fontSize={10} tickLine={false} />
                   <YAxis
                     fontSize={10}
                     tickLine={false}
-                    width={35}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
+                    width={45}
+                    tickFormatter={(v) =>
+                      v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`
+                    }
                   />
                   <Tooltip
                     formatter={(val: number) => val.toLocaleString()}

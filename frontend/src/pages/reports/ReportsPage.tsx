@@ -924,16 +924,19 @@ export default function ReportsPage() {
                             dataKey="grievances"
                             fill="#ef4444"
                             name="Public Requests"
+                            radius={[4, 4, 0, 0]}
                           />
                           <Bar
                             dataKey="projects"
                             fill="#3b82f6"
                             name="Projects"
+                            radius={[4, 4, 0, 0]}
                           />
                           <Bar
-                            dataKey="Public Facilities"
+                            dataKey="institutions"
                             fill="#22c55e"
-                            name="public facilities"
+                            name="Public Facilities"
+                            radius={[4, 4, 0, 0]}
                           />
                         </BarChart>
                       </ResponsiveContainer>

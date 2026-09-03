@@ -435,7 +435,7 @@ export default function ProjectListPage() {
               <CardContent>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ReBarChart data={stats.byCategory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <ReBarChart data={stats.byCategory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid
                         strokeDasharray="3 3"
                         vertical={false}
