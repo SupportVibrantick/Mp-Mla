@@ -9,11 +9,9 @@ import { requireTenantId } from "../../../utils/tenant.js";
 import { assertCanCreateWard } from "../../../lib/quota.js";
 import { ApiError } from "../../../utils/ApiError.js";
 
-
-
 /**
  * POST /api/admin/ward
- * Creates a new ward with areas and councillor.
+ * Creates a new ward with areas, councillors and demographics atomically.
  */
 export async function createWard(
   req: Request,
@@ -23,15 +21,32 @@ export async function createWard(
   try {
     const tenantId = requireTenantId(req);
 
-    
     await assertCanCreateWard(tenantId);
-    const { areas, councillor, councillors, demographics, ...wardData } = req.body;
-    if (wardData.constituencyId === "") wardData.constituencyId = null;
-    if (wardData.townVillageId === "") wardData.townVillageId = null;
 
+    const {
+      areas = [],
+      councillor,
+      councillors,
+      demographics,
+      ...wardData
+    } = req.body;
+
+    // Normalize nullable foreign keys
+    if (wardData.constituencyId === "") {
+      wardData.constituencyId = null;
+    }
+    if (wardData.townVillageId === "") {
+      wardData.townVillageId = null;
+    }
+
+    // Validate constituency tenant ownership
     if (wardData.constituencyId) {
       const constituency = await prisma.constituency.findFirst({
-        where: { id: wardData.constituencyId, tenantId, isDeleted: false },
+        where: {
+          id: wardData.constituencyId,
+          tenantId,
+          isDeleted: false,
+        },
       });
       if (!constituency) {
         return next(
@@ -42,9 +57,14 @@ export async function createWard(
       }
     }
 
+    // Validate town/village tenant ownership
     if (wardData.townVillageId) {
       const townVillage = await prisma.townVillage.findFirst({
-        where: { id: wardData.townVillageId, tenantId, isDeleted: false },
+        where: {
+          id: wardData.townVillageId,
+          tenantId,
+          isDeleted: false,
+        },
       });
       if (!townVillage) {
         return next(
@@ -55,7 +75,14 @@ export async function createWard(
       }
     }
 
-    const rawCouncillors = councillors || (councillor ? [councillor] : []);
+    // Councillors
+    const rawCouncillors =
+      Array.isArray(councillors) && councillors.length > 0
+        ? councillors
+        : councillor
+          ? [councillor]
+          : [];
+
     const councillorsForDb = rawCouncillors.map((c: any) => ({
       tenantId,
       name: c.name,
@@ -67,100 +94,186 @@ export async function createWard(
       isCurrent: c.isCurrent ?? true,
     }));
 
-    // Step 1: Compute aggregates
-    let totalPop = 0,
-      totalHH = 0,
-      totalMale = 0,
-      totalFemale = 0;
-    if (areas && areas.length > 0) {
-      totalPop = areas.reduce(
-        (s: number, a: any) => s + (a.population || 0),
-        0,
+    // Population source
+    // Explicit ward values are authoritative when supplied. Otherwise calculate from areas.
+    const hasDirectPopulation =
+      wardData.totalPopulation !== undefined &&
+      wardData.totalPopulation !== null &&
+      wardData.totalPopulation !== "";
+
+    const hasDirectHouseholds =
+      wardData.totalHouseholds !== undefined &&
+      wardData.totalHouseholds !== null &&
+      wardData.totalHouseholds !== "";
+
+    const hasDirectMale =
+      wardData.totalMale !== undefined &&
+      wardData.totalMale !== null &&
+      wardData.totalMale !== "";
+
+    const hasDirectFemale =
+      wardData.totalFemale !== undefined &&
+      wardData.totalFemale !== null &&
+      wardData.totalFemale !== "";
+
+    const areaPopulation = areas.reduce(
+      (sum: number, area: any) => sum + (Number(area.population) || 0),
+      0,
+    );
+
+    const areaHouseholds = areas.reduce(
+      (sum: number, area: any) => sum + (Number(area.households) || 0),
+      0,
+    );
+
+    const areaMale = areas.reduce(
+      (sum: number, area: any) => sum + (Number(area.maleCount) || 0),
+      0,
+    );
+
+    const areaFemale = areas.reduce(
+      (sum: number, area: any) => sum + (Number(area.femaleCount) || 0),
+      0,
+    );
+
+    const totalPopulation = hasDirectPopulation
+      ? Number(wardData.totalPopulation)
+      : areaPopulation;
+
+    const totalHouseholds = hasDirectHouseholds
+      ? Number(wardData.totalHouseholds)
+      : areaHouseholds;
+
+    const totalMale = hasDirectMale
+      ? Number(wardData.totalMale)
+      : areaMale;
+
+    const totalFemale = hasDirectFemale
+      ? Number(wardData.totalFemale)
+      : areaFemale;
+
+    // Validate population numbers
+    if (!Number.isFinite(totalPopulation) || totalPopulation < 0) {
+      return next(
+        ApiError.badRequest("Total population must be a valid non-negative number."),
       );
-      totalHH = areas.reduce((s: number, a: any) => s + (a.households || 0), 0);
-      totalMale = areas.reduce(
-        (s: number, a: any) => s + (a.maleCount || 0),
-        0,
+    }
+    if (!Number.isFinite(totalHouseholds) || totalHouseholds < 0) {
+      return next(
+        ApiError.badRequest(
+          "Total households must be a valid non-negative number.",
+        ),
       );
-      totalFemale = areas.reduce(
-        (s: number, a: any) => s + (a.femaleCount || 0),
-        0,
+    }
+    if (!Number.isFinite(totalMale) || totalMale < 0) {
+      return next(
+        ApiError.badRequest(
+          "Total male population must be a valid non-negative number.",
+        ),
+      );
+    }
+    if (!Number.isFinite(totalFemale) || totalFemale < 0) {
+      return next(
+        ApiError.badRequest(
+          "Total female population must be a valid non-negative number.",
+        ),
       );
     }
 
-    // Step 2: Strip per-area demographics for createMany
-    const areasForDb =
-      areas?.map(({ demographics: _d, ...rest }: any) => rest) || [];
-
-    // Step 3: Create ward + areas + councillors
-    const ward = await prisma.ward.create({
-      data: {
-        ...wardData,
+    // Strip nested demographics from areas and attach tenantId
+    const areasForDb = areas.map(
+      ({ demographics: _demographics, ...rest }: any) => ({
+        ...rest,
         tenantId,
-        establishedDate: wardData.establishedDate
-          ? new Date(wardData.establishedDate)
-          : undefined,
-        totalPopulation: totalPop,
-        totalHouseholds: totalHH,
-        totalAreas: areasForDb.length,
-        totalMale: totalMale,
-        totalFemale: totalFemale,
-        ...(areasForDb.length > 0
-          ? { areas: { createMany: { data: areasForDb } } }
-          : {}),
-        ...(councillorsForDb.length > 0
-          ? {
-              councillors: {
-                createMany: {
-                  data: councillorsForDb,
+      }),
+    );
+
+    // Create everything atomically inside a Prisma transaction
+    const ward = await prisma.$transaction(async (tx) => {
+      const createdWard = await tx.ward.create({
+        data: {
+          ...wardData,
+          tenantId,
+          establishedDate: wardData.establishedDate
+            ? new Date(wardData.establishedDate)
+            : undefined,
+          totalPopulation,
+          totalHouseholds,
+          totalAreas: areasForDb.length,
+          totalMale,
+          totalFemale,
+          ...(areasForDb.length > 0
+            ? {
+                areas: {
+                  createMany: {
+                    data: areasForDb,
+                  },
                 },
-              },
-            }
-          : {}),
-      },
-      include: {
-        areas: true,
-        councillors: { where: { isCurrent: true } },
-      },
-    });
+              }
+            : {}),
+          ...(councillorsForDb.length > 0
+            ? {
+                councillors: {
+                  createMany: {
+                    data: councillorsForDb,
+                  },
+                },
+              }
+            : {}),
+        },
+        include: {
+          areas: true,
+          councillors: {
+            where: {
+              isCurrent: true,
+            },
+          },
+        },
+      });
 
-    // Step 4: Ward-level demographics
-    await prisma.demographics.create({
-      data: buildDemographicsData(
-        tenantId,
-        ward.id,
-        null,
-        totalPop,
-        totalMale,
-        totalFemale,
-        totalHH,
-        demographics,
-      ),
-    });
+      // Create ward demographics using authoritative ward totals.
+      await tx.demographics.create({
+        data: buildDemographicsData(
+          tenantId,
+          createdWard.id,
+          null,
+          totalPopulation,
+          totalMale,
+          totalFemale,
+          totalHouseholds,
+          demographics,
+        ),
+      });
 
-    // Step 5: Area-level demographics
-    if (areas && areas.length > 0) {
-      for (const areaInput of areas) {
-        const createdArea = ward.areas.find((a) => a.name === areaInput.name);
-        if (!createdArea) continue;
+      // Create area demographics.
+      if (areas.length > 0) {
+        for (const areaInput of areas) {
+          const createdArea = createdWard.areas.find(
+            (area) => area.name === areaInput.name,
+          );
+          if (!createdArea) {
+            continue;
+          }
 
-        // Create area-level demo: explicit if provided, auto-estimated otherwise
-        await prisma.demographics.create({
-          data: buildDemographicsData(
-            tenantId,
-            ward.id,
-            createdArea.id,
-            areaInput.population || 0,
-            areaInput.maleCount || 0,
-            areaInput.femaleCount || 0,
-            areaInput.households || 0,
-            areaInput.demographics || null,
-          ),
-        });
+          await tx.demographics.create({
+            data: buildDemographicsData(
+              tenantId,
+              createdWard.id,
+              createdArea.id,
+              Number(areaInput.population) || 0,
+              Number(areaInput.maleCount) || 0,
+              Number(areaInput.femaleCount) || 0,
+              Number(areaInput.households) || 0,
+              areaInput.demographics || null,
+            ),
+          });
+        }
       }
-    }
 
-    // Step 6: Audit
+      return createdWard;
+    });
+
+    // Audit
     await createAuditLog({
       tenantId,
       userId: req.user!.id,
@@ -172,19 +285,37 @@ export async function createWard(
         name: ward.name,
         wardNumber: ward.wardNumber,
         areas: areasForDb.length,
+        totalPopulation,
+        totalHouseholds,
+        totalMale,
+        totalFemale,
       },
       ...getRequestMeta(req),
     });
 
-    // Step 7: Return full ward
+    // Return complete ward
     const fullWard = await prisma.ward.findFirst({
-      where: { id: ward.id, tenantId },
+      where: {
+        id: ward.id,
+        tenantId,
+      },
       include: {
         areas: true,
-        councillors: { where: { isCurrent: true } },
+        councillors: {
+          where: {
+            isCurrent: true,
+          },
+          orderBy: {
+            sinceDate: "desc",
+          },
+        },
         demographics: true,
         _count: {
-          select: { institutions: true, grievances: true, projects: true },
+          select: {
+            institutions: true,
+            grievances: true,
+            projects: true,
+          },
         },
       },
     });

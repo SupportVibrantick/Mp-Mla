@@ -97,6 +97,17 @@ export function useWard(id: string | undefined) {
   });
 }
 
+export function parseErrorMessage(err: any, fallback: string = "Operation failed"): string {
+  const data = err?.response?.data;
+  if (!data) return err?.message || fallback;
+  if (Array.isArray(data.errors) && data.errors.length > 0) {
+    return data.errors
+      .map((e: any) => (e.field ? `${e.field}: ${e.message}` : e.message))
+      .join("; ");
+  }
+  return data.message || fallback;
+}
+
 // ─── Create Ward ────────────────────────────────────────
 
 export function useCreateWard() {
@@ -112,7 +123,7 @@ export function useCreateWard() {
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed to create ward",
+        description: parseErrorMessage(err, "Failed to create ward"),
         variant: "destructive",
       });
     },
@@ -130,7 +141,7 @@ export function useBulkCreateWards() {
     },
     onError: (err: any) => {
       throw new Error(
-        err?.response?.data?.message || "Failed to bulk import wards",
+        parseErrorMessage(err, "Failed to bulk import wards"),
       );
     },
   });
@@ -151,7 +162,7 @@ export function useUpdateWard() {
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed",
+        description: parseErrorMessage(err, "Failed to update ward"),
         variant: "destructive",
       });
     },
@@ -173,7 +184,7 @@ export function useDeleteWard() {
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed",
+        description: parseErrorMessage(err, "Failed to delete ward"),
         variant: "destructive",
       });
     },
@@ -193,7 +204,7 @@ export function useBulkDeleteWards() {
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed to bulk delete wards",
+        description: parseErrorMessage(err, "Failed to bulk delete wards"),
         variant: "destructive",
       });
     },
@@ -223,7 +234,7 @@ export function useCreateArea() {
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed",
+        description: parseErrorMessage(err, "Failed to add area"),
         variant: "destructive",
       });
     },
@@ -253,7 +264,7 @@ export function useUpdateArea() {
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed",
+        description: parseErrorMessage(err, "Failed to update area"),
         variant: "destructive",
       });
     },
@@ -273,7 +284,7 @@ export function useDeleteArea() {
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed",
+        description: parseErrorMessage(err, "Failed to delete area"),
         variant: "destructive",
       });
     },

@@ -1,5 +1,6 @@
 import prisma from "./prisma.js";
 import { ApiError } from "../utils/ApiError.js";
+import { syncVoterDemographics } from "../routes/admin/voterList/demographicsSync.js";
 
 export type RecycleEntityType =
   | "community_group"
@@ -25,7 +26,9 @@ export type RecycleEntityType =
   | "constituency"
   | "block"
   | "town_village"
-  | "district";
+  | "district"
+  | "voter"
+  | "voter_list";
 
 interface ArchiveInput {
   tenantId?: string;
@@ -801,12 +804,46 @@ async function restoreGeographyRecord(
   });
 }
 
+async function restoreVoter(payload: unknown) {
+  const voterObj = ensureObject(payload, "voter");
+  const voterData = omitSystemFields(voterObj);
+
+  const existing = await prisma.voter.findUnique({
+    where: { id: voterObj.id as string },
+    select: { id: true, wardId: true, tenantId: true },
+  });
+
+  if (existing) {
+    await prisma.voter.update({
+      where: { id: voterObj.id as string },
+      data: { ...(voterData as any), isDeleted: false, status: "ACTIVE" },
+    });
+    if (existing.tenantId && existing.wardId) {
+      await syncVoterDemographics(existing.tenantId, existing.wardId);
+    }
+  } else {
+    await prisma.voter.create({
+      data: { ...(voterObj as any), isDeleted: false, status: "ACTIVE" },
+    });
+    if (voterObj.tenantId && voterObj.wardId) {
+      await syncVoterDemographics(
+        voterObj.tenantId as string,
+        voterObj.wardId as string,
+      );
+    }
+  }
+}
+
 export async function restoreRecycleBinEntry(entry: {
   id: string;
   entityType: string;
   payload: unknown;
 }) {
   switch (entry.entityType as RecycleEntityType) {
+    case "voter":
+    case "voter_list":
+      await restoreVoter(entry.payload);
+      break;
     case "community_group":
       await restoreCommunityGroup(entry.payload);
       break;
@@ -891,6 +928,10 @@ export async function permanentlyDeleteRecycledRecord(entry: {
   recordId: string;
 }) {
   switch (entry.entityType as RecycleEntityType) {
+    case "voter":
+    case "voter_list":
+      await prisma.voter.deleteMany({ where: { id: entry.recordId } });
+      break;
     case "community_group":
       await prisma.communityGroup.deleteMany({ where: { id: entry.recordId } });
       break;
@@ -933,9 +974,14 @@ export async function permanentlyDeleteRecycledRecord(entry: {
       await prisma.project.deleteMany({ where: { id: entry.recordId } });
       break;
     case "ward":
+      await prisma.voter.deleteMany({ where: { wardId: entry.recordId } });
+      await prisma.wardArea.deleteMany({ where: { wardId: entry.recordId } });
+      await prisma.wardCouncillor.deleteMany({ where: { wardId: entry.recordId } });
+      await prisma.demographics.deleteMany({ where: { wardId: entry.recordId } });
       await prisma.ward.deleteMany({ where: { id: entry.recordId } });
       break;
     case "ward_area":
+      await prisma.demographics.deleteMany({ where: { wardAreaId: entry.recordId } });
       await prisma.wardArea.deleteMany({ where: { id: entry.recordId } });
       break;
     case "project_milestone":
@@ -960,6 +1006,9 @@ export async function permanentlyDeleteRecycledRecord(entry: {
       });
       break;
     case "constituency":
+      await prisma.representativeProfile.deleteMany({
+        where: { constituencyId: entry.recordId },
+      });
       await prisma.constituency.deleteMany({ where: { id: entry.recordId } });
       break;
     case "block":

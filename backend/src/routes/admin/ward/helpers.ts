@@ -3,30 +3,72 @@ import { syncVoterDemographics } from "../voterList/demographicsSync.js";
 import { z } from "zod";
 
 /**
- * Recompute ward aggregate fields (totalPopulation, etc.)
+ * Recompute ward aggregate fields (totalAreas)
  * from its active areas. Called after any area create/update/delete.
  */
 export async function recomputeWardAggregates(wardId: string) {
-  const areas = await prisma.wardArea.findMany({
+  const activeAreaCount = await prisma.wardArea.count({
     where: { wardId, isActive: true },
-    select: {
-      population: true,
-      households: true,
-      maleCount: true,
-      femaleCount: true,
-    },
   });
 
   await prisma.ward.update({
     where: { id: wardId },
     data: {
-      totalPopulation: areas.reduce((s, a) => s + a.population, 0),
-      totalHouseholds: areas.reduce((s, a) => s + a.households, 0),
-      totalMale: areas.reduce((s, a) => s + a.maleCount, 0),
-      totalFemale: areas.reduce((s, a) => s + a.femaleCount, 0),
-      totalAreas: areas.length,
+      totalAreas: activeAreaCount,
     },
   });
+}
+
+/**
+ * Synchronize authoritative ward population metrics (totalPopulation, maleCount, femaleCount, totalHouseholds)
+ * into the ward-level Demographics record (wardAreaId=null).
+ */
+export async function syncWardDemographicsFromWard(
+  tenantId: string,
+  wardId: string,
+) {
+  const ward = await prisma.ward.findFirst({
+    where: { id: wardId, tenantId },
+    select: {
+      totalPopulation: true,
+      totalHouseholds: true,
+      totalMale: true,
+      totalFemale: true,
+    },
+  });
+
+  if (!ward) return;
+
+  const existing = await prisma.demographics.findFirst({
+    where: { tenantId, wardId, wardAreaId: null },
+  });
+
+  const data = {
+    totalPopulation: ward.totalPopulation || 0,
+    maleCount: ward.totalMale || 0,
+    femaleCount: ward.totalFemale || 0,
+    totalHouseholds: ward.totalHouseholds || 0,
+  };
+
+  if (existing) {
+    await prisma.demographics.update({
+      where: { id: existing.id },
+      data,
+    });
+  } else {
+    await prisma.demographics.create({
+      data: {
+        tenantId,
+        wardId,
+        wardAreaId: null,
+        ...data,
+        source: "Authoritative Ward Population",
+        surveyDate: new Date(),
+      },
+    });
+  }
+
+  await syncVoterDemographics(tenantId, wardId);
 }
 
 /**
@@ -37,7 +79,13 @@ export async function recomputeWardAggregates(wardId: string) {
 export async function recomputeWardDemographics(wardId: string) {
   const ward = await prisma.ward.findUnique({
     where: { id: wardId },
-    select: { tenantId: true },
+    select: {
+      tenantId: true,
+      totalPopulation: true,
+      totalHouseholds: true,
+      totalMale: true,
+      totalFemale: true,
+    },
   });
   if (!ward) return;
   const tenantId = ward.tenantId;
@@ -45,50 +93,25 @@ export async function recomputeWardDemographics(wardId: string) {
   const areaDemos = await prisma.demographics.findMany({
     where: { tenantId, wardId, wardAreaId: { not: null } },
   });
-  type Area = Awaited<ReturnType<typeof prisma.wardArea.findMany>>[number];
 
   if (areaDemos.length === 0) {
-    const areas = await prisma.wardArea.findMany({
-      where: { wardId, isActive: true },
-    });
-
-    const sum = (field: keyof Area) =>
-      areas.reduce((s, a) => s + (Number(a[field]) || 0), 0);
-    const data = {
-      totalPopulation: sum("population"),
-      maleCount: sum("maleCount"),
-      femaleCount: sum("femaleCount"),
-      totalHouseholds: sum("households"),
-      source: "Aggregated from ward areas",
-    };
-    const existing = await prisma.demographics.findFirst({
-      where: { tenantId, wardId, wardAreaId: null },
-    });
-    if (existing)
-      await prisma.demographics.update({ where: { id: existing.id }, data });
-    else
-      await prisma.demographics.create({
-        data: { tenantId, wardId, wardAreaId: null, ...data },
-      });
-
-    // Sync actual voter counts from Voter table
-    await syncVoterDemographics(tenantId, wardId);
+    await syncWardDemographicsFromWard(tenantId, wardId);
     return;
   }
   const sum = (field: keyof (typeof areaDemos)[0]) =>
     areaDemos.reduce((s, d) => s + (Number(d[field]) || 0), 0);
 
   const aggregated = {
-    totalPopulation: sum("totalPopulation"),
-    maleCount: sum("maleCount"),
-    femaleCount: sum("femaleCount"),
+    totalPopulation: ward.totalPopulation > 0 ? ward.totalPopulation : sum("totalPopulation"),
+    maleCount: ward.totalMale > 0 ? ward.totalMale : sum("maleCount"),
+    femaleCount: ward.totalFemale > 0 ? ward.totalFemale : sum("femaleCount"),
     transgenderCount: sum("transgenderCount"),
     age0to6: sum("age0to6"),
     age7to18: sum("age7to18"),
     age19to35: sum("age19to35"),
     age36to60: sum("age36to60"),
     age60plus: sum("age60plus"),
-    totalHouseholds: sum("totalHouseholds"),
+    totalHouseholds: ward.totalHouseholds > 0 ? ward.totalHouseholds : sum("totalHouseholds"),
     bplHouseholds: sum("bplHouseholds"),
     aplHouseholds: sum("aplHouseholds"),
     generalCount: sum("generalCount"),
@@ -140,10 +163,8 @@ export async function recomputeWardDemographics(wardId: string) {
 }
 
 /**
- * Build a Demographics record from either user-provided data
- * or auto-estimated from population numbers.
- * Derived voter fields (totalVoters, maleVoters, femaleVoters, newVotersCount)
- * are excluded from user input and auto-estimation.
+ * Build a Demographics record from user-provided input or auto-estimated numbers.
+ * Derived voter fields (totalVoters, maleVoters, femaleVoters) are strictly excluded from user input.
  */
 export function buildDemographicsData(
   tenantId: string,
@@ -155,103 +176,77 @@ export function buildDemographicsData(
   totalHH: number,
   userInput?: Record<string, any> | null,
 ) {
-  if (userInput && Object.keys(userInput).length > 0) {
-    const {
-      totalVoters,
-      maleVoters,
-      femaleVoters,
-      ...cleanInput
-    } = userInput;
+  const cleanInput = { ...(userInput || {}) };
 
-    return {
-      wardId,
-      tenantId,
-      wardAreaId,
-      totalPopulation: totalPop,
-      maleCount: totalMale,
-      femaleCount: totalFemale,
-      totalHouseholds: totalHH,
-      // Age
-      age0to6: cleanInput.age0to6 ?? 0,
-      age7to18: cleanInput.age7to18 ?? 0,
-      age19to35: cleanInput.age19to35 ?? 0,
-      age36to60: cleanInput.age36to60 ?? 0,
-      age60plus: cleanInput.age60plus ?? 0,
-      // Caste
-      generalCount: cleanInput.generalCount ?? 0,
-      obcCount: cleanInput.obcCount ?? 0,
-      scCount: cleanInput.scCount ?? 0,
-      stCount: cleanInput.stCount ?? 0,
-      minorityCount: cleanInput.minorityCount ?? 0,
-      otherCount: cleanInput.otherCount ?? 0,
-      // Religion
-      hinduCount: cleanInput.hinduCount ?? 0,
-      muslimCount: cleanInput.muslimCount ?? 0,
-      sikhCount: cleanInput.sikhCount ?? 0,
-      christianCount: cleanInput.christianCount ?? 0,
-      buddhistCount: cleanInput.buddhistCount ?? 0,
-      jainCount: cleanInput.jainCount ?? 0,
-      otherReligionCount: cleanInput.otherReligionCount ?? 0,
-      // Economic
-      bplHouseholds: cleanInput.bplHouseholds ?? 0,
-      aplHouseholds: cleanInput.aplHouseholds ?? 0,
-      // Literacy
-      literacyRate: cleanInput.literacyRate ?? null,
-      maleLiteracyRate: cleanInput.maleLiteracyRate ?? null,
-      femaleLiteracyRate: cleanInput.femaleLiteracyRate ?? null,
-      newVotersCount: cleanInput.newVotersCount ?? 0,
-      totalBirths: cleanInput.totalBirths ?? 0,
-      totalDeaths: cleanInput.totalDeaths ?? 0,
-      // Meta
-      source: cleanInput.source ?? null,
-      notes: cleanInput.notes ?? null,
-      surveyDate: cleanInput.surveyDate
-        ? new Date(cleanInput.surveyDate)
-        : new Date(),
-    };
-  }
+  // Never accept system-derived voter values from frontend input
+  delete cleanInput.totalVoters;
+  delete cleanInput.maleVoters;
+  delete cleanInput.femaleVoters;
 
-  // Default values when no survey data is provided (all 0/null until survey data exists)
   return {
-    wardId,
     tenantId,
+    wardId,
     wardAreaId,
-    totalPopulation: totalPop,
-    maleCount: totalMale,
-    femaleCount: totalFemale,
-    totalHouseholds: totalHH,
+
+    // Authoritative population values
+    totalPopulation: Number(totalPop) || 0,
+    maleCount: Number(totalMale) || 0,
+    femaleCount: Number(totalFemale) || 0,
+    totalHouseholds: Number(totalHH) || 0,
+
     // Age
-    age0to6: 0,
-    age7to18: 0,
-    age19to35: 0,
-    age36to60: 0,
-    age60plus: 0,
+    age0to6: Number(cleanInput.age0to6) || 0,
+    age7to18: Number(cleanInput.age7to18) || 0,
+    age19to35: Number(cleanInput.age19to35) || 0,
+    age36to60: Number(cleanInput.age36to60) || 0,
+    age60plus: Number(cleanInput.age60plus) || 0,
+
     // Caste
-    generalCount: 0,
-    obcCount: 0,
-    scCount: 0,
-    stCount: 0,
-    minorityCount: 0,
-    otherCount: 0,
+    generalCount: Number(cleanInput.generalCount) || 0,
+    obcCount: Number(cleanInput.obcCount) || 0,
+    scCount: Number(cleanInput.scCount) || 0,
+    stCount: Number(cleanInput.stCount) || 0,
+    minorityCount: Number(cleanInput.minorityCount) || 0,
+    otherCount: Number(cleanInput.otherCount) || 0,
+
     // Religion
-    hinduCount: 0,
-    muslimCount: 0,
-    sikhCount: 0,
-    christianCount: 0,
-    buddhistCount: 0,
-    jainCount: 0,
-    otherReligionCount: 0,
+    hinduCount: Number(cleanInput.hinduCount) || 0,
+    muslimCount: Number(cleanInput.muslimCount) || 0,
+    sikhCount: Number(cleanInput.sikhCount) || 0,
+    christianCount: Number(cleanInput.christianCount) || 0,
+    buddhistCount: Number(cleanInput.buddhistCount) || 0,
+    jainCount: Number(cleanInput.jainCount) || 0,
+    otherReligionCount: Number(cleanInput.otherReligionCount) || 0,
+
     // Economic
-    bplHouseholds: 0,
-    aplHouseholds: 0,
-    literacyRate: null,
-    maleLiteracyRate: null,
-    femaleLiteracyRate: null,
-    newVotersCount: 0,
-    totalBirths: 0,
-    totalDeaths: 0,
-    source: "Pending Survey Data",
-    surveyDate: new Date(),
+    bplHouseholds: Number(cleanInput.bplHouseholds) || 0,
+    aplHouseholds: Number(cleanInput.aplHouseholds) || 0,
+
+    // Literacy
+    literacyRate:
+      cleanInput.literacyRate !== undefined && cleanInput.literacyRate !== null
+        ? Number(cleanInput.literacyRate)
+        : null,
+    maleLiteracyRate:
+      cleanInput.maleLiteracyRate !== undefined && cleanInput.maleLiteracyRate !== null
+        ? Number(cleanInput.maleLiteracyRate)
+        : null,
+    femaleLiteracyRate:
+      cleanInput.femaleLiteracyRate !== undefined && cleanInput.femaleLiteracyRate !== null
+        ? Number(cleanInput.femaleLiteracyRate)
+        : null,
+
+    // Derived/recorded metrics
+    newVotersCount: Number(cleanInput.newVotersCount) || 0,
+    totalBirths: Number(cleanInput.totalBirths) || 0,
+    totalDeaths: Number(cleanInput.totalDeaths) || 0,
+
+    // Meta
+    source: cleanInput.source || "Pending Survey Data",
+    notes: cleanInput.notes || null,
+    surveyDate: cleanInput.surveyDate
+      ? new Date(cleanInput.surveyDate)
+      : new Date(),
   };
 }
 
@@ -288,10 +283,6 @@ export const demographicsZodSchema = z
     literacyRate: z.number().min(0).max(100).optional(),
     maleLiteracyRate: z.number().min(0).max(100).optional(),
     femaleLiteracyRate: z.number().min(0).max(100).optional(),
-    // Voters (optional derived fields, excluded from manual mutation)
-    totalVoters: z.number().int().min(0).optional(),
-    maleVoters: z.number().int().min(0).optional(),
-    femaleVoters: z.number().int().min(0).optional(),
     newVotersCount: z.number().int().min(0).optional(),
     totalBirths: z.number().int().min(0).default(0),
     totalDeaths: z.number().int().min(0).default(0),

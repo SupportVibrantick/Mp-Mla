@@ -115,6 +115,11 @@ router.delete(
   requirePermission("representative", "update"),
   representativeController.deleteRepresentativePhoto,
 );
+router.delete(
+  "/constituencies/:constituencyId/representative",
+  requirePermission("representative", "delete"),
+  representativeController.deleteRepresentativeProfile,
+);
 
 // ─── DISTRICTS ───
 router.get(

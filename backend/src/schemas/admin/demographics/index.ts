@@ -3,6 +3,7 @@ import { z } from "zod";
 export const createDemographicsSchema = z.object({
     wardId: z.number().int().positive("Ward is required"),
     communityGroup: z.string().min(1, "Community group is required"),
+    totalPopulation: z.number().int().min(0).default(0),
     maleCount: z.number().int().min(0).default(0),
     femaleCount: z.number().int().min(0).default(0),
     age0to18: z.number().int().min(0).default(0),
@@ -14,6 +15,7 @@ export const createDemographicsSchema = z.object({
 export const updateDemographicsSchema = z.object({
     wardId: z.number().int().positive().optional(),
     communityGroup: z.string().min(1).optional(),
+    totalPopulation: z.number().int().min(0).optional(),
     maleCount: z.number().int().min(0).optional(),
     femaleCount: z.number().int().min(0).optional(),
     age0to18: z.number().int().min(0).optional(),

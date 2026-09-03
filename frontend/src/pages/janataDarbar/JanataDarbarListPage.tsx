@@ -34,6 +34,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Plus,
   MoreVertical,
   Edit,
@@ -46,6 +56,7 @@ import {
   AlertCircle,
   HelpCircle,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 
 export default function JanataDarbarListPage() {
@@ -54,14 +65,10 @@ export default function JanataDarbarListPage() {
   const transitionMut = useTransitionJanataSession();
 
   const sessions = sessionsRes?.data || [];
-
-  const handleDelete = async (id: string) => {
-    if (
-      confirm("Are you sure you want to delete this Janata Darbar session?")
-    ) {
-      await deleteMut.mutateAsync(id);
-    }
-  };
+  const [sessionToDelete, setSessionToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const handleStartSession = async (id: string) => {
     await transitionMut.mutateAsync({ id, status: "ONGOING" });
@@ -311,7 +318,9 @@ export default function JanataDarbarListPage() {
                             <PermissionGate module="janata_darbar" action="delete">
                               <DropdownMenuItem
                                 className="cursor-pointer text-xs font-semibold text-red-600"
-                                onClick={() => handleDelete(s.id)}
+                                onClick={() =>
+                                  setSessionToDelete({ id: s.id, title: s.title })
+                                }
                               >
                                 <Trash2 className="h-4 w-4 mr-2" /> Delete
                                 Session
@@ -328,6 +337,47 @@ export default function JanataDarbarListPage() {
           </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog
+        open={!!sessionToDelete}
+        onOpenChange={(open) => !open && setSessionToDelete(null)}
+      >
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-extrabold text-foreground flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" /> Confirm Soft-Delete
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
+              Are you sure you want to delete <strong>{sessionToDelete?.title}</strong>? This session record will be soft-deleted and moved to the Recycle Bin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="border-border/60 hover:bg-muted" disabled={deleteMut.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMut.isPending}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (sessionToDelete) {
+                  await deleteMut.mutateAsync(sessionToDelete.id);
+                  setSessionToDelete(null);
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+            >
+              {deleteMut.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...
+                </>
+              ) : (
+                "Delete Session"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

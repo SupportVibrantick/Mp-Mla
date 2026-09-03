@@ -232,13 +232,11 @@ export async function deleteConstituency(
    *
    * Ward has isDeleted.
    * Town/village and Booth use isActive.
-   * Representative profile does not have active/deleted state.
    */
   const [
     activeWardCount,
     activeTownVillageCount,
     activeBoothCount,
-    representativeCount,
   ] = await Promise.all([
     prisma.ward.count({
       where: {
@@ -263,29 +261,45 @@ export async function deleteConstituency(
         isActive: true,
       },
     }),
-
-    prisma.representativeProfile.count({
-      where: {
-        tenantId,
-        constituencyId,
-      },
-    }),
   ]);
 
   if (
     activeWardCount > 0 ||
     activeTownVillageCount > 0 ||
-    activeBoothCount > 0 ||
-    representativeCount > 0
+    activeBoothCount > 0
   ) {
     throw ApiError.badRequest(
       `Cannot delete constituency. ` +
         `${activeWardCount} active wards, ` +
         `${activeTownVillageCount} active towns/villages, ` +
-        `${activeBoothCount} active booths, ` +
-        `${representativeCount} representative profile(s) reference this constituency. ` +
+        `${activeBoothCount} active booths reference this constituency. ` +
         `Deactivate or unlink these records first.`,
     );
+  }
+
+  // Auto-clean representative profile if present so it doesn't block deletion
+  const representativeProfile = await prisma.representativeProfile.findFirst({
+    where: { tenantId, constituencyId },
+  });
+
+  if (representativeProfile) {
+    await archiveToRecycleBin({
+      tenantId,
+      module: "constituency",
+      entityType: "representative_profile" as any,
+      recordId: representativeProfile.id,
+      recordLabel: `Representative: ${representativeProfile.name}`,
+      payload: representativeProfile,
+      deletedById: undefined,
+    }).catch(() => null);
+
+    if (representativeProfile.photoUrl) {
+      deleteFile(representativeProfile.photoUrl);
+    }
+
+    await prisma.representativeProfile.delete({
+      where: { id: representativeProfile.id },
+    });
   }
 
   /**
@@ -311,6 +325,46 @@ export async function deleteConstituency(
     data: {
       isDeleted: true,
       isActive: false,
+    },
+  });
+}
+
+export async function deleteRepresentativeProfile(
+  tenantId: string,
+  constituencyId: string,
+) {
+  await getConstituency(tenantId, constituencyId);
+
+  const profile = await prisma.representativeProfile.findFirst({
+    where: {
+      tenantId,
+      constituencyId,
+    },
+  });
+
+  if (!profile) {
+    throw ApiError.notFound(
+      "Representative profile not found for this constituency.",
+    );
+  }
+
+  if (profile.photoUrl) {
+    deleteFile(profile.photoUrl);
+  }
+
+  await archiveToRecycleBin({
+    tenantId,
+    module: "constituency",
+    entityType: "representative_profile" as any,
+    recordId: profile.id,
+    recordLabel: `Representative: ${profile.name}`,
+    payload: profile,
+    deletedById: undefined,
+  }).catch(() => null);
+
+  return prisma.representativeProfile.delete({
+    where: {
+      id: profile.id,
     },
   });
 }

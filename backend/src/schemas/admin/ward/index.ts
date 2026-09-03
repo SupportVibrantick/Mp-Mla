@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const updateWardSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  zone: z.string().max(10).optional().nullable(),
+  zone: z.string().optional().nullable(),
   status: z
     .enum(["ACTIVE", "INACTIVE", "PROPOSED", "MERGED", "DELIMITATION_PENDING"])
     .optional(),
@@ -15,6 +15,10 @@ export const updateWardSchema = z.object({
   establishedDate: z.string().datetime().optional().nullable(),
   constituencyId: z.string().optional().nullable(),
   townVillageId: z.string().optional().nullable(),
+  totalPopulation: z.number().int().min(0).optional().nullable(),
+  totalHouseholds: z.number().int().min(0).optional().nullable(),
+  totalMale: z.number().int().min(0).optional().nullable(),
+  totalFemale: z.number().int().min(0).optional().nullable(),
 });
 
 export const createAreaSchema = z.object({
@@ -66,7 +70,7 @@ export const updateCouncillorSchema = createCouncillorSchema.partial().extend({
 export const createWardSchema = z.object({
   wardNumber: z.number().int().positive("Ward number must be positive"),
   name: z.string().min(1, "Name is required").max(200),
-  zone: z.string().max(10).optional(),
+  zone: z.string().optional(),
   status: z
     .enum(["ACTIVE", "INACTIVE", "PROPOSED", "MERGED", "DELIMITATION_PENDING"])
     .optional(),
@@ -78,6 +82,10 @@ export const createWardSchema = z.object({
   establishedDate: z.string().datetime().optional(),
   constituencyId: z.string().optional().nullable(),
   townVillageId: z.string().optional().nullable(),
+  totalPopulation: z.number().int().min(0).optional().default(0),
+  totalHouseholds: z.number().int().min(0).optional().default(0),
+  totalMale: z.number().int().min(0).optional().default(0),
+  totalFemale: z.number().int().min(0).optional().default(0),
 
   areas: z
     .array(

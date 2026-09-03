@@ -95,6 +95,10 @@ const wardSchema = z.object({
   establishedDate: z.string().optional(),
   constituencyId: z.string().optional().nullable(),
   townVillageId: z.string().optional().nullable(),
+  totalPopulation: z.coerce.number().int().min(0).default(0),
+  totalHouseholds: z.coerce.number().int().min(0).default(0),
+  totalMale: z.coerce.number().int().min(0).default(0),
+  totalFemale: z.coerce.number().int().min(0).default(0),
 });
 
 type WardFormValues = z.infer<typeof wardSchema>;
@@ -328,6 +332,10 @@ export default function WardFormPage() {
       description: "",
       constituencyId: "",
       townVillageId: "",
+      totalPopulation: 0,
+      totalHouseholds: 0,
+      totalMale: 0,
+      totalFemale: 0,
     },
   });
 
@@ -379,6 +387,10 @@ export default function WardFormPage() {
         : "",
       constituencyId: ward.constituencyId || "",
       townVillageId: ward.townVillageId || "",
+      totalPopulation: ward.totalPopulation || 0,
+      totalHouseholds: ward.totalHouseholds || 0,
+      totalMale: ward.totalMale || 0,
+      totalFemale: ward.totalFemale || 0,
     });
 
     if (ward.townVillageId) {
@@ -566,8 +578,16 @@ export default function WardFormPage() {
 
     if (!hasData) return undefined; // backend will auto-estimate
 
+    const sanitizeRate = (val: number | undefined | null) => {
+      if (val === undefined || val === null || isNaN(val)) return undefined;
+      return Math.min(100, Math.max(0, val));
+    };
+
     return {
       ...demoForm,
+      literacyRate: sanitizeRate(demoForm.literacyRate),
+      maleLiteracyRate: sanitizeRate(demoForm.maleLiteracyRate),
+      femaleLiteracyRate: sanitizeRate(demoForm.femaleLiteracyRate),
       surveyDate: demoForm.surveyDate
         ? new Date(demoForm.surveyDate).toISOString()
         : undefined,
@@ -949,6 +969,56 @@ export default function WardFormPage() {
                 placeholder="Brief description..."
                 rows={3}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ═══ Demographics & Static Population ═════════ */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5 text-indigo-500" />
+              Demographics & Population Info
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Total Population</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  {...register("totalPopulation")}
+                  placeholder="e.g. 25000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Total Households</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  {...register("totalHouseholds")}
+                  placeholder="e.g. 5000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Male Population</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  {...register("totalMale")}
+                  placeholder="e.g. 12500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Female Population</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  {...register("totalFemale")}
+                  placeholder="e.g. 12500"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1337,13 +1407,16 @@ export default function WardFormPage() {
                     <Input
                       type="number"
                       step="0.1"
+                      min="0"
+                      max="100"
                       value={demoForm.literacyRate || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
                         setDemoForm((p) => ({
                           ...p,
-                          literacyRate: parseFloat(e.target.value) || 0,
-                        }))
-                      }
+                          literacyRate: isNaN(val) ? 0 : Math.min(100, Math.max(0, val)),
+                        }));
+                      }}
                     />
                   </div>
                   <div className="space-y-1">
@@ -1351,13 +1424,16 @@ export default function WardFormPage() {
                     <Input
                       type="number"
                       step="0.1"
+                      min="0"
+                      max="100"
                       value={demoForm.maleLiteracyRate || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
                         setDemoForm((p) => ({
                           ...p,
-                          maleLiteracyRate: parseFloat(e.target.value) || 0,
-                        }))
-                      }
+                          maleLiteracyRate: isNaN(val) ? 0 : Math.min(100, Math.max(0, val)),
+                        }));
+                      }}
                     />
                   </div>
                   <div className="space-y-1">
@@ -1365,13 +1441,16 @@ export default function WardFormPage() {
                     <Input
                       type="number"
                       step="0.1"
+                      min="0"
+                      max="100"
                       value={demoForm.femaleLiteracyRate || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
                         setDemoForm((p) => ({
                           ...p,
-                          femaleLiteracyRate: parseFloat(e.target.value) || 0,
-                        }))
-                      }
+                          femaleLiteracyRate: isNaN(val) ? 0 : Math.min(100, Math.max(0, val)),
+                        }));
+                      }}
                     />
                   </div>
                 </div>

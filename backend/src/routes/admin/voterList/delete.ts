@@ -6,6 +6,7 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { syncVoterDemographics } from "./demographicsSync.js";
+import { archiveToRecycleBin } from "../../../lib/recycleBin.js";
 
 // ══════════════════════════════════════════════════════════
 // SOFT-DELETE VOTER
@@ -32,6 +33,17 @@ export async function deleteVoter(
     await prisma.voter.update({
       where: { id },
       data: { isDeleted: true, status: "DELETED" },
+    });
+
+    // Archive to Recycle Bin
+    await archiveToRecycleBin({
+      tenantId,
+      module: "voter_list",
+      entityType: "voter",
+      recordId: voter.id,
+      recordLabel: `${voter.name} (${voter.voterIdNumber})`,
+      payload: voter,
+      deletedById: req.user!.id,
     });
 
     // Auto-sync Demographics for this ward
@@ -84,7 +96,6 @@ export async function bulkDeleteVoters(
         tenantId,
         isDeleted: false,
       },
-      select: { id: true, wardId: true },
     });
 
     if (voters.length === 0) {
@@ -99,6 +110,19 @@ export async function bulkDeleteVoters(
       where: { id: { in: validIds } },
       data: { isDeleted: true, status: "DELETED" },
     });
+
+    // Archive all deleted voters to Recycle Bin
+    for (const voter of voters) {
+      await archiveToRecycleBin({
+        tenantId,
+        module: "voter_list",
+        entityType: "voter",
+        recordId: voter.id,
+        recordLabel: `${voter.name} (${voter.voterIdNumber})`,
+        payload: voter,
+        deletedById: req.user!.id,
+      });
+    }
 
     // Auto-sync Demographics for affected wards
     for (const wardId of wardIds) {

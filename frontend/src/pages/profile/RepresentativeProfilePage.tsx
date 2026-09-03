@@ -7,12 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Shield, Calendar, Award, Building, Loader2 } from "lucide-react";
+import { User, Shield, Calendar, Award, Building, Loader2, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function RepresentativeProfilePage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [constituencyId, setConstituencyId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>({
     name: "",
@@ -54,10 +65,28 @@ export default function RepresentativeProfilePage() {
               termStartDate: prof.termStartDate ? new Date(prof.termStartDate).toISOString().split("T")[0] : "",
               termEndDate: prof.termEndDate ? new Date(prof.termEndDate).toISOString().split("T")[0] : "",
             });
+          } else {
+            setProfile({
+              name: "",
+              title: "",
+              partyName: "",
+              partyLogoUrl: "",
+              photoUrl: "",
+              termStartDate: "",
+              termEndDate: "",
+            });
           }
         } catch (err: any) {
-          // If 404, we just let them create/fill one
-          console.log("No representative profile found, creating a new one...");
+          // If 404, reset profile to blank
+          setProfile({
+            name: "",
+            title: "",
+            partyName: "",
+            partyLogoUrl: "",
+            photoUrl: "",
+            termStartDate: "",
+            termEndDate: "",
+          });
         }
       }
     } catch (err) {
@@ -89,6 +118,22 @@ export default function RepresentativeProfilePage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!constituencyId) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/admin/constituency/constituencies/${constituencyId}/representative`);
+      toast.success("Representative profile deleted successfully.");
+      setEditing(false);
+      fetchConstituencyAndProfile();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to delete representative profile.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <MainLayout title="Representative Profile">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -113,12 +158,50 @@ export default function RepresentativeProfilePage() {
               </div>
               <div>
                 {!editing ? (
-                  <Button
-                    onClick={() => setEditing(true)}
-                    className="bg-primary hover:bg-primary/95 text-white font-semibold text-xs h-9 px-6 rounded-xl shadow-md"
-                  >
-                    Edit Profile
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setEditing(true)}
+                      className="bg-primary hover:bg-primary/95 text-white font-semibold text-xs h-9 px-6 rounded-xl shadow-md"
+                    >
+                      Edit Profile
+                    </Button>
+                    {profile.name && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="border-destructive/30 hover:bg-destructive/10 text-destructive font-semibold text-xs h-9 px-4 rounded-xl"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1.5" />
+                            Delete Profile
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="rounded-2xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="font-extrabold text-foreground">
+                              Delete Representative Profile?
+                            </AlertDialogTitle>
+                          </AlertDialogHeader>
+                          <p className="text-xs text-muted-foreground">
+                            Are you sure you want to delete the representative profile for <strong>{profile.name}</strong>? This profile will be moved to the Recycle Bin.
+                          </p>
+                          <AlertDialogFooter className="gap-2 sm:gap-0">
+                            <AlertDialogCancel className="border-border/60 hover:bg-muted">
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={deleting}
+                              className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+                              onClick={handleDelete}
+                            >
+                              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                              Delete Profile
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex gap-2">
                     <Button

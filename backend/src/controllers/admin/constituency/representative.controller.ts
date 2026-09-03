@@ -126,3 +126,37 @@ export const deleteRepresentativePhoto = catchAsync(
     );
   },
 );
+
+export const deleteRepresentativeProfile = catchAsync(
+  async (req: Request, res: Response) => {
+    const tenantId = requireTenantId(req);
+    const constituencyId = req.params.constituencyId as string;
+
+    const original = await constituencyService
+      .getRepresentativeProfile(tenantId, constituencyId)
+      .catch(() => null);
+
+    const result = await constituencyService.deleteRepresentativeProfile(
+      tenantId,
+      constituencyId,
+    );
+
+    await createAuditLog({
+      userId: req.user!.id,
+      tenantId,
+      action: "DELETE",
+      module: "representative",
+      recordId: result.id,
+      description: `Deleted representative profile for constituency "${constituencyId}"`,
+      oldData: original,
+      ...getRequestMeta(req),
+    });
+
+    res.json(
+      ApiResponse.success(
+        result,
+        "Representative profile deleted successfully.",
+      ),
+    );
+  },
+);

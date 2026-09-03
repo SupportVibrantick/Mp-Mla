@@ -49,6 +49,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -611,6 +612,9 @@ function ConstituenciesList() {
                                     <AlertDialogTitle className="font-extrabold text-foreground">
                                       Delete "{c.name}"?
                                     </AlertDialogTitle>
+                                    <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
+                                      Are you sure you want to delete <strong>{c.name}</strong>? This constituency and its representative profile (if any) will be moved to the Recycle Bin.
+                                    </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter className="gap-2 sm:gap-0">
                                     <AlertDialogCancel className="border-border/60 hover:bg-muted">

@@ -323,6 +323,58 @@ export function useDeleteRepresentativePhoto(constituencyId?: string) {
     },
   });
 }
+
+/**
+ * Delete representative profile.
+ */
+export function useDeleteRepresentative(constituencyId?: string) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!constituencyId) {
+        throw new Error("Constituency ID is required.");
+      }
+
+      const response = await api.delete(
+        `/admin/constituency/constituencies/${constituencyId}/representative`,
+      );
+
+      return response.data;
+    },
+
+    onSuccess: (res: any) => {
+      qc.invalidateQueries({
+        queryKey: ["representative", constituencyId],
+      });
+
+      qc.invalidateQueries({
+        queryKey: ["constituency", constituencyId],
+      });
+
+      qc.invalidateQueries({
+        queryKey: ["constituencies"],
+      });
+
+      toast({
+        title: "Representative Profile Deleted",
+        description:
+          res?.message || "Representative profile deleted successfully.",
+      });
+    },
+
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description:
+          err?.response?.data?.message ||
+          "Failed to delete representative profile.",
+        variant: "destructive",
+      });
+    },
+  });
+}
 /* =========================================================
    WARD MAPPINGS
 ========================================================= */

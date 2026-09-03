@@ -9,6 +9,7 @@ import {
   useUpsertRepresentative,
   useUploadRepresentativePhoto,
   useDeleteRepresentativePhoto,
+  useDeleteRepresentative,
   useConstituencyWards,
   useLinkUnlinkWard,
   useConstituencyTownVillages,
@@ -20,6 +21,7 @@ import {
 } from "@/hooks/useConstituencies";
 import { useBlocks } from "@/hooks/useBlocks";
 import { useToast } from "@/hooks/use-toast";
+import { PermissionGate } from "@/components/auth/PermissionGate";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,6 +93,7 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
   const upsertRep = useUpsertRepresentative(id);
   const uploadRepresentativePhoto = useUploadRepresentativePhoto(id);
   const deleteRepresentativePhoto = useDeleteRepresentativePhoto(id);
+  const deleteRepresentative = useDeleteRepresentative(id);
 
   const [repEditing, setRepEditing] = useState(false);
   const [repForm, setRepForm] = useState({ ...emptyRepForm });
@@ -744,14 +747,50 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
                           {representative.title}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs"
-                        onClick={openRepEdit}
-                      >
-                        <Edit className="h-3 w-3 mr-1" /> Edit Profile
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={openRepEdit}
+                        >
+                          <Edit className="h-3 w-3 mr-1" /> Edit Profile
+                        </Button>
+                        <PermissionGate module="representative" action="delete">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" /> Delete Profile
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-2xl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="font-extrabold text-foreground">
+                                  Delete Representative Profile?
+                                </AlertDialogTitle>
+                              </AlertDialogHeader>
+                              <p className="text-xs text-muted-foreground">
+                                Are you sure you want to delete the representative profile for <strong>{representative.name}</strong>? This profile will be moved to the Recycle Bin.
+                              </p>
+                              <AlertDialogFooter className="gap-2 sm:gap-0">
+                                <AlertDialogCancel className="border-border/60 hover:bg-muted">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+                                  onClick={() => deleteRepresentative.mutate()}
+                                >
+                                  Delete Profile
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </PermissionGate>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
