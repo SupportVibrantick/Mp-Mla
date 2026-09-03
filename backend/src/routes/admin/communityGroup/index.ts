@@ -6,7 +6,7 @@ import {
   getCommunityGroupStats,
   getOneCommunityGroup,
 } from "./read.js";
-import { deleteCommunity } from "./delete.js";
+import { deleteCommunity, bulkDeleteCommunityGroups } from "./delete.js";
 import {
   createSchema,
   updateSchema,
@@ -32,6 +32,11 @@ router.get(
   "/export/all",
   requirePermission("community_groups", "read"),
   exportCommunityGroups,
+);
+router.post(
+  "/bulk-delete",
+  requirePermission("community_groups", "delete"),
+  bulkDeleteCommunityGroups,
 );
 router.get(
   "/:id",

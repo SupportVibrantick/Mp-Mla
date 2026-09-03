@@ -7,6 +7,7 @@ import {
   getTypeInfo,
   COMMUNITY_TYPES,
   useBulkCreateCommunityGroups,
+  useBulkDeleteCommunityGroups,
 } from "@/hooks/useCommunityGroups";
 import { useWards } from "@/hooks/useWards";
 import { PermissionGate } from "@/components/auth/PermissionGate";
@@ -36,6 +37,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MainLayout } from "@/components/layout/MainLayout";
 import {
   Users,
@@ -43,6 +54,7 @@ import {
   Search,
   Eye,
   Edit,
+  Trash2,
   Filter,
   ChevronLeft,
   ChevronRight,
@@ -64,7 +76,11 @@ export default function CommunityListPage() {
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+
   const { mutateAsync: bulkCreateGroups } = useBulkCreateCommunityGroups();
+  const { mutateAsync: bulkDeleteGroups, isPending: isBulkDeleting } = useBulkDeleteCommunityGroups();
 
   const queryParams = useMemo(() => {
     const p: Record<string, any> = { page, limit: 20 };
@@ -205,6 +221,19 @@ export default function CommunityListPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+            {selectedIds.length > 0 && (
+              <PermissionGate module="community_groups" action="delete">
+                <Button
+                  variant="destructive"
+                  className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold justify-center animate-in fade-in"
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected ({selectedIds.length})
+                </Button>
+              </PermissionGate>
+            )}
+
             <PermissionGate module="community_groups" action="read">
               <Button
                 variant="outline"
@@ -575,6 +604,22 @@ export default function CommunityListPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="w-10 h-12 px-3 text-center py-4 bg-muted/20">
+                      <input
+                        type="checkbox"
+                        checked={
+                          groups.length > 0 && selectedIds.length === groups.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(groups.map((g: any) => g.id));
+                          } else {
+                            setSelectedIds([]);
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Group Name</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Type</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward / Area</TableHead>
@@ -588,7 +633,7 @@ export default function CommunityListPage() {
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i} className="border-b border-border/40">
-                        {Array.from({ length: 7 }).map((_, j) => (
+                        {Array.from({ length: 8 }).map((_, j) => (
                           <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -598,7 +643,7 @@ export default function CommunityListPage() {
                   ) : groups.length === 0 ? (
                     <TableRow className="hover:bg-transparent">
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="text-center py-16 text-muted-foreground text-xs"
                       >
                         <Users className="h-10 w-10 mx-auto mb-3 opacity-30 text-muted-foreground" />
@@ -611,6 +656,20 @@ export default function CommunityListPage() {
                       const Icon = info.icon;
                       return (
                         <TableRow key={g.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                          <TableCell className="px-3 text-center align-middle">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(g.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedIds((prev) => [...prev, g.id]);
+                                } else {
+                                  setSelectedIds((prev) => prev.filter((id) => id !== g.id));
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            />
+                          </TableCell>
                           <TableCell className="py-4 px-4 align-middle">
                             <Link to={`/community/${g.id}`}>
                               <div className="cursor-pointer space-y-1">
@@ -777,6 +836,38 @@ export default function CommunityListPage() {
             </CardContent>
           </Card>
         )}
+        {/* Bulk Delete Confirmation Modal */}
+        <AlertDialog
+          open={isBulkDeleteOpen}
+          onOpenChange={setIsBulkDeleteOpen}
+        >
+          <AlertDialogContent className="rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-extrabold text-foreground">Bulk Delete Community Groups</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
+                Are you sure you want to delete <strong>{selectedIds.length}</strong> selected community group(s)?
+                The selected community groups will be moved to the Recycle Bin.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel className="border-border/60 hover:bg-muted" disabled={isBulkDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={isBulkDeleting}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await bulkDeleteGroups(selectedIds);
+                  setSelectedIds([]);
+                  setIsBulkDeleteOpen(false);
+                }}
+                className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+              >
+                {isBulkDeleting ? "Deleting..." : `Delete ${selectedIds.length} Groups`}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );

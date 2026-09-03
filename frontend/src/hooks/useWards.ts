@@ -180,6 +180,26 @@ export function useDeleteWard() {
   });
 }
 
+export function useBulkDeleteWards() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      wardsApi.bulkDelete(ids).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["wards"] });
+      toast({ title: "Bulk Delete Complete", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to bulk delete wards",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 // ─── Ward Areas ─────────────────────────────────────────
 
 export function useWardAreas(wardId: string | undefined) {

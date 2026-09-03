@@ -6,6 +6,7 @@ import {
   useCreateDepartment,
   useUpdateDepartment,
   useDeleteDepartment,
+  useBulkDeleteDepartments,
   useToggleDepartment,
   useBulkCreateDepartments,
 } from "@/hooks/useDepartments";
@@ -118,7 +119,11 @@ export default function DepartmentListPage() {
   const createMut = useCreateDepartment();
   const updateMut = useUpdateDepartment();
   const deleteMut = useDeleteDepartment();
+  const bulkDeleteMut = useBulkDeleteDepartments();
   const toggleMut = useToggleDepartment();
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
 
   const [dlg, setDlg] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -258,6 +263,19 @@ export default function DepartmentListPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+            {selectedIds.length > 0 && (
+              <PermissionGate module="departments" action="delete">
+                <Button
+                  variant="destructive"
+                  className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold justify-center animate-in fade-in"
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected ({selectedIds.length})
+                </Button>
+              </PermissionGate>
+            )}
+
             <PermissionGate module="departments" action="read">
               <Button
                 variant="outline"
@@ -465,6 +483,22 @@ export default function DepartmentListPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="w-10 h-12 px-3 text-center py-4 bg-muted/20">
+                      <input
+                        type="checkbox"
+                        checked={
+                          departments.length > 0 && selectedIds.length === departments.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(departments.map((d: any) => d.id));
+                          } else {
+                            setSelectedIds([]);
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Department</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Code</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Head</TableHead>
@@ -478,7 +512,7 @@ export default function DepartmentListPage() {
                   {isLoading ? (
                     Array.from({ length: 4 }).map((_, i) => (
                       <TableRow key={i} className="border-b border-border/40">
-                        {Array.from({ length: 7 }).map((_, j) => (
+                        {Array.from({ length: 8 }).map((_, j) => (
                           <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -488,7 +522,7 @@ export default function DepartmentListPage() {
                   ) : departments.length === 0 ? (
                     <TableRow className="hover:bg-transparent">
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="text-center py-16 text-muted-foreground text-xs"
                       >
                         <Landmark className="h-10 w-10 mx-auto mb-3 opacity-30 text-muted-foreground" />
@@ -504,6 +538,20 @@ export default function DepartmentListPage() {
                           !d.isActive && "opacity-50"
                         )}
                       >
+                        <TableCell className="px-3 text-center align-middle">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(d.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedIds((prev) => [...prev, d.id]);
+                              } else {
+                                setSelectedIds((prev) => prev.filter((id) => id !== d.id));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                          />
+                        </TableCell>
                         <TableCell className="py-4 px-4 align-middle">
                           <Link to={`/departments/${d.id}`}>
                             <div className="cursor-pointer space-y-1">
@@ -780,6 +828,39 @@ export default function DepartmentListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <AlertDialog
+        open={isBulkDeleteOpen}
+        onOpenChange={setIsBulkDeleteOpen}
+      >
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-extrabold text-foreground">Bulk Delete Departments</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
+              Are you sure you want to delete <strong>{selectedIds.length}</strong> selected department(s)?
+              Departments without active references will be moved to the Recycle Bin. Any departments with active grievances, projects, or assigned users will be automatically skipped.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="border-border/60 hover:bg-muted" disabled={bulkDeleteMut.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteMut.isPending}
+              onClick={async (e) => {
+                e.preventDefault();
+                await bulkDeleteMut.mutateAsync(selectedIds);
+                setSelectedIds([]);
+                setIsBulkDeleteOpen(false);
+              }}
+              className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+            >
+              {bulkDeleteMut.isPending ? "Deleting..." : `Delete ${selectedIds.length} Departments`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

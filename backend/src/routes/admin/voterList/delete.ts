@@ -56,3 +56,73 @@ export async function deleteVoter(
     next(err);
   }
 }
+
+// ══════════════════════════════════════════════════════════
+// BULK SOFT-DELETE VOTERS
+// ══════════════════════════════════════════════════════════
+
+export async function bulkDeleteVoters(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: "Request body must contain a non-empty 'ids' array.",
+      });
+      return;
+    }
+
+    const voters = await prisma.voter.findMany({
+      where: {
+        id: { in: ids },
+        tenantId,
+        isDeleted: false,
+      },
+      select: { id: true, wardId: true },
+    });
+
+    if (voters.length === 0) {
+      res.status(404).json({ success: false, message: "No valid active voters found to delete." });
+      return;
+    }
+
+    const validIds = voters.map((v) => v.id);
+    const wardIds = Array.from(new Set(voters.map((v) => v.wardId)));
+
+    await prisma.voter.updateMany({
+      where: { id: { in: validIds } },
+      data: { isDeleted: true, status: "DELETED" },
+    });
+
+    // Auto-sync Demographics for affected wards
+    for (const wardId of wardIds) {
+      await syncVoterDemographics(tenantId, wardId);
+    }
+
+    // Audit log (fire-and-forget)
+    createAuditLog({
+      userId: req.user!.id,
+      action: "DELETE",
+      module: "voter_list",
+      recordId: validIds[0],
+      description: `Soft-deleted ${validIds.length} voters`,
+      newData: { deletedCount: validIds.length, ids: validIds },
+      ...getRequestMeta(req),
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${validIds.length} voter(s)`,
+      data: { deletedCount: validIds.length },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+

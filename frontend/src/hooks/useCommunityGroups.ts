@@ -1,6 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import api, { communityGroupsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+
+// ... existing code ...
+
+export function useBulkDeleteCommunityGroups() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      communityGroupsApi.bulkDelete(ids).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["community-groups"] });
+      toast({ title: "Moved to Recycle Bin", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to bulk delete community groups",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 
 // ─── Types ──────────────────────────────────────────────
 

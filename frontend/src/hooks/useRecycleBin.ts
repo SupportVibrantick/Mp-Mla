@@ -52,3 +52,70 @@ export function useDeleteRecycleItem() {
     },
   });
 }
+
+export function useBulkRestoreRecycleItems() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      recycleBinApi.bulkRestore(ids).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["recycle-bin"] });
+      qc.invalidateQueries();
+      toast({ title: "Bulk Restore Complete", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Bulk Restore failed",
+        description:
+          err?.response?.data?.message || "Unable to restore selected items",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useBulkDeleteRecycleItems() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      recycleBinApi.bulkDelete(ids).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["recycle-bin"] });
+      toast({ title: "Bulk Delete Complete", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Bulk Delete failed",
+        description:
+          err?.response?.data?.message ||
+          "Unable to permanently delete selected items",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useEmptyRecycleBin() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: () => recycleBinApi.empty().then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["recycle-bin"] });
+      toast({ title: "Recycle Bin Emptied", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Empty failed",
+        description:
+          err?.response?.data?.message || "Unable to empty recycle bin",
+        variant: "destructive",
+      });
+    },
+  });
+}

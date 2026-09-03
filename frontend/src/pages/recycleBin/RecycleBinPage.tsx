@@ -24,6 +24,9 @@ import {
   useDeleteRecycleItem,
   useRecycleBin,
   useRestoreRecycleItem,
+  useBulkRestoreRecycleItems,
+  useBulkDeleteRecycleItems,
+  useEmptyRecycleBin,
 } from "@/hooks/useRecycleBin";
 import { Loader2, RotateCcw, Trash2, Search, Filter, History, Trash, Database } from "lucide-react";
 import {
@@ -41,6 +44,8 @@ export default function RecycleBinPage() {
   const [search, setSearch] = useState("");
   const [module, setModule] = useState("all");
   const [entityType, setEntityType] = useState("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   const [confirmDlg, setConfirmDlg] = useState<{
     open: boolean;
     item: any | null;
@@ -49,6 +54,14 @@ export default function RecycleBinPage() {
     open: false,
     item: null,
     type: "restore",
+  });
+
+  const [bulkDlg, setBulkDlg] = useState<{
+    open: boolean;
+    type: "bulk_restore" | "bulk_delete" | "empty";
+  }>({
+    open: false,
+    type: "bulk_restore",
   });
 
   const params = useMemo(
@@ -65,15 +78,25 @@ export default function RecycleBinPage() {
   const { data, isLoading } = useRecycleBin(params);
   const restoreMut = useRestoreRecycleItem();
   const deleteMut = useDeleteRecycleItem();
+  const bulkRestoreMut = useBulkRestoreRecycleItems();
+  const bulkDeleteMut = useBulkDeleteRecycleItems();
+  const emptyMut = useEmptyRecycleBin();
 
   const rows = data?.data || [];
   const modules = data?.filters?.modules || [];
   const entityTypes = data?.filters?.entityTypes || [];
 
+  const isPending =
+    restoreMut.isPending ||
+    deleteMut.isPending ||
+    bulkRestoreMut.isPending ||
+    bulkDeleteMut.isPending ||
+    emptyMut.isPending;
+
   return (
     <MainLayout title="Recycle Bin">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-7">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
               <History className="h-5 w-5" />
@@ -83,7 +106,48 @@ export default function RecycleBinPage() {
               <CardDescription>Restore or permanently remove deleted system records</CardDescription>
             </div>
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedIds.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-xs font-semibold bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800"
+                  disabled={isPending}
+                  onClick={() => setBulkDlg({ open: true, type: "bulk_restore" })}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                  Restore Selected ({selectedIds.length})
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-9 text-xs font-semibold"
+                  disabled={isPending}
+                  onClick={() => setBulkDlg({ open: true, type: "bulk_delete" })}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  Delete Selected ({selectedIds.length})
+                </Button>
+              </>
+            )}
+
+            {rows.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs font-semibold border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                disabled={isPending}
+                onClick={() => setBulkDlg({ open: true, type: "empty" })}
+              >
+                <Trash className="h-3.5 w-3.5 mr-1.5" />
+                Empty Recycle Bin
+              </Button>
+            )}
+          </div>
         </CardHeader>
+
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="relative">
@@ -139,6 +203,20 @@ export default function RecycleBinPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 px-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={rows.length > 0 && selectedIds.length === rows.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds(rows.map((r: any) => r.id));
+                        } else {
+                          setSelectedIds([]);
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                    />
+                  </TableHead>
                   <TableHead>Record</TableHead>
                   <TableHead>Module</TableHead>
                   <TableHead>Type</TableHead>
@@ -149,13 +227,27 @@ export default function RecycleBinPage() {
               <TableBody>
                 {rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       Recycle bin is empty.
                     </TableCell>
                   </TableRow>
                 ) : (
                   rows.map((item: any) => (
                     <TableRow key={item.id}>
+                      <TableCell className="px-3 text-center align-middle">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds((prev) => [...prev, item.id]);
+                            } else {
+                              setSelectedIds((prev) => prev.filter((id) => id !== item.id));
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{item.recordLabel || "Untitled"}</div>
                         <div className="text-xs text-muted-foreground">{item.recordId}</div>
@@ -172,7 +264,7 @@ export default function RecycleBinPage() {
                           variant="outline"
                           size="sm"
                           className="h-8 text-xs bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800"
-                          disabled={restoreMut.isPending || deleteMut.isPending}
+                          disabled={isPending}
                           onClick={() => {
                             setConfirmDlg({
                               open: true,
@@ -187,7 +279,7 @@ export default function RecycleBinPage() {
                           variant="destructive"
                           size="sm"
                           className="h-8 text-xs"
-                          disabled={restoreMut.isPending || deleteMut.isPending}
+                          disabled={isPending}
                           onClick={() => {
                             setConfirmDlg({
                               open: true,
@@ -207,7 +299,8 @@ export default function RecycleBinPage() {
           )}
         </CardContent>
       </Card>
-      
+
+      {/* Single Item Action Dialog */}
       <AlertDialog 
         open={confirmDlg.open} 
         onOpenChange={(open) => setConfirmDlg(prev => ({ ...prev, open }))}
@@ -249,6 +342,76 @@ export default function RecycleBinPage() {
               }}
             >
               {confirmDlg.type === "restore" ? "Restore Now" : "Delete Permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Action / Empty Dialog */}
+      <AlertDialog
+        open={bulkDlg.open}
+        onOpenChange={(open) => setBulkDlg((prev) => ({ ...prev, open }))}
+      >
+        <AlertDialogContent className="max-w-[420px]">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className={cn(
+                  "p-2 rounded-full",
+                  bulkDlg.type === "bulk_restore"
+                    ? "bg-emerald-100 text-emerald-600"
+                    : "bg-red-100 text-red-600"
+                )}
+              >
+                {bulkDlg.type === "bulk_restore" ? (
+                  <RotateCcw className="h-5 w-5" />
+                ) : (
+                  <Trash2 className="h-5 w-5" />
+                )}
+              </div>
+              <AlertDialogTitle>
+                {bulkDlg.type === "bulk_restore"
+                  ? `Restore ${selectedIds.length} Selected Records?`
+                  : bulkDlg.type === "bulk_delete"
+                  ? `Permanently Delete ${selectedIds.length} Records?`
+                  : "Empty Recycle Bin?"}
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              {bulkDlg.type === "bulk_restore"
+                ? `Are you sure you want to restore ${selectedIds.length} selected items back to their original modules?`
+                : bulkDlg.type === "bulk_delete"
+                ? `This action cannot be undone. ${selectedIds.length} selected records will be permanently deleted from the system database.`
+                : "This action cannot be undone. All items currently in the Recycle Bin will be permanently removed from the database."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={cn(
+                bulkDlg.type === "bulk_restore"
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-red-600 hover:bg-red-700"
+              )}
+              onClick={async () => {
+                if (bulkDlg.type === "bulk_restore") {
+                  await bulkRestoreMut.mutateAsync(selectedIds);
+                  setSelectedIds([]);
+                } else if (bulkDlg.type === "bulk_delete") {
+                  await bulkDeleteMut.mutateAsync(selectedIds);
+                  setSelectedIds([]);
+                } else if (bulkDlg.type === "empty") {
+                  await emptyMut.mutateAsync();
+                  setSelectedIds([]);
+                }
+                setBulkDlg({ open: false, type: "bulk_restore" });
+              }}
+            >
+              {bulkDlg.type === "bulk_restore"
+                ? "Restore Selected"
+                : bulkDlg.type === "bulk_delete"
+                ? "Delete Selected"
+                : "Empty Everything"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

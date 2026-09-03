@@ -75,6 +75,155 @@ router.get(
 );
 
 router.post(
+  "/bulk-restore",
+  requirePermission("recycle_bin", "restore"),
+  catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw ApiError.badRequest("No recycle bin entry IDs provided");
+    }
+
+    const entries = await (prisma as any).recycleBinEntry.findMany({
+      where: { id: { in: ids }, tenantId, restoredAt: null },
+    });
+
+    if (entries.length === 0) {
+      throw ApiError.notFound("No valid unrestored recycle bin entries found");
+    }
+
+    let restoredCount = 0;
+    for (const entry of entries) {
+      try {
+        await restoreRecycleBinEntry({
+          id: entry.id,
+          entityType: entry.entityType,
+          payload: entry.payload,
+        });
+
+        await (prisma as any).recycleBinEntry.update({
+          where: { id: entry.id },
+          data: {
+            restoredAt: new Date(),
+            restoredById: req.user?.id,
+          },
+        });
+        restoredCount++;
+      } catch (err: any) {
+        console.error(`Failed to restore recycle bin entry ${entry.id}:`, err?.message);
+      }
+    }
+
+    await createAuditLog({
+      tenantId,
+      userId: req.user?.id,
+      action: "RESTORE",
+      module: "recycle_bin",
+      recordId: ids.join(","),
+      description: `Bulk restored ${restoredCount} entries from recycle bin`,
+      ...getRequestMeta(req),
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully restored ${restoredCount} out of ${entries.length} items`,
+    });
+  }),
+);
+
+router.post(
+  "/bulk-delete",
+  requirePermission("recycle_bin", "delete"),
+  catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw ApiError.badRequest("No recycle bin entry IDs provided");
+    }
+
+    const entries = await (prisma as any).recycleBinEntry.findMany({
+      where: { id: { in: ids }, tenantId },
+    });
+
+    if (entries.length === 0) {
+      throw ApiError.notFound("No recycle bin entries found");
+    }
+
+    let deletedCount = 0;
+    for (const entry of entries) {
+      try {
+        if (!entry.restoredAt) {
+          await permanentlyDeleteRecycledRecord({
+            entityType: entry.entityType,
+            recordId: entry.recordId,
+          });
+        }
+        await (prisma as any).recycleBinEntry.delete({ where: { id: entry.id } });
+        deletedCount++;
+      } catch (err: any) {
+        console.error(`Failed to permanently delete recycle entry ${entry.id}:`, err?.message);
+      }
+    }
+
+    await createAuditLog({
+      tenantId,
+      userId: req.user?.id,
+      action: "DELETE",
+      module: "recycle_bin",
+      recordId: ids.join(","),
+      description: `Bulk permanently deleted ${deletedCount} recycle bin entries`,
+      ...getRequestMeta(req),
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${deletedCount} recycle bin items`,
+    });
+  }),
+);
+
+router.post(
+  "/empty",
+  requirePermission("recycle_bin", "delete"),
+  catchAsync(async (req, res) => {
+    const tenantId = requireTenantId(req);
+    const entries = await (prisma as any).recycleBinEntry.findMany({
+      where: { tenantId, restoredAt: null },
+    });
+
+    let deletedCount = 0;
+    for (const entry of entries) {
+      try {
+        await permanentlyDeleteRecycledRecord({
+          entityType: entry.entityType,
+          recordId: entry.recordId,
+        });
+        await (prisma as any).recycleBinEntry.delete({ where: { id: entry.id } });
+        deletedCount++;
+      } catch (err: any) {
+        console.error(`Failed to empty recycle entry ${entry.id}:`, err?.message);
+      }
+    }
+
+    await createAuditLog({
+      tenantId,
+      userId: req.user?.id,
+      action: "DELETE",
+      module: "recycle_bin",
+      description: `Emptied recycle bin, permanently removing ${deletedCount} items`,
+      ...getRequestMeta(req),
+    });
+
+    res.json({
+      success: true,
+      message: `Emptied recycle bin. ${deletedCount} items permanently deleted`,
+    });
+  }),
+);
+
+router.post(
   "/:id/restore",
   requirePermission("recycle_bin", "restore"),
   catchAsync(async (req, res) => {

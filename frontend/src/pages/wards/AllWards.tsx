@@ -11,6 +11,7 @@ import {
   useWardStats,
   useBulkCreateWards,
   useDeleteWard,
+  useBulkDeleteWards,
 } from "@/hooks/useWards";
 import { useAuth } from "@/hooks/useAuth";
 import { PermissionGate } from "@/components/auth/PermissionGate";
@@ -88,7 +89,9 @@ export default function WardsPage() {
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Delete Context
+  // Selection & Delete Context
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [wardToDelete, setWardToDelete] = useState<{
     id: string;
     name: string;
@@ -96,6 +99,7 @@ export default function WardsPage() {
 
   const { mutateAsync: bulkCreateWards } = useBulkCreateWards();
   const { mutateAsync: deleteWard, isPending: isDeleting } = useDeleteWard();
+  const { mutateAsync: bulkDeleteWards, isPending: isBulkDeleting } = useBulkDeleteWards();
 
 
 
@@ -365,6 +369,19 @@ export default function WardsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+            {selectedIds.length > 0 && (
+              <PermissionGate module="wards" action="delete">
+                <Button
+                  variant="destructive"
+                  className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold justify-center animate-in fade-in"
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected ({selectedIds.length})
+                </Button>
+              </PermissionGate>
+            )}
+
             <PermissionGate module="wards" action="read">
               <Button
                 variant="outline"
@@ -387,8 +404,6 @@ export default function WardsPage() {
                 Bulk Upload
               </Button>
             </PermissionGate>
-
-
 
             <PermissionGate module="wards" action="create">
               <Link to="/wards/new" className="w-full sm:w-auto">
@@ -430,6 +445,39 @@ export default function WardsPage() {
                 className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Delete Confirmation Modal */}
+        <AlertDialog
+          open={isBulkDeleteOpen}
+          onOpenChange={setIsBulkDeleteOpen}
+        >
+          <AlertDialogContent className="rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-extrabold text-foreground">Bulk Delete Wards</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
+                Are you sure you want to delete <strong>{selectedIds.length}</strong> selected ward(s)?
+                Wards without active dependent records will be moved to the Recycle Bin. Any wards with active grievances, projects, or voters will be automatically skipped.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel className="border-border/60 hover:bg-muted" disabled={isBulkDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={isBulkDeleting}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await bulkDeleteWards(selectedIds);
+                  setSelectedIds([]);
+                  setIsBulkDeleteOpen(false);
+                }}
+                className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+              >
+                {isBulkDeleting ? "Deleting..." : `Delete ${selectedIds.length} Wards`}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -596,6 +644,22 @@ export default function WardsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="w-10 h-12 px-3 text-center py-4 bg-muted/20">
+                      <input
+                        type="checkbox"
+                        checked={
+                          wards.length > 0 && selectedIds.length === wards.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(wards.map((w: any) => w.id));
+                          } else {
+                            setSelectedIds([]);
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </TableHead>
                     <TableHead className="w-14 h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">#</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward Name</TableHead>
                     <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Constituency</TableHead>
@@ -614,7 +678,7 @@ export default function WardsPage() {
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i} className="border-b border-border/40">
-                        {Array.from({ length: 12 }).map((_, j) => (
+                        {Array.from({ length: 13 }).map((_, j) => (
                           <TableCell key={j} className="py-4 px-4">
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -624,7 +688,7 @@ export default function WardsPage() {
                   ) : wards.length === 0 ? (
                     <TableRow className="hover:bg-transparent">
                       <TableCell
-                        colSpan={12}
+                        colSpan={13}
                         className="text-center py-16 text-muted-foreground text-xs font-semibold"
                       >
                         No wards found matching your filters.
@@ -637,6 +701,20 @@ export default function WardsPage() {
                       const extraCount = councillors.length > 1 ? councillors.length - 1 : 0;
                       return (
                         <TableRow key={ward.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
+                          <TableCell className="px-3 text-center align-middle">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(ward.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedIds((prev) => [...prev, ward.id]);
+                                } else {
+                                  setSelectedIds((prev) => prev.filter((id) => id !== ward.id));
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            />
+                          </TableCell>
                           <TableCell className="font-mono text-muted-foreground py-4 px-4 font-semibold text-xs">
                             {ward.wardNumber}
                           </TableCell>

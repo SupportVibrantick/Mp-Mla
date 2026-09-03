@@ -186,6 +186,8 @@ export const wardsApi = {
 
   delete: (id: string) => api.delete(`/admin/wards/${id}`),
 
+  bulkDelete: (ids: string[]) => api.post("/admin/wards/bulk-delete", { ids }),
+
   // areas
   listAreas: (wardId: string) => api.get(`/admin/wards/${wardId}/areas`),
 
@@ -211,6 +213,24 @@ export const wardsApi = {
   // demographics
   demographics: (wardId: string) =>
     api.get(`/admin/wards/${wardId}/demographics`),
+};
+
+export const communityGroupsApi = {
+  list: (params?: any) => api.get("/admin/community-groups", { params }),
+  get: (id: string) => api.get(`/admin/community-groups/${id}`),
+  stats: (wardId?: string) =>
+    api.get("/admin/community-groups/stats", {
+      params: wardId ? { wardId } : {},
+    }),
+  create: (data: any) => api.post("/admin/community-groups", data),
+  update: (id: string, data: any) => api.put(`/admin/community-groups/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/community-groups/${id}`),
+  bulkDelete: (ids: string[]) =>
+    api.post("/admin/community-groups/bulk-delete", { ids }),
+  toggleActive: (id: string) =>
+    api.patch(`/admin/community-groups/${id}/toggle-active`),
+  bulkCreate: (data: any[]) =>
+    api.post("/admin/community-groups/bulk", data),
 };
 
 export const grievancesApi = {
@@ -327,6 +347,8 @@ export const departmentsApi = {
   create: (data: any) => api.post("/admin/departments", data),
   update: (id: string, data: any) => api.put(`/admin/departments/${id}`, data),
   delete: (id: string) => api.delete(`/admin/departments/${id}`),
+  bulkDelete: (ids: string[]) =>
+    api.post("/admin/departments/bulk-delete", { ids }),
   toggle: (id: string) => api.patch(`/admin/departments/${id}/toggle-active`),
   getUsers: (id: string) => api.get(`/admin/departments/${id}/users`),
   getGrievances: (id: string) => api.get(`/admin/departments/${id}/grievances`),
@@ -349,6 +371,11 @@ export const recycleBinApi = {
   list: (params?: any) => api.get("/admin/recycle-bin", { params }),
   restore: (id: string) => api.post(`/admin/recycle-bin/${id}/restore`),
   delete: (id: string) => api.delete(`/admin/recycle-bin/${id}`),
+  bulkRestore: (ids: string[]) =>
+    api.post("/admin/recycle-bin/bulk-restore", { ids }),
+  bulkDelete: (ids: string[]) =>
+    api.post("/admin/recycle-bin/bulk-delete", { ids }),
+  empty: () => api.post("/admin/recycle-bin/empty"),
 };
 
 export const permissionsApi = {
@@ -374,6 +401,8 @@ export const voterListApi = {
   create: (data: any) => api.post("/admin/voter-list", data),
   update: (id: string, data: any) => api.put(`/admin/voter-list/${id}`, data),
   delete: (id: string) => api.delete(`/admin/voter-list/${id}`),
+  bulkDelete: (ids: string[]) =>
+    api.post("/admin/voter-list/bulk-delete", { ids }),
   bulkUpload: (data: any) => api.post("/admin/voter-list/bulk", data),
   listBulkJobs: (params?: any) =>
     api.get("/admin/voter-list/bulk/jobs", { params }),

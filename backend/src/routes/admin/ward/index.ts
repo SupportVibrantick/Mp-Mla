@@ -4,7 +4,7 @@ import { validate } from "../../../middleware/validate.js";
 import { listWards, getWard, getWardStats } from "./read.js";
 import { createWard } from "./create.js";
 import { updateWard } from "./update.js";
-import { deleteWard } from "./delete.js";
+import { deleteWard, bulkDeleteWards } from "./delete.js";
 import {
   listAreas,
   getArea,
@@ -32,17 +32,22 @@ const router = Router();
 router.get("/", requirePermission("wards", "read"), listWards);
 router.get("/stats", requirePermission("wards", "read"), getWardStats);
 router.get("/export", requirePermission("wards", "read"), exportWards);
+router.post(
+  "/bulk",
+  requirePermission("wards", "create"),
+  bulkCreateWards,
+);
+router.post(
+  "/bulk-delete",
+  requirePermission("wards", "delete"),
+  bulkDeleteWards,
+);
 router.get("/:id", requirePermission("wards", "read"), getWard);
 router.post(
   "/",
   requirePermission("wards", "create"),
   validate(createWardSchema),
   createWard,
-);
-router.post(
-  "/bulk",
-  requirePermission("wards", "create"),
-  bulkCreateWards,
 );
 router.put(
   "/:id",

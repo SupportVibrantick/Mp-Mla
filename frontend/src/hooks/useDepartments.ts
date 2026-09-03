@@ -63,6 +63,25 @@ export function useDeleteDepartment() {
     "Deleted",
   );
 }
+export function useBulkDeleteDepartments() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      departmentsApi.bulkDelete(ids).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["departments"] });
+      toast({ title: "Bulk Delete Complete", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to bulk delete departments",
+        variant: "destructive",
+      });
+    },
+  });
+}
 export function useToggleDepartment() {
   return useDeptMut(
     (id: string) => departmentsApi.toggle(id).then((r) => r.data),

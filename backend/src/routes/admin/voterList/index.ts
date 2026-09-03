@@ -9,7 +9,7 @@ import {
 import { listVoters, getVoter, getVoterStats } from "./read.js";
 import { createVoter } from "./create.js";
 import { updateVoter } from "./update.js";
-import { deleteVoter } from "./delete.js";
+import { deleteVoter, bulkDeleteVoters } from "./delete.js";
 import { bulkUploadVoters, listBulkJobs, getBulkJob } from "./bulk.js";
 import { exportVoters, downloadSampleExcel } from "./export.js";
 
@@ -53,11 +53,17 @@ router.get(
   exportVoters,
 );
 
-// ─── Bulk Upload ─────────────────────────────────────────
+// ─── Bulk Operations ─────────────────────────────────────
 router.post(
   "/bulk",
   requirePermission("voter_list", "create"),
   bulkUploadVoters,
+);
+
+router.post(
+  "/bulk-delete",
+  requirePermission("voter_list", "delete"),
+  bulkDeleteVoters,
 );
 
 // ─── Bulk Upload Job Tracking ────────────────────────────

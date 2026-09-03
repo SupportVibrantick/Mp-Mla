@@ -18,7 +18,7 @@ import {
 } from "../../../schemas/admin/departments/index.js";
 import { createDepartment } from "./create.js";
 import { updateDepartment, toggleDepartment, upsertDepartmentSlas } from "./update.js";
-import { deleteDepartment } from "./delete.js";
+import { deleteDepartment, bulkDeleteDepartments } from "./delete.js";
 import { bulkCreateDepartments } from "./bulk.js";
 import { exportDepartments } from "./export.js";
 
@@ -40,6 +40,11 @@ router.post(
   "/bulk",
   requirePermission("departments", "create"),
   bulkCreateDepartments,
+);
+router.post(
+  "/bulk-delete",
+  requirePermission("departments", "delete"),
+  bulkDeleteDepartments,
 );
 
 router.get(

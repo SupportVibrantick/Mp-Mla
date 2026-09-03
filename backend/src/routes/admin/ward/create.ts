@@ -22,6 +22,8 @@ export async function createWard(
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
+
+    
     await assertCanCreateWard(tenantId);
     const { areas, councillor, councillors, demographics, ...wardData } = req.body;
     if (wardData.constituencyId === "") wardData.constituencyId = null;

@@ -77,6 +77,8 @@ export default function VoterListPage() {
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [selectedVoter, setSelectedVoter] = useState<any>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
 
   // Single Voter Form State
   const [form, setForm] = useState({
@@ -219,6 +221,30 @@ export default function VoterListPage() {
       toast({
         title: "Error",
         description: err?.response?.data?.message || "Failed to delete voter",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => voterListApi.bulkDelete(ids),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["demographics"] });
+      queryClient.invalidateQueries({ queryKey: ["wards"] });
+      setSelectedIds([]);
+      setIsBulkDeleteOpen(false);
+      toast({
+        title: "Bulk Delete Successful",
+        description: res.data.message || "Selected voters soft-deleted",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to bulk delete voters",
         variant: "destructive",
       });
     },
@@ -513,6 +539,18 @@ export default function VoterListPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {selectedIds.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsBulkDeleteOpen(true)}
+                className="gap-1.5 animate-in fade-in"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Selected ({selectedIds.length})</span>
+              </Button>
+            )}
+
             <Button
               variant="outline"
               size="sm"
@@ -701,6 +739,22 @@ export default function VoterListPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
+                  <TableHead className="w-[40px] px-3">
+                    <input
+                      type="checkbox"
+                      checked={
+                        voters.length > 0 && selectedIds.length === voters.length
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds(voters.map((v: any) => v.id));
+                        } else {
+                          setSelectedIds([]);
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                    />
+                  </TableHead>
                   <TableHead className="w-[140px]">EPIC ID</TableHead>
                   <TableHead>Voter Name</TableHead>
                   <TableHead>Relative Name</TableHead>
@@ -716,6 +770,7 @@ export default function VoterListPage() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                       <TableCell>
                         <Skeleton className="h-5 w-24" />
                       </TableCell>
@@ -742,7 +797,7 @@ export default function VoterListPage() {
                 ) : voters.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="text-center py-12 text-muted-foreground"
                     >
                       <Users className="h-10 w-10 mx-auto mb-2 opacity-40" />
@@ -756,6 +811,20 @@ export default function VoterListPage() {
                 ) : (
                   voters.map((v: any) => (
                     <TableRow key={v.id} className="hover:bg-muted/20">
+                      <TableCell className="w-[40px] px-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(v.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds((prev) => [...prev, v.id]);
+                            } else {
+                              setSelectedIds((prev) => prev.filter((id) => id !== v.id));
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                      </TableCell>
                       <TableCell className="font-mono font-semibold text-xs text-primary">
                         {v.voterIdNumber}
                       </TableCell>
@@ -1358,6 +1427,44 @@ export default function VoterListPage() {
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               )}
               Delete Voter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Bulk Delete Confirmation Dialog ──────────────────────── */}
+      <Dialog
+        open={isBulkDeleteOpen}
+        onOpenChange={(open) => {
+          if (!open) setIsBulkDeleteOpen(false);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-rose-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              <span>Confirm Bulk Soft-Delete</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Are you sure you want to soft-delete <strong>{selectedIds.length}</strong> selected voter records? Selected voters will be marked as DELETED and ward demographics will be automatically recalculated.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={bulkDeleteMutation.isPending}
+              onClick={() => {
+                bulkDeleteMutation.mutate(selectedIds);
+              }}
+            >
+              {bulkDeleteMutation.isPending && (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Delete {selectedIds.length} Voters
             </Button>
           </DialogFooter>
         </DialogContent>
