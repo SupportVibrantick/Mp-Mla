@@ -116,102 +116,146 @@ export default function ProjectListPage() {
   };
 
   const downloadSampleTemplate = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Projects");
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Projects");
+      const dropdownSheet = workbook.addWorksheet("DropdownData", {
+        state: "hidden",
+      });
 
-    // Define Columns
-    const columns = [
-      { header: "projectCode", key: "projectCode" },
-      { header: "name", key: "name" },
-      { header: "category", key: "category" },
-      { header: "department", key: "department" },
-      { header: "contractor", key: "contractor" },
-      { header: "contractorPhone", key: "contractorPhone" },
-      { header: "wardNumber", key: "wardNumber" },
-      { header: "startDate", key: "startDate" },
-      { header: "expectedEndDate", key: "expectedEndDate" },
-      { header: "actualEndDate", key: "actualEndDate" },
-      { header: "budgetSanctioned", key: "budgetSanctioned" },
-      { header: "budgetReleased", key: "budgetReleased" },
-      { header: "budgetUsed", key: "budgetUsed" },
-      { header: "fundType", key: "fundType" },
-      { header: "status", key: "status" },
-      { header: "completionPercent", key: "completionPercent" },
-      { header: "description", key: "description" },
-      { header: "address", key: "address" },
-    ];
+      // Define Columns
+      const columns = [
+        { header: "projectCode", key: "projectCode", width: 18 },
+        { header: "name", key: "name", width: 30 },
+        { header: "category", key: "category", width: 20 },
+        { header: "department", key: "department", width: 25 },
+        { header: "contractor", key: "contractor", width: 25 },
+        { header: "contractorPhone", key: "contractorPhone", width: 18 },
+        { header: "wardNumber", key: "wardNumber", width: 14 },
+        { header: "startDate", key: "startDate", width: 15 },
+        { header: "expectedEndDate", key: "expectedEndDate", width: 18 },
+        { header: "actualEndDate", key: "actualEndDate", width: 15 },
+        { header: "budgetSanctioned", key: "budgetSanctioned", width: 18 },
+        { header: "budgetReleased", key: "budgetReleased", width: 18 },
+        { header: "budgetUsed", key: "budgetUsed", width: 18 },
+        { header: "fundType", key: "fundType", width: 18 },
+        { header: "status", key: "status", width: 16 },
+        { header: "completionPercent", key: "completionPercent", width: 18 },
+        { header: "description", key: "description", width: 35 },
+        { header: "address", key: "address", width: 35 },
+      ];
 
-    worksheet.columns = columns;
+      worksheet.columns = columns;
 
-    // Add Example Rows
-    worksheet.addRow({
-      projectCode: "PROJ-001",
-      name: "School Build",
-      category: "EDUCATION",
-      department: "EDU",
-      contractor: "ABC Infra",
-      contractorPhone: "9876543210",
-      wardNumber: 101,
-      startDate: "2024-01-01",
-      expectedEndDate: "2024-12-31",
-      budgetSanctioned: 5000000,
-      budgetReleased: 2000000,
-      budgetUsed: 500000,
-      fundType: "STATE_FUND",
-      status: "RUNNING",
-      completionPercent: 10,
-    });
+      // Add Example Rows
+      worksheet.addRow({
+        projectCode: "PROJ-001",
+        name: "School Construction",
+        category: "EDUCATION",
+        department: departments[0]?.name || "Education Department",
+        contractor: "ABC Infra Ltd",
+        contractorPhone: "9876543210",
+        wardNumber: wards[0]?.wardNumber || 101,
+        startDate: "2024-01-01",
+        expectedEndDate: "2024-12-31",
+        actualEndDate: "",
+        budgetSanctioned: 5000000,
+        budgetReleased: 2000000,
+        budgetUsed: 500000,
+        fundType: "STATE_FUND",
+        status: "RUNNING",
+        completionPercent: 10,
+        description: "Construction of new school building in Ward 101",
+        address: "Plot 12, Main Sector",
+      });
 
-    // Add Data Validation (Dropdowns) for 100 rows
-    const categories = PROJECT_CATEGORIES.map((c) => c.value);
-    const statuses = PROJECT_STATUSES.map((s) => s.value);
-    const fundTypes = FUND_TYPES.map((f) => f.value);
+      const categories = PROJECT_CATEGORIES.map((c) => c.value);
+      const deptList = departments
+        .map((d: any) => String(d.name || d.code || "").trim())
+        .filter(Boolean)
+        .sort((a: string, b: string) => a.localeCompare(b));
+      const wardList = wards
+        .map((w: any) => String(w.wardNumber))
+        .filter(Boolean)
+        .sort((a: string, b: string) => Number(a) - Number(b));
+      const fundTypes = FUND_TYPES.map((f) => f.value);
+      const statuses = PROJECT_STATUSES.map((s) => s.value);
 
-    for (let i = 2; i <= 101; i++) {
-      // Category Dropdown (Column C)
-      worksheet.getCell(`C${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`"${categories.join(",")}"`],
-        showErrorMessage: true,
+      dropdownSheet.getColumn(1).values = ["Categories", ...categories];
+      dropdownSheet.getColumn(2).values = ["Departments", ...deptList];
+      dropdownSheet.getColumn(3).values = ["WardNumbers", ...wardList];
+      dropdownSheet.getColumn(4).values = ["FundTypes", ...fundTypes];
+      dropdownSheet.getColumn(5).values = ["Statuses", ...statuses];
+
+      for (let i = 2; i <= 501; i++) {
+        // Category Dropdown (Column C)
+        worksheet.getCell(`C${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$A$2:$A$${categories.length + 1}`],
+          showErrorMessage: true,
+        };
+
+        // Department Dropdown (Column D)
+        worksheet.getCell(`D${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [
+            `=DropdownData!$B$2:$B$${Math.max(deptList.length + 1, 2)}`,
+          ],
+          showErrorMessage: true,
+        };
+
+        // WardNumber Dropdown (Column G)
+        worksheet.getCell(`G${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [
+            `=DropdownData!$C$2:$C$${Math.max(wardList.length + 1, 2)}`,
+          ],
+          showErrorMessage: true,
+        };
+
+        // FundType Dropdown (Column N)
+        worksheet.getCell(`N${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$D$2:$D$${fundTypes.length + 1}`],
+          showErrorMessage: true,
+        };
+
+        // Status Dropdown (Column O)
+        worksheet.getCell(`O${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$E$2:$E$${statuses.length + 1}`],
+          showErrorMessage: true,
+        };
+      }
+
+      // Styling
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
       };
 
-      // FundType Dropdown (Column N)
-      worksheet.getCell(`N${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`"${fundTypes.join(",")}"`],
-        showErrorMessage: true,
-      };
-
-      // Status Dropdown (Column O)
-      worksheet.getCell(`O${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`"${statuses.join(",")}"`],
-        showErrorMessage: true,
-      };
+      // Download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Projects_Import_Template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate Projects template", err);
+      toast.error("Failed to generate Excel template");
     }
-
-    // Styling
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFE0E0E0" },
-    };
-
-    // Download
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "projects_bulk_template.xlsx";
-    a.click();
-    window.URL.revokeObjectURL(url);
   };
 
   const params = useMemo(() => {

@@ -9,7 +9,7 @@ import {
 } from "./read.js";
 import { createGrievance } from "./create.js";
 import { updateGrievance, changeStatus, assignGrievance } from "./update.js";
-import { deleteGrievance } from "./delete.js";
+import { deleteGrievance, bulkDeleteGrievances } from "./delete.js";
 import { addTimelineEntry, listTimelineEntries } from "./timeline.js";
 import { exportGrievances } from "./export.js";
 import { bulkCreateGrievances } from "./bulk.js";
@@ -44,6 +44,11 @@ router.post(
   "/bulk",
   requirePermission("grievances", "create"),
   bulkCreateGrievances,
+);
+router.post(
+  "/bulk-delete",
+  requirePermission("grievances", "delete"),
+  bulkDeleteGrievances,
 );
 
 router.get("/:id", requirePermission("grievances", "read"), getGrievance);

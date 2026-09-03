@@ -232,6 +232,27 @@ export function useDeleteGrievance() {
   );
 }
 
+export function useBulkDeleteGrievances() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      grievancesApi.bulkDelete(ids).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["grievances"] });
+      toast({ title: "Bulk Delete Complete", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description:
+          err?.response?.data?.message || "Failed to bulk delete grievances",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 export function useExportGrievances() {
   const { toast } = useToast();
   return useMutation({

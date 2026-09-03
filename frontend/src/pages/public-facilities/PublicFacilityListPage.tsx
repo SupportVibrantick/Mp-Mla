@@ -254,25 +254,45 @@ export default function PublicFacilityListPage() {
     });
     const catList = PUBLIC_FACILITY_CATEGORIES.map((c: any) => c.value);
     const statusList = PUBLIC_FACILITY_STATUSES.map((s: any) => s.value);
+    const wardList = wards
+      .map((w: any) => String(w.wardNumber))
+      .filter(Boolean)
+      .sort((a: string, b: string) => Number(a) - Number(b));
+    const booleanList = ["TRUE", "FALSE"];
 
     dropdownSheet.getColumn(1).values = ["Categories", ...catList];
     dropdownSheet.getColumn(2).values = ["Statuses", ...statusList];
+    dropdownSheet.getColumn(3).values = ["WardNumbers", ...wardList];
+    dropdownSheet.getColumn(4).values = ["Booleans", ...booleanList];
 
     for (let i = 2; i <= maxRows; i++) {
+      // Category (Column B)
       worksheet.getCell(`B${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`DropdownData!$A$2:$A$${catList.length + 1}`],
+        formulae: [`=DropdownData!$A$2:$A$${catList.length + 1}`],
+        showErrorMessage: true,
       };
+      // WardNumber (Column E)
+      worksheet.getCell(`E${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`=DropdownData!$C$2:$C$${Math.max(wardList.length + 1, 2)}`],
+        showErrorMessage: true,
+      };
+      // Status (Column I)
       worksheet.getCell(`I${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`DropdownData!$B$2:$B$${statusList.length + 1}`],
+        formulae: [`=DropdownData!$B$2:$B$${statusList.length + 1}`],
+        showErrorMessage: true,
       };
+      // InchargeIsActive (Column S)
       worksheet.getCell(`S${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: ['"TRUE,FALSE"'],
+        formulae: [`=DropdownData!$D$2:$D$3`],
+        showErrorMessage: true,
       };
     } 
 

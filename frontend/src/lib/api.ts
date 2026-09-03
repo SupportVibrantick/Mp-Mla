@@ -266,6 +266,9 @@ export const grievancesApi = {
   export: (params?: any) => api.get("/admin/grievances/export", { params }),
 
   bulk: (data: any[]) => api.post("/admin/grievances/bulk", data),
+
+  bulkDelete: (ids: string[]) =>
+    api.post("/admin/grievances/bulk-delete", { ids }),
 };
 
 export const projectsApi = {

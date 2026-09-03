@@ -62,3 +62,81 @@ export async function deleteGrievance(
     next(error);
   }
 }
+
+/**
+ * POST /api/admin/grievances/bulk-delete
+ * Bulk deletes grievances (moving to recycle bin).
+ */
+export async function bulkDeleteGrievances(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: "Request body must contain a non-empty 'ids' array.",
+      });
+      return;
+    }
+
+    const grievances = await prisma.grievance.findMany({
+      where: { id: { in: ids }, tenantId, isDeleted: false },
+      include: {
+        timeline: true,
+        attachments: true,
+      },
+    });
+
+    if (grievances.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: "No active grievances found to delete.",
+      });
+      return;
+    }
+
+    let deletedCount = 0;
+
+    for (const g of grievances) {
+      await archiveToRecycleBin({
+        tenantId,
+        module: "grievances",
+        entityType: "grievance",
+        recordId: g.id,
+        recordLabel: g.ticketNumber,
+        payload: g,
+        deletedById: req.user?.id,
+      });
+
+      await prisma.grievance.update({
+        where: { id: g.id },
+        data: { isDeleted: true },
+      });
+
+      await createAuditLog({
+        tenantId,
+        userId: req.user!.id,
+        action: "DELETE",
+        module: "grievances",
+        recordId: g.id,
+        description: `Moved grievance ${g.ticketNumber} to recycle bin`,
+        ...getRequestMeta(req),
+      });
+
+      deletedCount++;
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk delete completed. ${deletedCount} grievance(s) moved to recycle bin.`,
+      data: { deletedCount },
+    });
+  } catch (error) {
+    next(error);
+  }
+}

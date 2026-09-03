@@ -13,7 +13,9 @@
     "db:studio": "npx prisma studio",
     "db:generate": "npx prisma generate",
     "db:reset": "npx prisma migrate reset",
-    "db:migrate-settings": "tsx scripts/migrate-settings-to-tenant.ts"
+    "db:migrate-settings": "tsx scripts/migrate-settings-to-tenant.ts",
+    "clean:voters": "tsx src/scripts/cleanVoters.ts",
+    "clean:recycle-bin": "tsx src/scripts/cleanRecycleBin.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
