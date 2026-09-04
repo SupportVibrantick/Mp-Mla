@@ -57,6 +57,8 @@ import {
   Loader2,
   KeyRound,
   UserX,
+  UserCheck,
+  Trash2,
   Pencil,
   Eye,
   EyeOff,
@@ -223,6 +225,21 @@ export default function UserManagement() {
     });
     setEditOpen(false);
     setSelectedUser(null);
+  };
+
+  // ─── Status Toggle ──────────────────────────────────
+  const handleToggleStatus = async (user: any, newStatus: "ACTIVE" | "INACTIVE") => {
+    await updateMutation.mutateAsync({
+      id: user.id,
+      data: {
+        name: user.name,
+        phone: user.phone || "",
+        designation: user.designation || "",
+        departmentId: user.departmentId || "",
+        role: user.role,
+        status: newStatus,
+      },
+    });
   };
 
   // ─── Delete ─────────────────────────────────────────
@@ -473,10 +490,28 @@ export default function UserManagement() {
                                   Manage Permissions
                                 </DropdownMenuItem>
                               </PermissionGate>
-                              <PermissionGate module="users" action="delete">
-                                {!isCurrentUser && u.status === "ACTIVE" && (
-                                  <>
-                                    <DropdownMenuSeparator />
+                              {!isCurrentUser && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <PermissionGate module="users" action="update">
+                                    {u.status === "ACTIVE" ? (
+                                      <DropdownMenuItem
+                                        onClick={() => handleToggleStatus(u, "INACTIVE")}
+                                        className="cursor-pointer text-amber-600 focus:text-amber-600 font-semibold text-xs"
+                                      >
+                                        <UserX className="mr-2 h-3.5 w-3.5" /> Deactivate
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        onClick={() => handleToggleStatus(u, "ACTIVE")}
+                                        className="cursor-pointer text-emerald-600 focus:text-emerald-600 font-semibold text-xs"
+                                      >
+                                        <UserCheck className="mr-2 h-3.5 w-3.5" /> Activate
+                                      </DropdownMenuItem>
+                                    )}
+                                  </PermissionGate>
+
+                                  <PermissionGate module="users" action="delete">
                                     <DropdownMenuItem
                                       onClick={() => {
                                         setSelectedUser(u);
@@ -484,11 +519,11 @@ export default function UserManagement() {
                                       }}
                                       className="cursor-pointer text-destructive focus:text-destructive font-semibold text-xs"
                                     >
-                                      <UserX className="mr-2 h-3.5 w-3.5" />{" "} Deactivate
+                                      <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete User
                                     </DropdownMenuItem>
-                                  </>
-                                )}
-                              </PermissionGate>
+                                  </PermissionGate>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -707,6 +742,7 @@ export default function UserManagement() {
               <div className="space-y-2">
                 <Label>Role <span className="text-destructive">*</span></Label>
                 <Select
+                  disabled={selectedUser?.id === currentUser?.id}
                   value={editForm.watch("role")}
                   onValueChange={(val) => editForm.setValue("role", val as any, { shouldValidate: true })}
                 >
@@ -719,6 +755,9 @@ export default function UserManagement() {
                     <SelectItem value="OFFICE_STAFF">Office Staff</SelectItem>
                   </SelectContent>
                 </Select>
+                {selectedUser?.id === currentUser?.id && (
+                  <p className="text-[10px] text-muted-foreground italic font-medium">You cannot change your own role</p>
+                )}
                 {editForm.formState.errors.role && (
                   <p className="text-xs text-destructive">{editForm.formState.errors.role.message}</p>
                 )}
@@ -748,6 +787,7 @@ export default function UserManagement() {
             <div className="space-y-2">
               <Label>Account Status <span className="text-destructive">*</span></Label>
               <Select
+                disabled={selectedUser?.id === currentUser?.id}
                 value={editForm.watch("status")}
                 onValueChange={(val) => editForm.setValue("status", val as any, { shouldValidate: true })}
               >
@@ -760,6 +800,9 @@ export default function UserManagement() {
                   <SelectItem value="SUSPENDED">Suspended</SelectItem>
                 </SelectContent>
               </Select>
+              {selectedUser?.id === currentUser?.id && (
+                <p className="text-[10px] text-muted-foreground italic font-medium">You cannot deactivate or suspend your own account</p>
+              )}
               {editForm.formState.errors.status && (
                 <p className="text-xs text-destructive">{editForm.formState.errors.status.message}</p>
               )}
@@ -778,25 +821,27 @@ export default function UserManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Deactivate User Dialog */}
+      {/* Delete User Dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate User Account</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to deactivate <strong>{selectedUser?.name}</strong>'s account?
-              This will block their access and change their status to INACTIVE.
+            <AlertDialogTitle className="font-extrabold text-foreground flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" /> Delete User Account
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
+              Are you sure you want to delete <strong>{selectedUser?.name}</strong>'s account?
+              This record will be moved to the Recycle Bin and can be restored later.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteOpen(false)}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel onClick={() => setDeleteOpen(false)} className="border-border/60">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90 font-semibold"
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Deactivate
+              Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

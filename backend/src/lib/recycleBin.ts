@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { syncVoterDemographics } from "../routes/admin/voterList/demographicsSync.js";
 
 export type RecycleEntityType =
+  | "user"
   | "community_group"
   | "department"
   | "fund"
@@ -826,12 +827,46 @@ async function restoreVoter(payload: unknown) {
       data: { ...(voterObj as any), isDeleted: false, status: "ACTIVE" },
     });
     if (voterObj.tenantId && voterObj.wardId) {
-      await syncVoterDemographics(
-        voterObj.tenantId as string,
-        voterObj.wardId as string,
-      );
     }
   }
+}
+
+async function restoreUser(payload: unknown) {
+  const userObj = ensureObject(payload, "user");
+  const permissions = Array.isArray(userObj.permissions)
+    ? userObj.permissions
+    : [];
+  const userData = omit(userObj, ["permissions"]);
+  const userUpdateData = omitSystemFields(userData);
+
+  await prisma.$transaction(async (tx) => {
+    const existing = await tx.user.findUnique({
+      where: { id: userObj.id as string },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await tx.user.update({
+        where: { id: userObj.id as string },
+        data: { ...(userUpdateData as any), status: "ACTIVE" },
+      });
+    } else {
+      await tx.user.create({
+        data: { ...(userData as any), status: "ACTIVE" },
+      });
+    }
+
+    if (permissions.length > 0) {
+      await tx.userPermission.createMany({
+        data: permissions.map((p: any) => ({
+          userId: userObj.id,
+          permissionId: p.permissionId,
+          granted: p.granted ?? true,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  });
 }
 
 export async function restoreRecycleBinEntry(entry: {
@@ -840,6 +875,9 @@ export async function restoreRecycleBinEntry(entry: {
   payload: unknown;
 }) {
   switch (entry.entityType as RecycleEntityType) {
+    case "user":
+      await restoreUser(entry.payload);
+      break;
     case "voter":
     case "voter_list":
       await restoreVoter(entry.payload);
@@ -928,6 +966,12 @@ export async function permanentlyDeleteRecycledRecord(entry: {
   recordId: string;
 }) {
   switch (entry.entityType as RecycleEntityType) {
+    case "user":
+      await prisma.userPermission.deleteMany({ where: { userId: entry.recordId } });
+      await prisma.refreshToken.deleteMany({ where: { userId: entry.recordId } });
+      await (prisma as any).auditLog.deleteMany({ where: { userId: entry.recordId } }).catch(() => {});
+      await prisma.user.deleteMany({ where: { id: entry.recordId } });
+      break;
     case "voter":
     case "voter_list":
       await prisma.voter.deleteMany({ where: { id: entry.recordId } });

@@ -4,12 +4,13 @@ import {
   createAuditLog,
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
+import { archiveToRecycleBin, isRecordInRecycleBin } from "../../../lib/recycleBin.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 
 /**
  * DELETE /api/admin/users/:id
- * Soft delete — sets status to INACTIVE and revokes all tokens
+ * Soft delete user — archives to Recycle Bin and sets status to INACTIVE
  */
 
 export async function deleteUser(
@@ -31,17 +32,13 @@ export async function deleteUser(
 
     // Prevent self-deletion
     if (userId === req.user.id) {
-      throw ApiError.badRequest("You cannot deactivate your own account.");
+      throw ApiError.badRequest("You cannot delete your own account.");
     }
 
     const user = await prisma.user.findFirst({
       where: { id: userId, tenantId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        status: true,
+      include: {
+        permissions: true,
       },
     });
 
@@ -49,11 +46,24 @@ export async function deleteUser(
       throw ApiError.notFound("User not found");
     }
 
-    if (user.status === "INACTIVE") {
-      throw ApiError.badRequest("User already inactive.");
+    // Check if already in recycle bin
+    const recycled = await isRecordInRecycleBin("user", userId);
+    if (recycled) {
+      throw ApiError.badRequest("User already in Recycle Bin.");
     }
 
-    // Soft delete
+    // Archive payload to Recycle Bin
+    await archiveToRecycleBin({
+      tenantId,
+      module: "users",
+      entityType: "user",
+      recordId: user.id,
+      recordLabel: user.name || user.email,
+      payload: user,
+      deletedById: req.user.id,
+    });
+
+    // Soft delete -> set INACTIVE
     await prisma.user.update({
       where: { id: userId },
       data: { status: "INACTIVE" },
@@ -74,20 +84,21 @@ export async function deleteUser(
     createAuditLog({
       userId: req.user.id,
       tenantId,
-      action: "STATUS_CHANGE",
+      action: "DELETE",
       module: "users",
       recordId: user.id,
-      description: `Deactivated user ${user.email}`,
+      description: `Deleted user ${user.email} (moved to Recycle Bin)`,
       oldData: { status: user.status },
-      newData: { status: "INACTIVE" },
+      newData: { status: "INACTIVE", inRecycleBin: true },
       ...getRequestMeta(req),
     });
 
     res.json({
       success: true,
-      message: `User ${user.email} deactivated successfully.`,
+      message: `User ${user.name || user.email} deleted and moved to Recycle Bin successfully.`,
     });
   } catch (error) {
     next(error);
   }
 }
+

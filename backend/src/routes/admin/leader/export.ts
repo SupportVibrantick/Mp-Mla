@@ -24,9 +24,28 @@ export const exportLeaders = catchAsync(async (req: Request, res: Response) => {
     orderBy: { name: "asc" },
   });
 
+  const LEADER_CATEGORY_LABELS: Record<string, string> = {
+    PARTY_LEADER: "Party Leader",
+    OPPOSITION_LEADER: "Opposition",
+    BUREAUCRAT: "Bureaucrat",
+    COMMUNITY_LEADER: "Heads",
+    RELIGIOUS_LEADER: "Religious Heads",
+    BUSINESS_LEADER: "Business Leader",
+    MEDIA_PERSON: "Media",
+    YOUTH_LEADER: "Youth Leader",
+    WOMEN_LEADER: "Women Leader",
+    SENIOR_CITIZEN: "Senior Citizen",
+    ACADEMIC: "Academic",
+    LEGAL: "Legal",
+    MEDICAL: "Medical",
+    NGO_HEAD: "NGO Head",
+    TRADE_UNION: "Trade Union",
+    OTHER: "Other",
+  };
+
   const exportData = data.map((item) => ({
     name: item.name,
-    category: item.category,
+    category: LEADER_CATEGORY_LABELS[item.category] || item.category,
     designation: item.designation ?? "",
     organization: item.organization ?? "",
     partyName: item.partyName ?? "",

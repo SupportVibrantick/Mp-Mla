@@ -8,6 +8,7 @@ import {
 } from "../../../middleware/auditLog.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { requireTenantId } from "../../../utils/tenant.js";
+
 /**
  * PUT /api/admin/users/:id
  */
@@ -41,12 +42,21 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
   if (!oldUser) throw ApiError.notFound("User not found");
 
   // ✅ Prevent self role change
-  if (
+  if(
     userId === req.user.id &&
     req.body.role &&
     req.body.role !== oldUser.role
   ) {
     throw ApiError.badRequest("You cannot change your own role");
+  }
+
+  // ✅ Prevent self status change to INACTIVE or SUSPENDED
+  if (
+    userId === req.user.id &&
+    req.body.status &&
+    req.body.status !== "ACTIVE"
+  ) {
+    throw ApiError.badRequest("You cannot deactivate or suspend your own account");
   }
 
   //  Build update object safely

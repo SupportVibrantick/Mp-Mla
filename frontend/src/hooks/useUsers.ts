@@ -71,12 +71,12 @@ export function useDeleteUser() {
     mutationFn: (id: string) => usersApi.delete(id).then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["users"] });
-      toast({ title: "User Deactivated", description: res.message });
+      toast({ title: "User Deleted", description: res.message });
     },
     onError: (err: any) => {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Failed to deactivate",
+        description: err?.response?.data?.message || "Failed to delete user",
         variant: "destructive",
       });
     },

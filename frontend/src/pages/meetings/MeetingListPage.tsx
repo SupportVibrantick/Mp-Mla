@@ -46,6 +46,7 @@ import {
   Calendar,
   Layers,
   Monitor,
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -53,6 +54,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 
 export default function MeetingListPage() {
@@ -60,6 +71,7 @@ export default function MeetingListPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
+  const [meetingToDelete, setMeetingToDelete] = useState<any | null>(null);
 
   const { data: mRes, isLoading } = useMeetings({
     search: search || undefined,
@@ -69,7 +81,7 @@ export default function MeetingListPage() {
   });
 
   const { data: statsRes } = useMeetingStats();
-  const { mutate: deleteMeeting } = useDeleteMeeting();
+  const deleteMut = useDeleteMeeting();
 
   const meetings = mRes?.data || [];
   const stats = statsRes?.data || { total: 0, scheduled: 0, completed: 0, cancelled: 0 };
@@ -301,9 +313,7 @@ export default function MeetingListPage() {
                           <PermissionGate module="meeting" action="delete">
                             <DropdownMenuItem 
                               className="text-red-600 cursor-pointer font-semibold text-xs"
-                              onClick={() => {
-                                if (window.confirm("Delete meeting?")) deleteMeeting(meeting.id);
-                              }}
+                              onClick={() => setMeetingToDelete(meeting)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" /> Delete Meeting
                             </DropdownMenuItem>
@@ -425,9 +435,7 @@ export default function MeetingListPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
-                                onClick={() => {
-                                  if (window.confirm("Are you sure?")) deleteMeeting(meeting.id);
-                                }}
+                                onClick={() => setMeetingToDelete(meeting)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -442,8 +450,50 @@ export default function MeetingListPage() {
             </div>
           </Card>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <AlertDialog
+          open={!!meetingToDelete}
+          onOpenChange={(open) => !open && setMeetingToDelete(null)}
+        >
+          <AlertDialogContent className="rounded-2xl max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-extrabold text-foreground flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" /> Confirm Delete
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-muted-foreground font-medium">
+                Are you sure you want to delete <strong>{meetingToDelete?.title}</strong>? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel className="border-border/60 hover:bg-muted" disabled={deleteMut.isPending}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={deleteMut.isPending}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (meetingToDelete) {
+                    await deleteMut.mutateAsync(meetingToDelete.id);
+                    setMeetingToDelete(null);
+                  }
+                }}
+                className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+              >
+                {deleteMut.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...
+                  </>
+                ) : (
+                  "Delete Meeting"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );
 }
+
 

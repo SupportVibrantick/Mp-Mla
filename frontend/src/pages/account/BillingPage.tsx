@@ -65,7 +65,7 @@ export default function BillingPage() {
   };
 
   return (
-    <MainLayout>
+    <MainLayout title="Billing & Subscription">
       <div className="space-y-12 max-w-6xl mx-auto p-4 md:p-8">
         {/* Header Section */}
         <div>
