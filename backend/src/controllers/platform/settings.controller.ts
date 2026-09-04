@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../lib/prisma.js";
+import { createAuditLog, getRequestMeta } from "../../middleware/auditLog.js";
 import { PLATFORM_SETTING_DEFS } from "../../lib/platformSettingDefaults.js";
 import { clearPlatformSettingsCache } from "../../lib/settings.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -79,7 +80,7 @@ export async function updatePlatformSettings(
       }
     }
 
-    let updated = 0;
+    const changed: { key: string; old: string; new: string }[] = [];
 
     for (const item of settings) {
       const key = typeof item?.key === "string" ? item.key : "";
@@ -105,6 +106,9 @@ export async function updatePlatformSettings(
         }
       }
 
+      const oldValue = existing?.value ?? def.value;
+      if (oldValue === value && !uploadedFile) continue;
+
       await prisma.platformSetting.upsert({
         where: { key },
         update: { value },
@@ -116,11 +120,28 @@ export async function updatePlatformSettings(
           description: def.description,
         },
       });
-      updated++;
+
+      changed.push({
+        key,
+        old: def.type === "secret" ? "***" : (oldValue ?? ""),
+        new: def.type === "secret" ? "***" : (value ?? ""),
+      });
     }
 
     clearPlatformSettingsCache();
-    res.json(ApiResponse.success(null, `${updated} setting(s) updated`));
+    if (changed.length > 0) {
+      await createAuditLog({
+        userId: (req as any).platformUser?.id ?? null,
+        action: "UPDATE",
+        module: "settings",
+        description: `Updated ${changed.length} platform setting(s)`,
+        oldData: Object.fromEntries(changed.map((c) => [c.key, c.old])),
+        newData: Object.fromEntries(changed.map((c) => [c.key, c.new])),
+        ...getRequestMeta(req),
+      });
+    }
+
+    res.json(ApiResponse.success(null, `${changed.length} setting(s) updated`));
   } catch (error) {
     next(error);
   }
@@ -160,6 +181,14 @@ export async function resetPlatformSettings(
     }
 
     clearPlatformSettingsCache();
+    await createAuditLog({
+      userId: (req as any).platformUser?.id ?? null,
+      action: "UPDATE",
+      module: "settings",
+      description: `Reset "${group}" platform settings to defaults`,
+      ...getRequestMeta(req),
+    });
+
     res.json(ApiResponse.success(null, `"${group}" settings reset`));
   } catch (error) {
     next(error);

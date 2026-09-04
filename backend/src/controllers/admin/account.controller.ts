@@ -63,6 +63,24 @@ export async function getInvoices(
       return;
     }
 
+    // Cleanup any old unfulfilled CREATED/PENDING payments, keeping at most the single newest one
+    const unfulfilledPayments = await prisma.payment.findMany({
+      where: {
+        subscriptionId: subscription.id,
+        status: { in: ["CREATED", "PENDING"] },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+
+    if (unfulfilledPayments.length > 1) {
+      const oldIds = unfulfilledPayments.slice(1).map((p) => p.id);
+      await prisma.payment.updateMany({
+        where: { id: { in: oldIds } },
+        data: { status: "CANCELLED" },
+      });
+    }
+
     const payments = await prisma.payment.findMany({
       where: { subscriptionId: subscription.id },
       orderBy: { createdAt: "desc" },

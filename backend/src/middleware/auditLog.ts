@@ -36,31 +36,25 @@ export async function createAuditLog(input: AuditLogInput): Promise<void> {
       if (isEnabled === "false") return;
     }
 
-    prisma.auditLog
-      .create({
-        data: {
-          tenantId: input.tenantId ?? undefined,
-          userId: input.userId ?? undefined,
-          action: input.action,
-          module: input.module,
-          recordId: input.recordId ?? undefined,
-          description: input.description,
-          oldData: input.oldData ?? undefined,
-          newData: input.newData ?? undefined,
-          ipAddress: input.ipAddress ?? undefined,
-          userAgent: input.userAgent ?? undefined,
-        },
-      })
-      .then(() => {
-        logger.debug(
-          `Audit: ${input.action} ${input.module} ${input.recordId ?? ""}`,
-        );
-      })
-      .catch((error) => {
-        logger.error(`Audit log failed: ${error.message}`);
-      });
+    await prisma.auditLog.create({
+      data: {
+        tenantId: input.tenantId ?? undefined,
+        userId: input.userId ?? undefined,
+        action: input.action,
+        module: input.module,
+        recordId: input.recordId ?? undefined,
+        description: input.description,
+        oldData: input.oldData ?? undefined,
+        newData: input.newData ?? undefined,
+        ipAddress: input.ipAddress ?? undefined,
+        userAgent: input.userAgent ?? undefined,
+      },
+    });
+    logger.debug(
+      `Audit: ${input.action} ${input.module} ${input.recordId ?? ""}`,
+    );
   } catch (error: any) {
-    logger.error(`Audit log check failed: ${error.message}`);
+    logger.error(`Audit log failed: ${error.message}`);
   }
 }
 

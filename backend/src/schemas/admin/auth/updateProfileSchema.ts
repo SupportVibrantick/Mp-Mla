@@ -7,11 +7,15 @@ export const updateProfileSchema = z.object({
   department: z.string().optional().nullable(),
   bio: z.string().optional().nullable(),
   avatarUrl: z
-    .string()
-    .url("Invalid avatar URL")
-    .or(z.string().regex(/^data:image\//))
-    .optional()
-    .nullable(),
+    .preprocess(
+      (val) => (val === "" ? null : val),
+      z
+        .string()
+        .url("Invalid avatar URL")
+        .or(z.string().regex(/^data:image\//))
+        .nullable()
+        .optional(),
+    ),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

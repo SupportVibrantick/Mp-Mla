@@ -10,6 +10,7 @@ import {
 import { env } from "../../../lib/env.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { validate } from "../../../middleware/validate.js";
+import { createAuditLog, getRequestMeta } from "../../../middleware/auditLog.js";
 import {
   authenticatePlatform,
   requireActivePlatformUser,
@@ -278,6 +279,11 @@ router.patch(
   validate(platformUpdateProfileSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const oldUser = await prisma.platformUser.findUnique({
+        where: { id: req.platformUser!.id },
+        select: { name: true, avatarUrl: true },
+      });
+
       const user = await prisma.platformUser.update({
         where: { id: req.platformUser!.id },
         data: req.body,
@@ -292,6 +298,16 @@ router.patch(
           lastLoginIp: true,
           createdAt: true,
         },
+      });
+
+      await createAuditLog({
+        userId: req.platformUser!.id,
+        action: "UPDATE",
+        module: "settings",
+        description: "Updated platform profile settings",
+        oldData: { name: oldUser?.name ?? null, avatarUrl: oldUser?.avatarUrl ?? null },
+        newData: { name: user.name ?? null, avatarUrl: user.avatarUrl ?? null },
+        ...getRequestMeta(req),
       });
 
       res.json({

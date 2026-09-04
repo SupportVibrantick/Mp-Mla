@@ -71,6 +71,17 @@ export async function createOrder(params: CreateOrderParams) {
     },
   });
 
+  // Auto-cancel any previous unfulfilled payments (CREATED / PENDING) for this tenant
+  await prisma.payment.updateMany({
+    where: {
+      tenantId: subscription.tenantId,
+      status: { in: ["CREATED", "PENDING"] },
+    },
+    data: {
+      status: "CANCELLED",
+    },
+  });
+
   // Create payment record with CREATED status
   const payment = await prisma.payment.create({
     data: {
@@ -395,6 +406,18 @@ export async function verifyPayment(params: VerifyPaymentParams) {
       },
     });
 
+    // 1b. Auto-cancel any other pending/created payments for this tenant
+    await tx.payment.updateMany({
+      where: {
+        tenantId: payment.subscription.tenantId,
+        status: { in: ["CREATED", "PENDING"] },
+        id: { not: payment.id },
+      },
+      data: {
+        status: "CANCELLED",
+      },
+    });
+
     // 2. Check if this payment was created for a plan upgrade
     await checkAndApplyUpgrade(payment, tx, performedBy);
 
@@ -550,6 +573,18 @@ export async function recordManualPayment(params: ManualPaymentParams) {
     if (isSuccess) {
       // Check if this payment was created for a plan upgrade
       await checkAndApplyUpgrade(payment, tx, performedBy);
+
+      // Auto-cancel any other pending/created payments for this tenant
+      await tx.payment.updateMany({
+        where: {
+          tenantId: subscription.tenantId,
+          status: { in: ["CREATED", "PENDING"] },
+          id: { not: payment.id },
+        },
+        data: {
+          status: "CANCELLED",
+        },
+      });
 
       // 2. Update subscription
       const newAmountDue = Math.max(0, subscription.amountDue - amount);

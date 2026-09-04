@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
 import {
   useSettings,
   useUpdateSettings,
@@ -138,6 +139,7 @@ interface ProfileData {
 
 function ProfileSection() {
   const { user, refreshUser } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<ProfileData>({
     fullName: user?.name || "",
     email: user?.email || "",
@@ -147,6 +149,7 @@ function ProfileSection() {
     bio: user?.bio || "",
     avatarUrl: user?.avatarUrl || "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -167,6 +170,21 @@ function ProfileSection() {
   const update = (field: keyof ProfileData, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
     setSaved(false);
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!profile.fullName || profile.fullName.trim().length < 2) {
+      newErrors.fullName = "Full Name must be at least 2 characters.";
+    }
+    if (profile.phone && profile.phone.trim().length > 0 && profile.phone.trim().length < 7) {
+      newErrors.phone = "Please enter a valid phone number.";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,21 +198,57 @@ function ProfileSection() {
   };
 
   const handleSave = async () => {
+    if (!validate()) {
+      toast({
+        title: "Validation Error",
+        description: "Please correct the errors in the form before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       await authApi.updateMe({
-        name: profile.fullName,
-        phone: profile.phone,
-        designation: profile.designation,
-        department: profile.department,
-        bio: profile.bio,
+        name: profile.fullName.trim(),
+        phone: profile.phone.trim(),
+        designation: profile.designation.trim(),
+        department: profile.department.trim(),
+        bio: profile.bio.trim(),
         avatarUrl: profile.avatarUrl,
       });
       await refreshUser();
       setSaved(true);
+      toast({
+        title: "Profile Saved",
+        description: "Your profile information has been updated successfully.",
+      });
       setTimeout(() => setSaved(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update profile:", error);
+      let errorMsg = "Failed to update profile. Please try again.";
+      if (error?.response?.data?.message) {
+        const msg = error.response.data.message;
+        if (typeof msg === "string") {
+          try {
+            const parsed = JSON.parse(msg);
+            if (Array.isArray(parsed) && parsed[0]?.message) {
+              errorMsg = parsed[0].message;
+            } else {
+              errorMsg = msg;
+            }
+          } catch {
+            errorMsg = msg;
+          }
+        }
+      } else if (error?.message) {
+        errorMsg = error.message;
+      }
+      toast({
+        title: "Save Failed",
+        description: errorMsg,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -253,14 +307,20 @@ function ProfileSection() {
             value={profile.fullName}
             onChange={(e) => update("fullName", e.target.value)}
             placeholder="John Doe"
+            className={cn(errors.fullName && "border-destructive focus-visible:ring-destructive")}
           />
+          {errors.fullName && (
+            <p className="text-xs text-destructive">{errors.fullName}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label className="text-sm">Email Address</Label>
           <Input
             type="email"
             value={profile.email}
-            onChange={(e) => update("email", e.target.value)}
+            readOnly
+            disabled
+            className="bg-muted/50 text-muted-foreground cursor-not-allowed font-medium"
             placeholder="john@example.com"
           />
         </div>
@@ -271,7 +331,11 @@ function ProfileSection() {
             value={profile.phone}
             onChange={(e) => update("phone", e.target.value)}
             placeholder="+91 98765 43210"
+            className={cn(errors.phone && "border-destructive focus-visible:ring-destructive")}
           />
+          {errors.phone && (
+            <p className="text-xs text-destructive">{errors.phone}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label className="text-sm">Designation</Label>
@@ -301,15 +365,23 @@ function ProfileSection() {
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
+        <Button onClick={handleSave} disabled={saving} className="gap-2 min-w-[130px]">
           {saving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Saving...</span>
+            </>
           ) : saved ? (
-            <CheckCircle2 className="h-4 w-4" />
+            <>
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <span>Saved</span>
+            </>
           ) : (
-            <Save className="h-4 w-4" />
+            <>
+              <Save className="h-4 w-4" />
+              <span>Save Profile</span>
+            </>
           )}
-          {saved ? "Saved" : "Save Profile"}
         </Button>
       </div>
     </div>

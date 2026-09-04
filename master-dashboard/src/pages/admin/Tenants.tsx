@@ -119,7 +119,7 @@ const updateTenantSchema = z.object({
   district: z.string().min(2).optional(),
   address: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
   logoUrl: z.string().optional(),
   faviconUrl: z.string().optional(),

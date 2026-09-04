@@ -159,6 +159,11 @@ export default function Dashboard() {
     }),
   );
 
+  const totalPlanTenants = planPieData.reduce(
+    (acc: number, item: any) => acc + (item.value || 0),
+    0,
+  );
+
   return (
     <MainLayout title="Platform Dashboard">
       <div className="space-y-6">
@@ -329,7 +334,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Subscriptions */}
-          <Link href="/subscriptions" className="block group">
+          <Link href="/subscriptions/tenants" className="block group">
             <Card className={cn(
               "h-full cursor-pointer transition-all duration-300 ease-out",
               "bg-white dark:bg-slate-900",
@@ -437,7 +442,7 @@ export default function Dashboard() {
           </Link>
 
           {/* Successful Invoices */}
-          <Link href="/payments" className="block group">
+          <Link href="/subscriptions/invoices" className="block group">
             <Card className={cn(
               "h-full cursor-pointer transition-all duration-300 ease-out",
               "bg-white dark:bg-slate-900",
@@ -589,36 +594,69 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="h-[260px] flex items-center justify-center">
+              <div className="relative h-[260px] flex items-center justify-center">
                 {planPieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                         data={planPieData}
-                         cx="50%"
-                         cy="50%"
-                         innerRadius={60}
-                         outerRadius={85}
-                         paddingAngle={4}
-                         dataKey="value"
-                      >
-                        {planPieData.map((entry: any, index: number) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: "12px",
-                          border: "1px solid hsl(var(--border))",
-                          background: "hsl(var(--card))",
-                          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-                          fontSize: "11px",
-                          fontWeight: "bold",
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: "11px", fontWeight: "600" }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                           data={planPieData}
+                           cx="50%"
+                           cy="45%"
+                           innerRadius={60}
+                           outerRadius={85}
+                           paddingAngle={4}
+                           dataKey="value"
+                        >
+                          {planPieData.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0];
+                              const pct = totalPlanTenants > 0 ? Math.round(((data.value as number) / totalPlanTenants) * 100) : 0;
+                              return (
+                                <div className="bg-popover text-popover-foreground border border-border rounded-xl p-3 shadow-lg text-xs font-semibold space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.fill }} />
+                                    <span className="font-bold">{data.name}</span>
+                                  </div>
+                                  <div className="text-muted-foreground font-medium">
+                                    {data.value} {data.value === 1 ? "Tenant" : "Tenants"} ({pct}%)
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend
+                          verticalAlign="bottom"
+                          height={36}
+                          wrapperStyle={{ fontSize: "11px", fontWeight: "600", paddingTop: "8px" }}
+                          formatter={(value: string) => {
+                            const item = planPieData.find((p) => p.name === value);
+                            const pct = totalPlanTenants > 0 && item ? Math.round((item.value / totalPlanTenants) * 100) : 0;
+                            return (
+                              <span className="text-slate-700 dark:text-slate-300 font-medium">
+                                {value}: <span className="font-bold text-slate-900 dark:text-slate-100">{item?.value || 0}</span> ({pct}%)
+                              </span>
+                            );
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-10">
+                      <p className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+                        {totalPlanTenants}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                        {totalPlanTenants === 1 ? "Tenant" : "Tenants"}
+                      </p>
+                    </div>
+                  </>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm space-y-2">
                     <Activity className="h-8 w-8 text-muted-foreground/40" />

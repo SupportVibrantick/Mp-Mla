@@ -414,6 +414,7 @@ export default function BillingPage() {
                       const status = inv.status?.toLowerCase();
                       const isPaid = status === 'paid' || status === 'completed' || status === 'success';
                       const isPending = status === 'pending' || status === 'created';
+                      const isCancelled = status === 'cancelled';
                       
                       return (
                         <tr key={inv.id} className="hover:bg-muted/30 transition-colors">
@@ -436,10 +437,12 @@ export default function BillingPage() {
                                 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
                                 : isPending
                                   ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
-                                  : 'bg-red-500/10 text-red-600 border-red-500/20 dark:bg-red-500/20 dark:text-red-400'
+                                  : isCancelled
+                                    ? 'bg-slate-500/10 text-slate-500 border-slate-500/20 dark:bg-slate-800 dark:text-slate-400'
+                                    : 'bg-red-500/10 text-red-600 border-red-500/20 dark:bg-red-500/20 dark:text-red-400'
                             }`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${
-                                isPaid ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-red-500'
+                                isPaid ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : isCancelled ? 'bg-slate-400' : 'bg-red-500'
                               }`}></span>
                               {inv.status}
                             </span>

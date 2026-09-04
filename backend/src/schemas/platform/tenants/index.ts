@@ -6,35 +6,41 @@ export const createTenantSchema = z.object({
   constituencyName: z.string().min(2, "Constituency name is required"),
   state: z.string().min(2, "State is required"),
   district: z.string().min(2, "District is required"),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email("Invalid email").optional(),
-  website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  logoUrl: z.string().optional(),
-  faviconUrl: z.string().optional(),
+  address: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  email: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().email("Invalid email").nullable().optional()
+  ),
+  website: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().url("Invalid URL").nullable().optional()
+  ),
+  logoUrl: z.string().optional().nullable(),
+  faviconUrl: z.string().optional().nullable(),
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
 
   representativeName: z.string().min(2, "Representative name is required"),
   representativeTitle: z.string().min(2, "Representative title is required"),
-  representativePhoto: z.string().optional(),
-  partyName: z.string().optional(),
-  partyLogoUrl: z.string().optional(),
-  termStartDate: z.string().optional(),
-  termEndDate: z.string().optional(),
+  representativePhoto: z.string().optional().nullable(),
+  partyName: z.string().optional().nullable(),
+  partyLogoUrl: z.string().optional().nullable(),
+  termStartDate: z.string().optional().nullable(),
+  termEndDate: z.string().optional().nullable(),
 
   // Constituency specific properties
   constituencyType: z.enum(["ASSEMBLY", "PARLIAMENTARY"]).optional().default("ASSEMBLY"),
-  constituencyCode: z.string().optional(),
+  constituencyCode: z.string().optional().nullable(),
 
   // Admin user to create for this tenant
   adminEmail: z.string().email("Admin email is required"),
   adminPassword: z.string().min(6, "Admin password must be at least 6 characters"),
   adminName: z.string().min(2, "Admin name is required"),
-  adminPhone: z.string().optional(),
+  adminPhone: z.string().optional().nullable(),
 
   // Subscription plan
-  planId: z.string().optional(),
+  planId: z.string().optional().nullable(),
   billingCycle: z.enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"]).optional(),
   trialDays: z.coerce.number().int().min(1).max(90).optional(),
 });
@@ -45,27 +51,33 @@ export const updateTenantSchema = z.object({
   constituencyName: z.string().min(2).optional(),
   state: z.string().min(2).optional(),
   district: z.string().min(2).optional(),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
-  website: z.string().url().optional().or(z.literal("")),
-  logoUrl: z.string().optional(),
-  faviconUrl: z.string().optional(),
+  address: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  email: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().email("Invalid email").nullable().optional()
+  ),
+  website: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().url("Invalid URL").nullable().optional()
+  ),
+  logoUrl: z.string().optional().nullable(),
+  faviconUrl: z.string().optional().nullable(),
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
 
   representativeName: z.string().min(2).optional(),
   representativeTitle: z.string().min(2).optional(),
-  representativePhoto: z.string().optional(),
-  partyName: z.string().optional(),
-  partyLogoUrl: z.string().optional(),
-  termStartDate: z.string().optional(),
-  termEndDate: z.string().optional(),
+  representativePhoto: z.string().optional().nullable(),
+  partyName: z.string().optional().nullable(),
+  partyLogoUrl: z.string().optional().nullable(),
+  termStartDate: z.string().optional().nullable(),
+  termEndDate: z.string().optional().nullable(),
 
   status: z.enum(["ACTIVE", "SUSPENDED", "DEACTIVATED"]).optional(),
   constituencyType: z.enum(["ASSEMBLY", "PARLIAMENTARY"]).optional(),
-  constituencyCode: z.string().optional(),
-  planId: z.string().optional(),
+  constituencyCode: z.string().optional().nullable(),
+  planId: z.string().optional().nullable(),
   billingCycle: z.enum(["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"]).optional(),
 });
 

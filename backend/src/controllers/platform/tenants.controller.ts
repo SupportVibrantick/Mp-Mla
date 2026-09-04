@@ -448,6 +448,14 @@ export const updateTenant = async (
       updateData.termEndDate = null;
     }
     if (updateData.website === "") updateData.website = null;
+    if (updateData.email === "") updateData.email = null;
+    if (updateData.phone === "") updateData.phone = null;
+    if (updateData.address === "") updateData.address = null;
+    if (updateData.logoUrl === "") updateData.logoUrl = null;
+    if (updateData.faviconUrl === "") updateData.faviconUrl = null;
+    if (updateData.representativePhoto === "") updateData.representativePhoto = null;
+    if (updateData.partyName === "") updateData.partyName = null;
+    if (updateData.partyLogoUrl === "") updateData.partyLogoUrl = null;
 
     const updatedTenant = await prisma.$transaction(async (tx) => {
       // 1. Update the tenant record

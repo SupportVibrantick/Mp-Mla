@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
+import { createAuditLog, getRequestMeta } from "../../../middleware/auditLog.js";
 import { getUserEffectivePermissions } from "../../../lib/permissions.js";
 import { listEnabledModules } from "../../../middleware/requireModule.js";
 import { requireTenantId } from "../../../utils/tenant.js";
@@ -95,6 +96,18 @@ export async function updateMe(
   try {
     const validated = updateProfileSchema.parse(req.body);
 
+    const oldUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        name: true,
+        phone: true,
+        avatarUrl: true,
+        designation: true,
+        department: true,
+        bio: true,
+      },
+    });
+
     const user = await prisma.user.update({
       where: { id: req.user!.id },
       data: validated,
@@ -111,6 +124,32 @@ export async function updateMe(
         bio: true,
         updatedAt: true,
       },
+    });
+
+    const tenantId = req.user?.tenantId ?? undefined;
+    await createAuditLog({
+      tenantId,
+      userId: req.user!.id,
+      action: "UPDATE",
+      module: "settings",
+      description: "Updated profile settings",
+      oldData: {
+        name: oldUser?.name ?? null,
+        phone: oldUser?.phone ?? null,
+        avatarUrl: oldUser?.avatarUrl ?? null,
+        designation: oldUser?.designation ?? null,
+        department: oldUser?.department ?? null,
+        bio: oldUser?.bio ?? null,
+      },
+      newData: {
+        name: user.name ?? null,
+        phone: user.phone ?? null,
+        avatarUrl: user.avatarUrl ?? null,
+        designation: user.designation ?? null,
+        department: user.department ?? null,
+        bio: user.bio ?? null,
+      },
+      ...getRequestMeta(req),
     });
 
     res.json(ApiResponse.success(user, "Profile updated successfully"));

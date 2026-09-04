@@ -1,5 +1,16 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { cn, getImageUrl } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   LayoutDashboard,
   Building2,
@@ -48,6 +59,7 @@ interface NavSection {
 export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const { user, logout, canAny } = useAuth();
   const { settings } = useSystemSettings();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const [location] = useLocation();
 
@@ -321,13 +333,33 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-white/80 hover:bg-rose-500/20 hover:text-rose-300"
-                onClick={() => logout()}
+                onClick={() => setLogoutOpen(true)}
               >
                 <LogOut className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
+
+        <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Any unsaved changes may be lost. You will need to sign in again to access the portal.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => logout()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Log Out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.aside>
     </TooltipProvider>
   );

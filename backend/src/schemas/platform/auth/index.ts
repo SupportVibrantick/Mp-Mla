@@ -21,5 +21,14 @@ export const platformChangePasswordSchema = z.object({
 
 export const platformUpdateProfileSchema = z.object({
   name: z.string().min(2).max(120).optional(),
-  avatarUrl: z.string().url().nullable().optional(),
+  avatarUrl: z
+    .preprocess(
+      (val) => (val === "" ? null : val),
+      z
+        .string()
+        .url("Invalid avatar URL")
+        .or(z.string().regex(/^data:image\//))
+        .nullable()
+        .optional(),
+    ),
 });
