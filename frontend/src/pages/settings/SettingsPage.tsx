@@ -5,6 +5,7 @@ import {
   useUpdateSettings,
   useResetSettings,
   useTestEmail,
+  useTestWhatsApp,
   SETTING_GROUPS,
 } from "@/hooks/useSettings";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -664,6 +665,8 @@ export default function SettingsPage() {
   const updateMut = useUpdateSettings();
   const resetMut = useResetSettings();
   const testEmailMut = useTestEmail();
+  const testWhatsAppMut = useTestWhatsApp();
+  const [testWhatsAppTo, setTestWhatsAppTo] = useState("");
 
   const [activeGroup, setActiveGroup] = useState("profile");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -1096,6 +1099,9 @@ export default function SettingsPage() {
                     const smsSenderIdSetting = groupSettings.find((s: any) => s.key === "sms_sender_id");
 
                     const whatsappEnabledSetting = groupSettings.find((s: any) => s.key === "whatsapp_enabled");
+                    const whatsappWabaIdSetting = groupSettings.find((s: any) => s.key === "whatsapp_waba_id");
+                    const whatsappPhoneIdSetting = groupSettings.find((s: any) => s.key === "whatsapp_phone_number_id");
+                    const whatsappBusinessPhoneSetting = groupSettings.find((s: any) => s.key === "whatsapp_business_phone");
                     const whatsappApiKeySetting = groupSettings.find((s: any) => s.key === "whatsapp_api_key");
 
                     const otherToggles = groupSettings.filter(
@@ -1216,35 +1222,100 @@ export default function SettingsPage() {
 
                               {(formValues["whatsapp_enabled"] ?? whatsappEnabledSetting.value) === "true" && (
                                 <div className="pt-4 border-t space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                  {whatsappApiKeySetting && (
-                                    <div className="space-y-2">
-                                      <Label className="text-sm font-medium">{whatsappApiKeySetting.label}</Label>
-                                      <div className="flex gap-2">
+                                  <div className="grid gap-4 sm:grid-cols-2">
+                                    {whatsappWabaIdSetting && (
+                                      <div className="space-y-2">
+                                        <Label className="text-sm font-medium">{whatsappWabaIdSetting.label}</Label>
                                         <Input
-                                          type={showSecrets["whatsapp_api_key"] ? "text" : "password"}
-                                          value={formValues["whatsapp_api_key"] ?? whatsappApiKeySetting.value ?? ""}
-                                          onChange={(e) => updateValue("whatsapp_api_key", e.target.value)}
-                                          className="font-mono"
-                                          placeholder="Enter WhatsApp API Key"
+                                          value={formValues["whatsapp_waba_id"] ?? whatsappWabaIdSetting.value ?? ""}
+                                          onChange={(e) => updateValue("whatsapp_waba_id", e.target.value)}
+                                          placeholder="Enter WhatsApp WABA ID (e.g. 1029384756)"
                                         />
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="icon"
-                                          onClick={() =>
-                                            setShowSecrets((p) => ({ ...p, whatsapp_api_key: !p.whatsapp_api_key }))
-                                          }
-                                        >
-                                          {showSecrets["whatsapp_api_key"] ? (
-                                            <EyeOff className="h-4 w-4" />
-                                          ) : (
-                                            <Eye className="h-4 w-4" />
-                                          )}
-                                        </Button>
+                                        <p className="text-[10px] text-muted-foreground">{whatsappWabaIdSetting.description}</p>
                                       </div>
-                                      <p className="text-[10px] text-muted-foreground">{whatsappApiKeySetting.description}</p>
+                                    )}
+
+                                    {whatsappPhoneIdSetting && (
+                                      <div className="space-y-2">
+                                        <Label className="text-sm font-medium">{whatsappPhoneIdSetting.label}</Label>
+                                        <Input
+                                          value={formValues["whatsapp_phone_number_id"] ?? whatsappPhoneIdSetting.value ?? ""}
+                                          onChange={(e) => updateValue("whatsapp_phone_number_id", e.target.value)}
+                                          placeholder="Enter Phone Number ID (e.g. 1098765432)"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">{whatsappPhoneIdSetting.description}</p>
+                                      </div>
+                                    )}
+
+                                    {whatsappBusinessPhoneSetting && (
+                                      <div className="space-y-2">
+                                        <Label className="text-sm font-medium">{whatsappBusinessPhoneSetting.label}</Label>
+                                        <Input
+                                          value={formValues["whatsapp_business_phone"] ?? whatsappBusinessPhoneSetting.value ?? ""}
+                                          onChange={(e) => updateValue("whatsapp_business_phone", e.target.value)}
+                                          placeholder="e.g. +91 98765 43210"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">{whatsappBusinessPhoneSetting.description}</p>
+                                      </div>
+                                    )}
+
+                                    {whatsappApiKeySetting && (
+                                      <div className="space-y-2 sm:col-span-2">
+                                        <Label className="text-sm font-medium">{whatsappApiKeySetting.label}</Label>
+                                        <div className="flex gap-2">
+                                          <Input
+                                            type={showSecrets["whatsapp_api_key"] ? "text" : "password"}
+                                            value={formValues["whatsapp_api_key"] ?? whatsappApiKeySetting.value ?? ""}
+                                            onChange={(e) => updateValue("whatsapp_api_key", e.target.value)}
+                                            className="font-mono"
+                                            placeholder="Enter WhatsApp Access Token / API Key"
+                                          />
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() =>
+                                              setShowSecrets((p) => ({ ...p, whatsapp_api_key: !p.whatsapp_api_key }))
+                                            }
+                                          >
+                                            {showSecrets["whatsapp_api_key"] ? (
+                                              <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                              <Eye className="h-4 w-4" />
+                                            )}
+                                          </Button>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground">{whatsappApiKeySetting.description}</p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Test WhatsApp Connection */}
+                                  <div className="pt-3 border-t">
+                                    <p className="text-xs font-semibold text-muted-foreground mb-2">Test WhatsApp Connection</p>
+                                    <div className="flex gap-2 max-w-sm">
+                                      <Input
+                                        placeholder="+91 98765 43210"
+                                        value={testWhatsAppTo}
+                                        onChange={(e) => setTestWhatsAppTo(e.target.value)}
+                                      />
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => testWhatsAppMut.mutate(testWhatsAppTo)}
+                                        disabled={!testWhatsAppTo || testWhatsAppMut.isPending}
+                                        className="shrink-0 gap-1.5"
+                                      >
+                                        {testWhatsAppMut.isPending ? (
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                          <Save className="h-3.5 w-3.5 opacity-0 hidden" />
+                                        )}
+                                        Send Test
+                                      </Button>
                                     </div>
-                                  )}
+                                  </div>
                                 </div>
                               )}
                             </div>

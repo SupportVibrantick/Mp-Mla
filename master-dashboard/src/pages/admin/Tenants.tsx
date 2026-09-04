@@ -78,13 +78,22 @@ import { MainLayout } from "@/components/layout/MainLayout";
 
 // ─── Schemas ────────────────────────────────────────────
 
+const phoneValidation = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .refine(
+    (val) => !val || /^\+?[0-9\s-]{10,15}$/.test(val),
+    "Invalid phone number. Must contain 10-15 digits"
+  );
+
 const createTenantSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   constituencyName: z.string().min(2, "Constituency name is required"),
   state: z.string().min(2, "State is required"),
   district: z.string().min(2, "District is required"),
   address: z.string().optional(),
-  phone: z.string().optional(),
+  phone: phoneValidation,
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
   logoUrl: z.string().optional(),
@@ -104,7 +113,7 @@ const createTenantSchema = z.object({
   adminEmail: z.string().email("Admin email is required"),
   adminPassword: z.string().min(6, "Admin password must be at least 6 characters"),
   adminName: z.string().min(2, "Admin name is required"),
-  adminPhone: z.string().optional(),
+  adminPhone: phoneValidation,
 
   // Plan
   planId: z.string().optional(),
@@ -118,7 +127,7 @@ const updateTenantSchema = z.object({
   state: z.string().min(2).optional(),
   district: z.string().min(2).optional(),
   address: z.string().optional(),
-  phone: z.string().optional(),
+  phone: phoneValidation,
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
   logoUrl: z.string().optional(),
@@ -143,7 +152,7 @@ const createTenantUserSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Valid email is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  phone: z.string().optional(),
+  phone: phoneValidation,
   role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"]),
   designation: z.string().optional(),
   department: z.string().optional(),
@@ -1147,6 +1156,9 @@ export default function TenantsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="a-phone">Admin Contact Phone</Label>
                     <Input id="a-phone" placeholder="9876543210" {...createForm.register("adminPhone")} />
+                    {createForm.formState.errors.adminPhone && (
+                      <p className="text-xs text-destructive">{createForm.formState.errors.adminPhone.message}</p>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
@@ -1467,6 +1479,9 @@ function TenantUsersDialog({ open, onOpenChange, tenant }: UsersDialogProps) {
                   <div className="space-y-1">
                     <Label htmlFor="u-phone" className="text-xs">Phone Number</Label>
                     <Input id="u-phone" className="h-8 text-xs" {...userForm.register("phone")} />
+                    {userForm.formState.errors.phone && (
+                      <p className="text-[10px] text-destructive">{userForm.formState.errors.phone.message}</p>
+                    )}
                   </div>
                 </div>
 

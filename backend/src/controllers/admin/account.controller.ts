@@ -36,7 +36,15 @@ export async function getSubscription(
         currentPeriodStart: subscription.currentPeriodStart,
         currentPeriodEnd: subscription.currentPeriodEnd,
         nextPaymentDue: subscription.nextPaymentDue,
-        amountDue: subscription.amountDue,
+        amountDue:
+          subscription.status === "ACTIVE"
+            ? subscription.billingCycle === "YEARLY"
+              ? subscription.plan.priceYearly
+              : subscription.plan.priceMonthly
+            : subscription.amountDue ||
+              (subscription.billingCycle === "YEARLY"
+                ? subscription.plan.priceYearly
+                : subscription.plan.priceMonthly),
         lastPaymentAt: subscription.lastPaymentAt,
         plan: subscription.plan,
         supportEmail,

@@ -234,6 +234,7 @@ export async function applyPlanUpgradeFromPayment(
       currentPeriodStart: now,
       currentPeriodEnd,
       nextPaymentDue: currentPeriodEnd,
+      amountDue: 0,
     },
   });
 

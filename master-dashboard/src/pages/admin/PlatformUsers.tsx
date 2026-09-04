@@ -253,11 +253,38 @@ export default function PlatformUsersPage() {
 
   const handleEditSubmit = (values: EditUserForm) => {
     if (!selectedUser) return;
+    if (selectedUser.id === currentUser?.id) {
+      if (values.role !== selectedUser.role) {
+        toast({
+          variant: "destructive",
+          title: "Action Not Allowed",
+          description: "You cannot change your own role.",
+        });
+        return;
+      }
+      if (values.isActive === false && selectedUser.isActive) {
+        toast({
+          variant: "destructive",
+          title: "Action Not Allowed",
+          description: "You cannot deactivate your own account.",
+        });
+        return;
+      }
+    }
     editUserMutation.mutate({ id: selectedUser.id, data: values });
   };
 
   const handleConfirmToggleStatus = () => {
     if (!toggleStatusAlert) return;
+    if (toggleStatusAlert.id === currentUser?.id) {
+      toast({
+        variant: "destructive",
+        title: "Action Not Allowed",
+        description: "You cannot deactivate your own account.",
+      });
+      setToggleStatusAlert(null);
+      return;
+    }
     toggleStatusMutation.mutate({
       id: toggleStatusAlert.id,
       isActive: !toggleStatusAlert.isActive,
@@ -581,6 +608,7 @@ export default function PlatformUsersPage() {
               <div className="space-y-1.5">
                 <Label>Role</Label>
                 <Select
+                  disabled={selectedUser?.id === currentUser?.id}
                   value={editForm.watch("role")}
                   onValueChange={(val) => {
                     editForm.setValue("role", val as any, { shouldValidate: true });
@@ -589,7 +617,7 @@ export default function PlatformUsersPage() {
                     }
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -599,18 +627,30 @@ export default function PlatformUsersPage() {
                     <SelectItem value="SUPPORT_STAFF">Support Staff</SelectItem>
                   </SelectContent>
                 </Select>
+                {selectedUser?.id === currentUser?.id && (
+                  <p className="text-xs text-amber-600 font-medium">
+                    You cannot change your own role.
+                  </p>
+                )}
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-border/70 p-3 bg-muted/10">
-                <div>
-                  <p className="text-sm font-semibold">Account Status</p>
-                  <p className="text-xs text-muted-foreground">Toggle to enable or suspend this login.</p>
+              <div className="flex flex-col gap-1.5 rounded-xl border border-border/70 p-3 bg-muted/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold">Account Status</p>
+                    <p className="text-xs text-muted-foreground">Toggle to enable or suspend this login.</p>
+                  </div>
+                  <Switch
+                    checked={editForm.watch("isActive")}
+                    onCheckedChange={(checked) => editForm.setValue("isActive", checked)}
+                    disabled={(editForm.watch("role") === "SUPER_ADMIN" && editForm.watch("isActive")) || selectedUser?.id === currentUser?.id}
+                  />
                 </div>
-                <Switch
-                  checked={editForm.watch("isActive")}
-                  onCheckedChange={(checked) => editForm.setValue("isActive", checked)}
-                  disabled={(editForm.watch("role") === "SUPER_ADMIN" && editForm.watch("isActive")) || selectedUser?.id === currentUser?.id}
-                />
+                {selectedUser?.id === currentUser?.id && (
+                  <p className="text-xs text-amber-600 font-medium">
+                    You cannot deactivate your own account.
+                  </p>
+                )}
               </div>
 
               <DialogFooter className="pt-2">

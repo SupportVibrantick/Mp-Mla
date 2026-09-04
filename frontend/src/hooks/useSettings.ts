@@ -105,3 +105,24 @@ export function useTestEmail() {
     },
   });
 }
+
+
+export function useTestWhatsApp() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (to: string) =>
+      api.post("/admin/settings/test-whatsapp", { to }).then((r) => r.data),
+    onSuccess: (res) => {
+      toast({ title: "Success", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "WhatsApp Test Failed",
+        description:
+          err?.response?.data?.message || "Failed to send test WhatsApp message.",
+        variant: "destructive",
+      });
+    },
+  });
+}

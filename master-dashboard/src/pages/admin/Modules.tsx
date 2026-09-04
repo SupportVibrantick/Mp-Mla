@@ -96,6 +96,10 @@ export default function ModulesPage() {
   // Module Form States
   const [showForm, setShowForm] = useState(false);
   const [selectedModule, setSelectedModule] = useState<any>(null);
+  const [pendingDeleteModule, setPendingDeleteModule] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Tenant Access States
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
@@ -191,10 +195,10 @@ export default function ModulesPage() {
     setShowForm(false);
   };
 
-  const handleDeleteModule = async (id: string) => {
-    if (confirm("Are you sure you want to delete/deactivate this module?")) {
-      await deleteModuleMutation.mutateAsync(id);
-    }
+  const handleConfirmDeleteModule = async () => {
+    if (!pendingDeleteModule) return;
+    await deleteModuleMutation.mutateAsync(pendingDeleteModule.id);
+    setPendingDeleteModule(null);
   };
 
   const handleToggleAccessEnabled = async (accessRecord: any) => {
@@ -591,7 +595,7 @@ export default function ModulesPage() {
                           variant="ghost"
                           size="sm"
                           className="rounded-xl text-destructive hover:text-destructive hover:bg-destructive/5"
-                          onClick={() => handleDeleteModule(mod.id)}
+                          onClick={() => setPendingDeleteModule({ id: mod.id, name: mod.name })}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -866,6 +870,42 @@ export default function ModulesPage() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   "Revoke Access"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete / Deactivate Module confirmation Dialog */}
+        <AlertDialog
+          open={!!pendingDeleteModule}
+          onOpenChange={(open) => !open && setPendingDeleteModule(null)}
+        >
+          <AlertDialogContent className="rounded-[24px]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-6 w-6 shrink-0" />
+                Deactivate Module?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm mt-2">
+                Are you sure you want to deactivate/delete the module{" "}
+                <strong className="text-foreground">{pendingDeleteModule?.name}</strong>?
+                This will mark the module as inactive and prevent it from being assigned to customer tenant workspaces.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 mt-4">
+              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleConfirmDeleteModule();
+                }}
+              >
+                {deleteModuleMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Deactivate Module"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

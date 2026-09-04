@@ -12,7 +12,7 @@ import {
   usePaymentCheckout,
 } from "../../hooks/useAccount";
 import { getImageUrl } from "../../lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   Check, 
   Mail, 
@@ -24,6 +24,14 @@ import {
   Loader2,
   ShieldCheck
 } from "lucide-react";
+
+function calculateDiscountPercentage(priceMonthly?: number, priceYearly?: number): number {
+  if (!priceMonthly || !priceYearly || priceMonthly <= 0 || priceYearly <= 0) return 0;
+  const annualMonthlyCost = priceMonthly * 12;
+  if (annualMonthlyCost <= priceYearly) return 0;
+  const discount = Math.round(((annualMonthlyCost - priceYearly) / annualMonthlyCost) * 100);
+  return discount > 0 ? discount : 0;
+}
 
 export default function BillingPage() {
   const { data: subscription, isLoading: subLoading } =
@@ -40,6 +48,16 @@ export default function BillingPage() {
   const plans = plansData?.plans || [];
   const currentPlanId = plansData?.currentPlanId || subscription?.plan?.id;
   const pendingRequest = plansData?.pendingRequest;
+
+  const maxDiscount = useMemo(() => {
+    if (!plans || plans.length === 0) return 0;
+    let max = 0;
+    for (const plan of plans) {
+      const d = calculateDiscountPercentage(plan.priceMonthly, plan.priceYearly);
+      if (d > max) max = d;
+    }
+    return max;
+  }, [plans]);
 
   const submitUpgradeRequest = (planId: string) => {
     upgradeRequest.mutate({
@@ -244,7 +262,9 @@ export default function BillingPage() {
                 }`}
               >
                 Yearly
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">-20%</span>
+                {maxDiscount > 0 && (
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">-{maxDiscount}%</span>
+                )}
               </button>
             </div>
           </div>
@@ -272,6 +292,7 @@ export default function BillingPage() {
                 const isPending = pendingRequest?.requestedPlan?.id === plan.id;
                 const price = selectedCycle === "YEARLY" ? plan.priceYearly : plan.priceMonthly;
                 const displayPrice = Number(price || 0).toFixed(0);
+                const planDiscount = calculateDiscountPercentage(plan.priceMonthly, plan.priceYearly);
 
                 return (
                   <div 
@@ -299,8 +320,17 @@ export default function BillingPage() {
                       <p className="text-xs text-muted-foreground mb-6 min-h-[32px] line-clamp-2">{plan.description}</p>
                       
                       <div className="mb-6 pb-6 border-b border-border/50">
-                        <span className="text-4xl font-extrabold tracking-tight text-foreground">INR {displayPrice}</span>
-                        <span className="text-xs text-muted-foreground ml-1">/{selectedCycle === "YEARLY" ? "year" : "month"}</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-extrabold tracking-tight text-foreground">INR {displayPrice}</span>
+                          <span className="text-xs text-muted-foreground">/{selectedCycle === "YEARLY" ? "year" : "month"}</span>
+                        </div>
+                        {selectedCycle === "YEARLY" && planDiscount > 0 && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">
+                              Save {planDiscount}%
+                            </span>
+                          </div>
+                        )}
                       </div>
                       
                       <ul className="space-y-3 mb-8 text-sm">

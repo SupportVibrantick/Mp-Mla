@@ -80,8 +80,13 @@ export async function updatePlatformUser(
     const target = await prisma.platformUser.findUnique({ where: { id } });
     if (!target) throw ApiError.notFound("User not found");
 
-    if (isActive === false && id === req.platformUser?.id) {
-      throw ApiError.badRequest("You cannot deactivate your own account");
+    if (id === req.platformUser?.id) {
+      if (isActive === false) {
+        throw ApiError.badRequest("You cannot deactivate your own account");
+      }
+      if (role !== undefined && role !== target.role) {
+        throw ApiError.badRequest("You cannot change your own role");
+      }
     }
 
     if (target.role === "SUPER_ADMIN" && (isActive === false || (role !== undefined && role !== "SUPER_ADMIN"))) {

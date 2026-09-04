@@ -77,6 +77,15 @@ import { MainLayout } from "@/components/layout/MainLayout";
 
 // ─── Schemas ────────────────────────────────────────────
 
+const phoneValidation = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .refine(
+    (val) => !val || /^\+?[0-9\s-]{10,15}$/.test(val),
+    "Invalid phone number. Must contain 10-15 digits"
+  );
+
 const createUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -85,7 +94,7 @@ const createUserSchema = z.object({
     .min(8, "Minimum 8 characters")
     .regex(/[A-Z]/, "Needs uppercase letter")
     .regex(/[0-9]/, "Needs a number"),
-  phone: z.string().min(10, "Minimum 10 digits").optional().or(z.literal("")),
+  phone: phoneValidation,
   designation: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
   role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"], {
@@ -95,7 +104,7 @@ const createUserSchema = z.object({
 
 const editUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  phone: z.string().optional().or(z.literal("")),
+  phone: phoneValidation,
   designation: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
   role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"]),
@@ -727,6 +736,9 @@ export default function UserManagement() {
                   id="edit-phone"
                   {...editForm.register("phone")}
                 />
+                {editForm.formState.errors.phone && (
+                  <p className="text-xs text-destructive">{editForm.formState.errors.phone.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">

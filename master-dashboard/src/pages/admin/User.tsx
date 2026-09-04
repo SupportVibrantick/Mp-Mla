@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -73,6 +74,15 @@ import { MainLayout } from "@/components/layout/MainLayout";
 
 // ─── Schemas ────────────────────────────────────────────
 
+const phoneValidation = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .refine(
+    (val) => !val || /^\+?[0-9\s-]{10,15}$/.test(val),
+    "Invalid phone number. Must contain 10-15 digits"
+  );
+
 const createUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -81,7 +91,7 @@ const createUserSchema = z.object({
     .min(8, "Minimum 8 characters")
     .regex(/[A-Z]/, "Needs uppercase letter")
     .regex(/[0-9]/, "Needs a number"),
-  phone: z.string().min(10, "Minimum 10 digits").optional().or(z.literal("")),
+  phone: phoneValidation,
   role: z.enum(["SUPER_ADMIN", "PLATFORM_ADMIN", "SUPPORT_STAFF", "BILLING_MANAGER"], {
     required_error: "Please select a role",
   }),
@@ -89,7 +99,7 @@ const createUserSchema = z.object({
 
 const editUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  phone: z.string().optional().or(z.literal("")),
+  phone: phoneValidation,
   role: z.enum(["SUPER_ADMIN", "PLATFORM_ADMIN", "SUPPORT_STAFF", "BILLING_MANAGER"]),
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]),
 });
@@ -133,6 +143,7 @@ const STATUS_CONFIG: Record<
 // ─── Main Component ─────────────────────────────────────
 
 export default function UserManagement() {
+  const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -203,6 +214,24 @@ export default function UserManagement() {
 
   const handleEdit = async (formData: EditForm) => {
     if (!selectedUser) return;
+    if (selectedUser.id === currentUser?.id) {
+      if (formData.role && formData.role !== selectedUser.role) {
+        toast({
+          variant: "destructive",
+          title: "Action Not Allowed",
+          description: "You cannot change your own role.",
+        });
+        return;
+      }
+      if (formData.status && formData.status !== "ACTIVE" && selectedUser.status === "ACTIVE") {
+        toast({
+          variant: "destructive",
+          title: "Action Not Allowed",
+          description: "You cannot deactivate or suspend your own account.",
+        });
+        return;
+      }
+    }
     await updateMutation.mutateAsync({ id: selectedUser.id, data: formData });
     setEditOpen(false);
     setSelectedUser(null);
@@ -646,6 +675,11 @@ export default function UserManagement() {
                   placeholder="9876543210"
                   {...createForm.register("phone")}
                 />
+                {createForm.formState.errors.phone && (
+                  <p className="text-xs text-destructive">
+                    {createForm.formState.errors.phone.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -759,16 +793,22 @@ export default function UserManagement() {
               <div className="space-y-2">
                 <Label htmlFor="e-phone">Phone</Label>
                 <Input id="e-phone" {...editForm.register("phone")} />
+                {editForm.formState.errors.phone && (
+                  <p className="text-xs text-destructive">
+                    {editForm.formState.errors.phone.message}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Role</Label>
                   <Select
+                    disabled={selectedUser?.id === currentUser?.id}
                     value={editForm.watch("role")}
                     onValueChange={(v) => editForm.setValue("role", v as any)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -778,15 +818,21 @@ export default function UserManagement() {
                       <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                     </SelectContent>
                   </Select>
+                  {selectedUser?.id === currentUser?.id && (
+                    <p className="text-xs text-amber-600 font-medium mt-1">
+                      You cannot change your own role.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select
+                    disabled={selectedUser?.id === currentUser?.id}
                     value={editForm.watch("status")}
                     onValueChange={(v) => editForm.setValue("status", v as any)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -795,6 +841,11 @@ export default function UserManagement() {
                       <SelectItem value="SUSPENDED">Suspended</SelectItem>
                     </SelectContent>
                   </Select>
+                  {selectedUser?.id === currentUser?.id && (
+                    <p className="text-xs text-amber-600 font-medium mt-1">
+                      You cannot deactivate or suspend your own account.
+                    </p>
+                  )}
                 </div>
               </div>
 

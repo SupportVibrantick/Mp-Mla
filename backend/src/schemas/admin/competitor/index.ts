@@ -2,6 +2,15 @@ import { z } from "zod";
 
 // ─── Competitor CRUD Schemas ─────────────────────────────
 
+const phoneValidation = z.preprocess(
+  (val) => (val === "" ? null : val),
+  z
+    .string()
+    .regex(/^\+?[0-9\s-]{10,15}$/, "Invalid phone number. Must contain 10-15 digits")
+    .nullable()
+    .optional()
+);
+
 export const createCompetitorSchema = z.object({
   candidateName: z.string().min(2, "Candidate name is required"),
   partyName: z.string().min(1, "Party name is required"),
@@ -9,7 +18,7 @@ export const createCompetitorSchema = z.object({
   partyLogoUrl: z.string().url().optional().or(z.literal("")),
   designation: z.string().optional(),
   constituency: z.string().optional(),
-  phone: z.string().optional(),
+  phone: phoneValidation,
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   facebookUrl: z.string().url().optional().or(z.literal("")),
   twitterUrl: z.string().url().optional().or(z.literal("")),

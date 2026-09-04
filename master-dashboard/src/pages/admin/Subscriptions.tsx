@@ -92,6 +92,20 @@ function parseFeatures(features: any, description?: string | null) {
   return [];
 }
 
+function calculateDiscountPercentage(
+  priceMonthly?: number,
+  priceYearly?: number,
+): number {
+  if (!priceMonthly || !priceYearly || priceMonthly <= 0 || priceYearly <= 0)
+    return 0;
+  const annualMonthlyCost = priceMonthly * 12;
+  if (annualMonthlyCost <= priceYearly) return 0;
+  const discount = Math.round(
+    ((annualMonthlyCost - priceYearly) / annualMonthlyCost) * 100,
+  );
+  return discount > 0 ? discount : 0;
+}
+
 export default function SubscriptionsPage() {
   const [billingView, setBillingView] = useState<"MONTHLY" | "YEARLY">(
     "YEARLY",
@@ -108,6 +122,20 @@ export default function SubscriptionsPage() {
   const metrics = overview?.metrics;
   const overviewPlans = overview?.planDistribution || [];
   const plans = plansQuery.data?.data?.data?.plans || [];
+
+  const maxDiscount = useMemo(() => {
+    const displayPlans = plans.length ? plans : overviewPlans;
+    if (!displayPlans || displayPlans.length === 0) return 0;
+    let max = 0;
+    for (const plan of displayPlans) {
+      const d = calculateDiscountPercentage(
+        plan.priceMonthly,
+        plan.priceYearly,
+      );
+      if (d > max) max = d;
+    }
+    return max;
+  }, [plans, overviewPlans]);
 
   const modulesQuery = useModules({ limit: 100, isActive: "true" });
   const allModules = modulesQuery.data?.data?.data?.modules || [];
@@ -200,36 +228,55 @@ export default function SubscriptionsPage() {
             </Button>
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">
-                {selectedPlan ? `Edit Plan: ${selectedPlan.name}` : "Create Subscription Plan"}
+                {selectedPlan
+                  ? `Edit Plan: ${selectedPlan.name}`
+                  : "Create Subscription Plan"}
               </h1>
               <p className="text-muted-foreground mt-1">
-                {selectedPlan ? "Modify pricing plans, feature access, and system limitations." : "Add a brand new subscription tier to your SaaS model."}
+                {selectedPlan
+                  ? "Modify pricing plans, feature access, and system limitations."
+                  : "Add a brand new subscription tier to your SaaS model."}
               </p>
             </div>
           </div>
 
           {/* Form Content */}
-          <form onSubmit={planForm.handleSubmit(handleSavePlan)} className="space-y-6">
+          <form
+            onSubmit={planForm.handleSubmit(handleSavePlan)}
+            className="space-y-6"
+          >
             <div className="grid gap-6 md:grid-cols-2">
               {/* General Section */}
               <Card className="rounded-[24px] border border-border/60 p-6 shadow-sm space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-3">
                   General Information
                 </h3>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="plan-name">Plan Name</Label>
-                  <Input id="plan-name" placeholder="e.g. Starter, Enterprise" {...planForm.register("name")} />
+                  <Input
+                    id="plan-name"
+                    placeholder="e.g. Starter, Enterprise"
+                    {...planForm.register("name")}
+                  />
                   {planForm.formState.errors.name && (
-                    <p className="text-sm text-destructive font-medium">{planForm.formState.errors.name.message}</p>
+                    <p className="text-sm text-destructive font-medium">
+                      {planForm.formState.errors.name.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="plan-code">Plan Code</Label>
-                  <Input id="plan-code" placeholder="e.g. starter-tier" {...planForm.register("code")} />
+                  <Input
+                    id="plan-code"
+                    placeholder="e.g. starter-tier"
+                    {...planForm.register("code")}
+                  />
                   {planForm.formState.errors.code && (
-                    <p className="text-sm text-destructive font-medium">{planForm.formState.errors.code.message}</p>
+                    <p className="text-sm text-destructive font-medium">
+                      {planForm.formState.errors.code.message}
+                    </p>
                   )}
                 </div>
 
@@ -262,7 +309,9 @@ export default function SubscriptionsPage() {
                         {...planForm.register("priceMonthly")}
                       />
                       {planForm.formState.errors.priceMonthly && (
-                        <p className="text-sm text-destructive font-medium">{planForm.formState.errors.priceMonthly.message}</p>
+                        <p className="text-sm text-destructive font-medium">
+                          {planForm.formState.errors.priceMonthly.message}
+                        </p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -275,7 +324,9 @@ export default function SubscriptionsPage() {
                         {...planForm.register("priceYearly")}
                       />
                       {planForm.formState.errors.priceYearly && (
-                        <p className="text-sm text-destructive font-medium">{planForm.formState.errors.priceYearly.message}</p>
+                        <p className="text-sm text-destructive font-medium">
+                          {planForm.formState.errors.priceYearly.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -306,7 +357,9 @@ export default function SubscriptionsPage() {
                     placeholder="0"
                     {...planForm.register("sortOrder")}
                   />
-                  <p className="text-xs text-muted-foreground">Order of appearance in lists (lowest first).</p>
+                  <p className="text-xs text-muted-foreground">
+                    Order of appearance in lists (lowest first).
+                  </p>
                 </div>
               </Card>
             </div>
@@ -326,7 +379,9 @@ export default function SubscriptionsPage() {
                     placeholder="Enter each feature on a new line&#10;e.g. Advanced analytics&#10;e.g. Custom domain integration"
                     {...planForm.register("features")}
                   />
-                  <p className="text-xs text-muted-foreground">Specify standard offerings for marketing purposes.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Specify standard offerings for marketing purposes.
+                  </p>
                 </div>
               </Card>
             </div>
@@ -338,7 +393,8 @@ export default function SubscriptionsPage() {
                   Included Modules & Addons
                 </h3>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Select which system modules and features are enabled for tenants subscribed to this plan.
+                  Select which system modules and features are enabled for
+                  tenants subscribed to this plan.
                 </p>
               </div>
 
@@ -364,23 +420,32 @@ export default function SubscriptionsPage() {
                           if (isChecked) {
                             planForm.setValue(
                               "moduleIds",
-                              selectedModuleIds.filter((id) => id !== mod.id)
+                              selectedModuleIds.filter((id) => id !== mod.id),
                             );
                           } else {
-                            planForm.setValue("moduleIds", [...selectedModuleIds, mod.id]);
+                            planForm.setValue("moduleIds", [
+                              ...selectedModuleIds,
+                              mod.id,
+                            ]);
                           }
                         }}
                       >
-                        <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
-                          isChecked
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-muted-foreground/30"
-                        }`}>
-                          {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                        <div
+                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                            isChecked
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground/30"
+                          }`}
+                        >
+                          {isChecked && (
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          )}
                         </div>
                         <div className="space-y-0.5">
                           <p className="font-semibold text-sm">{mod.name}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{mod.description || "No description"}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {mod.description || "No description"}
+                          </p>
                         </div>
                       </div>
                     );
@@ -402,9 +467,12 @@ export default function SubscriptionsPage() {
               <Button
                 type="submit"
                 className="px-6 rounded-xl"
-                disabled={createPlanMutation.isPending || updatePlanMutation.isPending}
+                disabled={
+                  createPlanMutation.isPending || updatePlanMutation.isPending
+                }
               >
-                {createPlanMutation.isPending || updatePlanMutation.isPending ? (
+                {createPlanMutation.isPending ||
+                updatePlanMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Saving changes...
@@ -514,9 +582,11 @@ export default function SubscriptionsPage() {
               }`}
             >
               Yearly
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
-                -20%
-              </span>
+              {maxDiscount > 0 && (
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                  -{maxDiscount}%
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -539,11 +609,13 @@ export default function SubscriptionsPage() {
                 const isFeatured = !!plan.isPopular;
                 const price =
                   billingView === "YEARLY"
-                    ? plan.priceYearly
-                      ? plan.priceYearly / 12
-                      : plan.priceMonthly
+                    ? (plan.priceYearly ?? plan.priceMonthly)
                     : plan.priceMonthly;
                 const features = parseFeatures(plan.features, plan.description);
+                const planDiscount = calculateDiscountPercentage(
+                  plan.priceMonthly,
+                  plan.priceYearly,
+                );
 
                 return (
                   <Card
@@ -561,23 +633,41 @@ export default function SubscriptionsPage() {
                     )}
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-2xl font-bold font-heading">{plan.name}</h3>
+                        <h3 className="text-2xl font-bold font-heading">
+                          {plan.name}
+                        </h3>
                         <p className="mt-2 min-h-12 text-sm text-muted-foreground leading-relaxed">
                           {plan.description ||
                             "Built for teams that need reliable tenant scaling and billing control."}
                         </p>
                       </div>
-                      {isFeatured && <Sparkles className="h-5 w-5 text-primary animate-pulse shrink-0 mt-1" />}
+                      {isFeatured && (
+                        <Sparkles className="h-5 w-5 text-primary animate-pulse shrink-0 mt-1" />
+                      )}
                     </div>
                     <div className="mt-6 flex items-baseline gap-1.5">
                       <span className="text-5xl font-bold tracking-tight font-heading">
                         {formatCurrency(price)}
                       </span>
-                      <span className="text-sm font-semibold text-muted-foreground">/mo</span>
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        /{billingView === "YEARLY" ? "yr" : "mo"}
+                      </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      billed {billingView === "YEARLY" ? "yearly" : "monthly"}
-                    </p>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap">
+                      <p className="text-xs text-muted-foreground">
+                        billed {billingView === "YEARLY" ? "yearly" : "monthly"}
+                        {billingView === "YEARLY" && plan.priceYearly > 0 && (
+                          <span className="ml-1 text-muted-foreground/80">
+                            ({formatCurrency(plan.priceYearly / 12)}/mo)
+                          </span>
+                        )}
+                      </p>
+                      {billingView === "YEARLY" && planDiscount > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                          Save {planDiscount}%
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-6 flex gap-3">
                       <Button
                         className="flex-1 rounded-2xl font-semibold shadow-sm hover:shadow-md transition-all duration-300"
@@ -597,7 +687,9 @@ export default function SubscriptionsPage() {
                           <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
                             <Check className="h-3 w-3 stroke-[3]" />
                           </div>
-                          <span className="text-muted-foreground font-medium">{feature}</span>
+                          <span className="text-muted-foreground font-medium">
+                            {feature}
+                          </span>
                         </div>
                       ))}
                       {plan.planModules && plan.planModules.length > 0 && (

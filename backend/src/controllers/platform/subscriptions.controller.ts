@@ -185,7 +185,15 @@ export const getSubscriptionOverview = async (
           planName: subscription.plan.name,
           billingCycle: subscription.billingCycle,
           nextPaymentDue: subscription.nextPaymentDue,
-          amountDue: subscription.amountDue,
+          amountDue:
+            subscription.status === "ACTIVE"
+              ? subscription.billingCycle === "YEARLY"
+                ? subscription.plan.priceYearly
+                : subscription.plan.priceMonthly
+              : subscription.amountDue ||
+                (subscription.billingCycle === "YEARLY"
+                  ? subscription.plan.priceYearly
+                  : subscription.plan.priceMonthly),
           status: subscription.status,
         })),
       }),
@@ -1167,10 +1175,14 @@ export const listUpcomingRenewals = async (
           billingCycle: sub.billingCycle,
           nextPaymentDue: sub.nextPaymentDue,
           amountDue:
-            sub.amountDue ||
-            (sub.billingCycle === "YEARLY"
-              ? sub.plan.priceYearly
-              : sub.plan.priceMonthly),
+            sub.status === "ACTIVE"
+              ? sub.billingCycle === "YEARLY"
+                ? sub.plan.priceYearly
+                : sub.plan.priceMonthly
+              : sub.amountDue ||
+                (sub.billingCycle === "YEARLY"
+                  ? sub.plan.priceYearly
+                  : sub.plan.priceMonthly),
           status: sub.status,
         })),
         pagination: {

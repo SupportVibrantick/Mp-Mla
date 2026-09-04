@@ -1,9 +1,18 @@
 import { z } from "zod";
 import { ContactCategory, InteractionChannel, FollowUpStatus } from "@prisma/client";
 
+const phoneValidation = z.preprocess(
+  (val) => (val === "" ? null : val),
+  z
+    .string()
+    .regex(/^\+?[0-9\s-]{10,15}$/, "Invalid phone number. Must contain 10-15 digits")
+    .nullable()
+    .optional()
+);
+
 export const contactBaseSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  phone: z.string().optional().nullable(),
+  phone: phoneValidation,
   email: z.string().email("Invalid email format").optional().nullable().or(z.literal("")),
   address: z.string().optional().nullable(),
   wardId: z.string().optional().nullable(),

@@ -26,9 +26,18 @@ import {
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ArrowLeft, Save, Users, Loader2 } from "lucide-react";
 
+const phoneValidation = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .refine(
+    (val) => !val || /^\+?[0-9\s-]{10,15}$/.test(val),
+    "Invalid phone number. Must contain 10-15 digits"
+  );
+
 const formSchema = z.object({
   name: z.string().min(1, "Name required"),
-  phone: z.string().optional(),
+  phone: phoneValidation,
   email: z.string().optional(),
   address: z.string().optional(),
   wardId: z.string().optional(),
@@ -178,6 +187,9 @@ export default function ContactFormPage() {
               <div className="space-y-2">
                 <Label>Phone</Label>
                 <Input {...register("phone")} placeholder="+91 98765 43210" />
+                {errors.phone && (
+                  <p className="text-xs text-destructive">{errors.phone.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>

@@ -19,6 +19,15 @@ const LEADER_CATEGORIES = [
   "OTHER",
 ] as const;
 
+const phoneValidation = z.preprocess(
+  (val) => (val === "" ? null : val),
+  z
+    .string()
+    .regex(/^\+?[0-9\s-]{10,15}$/, "Invalid phone number. Must contain 10-15 digits")
+    .nullable()
+    .optional()
+);
+
 export const createSchema = z.object({
   name: z.string().min(1, "Name required"),
   category: z.enum(LEADER_CATEGORIES),
@@ -30,10 +39,10 @@ export const createSchema = z.object({
   photoUrl: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
   address: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
   wardId: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
-  phone: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
-  altPhone: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
+  phone: phoneValidation,
+  altPhone: phoneValidation,
   email: z.string().email().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
-  whatsapp: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
+  whatsapp: phoneValidation,
   facebookUrl: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
   twitterUrl: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
   instagramUrl: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),

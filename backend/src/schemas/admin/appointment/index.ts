@@ -7,11 +7,20 @@ function isEndTimeAfterStartTime(startTime: string, endTime: string): boolean {
   return end > start;
 }
 
+const phoneValidation = z.preprocess(
+  (val) => (val === "" ? null : val),
+  z
+    .string()
+    .regex(/^\+?[0-9\s-]{10,15}$/, "Invalid phone number. Must contain 10-15 digits")
+    .nullable()
+    .optional()
+);
+
 export const appointmentBaseSchema = z.object({
   title: z.string().min(1, "Title is required"),
   type: z.nativeEnum(AppointmentType),
   requesterName: z.string().min(1, "Requester name is required"),
-  requesterPhone: z.string().optional().nullable(),
+  requesterPhone: phoneValidation,
   requesterEmail: z.string().email("Invalid email format").optional().nullable().or(z.literal("")),
   date: z.string().or(z.date()).transform((val) => new Date(val)),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Start time must be in HH:MM format"),

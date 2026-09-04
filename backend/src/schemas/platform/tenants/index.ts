@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+const phoneValidation = z.preprocess(
+  (val) => (val === "" ? null : val),
+  z
+    .string()
+    .regex(/^\+?[0-9\s-]{10,15}$/, "Invalid phone number. Must contain 10-15 digits")
+    .nullable()
+    .optional()
+);
+
 // ─── Create Tenant ─────────────────────────────────────
 export const createTenantSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -7,7 +16,7 @@ export const createTenantSchema = z.object({
   state: z.string().min(2, "State is required"),
   district: z.string().min(2, "District is required"),
   address: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
+  phone: phoneValidation,
   email: z.preprocess(
     (val) => (val === "" ? null : val),
     z.string().email("Invalid email").nullable().optional()
@@ -37,7 +46,7 @@ export const createTenantSchema = z.object({
   adminEmail: z.string().email("Admin email is required"),
   adminPassword: z.string().min(6, "Admin password must be at least 6 characters"),
   adminName: z.string().min(2, "Admin name is required"),
-  adminPhone: z.string().optional().nullable(),
+  adminPhone: phoneValidation,
 
   // Subscription plan
   planId: z.string().optional().nullable(),
@@ -52,7 +61,7 @@ export const updateTenantSchema = z.object({
   state: z.string().min(2).optional(),
   district: z.string().min(2).optional(),
   address: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
+  phone: phoneValidation,
   email: z.preprocess(
     (val) => (val === "" ? null : val),
     z.string().email("Invalid email").nullable().optional()
@@ -97,7 +106,7 @@ export const createTenantUserSchema = z.object({
   email: z.string().email("Valid email is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(2, "Name is required"),
-  phone: z.string().optional(),
+  phone: phoneValidation,
   role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"]),
   designation: z.string().optional(),
   department: z.string().optional(),
