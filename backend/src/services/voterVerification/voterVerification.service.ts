@@ -23,6 +23,7 @@ export async function updateVoter(
     gender?: any;
     phone?: string;
     address?: string;
+    bloodGroup?: string;
   },
   photoFilename?: string,
 ) {

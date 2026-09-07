@@ -59,6 +59,7 @@ const voterUpdateSchema = z.object({
   gender: z.enum(["MALE", "FEMALE", "OTHER"]),
   phone: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
+  bloodGroup: z.string().optional().or(z.literal("")),
 });
 
 type SearchForm = z.infer<typeof searchSchema>;
@@ -174,6 +175,7 @@ export default function VoterVerificationPage() {
       gender: voterRecord.gender,
       phone: voterRecord.phone || "",
       address: voterRecord.address || "",
+      bloodGroup: voterRecord.bloodGroup || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -201,6 +203,7 @@ export default function VoterVerificationPage() {
       formPayload.append("gender", data.gender);
       if (data.phone) formPayload.append("phone", data.phone);
       if (data.address) formPayload.append("address", data.address);
+      if (data.bloodGroup) formPayload.append("bloodGroup", data.bloodGroup);
       if (photoFile) {
         formPayload.append("photo", photoFile);
       }
@@ -404,6 +407,10 @@ export default function VoterVerificationPage() {
                         <span className="text-[10px] text-muted-foreground uppercase font-bold">Gender</span>
                         <p className="text-sm font-semibold text-foreground uppercase">{voterRecord.gender}</p>
                       </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Blood Group</span>
+                        <p className="text-sm font-semibold text-rose-600 dark:text-rose-400 font-bold">{voterRecord.bloodGroup || "N/A"}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -594,6 +601,31 @@ export default function VoterVerificationPage() {
                   <span className="text-[9px] font-semibold text-rose-500">{updateErrors.gender.message}</span>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Blood Group (Optional)
+              </Label>
+              <Select
+                value={watchUpdate("bloodGroup") || "NONE"}
+                onValueChange={(val) => setUpdateValue("bloodGroup", val === "NONE" ? "" : val)}
+              >
+                <SelectTrigger className="h-10 rounded-xl text-xs font-semibold">
+                  <SelectValue placeholder="Select Blood Group" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="NONE" className="text-xs">Not Specified</SelectItem>
+                  <SelectItem value="A+" className="text-xs">A+</SelectItem>
+                  <SelectItem value="A-" className="text-xs">A-</SelectItem>
+                  <SelectItem value="B+" className="text-xs">B+</SelectItem>
+                  <SelectItem value="B-" className="text-xs">B-</SelectItem>
+                  <SelectItem value="AB+" className="text-xs">AB+</SelectItem>
+                  <SelectItem value="AB-" className="text-xs">AB-</SelectItem>
+                  <SelectItem value="O+" className="text-xs">O+</SelectItem>
+                  <SelectItem value="O-" className="text-xs">O-</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">

@@ -420,9 +420,11 @@ model Tenant {
   booths                     Booth[]
   townVillages               TownVillage[]
 
-  geographyImportJobs GeographyImportJob[]
-  constituencyWards   ConstituencyWard[]
+  geographyImportJobs        GeographyImportJob[]
+  constituencyWards          ConstituencyWard[]
   voterIdentityVerifications VoterIdentityVerification[]
+  voterAccountMemberships    VoterAccountMembership[]
+  voterApplicationSequence   VoterApplicationSequence?
 
   @@index([status])
   @@map("tenants")
@@ -2093,10 +2095,11 @@ model Voter {
   boothId    String?
 
   // Electoral Roll Identity
-  voterIdNumber String // EPIC number (unique per tenant)
-  slNo          Int? // Serial number in voter list
-  sectionNo     Int? // Part/Section number
-  boothNo       Int? // Polling booth number
+  voterIdNumber     String // EPIC number (unique per tenant)
+  applicationNumber String? // Generated application number (e.g. APP-2026-000001)
+  slNo              Int? // Serial number in voter list
+  sectionNo         Int? // Part/Section number
+  boothNo           Int? // Polling booth number
 
   // Personal Details
   name         String
@@ -2105,6 +2108,7 @@ model Voter {
   gender       VoterGender
   age          Int?
   photoUrl     String?
+  bloodGroup   String? @map("blood_group")
 
   // Address
   houseNo  String?
@@ -2118,23 +2122,27 @@ model Voter {
   isDisabled Boolean @default(false)
 
   // Metadata
-  status        String  @default("ACTIVE") // ACTIVE, DELETED, SHIFTED
-  isDeleted     Boolean @default(false)
-  uploadBatchId String?
+  status              String   @default("ACTIVE") // ACTIVE, DELETED, SHIFTED
+  isDeleted           Boolean  @default(false)
+  forcePasswordChange Boolean  @default(true)
+  uploadBatchId       String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant      Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ward        Ward                        @relation(fields: [wardId], references: [id])
-  wardArea    WardArea?                   @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
-  uploadBatch BulkUploadJob?              @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
-  booth       Booth?                      @relation(fields: [boothId], references: [id], onDelete: SetNull)
+  tenant                Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward                  Ward                        @relation(fields: [wardId], references: [id])
+  wardArea              WardArea?                   @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
+  uploadBatch           BulkUploadJob?              @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
+  booth                 Booth?                      @relation(fields: [boothId], references: [id], onDelete: SetNull)
   identityVerifications VoterIdentityVerification[]
+  accountMemberships    VoterAccountMembership[]
 
   @@unique([tenantId, voterIdNumber])
+  @@unique([tenantId, applicationNumber])
   @@index([tenantId])
+  @@index([applicationNumber])
   @@index([wardId])
   @@index([wardAreaId])
   @@index([gender])
@@ -2147,6 +2155,87 @@ model Voter {
   @@index([tenantId, wardId, boothNo])
   @@index([tenantId, wardId, sectionNo])
   @@map("voters")
+}
+
+model VoterAccount {
+  id                  String             @id @default(cuid())
+  mobile              String             @unique
+  passwordHash        String
+  status              VoterAccountStatus @default(ACTIVE)
+  passwordChangedAt   DateTime?
+  forcePasswordChange Boolean            @default(true)
+  failedLoginCount    Int                @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  memberships VoterAccountMembership[]
+
+  @@index([mobile])
+  @@index([status])
+  @@map("voter_accounts")
+}
+
+enum VoterAccountStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+model VoterAccountMembership {
+  id             String       @id @default(cuid())
+  voterAccountId String
+  tenantId       String
+  voterId        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  voterAccount VoterAccount @relation(fields: [voterAccountId], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  voter        Voter        @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, voterId])
+  @@unique([voterAccountId, tenantId, voterId])
+  @@index([voterAccountId])
+  @@index([tenantId])
+  @@index([voterId])
+  @@map("voter_account_memberships")
+}
+
+model VoterOtp {
+  id         String          @id @default(cuid())
+  mobile     String
+  purpose    VoterOtpPurpose
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int             @default(0)
+  verifiedAt DateTime?
+  createdAt  DateTime        @default(now())
+
+  @@index([mobile, purpose])
+  @@index([expiresAt])
+  @@map("voter_otps")
+}
+
+enum VoterOtpPurpose {
+  PASSWORD_RESET
+  MOBILE_CHANGE
+}
+
+model VoterApplicationSequence {
+  id            String   @id @default(cuid())
+  tenantId      String   @unique
+  prefix        String   @default("APP")
+  currentNumber Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("voter_application_sequences")
 }
 
 model VoterIdentityVerification {

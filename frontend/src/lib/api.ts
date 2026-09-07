@@ -35,7 +35,7 @@ const processQueue = (error: any, token: string | null = null) => {
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = TokenStorage.getAccessToken();
-    if (token && config.headers) {
+    if (token && config.headers && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     if (config.headers && !(config.data instanceof FormData)) {
@@ -53,13 +53,18 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
+    const reqUrl = originalRequest?.url || "";
+    const isPublicOrVoterPortal =
+      reqUrl.includes("/public/") ||
+      reqUrl.includes("/voter-portal/") ||
+      reqUrl.includes("/auth/login") ||
+      reqUrl.includes("/auth/refresh");
 
-    // If 401 and not a retry and not the login/refresh endpoint itself
+    // If 401 and not a retry and not a public/voter-portal/auth endpoint
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/login") &&
-      !originalRequest.url?.includes("/auth/refresh")
+      !originalRequest?._retry &&
+      !isPublicOrVoterPortal
     ) {
       if (isRefreshing) {
         // Queue this request until refresh completes
@@ -403,6 +408,8 @@ export const voterListApi = {
   get: (id: string) => api.get(`/admin/voter-list/${id}`),
   create: (data: any) => api.post("/admin/voter-list", data),
   update: (id: string, data: any) => api.put(`/admin/voter-list/${id}`, data),
+  resetPassword: (id: string, data?: { newPassword?: string }) =>
+    api.post(`/admin/voter-list/${id}/reset-password`, data),
   delete: (id: string) => api.delete(`/admin/voter-list/${id}`),
   bulkDelete: (ids: string[]) =>
     api.post("/admin/voter-list/bulk-delete", { ids }),

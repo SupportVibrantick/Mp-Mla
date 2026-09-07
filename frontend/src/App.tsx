@@ -78,6 +78,7 @@ import JanataDarbarListPage from "./pages/janataDarbar/JanataDarbarListPage";
 import JanataDarbarFormPage from "./pages/janataDarbar/JanataDarbarFormPage";
 import JanataDarbarSessionPage from "./pages/janataDarbar/JanataDarbarSessionPage";
 import VoterVerificationPage from "./pages/voterVerification/VoterVerificationPage";
+import VoterPortalPage from "./pages/voterPortal/VoterPortalPage";
 
 import CompetitorListPage from "./pages/competitors/CompetitorListPage";
 import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
@@ -654,7 +655,8 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/voter-verification" component={VoterVerificationPage} />
+      <Route path="/voter-portal" component={VoterPortalPage} />
+      <Route path="/voter-verification" component={VoterPortalPage} />
 
       <Route path="/change-password" component={ChangePassword} />
 

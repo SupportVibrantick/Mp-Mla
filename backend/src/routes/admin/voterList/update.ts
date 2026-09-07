@@ -7,6 +7,9 @@ import {
 } from "../../../middleware/auditLog.js";
 import { syncVoterDemographics } from "./demographicsSync.js";
 
+import bcrypt from "bcryptjs";
+import { createVoterAccountForVoter } from "../../../services/voterPortal/voterAuth.service.js";
+
 // ══════════════════════════════════════════════════════════
 // UPDATE VOTER
 // ══════════════════════════════════════════════════════════
@@ -98,6 +101,9 @@ export async function updateVoter(
         ...(data.phone !== undefined && {
           phone: data.phone?.trim() || null,
         }),
+        ...(data.bloodGroup !== undefined && {
+          bloodGroup: data.bloodGroup?.trim() || null,
+        }),
         ...(data.isDisabled !== undefined && { isDisabled: data.isDisabled }),
       },
       include: {
@@ -127,6 +133,89 @@ export async function updateVoter(
       success: true,
       message: "Voter updated successfully",
       data: updated,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// RESET VOTER PORTAL PASSWORD
+// ══════════════════════════════════════════════════════════
+
+export async function resetVoterPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const id = req.params.id as string;
+    const { newPassword } = req.body;
+
+    const voter = await prisma.voter.findFirst({
+      where: { id, tenantId, isDeleted: false },
+    });
+
+    if (!voter) {
+      res.status(404).json({ success: false, message: "Voter not found" });
+      return;
+    }
+
+    if (!voter.applicationNumber) {
+      res.status(400).json({
+        success: false,
+        message: "Voter does not have an application number assigned.",
+      });
+      return;
+    }
+
+    const cleanAppNum = voter.applicationNumber.trim().toUpperCase();
+    const finalPassword =
+      newPassword && newPassword.trim() ? newPassword.trim() : cleanAppNum;
+    const passwordHash = await bcrypt.hash(finalPassword, 10);
+    const forcePasswordChange =
+      !newPassword ||
+      newPassword.trim() === "" ||
+      newPassword.trim().toUpperCase() === cleanAppNum;
+
+    // Create or find voter account
+    const { account } = await createVoterAccountForVoter(
+      tenantId,
+      voter.id,
+      cleanAppNum,
+      voter.phone,
+    );
+
+    // Update VoterAccount password
+    await prisma.voterAccount.update({
+      where: { id: account.id },
+      data: {
+        passwordHash,
+        forcePasswordChange,
+        passwordChangedAt: forcePasswordChange ? null : new Date(),
+      },
+    });
+
+    // Update Voter model forcePasswordChange
+    await prisma.voter.update({
+      where: { id: voter.id },
+      data: { forcePasswordChange },
+    });
+
+    // Audit log
+    createAuditLog({
+      userId: req.user!.id,
+      action: "UPDATE",
+      module: "voter_list",
+      recordId: id,
+      description: `Reset voter portal password for "${voter.name}" (${voter.applicationNumber})`,
+      ...getRequestMeta(req),
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: `Voter portal password updated successfully for ${voter.name}.`,
     });
   } catch (err) {
     next(err);

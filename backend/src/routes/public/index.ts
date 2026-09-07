@@ -10,10 +10,14 @@ import {
   updateVoterDetails,
 } from "../../controllers/public/voterVerification.controller.js";
 
+import voterPortalRoutes from "./voterPortal/index.js";
+
 const voterUploader = createUploader("voters");
 
-
 const router = Router();
+
+// Mount Voter Portal router
+router.use("/voter-portal", voterPortalRoutes);
 
 // Upload middleware for institution request documents
 const docUpload = createUploader("institution-requests");

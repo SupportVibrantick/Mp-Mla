@@ -16,6 +16,7 @@ import ExcelJS from "exceljs";
 // ══════════════════════════════════════════════════════════
 
 const CSV_HEADERS = [
+  "Application Number",
   "Voter ID",
   "Sl No",
   "Section No",
@@ -25,6 +26,7 @@ const CSV_HEADERS = [
   "Relation Type",
   "Gender",
   "Age",
+  "Blood Group",
   "House No",
   "Address",
   "Locality",
@@ -105,6 +107,7 @@ export async function exportVoters(
         orderBy: { id: "asc" },
         select: {
           id: true,
+          applicationNumber: true,
           voterIdNumber: true,
           slNo: true,
           sectionNo: true,
@@ -114,6 +117,7 @@ export async function exportVoters(
           relationType: true,
           gender: true,
           age: true,
+          bloodGroup: true,
           houseNo: true,
           address: true,
           locality: true,
@@ -130,6 +134,7 @@ export async function exportVoters(
       // Write rows
       for (const v of voters) {
         const row = [
+          escapeCSV(v.applicationNumber),
           escapeCSV(v.voterIdNumber),
           escapeCSV(v.slNo),
           escapeCSV(v.sectionNo),
@@ -139,6 +144,7 @@ export async function exportVoters(
           escapeCSV(v.relationType),
           escapeCSV(v.gender),
           escapeCSV(v.age),
+          escapeCSV(v.bloodGroup),
           escapeCSV(v.houseNo),
           escapeCSV(v.address),
           escapeCSV(v.locality),

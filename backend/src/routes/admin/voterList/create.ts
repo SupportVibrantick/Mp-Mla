@@ -6,6 +6,8 @@ import {
   getRequestMeta,
 } from "../../../middleware/auditLog.js";
 import { syncVoterDemographics } from "./demographicsSync.js";
+import { generateApplicationNumber } from "../../../services/voterPortal/applicationNumber.service.js";
+import { createVoterAccountForVoter } from "../../../services/voterPortal/voterAuth.service.js";
 
 // ══════════════════════════════════════════════════════════
 // CREATE SINGLE VOTER
@@ -65,12 +67,16 @@ export async function createVoter(
       return;
     }
 
+    // Auto-generate application number for voter
+    const applicationNumber = await generateApplicationNumber(tenantId);
+
     const voter = await prisma.voter.create({
       data: {
         tenantId,
         wardId: data.wardId,
         wardAreaId: data.wardAreaId || null,
         voterIdNumber: data.voterIdNumber.trim(),
+        applicationNumber,
         slNo: data.slNo ?? null,
         sectionNo: data.sectionNo ?? null,
         boothNo: data.boothNo ?? null,
@@ -83,12 +89,21 @@ export async function createVoter(
         address: data.address?.trim() || null,
         locality: data.locality?.trim() || null,
         phone: data.phone?.trim() || null,
+        bloodGroup: data.bloodGroup?.trim() || null,
         isDisabled: data.isDisabled ?? false,
       },
       include: {
         ward: { select: { id: true, name: true, wardNumber: true } },
       },
     });
+
+    // Create Voter Account & Membership with default password = applicationNumber
+    await createVoterAccountForVoter(
+      tenantId,
+      voter.id,
+      applicationNumber,
+      data.phone
+    );
 
     // Auto-sync Demographics for this ward
     await syncVoterDemographics(tenantId, data.wardId);
@@ -99,15 +114,19 @@ export async function createVoter(
       action: "CREATE",
       module: "voter_list",
       recordId: voter.id,
-      description: `Created voter "${data.name}" (${data.voterIdNumber})`,
-      newData: { name: data.name, voterIdNumber: data.voterIdNumber, wardId: data.wardId },
+      description: `Created voter "${data.name}" (${data.voterIdNumber}) with Application No ${applicationNumber}`,
+      newData: { name: data.name, voterIdNumber: data.voterIdNumber, applicationNumber, wardId: data.wardId },
       ...getRequestMeta(req),
     }).catch(() => {});
 
     res.status(201).json({
       success: true,
       message: "Voter created successfully",
-      data: voter,
+      data: {
+        ...voter,
+        applicationNumber,
+        initialPassword: applicationNumber,
+      },
     });
   } catch (err) {
     next(err);

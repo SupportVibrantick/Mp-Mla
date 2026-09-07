@@ -56,6 +56,7 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
+  KeyRound,
 } from "lucide-react";
 
 // ══════════════════════════════════════════════════════════
@@ -80,6 +81,11 @@ export default function VoterListPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
 
+  // Reset Password Modal State
+  const [resetPasswordVoter, setResetPasswordVoter] = useState<any>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+
   // Single Voter Form State
   const [form, setForm] = useState({
     wardId: "",
@@ -97,6 +103,7 @@ export default function VoterListPage() {
     address: "",
     locality: "",
     phone: "",
+    bloodGroup: "",
     isDisabled: false,
   });
 
@@ -226,6 +233,30 @@ export default function VoterListPage() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword?: string }) =>
+      voterListApi.resetPassword(id, newPassword ? { newPassword } : {}),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      toast({
+        title: "Password Reset Successful",
+        description:
+          res?.data?.message || "Voter portal password updated successfully",
+      });
+      setIsResetPasswordOpen(false);
+      setResetPasswordVoter(null);
+      setNewPasswordInput("");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Reset Failed",
+        description:
+          err?.response?.data?.message || "Failed to reset voter password",
+        variant: "destructive",
+      });
+    },
+  });
+
   const bulkDeleteMutation = useMutation({
     mutationFn: (ids: string[]) => voterListApi.bulkDelete(ids),
     onSuccess: (res) => {
@@ -294,6 +325,7 @@ export default function VoterListPage() {
       address: "",
       locality: "",
       phone: "",
+      bloodGroup: "",
       isDisabled: false,
     });
   }
@@ -322,6 +354,7 @@ export default function VoterListPage() {
       address: voter.address || "",
       locality: voter.locality || "",
       phone: voter.phone || "",
+      bloodGroup: voter.bloodGroup || "",
       isDisabled: voter.isDisabled || false,
     });
     setIsEditOpen(true);
@@ -755,13 +788,15 @@ export default function VoterListPage() {
                       className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                     />
                   </TableHead>
-                  <TableHead className="w-[140px]">EPIC ID</TableHead>
+                  <TableHead className="w-[140px]">Application No.</TableHead>
+                  <TableHead className="w-[130px]">EPIC ID</TableHead>
                   <TableHead>Voter Name</TableHead>
                   <TableHead>Relative Name</TableHead>
                   <TableHead className="w-[90px]">Gender</TableHead>
                   <TableHead className="w-[70px]">Age</TableHead>
+                  {/* <TableHead className="w-[95px]">Blood Group</TableHead> */}
                   <TableHead>Ward & Locality</TableHead>
-                  <TableHead className="text-right w-[100px]">
+                  <TableHead className="text-right w-[120px]">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -771,6 +806,9 @@ export default function VoterListPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24" />
+                      </TableCell>
                       <TableCell>
                         <Skeleton className="h-5 w-24" />
                       </TableCell>
@@ -797,7 +835,7 @@ export default function VoterListPage() {
                 ) : voters.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center py-12 text-muted-foreground"
                     >
                       <Users className="h-10 w-10 mx-auto mb-2 opacity-40" />
@@ -824,6 +862,20 @@ export default function VoterListPage() {
                           }}
                           className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                         />
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {v.applicationNumber ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 font-mono text-[11px]"
+                          >
+                            {v.applicationNumber}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs font-normal">
+                            -
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="font-mono font-semibold text-xs text-primary">
                         {v.voterIdNumber}
@@ -869,6 +921,15 @@ export default function VoterListPage() {
                       <TableCell className="text-xs font-medium">
                         {v.age ?? " - "}
                       </TableCell>
+                      {/* <TableCell>
+                        {v.bloodGroup ? (
+                          <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-600 border-rose-200 font-semibold">
+                            {v.bloodGroup}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </TableCell> */}
                       <TableCell>
                         <div className="text-xs font-medium text-foreground">
                           {v.ward?.name
@@ -883,6 +944,19 @@ export default function VoterListPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-amber-600"
+                            title="Reset Voter Portal Password"
+                            onClick={() => {
+                              setResetPasswordVoter(v);
+                              setNewPasswordInput("");
+                              setIsResetPasswordOpen(true);
+                            }}
+                          >
+                            <KeyRound className="h-3.5 w-3.5" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1036,6 +1110,31 @@ export default function VoterListPage() {
                   setForm((p) => ({ ...p, age: e.target.value }))
                 }
               />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Blood Group (Optional)</Label>
+              <Select
+                value={form.bloodGroup || "NONE"}
+                onValueChange={(val) =>
+                  setForm((p) => ({ ...p, bloodGroup: val === "NONE" ? "" : val }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Blood Group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Not Specified</SelectItem>
+                  <SelectItem value="A+">A+</SelectItem>
+                  <SelectItem value="A-">A-</SelectItem>
+                  <SelectItem value="B+">B+</SelectItem>
+                  <SelectItem value="B-">B-</SelectItem>
+                  <SelectItem value="AB+">AB+</SelectItem>
+                  <SelectItem value="AB-">AB-</SelectItem>
+                  <SelectItem value="O+">O+</SelectItem>
+                  <SelectItem value="O-">O-</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
@@ -1465,6 +1564,106 @@ export default function VoterListPage() {
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               )}
               Delete {selectedIds.length} Voters
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Reset Password Dialog ──────────────────────── */}
+      <Dialog
+        open={isResetPasswordOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsResetPasswordOpen(false);
+            setResetPasswordVoter(null);
+            setNewPasswordInput("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <KeyRound className="h-5 w-5 text-amber-600" />
+              <span>Reset Voter Portal Password</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Update or reset the password for this voter's portal account.
+            </DialogDescription>
+          </DialogHeader>
+
+          {resetPasswordVoter && (
+            <div className="space-y-4 py-2">
+              <div className="p-3 bg-muted/40 rounded-xl space-y-1.5 text-xs border border-border/50">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Voter Name:</span>
+                  <span className="font-semibold text-foreground">
+                    {resetPasswordVoter.name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Application No:</span>
+                  <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                    {resetPasswordVoter.applicationNumber || "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">EPIC ID:</span>
+                  <span className="font-mono font-semibold text-primary">
+                    {resetPasswordVoter.voterIdNumber}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword" className="text-xs font-semibold">
+                  New Password (Optional)
+                </Label>
+                <Input
+                  id="newPassword"
+                  type="text"
+                  placeholder="Leave blank to default to Application Number"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  If left blank, password will reset to:{" "}
+                  <code className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                    {resetPasswordVoter.applicationNumber ||
+                      resetPasswordVoter.voterIdNumber}
+                  </code>{" "}
+                  and force password change on next voter portal login.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsResetPasswordOpen(false);
+                setResetPasswordVoter(null);
+                setNewPasswordInput("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={resetPasswordMutation.isPending}
+              onClick={() => {
+                if (resetPasswordVoter) {
+                  resetPasswordMutation.mutate({
+                    id: resetPasswordVoter.id,
+                    newPassword: newPasswordInput.trim() || undefined,
+                  });
+                }
+              }}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {resetPasswordMutation.isPending && (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Reset Password
             </Button>
           </DialogFooter>
         </DialogContent>

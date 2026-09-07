@@ -104,6 +104,9 @@ interface RowError {
   error: string;
 }
 
+import { generateApplicationNumberBatch } from "../../../services/voterPortal/applicationNumber.service.js";
+import { createVoterAccountForVoter } from "../../../services/voterPortal/voterAuth.service.js";
+
 interface ValidatedVoter {
   tenantId: string;
   wardId: string;
@@ -121,8 +124,11 @@ interface ValidatedVoter {
   address: string | null;
   locality: string | null;
   phone: string | null;
+  bloodGroup: string | null;
   isDisabled: boolean;
   uploadBatchId: string;
+  applicationNumber: string;
+  forcePasswordChange: boolean;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -188,6 +194,7 @@ export async function bulkUploadVoters(
 
     // ─── 3. Validate all rows ─────────────────────────────
     const errors: RowError[] = [];
+    const preValidRows: any[] = [];
     const validRows: ValidatedVoter[] = [];
     const seenInBatch = new Set<string>(); // Track duplicates within this batch
     let duplicateCount = 0;
@@ -324,7 +331,7 @@ export async function bulkUploadVoters(
       }
 
       // Build validated record
-      const validated: ValidatedVoter = {
+      const validatedPartial = {
         tenantId,
         wardId,
         wardAreaId,
@@ -361,13 +368,27 @@ export async function bulkUploadVoters(
           safeString(getRowValue(row, "locality", "area", "colony")) || null,
         phone:
           safeString(getRowValue(row, "phone", "mobile", "contact")) || null,
+        bloodGroup:
+          safeString(getRowValue(row, "bloodGroup", "blood_group", "bloodGroup")) || null,
         isDisabled: normalizeBoolean(
           getRowValue(row, "isDisabled", "disabled", "is_disabled"),
         ),
         uploadBatchId: job.id,
       };
 
-      validRows.push(validated);
+      preValidRows.push(validatedPartial);
+    }
+
+    // Assign application numbers
+    if (preValidRows.length > 0) {
+      const appNumbers = await generateApplicationNumberBatch(tenantId, preValidRows.length);
+      for (let i = 0; i < preValidRows.length; i++) {
+        validRows.push({
+          ...preValidRows[i],
+          applicationNumber: appNumbers[i],
+          forcePasswordChange: true,
+        });
+      }
     }
 
     // ─── 4. Batch insert valid rows using createMany ──────
@@ -387,6 +408,22 @@ export async function bulkUploadVoters(
           });
 
           successCount += result.count;
+
+          // Fetch created voters to generate voter accounts
+          const createdVoters = await prisma.voter.findMany({
+            where: {
+              tenantId,
+              uploadBatchId: job.id,
+              applicationNumber: { in: chunk.map((c) => c.applicationNumber) },
+            },
+            select: { id: true, applicationNumber: true, phone: true },
+          });
+
+          for (const v of createdVoters) {
+            if (v.applicationNumber) {
+              await createVoterAccountForVoter(tenantId, v.id, v.applicationNumber, v.phone ?? undefined);
+            }
+          }
 
           // If some were skipped (race condition duplicates)
           const skippedInChunk = chunk.length - result.count;

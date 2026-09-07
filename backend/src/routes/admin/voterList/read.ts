@@ -59,8 +59,10 @@ export async function listVoters(
       where.OR = [
         { name: { contains: searchStr, mode: "insensitive" } },
         { voterIdNumber: { contains: searchStr, mode: "insensitive" } },
+        { applicationNumber: { contains: searchStr, mode: "insensitive" } },
         { relativeName: { contains: searchStr, mode: "insensitive" } },
         { phone: { contains: searchStr, mode: "insensitive" } },
+        { bloodGroup: { contains: searchStr, mode: "insensitive" } },
       ];
     }
 
@@ -69,6 +71,7 @@ export async function listVoters(
       name: "name",
       age: "age",
       voterIdNumber: "voterIdNumber",
+      applicationNumber: "applicationNumber",
       slNo: "slNo",
       createdAt: "createdAt",
     };
@@ -83,6 +86,7 @@ export async function listVoters(
         orderBy: { [orderField]: orderDir },
         select: {
           id: true,
+          applicationNumber: true,
           voterIdNumber: true,
           slNo: true,
           sectionNo: true,
@@ -96,11 +100,15 @@ export async function listVoters(
           address: true,
           locality: true,
           phone: true,
+          photoUrl: true,
+          bloodGroup: true,
           isDisabled: true,
           status: true,
+          forcePasswordChange: true,
           wardId: true,
           wardAreaId: true,
           createdAt: true,
+          updatedAt: true,
           ward: { select: { id: true, name: true, wardNumber: true } },
           wardArea: { select: { id: true, name: true } },
         },
@@ -145,6 +153,19 @@ export async function getVoter(
         wardArea: { select: { id: true, name: true } },
         uploadBatch: {
           select: { id: true, fileName: true, createdAt: true },
+        },
+        accountMemberships: {
+          select: {
+            id: true,
+            voterAccountId: true,
+            createdAt: true,
+            voterAccount: {
+              select: {
+                id: true,
+                mobile: true,
+              },
+            },
+          },
         },
       },
     });

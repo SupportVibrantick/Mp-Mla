@@ -8,7 +8,7 @@ import {
 
 import { listVoters, getVoter, getVoterStats } from "./read.js";
 import { createVoter } from "./create.js";
-import { updateVoter } from "./update.js";
+import { updateVoter, resetVoterPassword } from "./update.js";
 import { deleteVoter, bulkDeleteVoters } from "./delete.js";
 import { bulkUploadVoters, listBulkJobs, getBulkJob } from "./bulk.js";
 import { exportVoters, downloadSampleExcel } from "./export.js";
@@ -104,6 +104,12 @@ router.put(
   requirePermission("voter_list", "update"),
   validate(updateVoterSchema),
   updateVoter,
+);
+
+router.post(
+  "/:id/reset-password",
+  requirePermission("voter_list", "update"),
+  resetVoterPassword,
 );
 
 router.delete(

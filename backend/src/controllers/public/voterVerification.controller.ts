@@ -32,6 +32,7 @@ export const searchVoter = async (req: Request, res: Response, next: NextFunctio
         phone: voter.phone,
         address: voter.address,
         photoUrl: voter.photoUrl,
+        bloodGroup: voter.bloodGroup,
       },
     });
   } catch (error) {
@@ -73,7 +74,7 @@ export const confirmAadhaarVerification = async (req: Request, res: Response, ne
 export const updateVoterDetails = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { voterId } = req.params;
-    const { name, relativeName, age, gender, phone, address, tenantId } = req.body;
+    const { name, relativeName, age, gender, phone, address, bloodGroup, tenantId } = req.body;
     if (!voterId || !tenantId) {
       throw ApiError.badRequest("Voter ID and Tenant ID are required");
     }
@@ -91,6 +92,7 @@ export const updateVoterDetails = async (req: Request, res: Response, next: Next
         gender,
         phone,
         address,
+        bloodGroup,
       },
       photoFilename,
     );
@@ -108,6 +110,7 @@ export const updateVoterDetails = async (req: Request, res: Response, next: Next
         phone: updatedVoter.phone,
         address: updatedVoter.address,
         photoUrl: updatedVoter.photoUrl,
+        bloodGroup: updatedVoter.bloodGroup,
       },
     });
   } catch (error) {
