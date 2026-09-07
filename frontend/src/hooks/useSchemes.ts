@@ -109,6 +109,12 @@ export function useDeleteScheme() {
     "Scheme Deleted",
   );
 }
+export function useBulkCreateSchemes() {
+  return useSchemeMut(
+    (data: any[]) => api.post("/admin/schemes/bulk", data).then((r) => r.data),
+    "Bulk Import Completed",
+  );
+}
 
 // ─── Scheme Applications ───
 export function useSchemeApplications(params?: Record<string, any>) {

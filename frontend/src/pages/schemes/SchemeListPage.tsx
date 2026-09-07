@@ -6,7 +6,13 @@ import {
   getSchemeStatusInfo,
   SCHEME_STATUSES,
   SCHEME_LEVELS,
+  useBulkCreateSchemes,
 } from "@/hooks/useSchemes";
+import { toast } from "sonner";
+import * as xlsx from "xlsx";
+import ExcelJS from "exceljs";
+import api from "@/lib/api";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +45,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  FileUp,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -47,6 +55,118 @@ export default function SchemeListPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const { mutateAsync: bulkCreateSchemes } = useBulkCreateSchemes();
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await api.get("/admin/schemes/export");
+      const data = response.data?.data;
+      if (data && data.length > 0) {
+        const ws = xlsx.utils.json_to_sheet(data);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Schemes");
+        xlsx.writeFile(wb, "schemes_export.xlsx");
+        toast.success("Schemes exported successfully.");
+      } else {
+        toast.error("No data available to export.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export schemes.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const downloadSampleTemplate = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Schemes");
+      const dropdownSheet = workbook.addWorksheet("DropdownData", {
+        state: "hidden",
+      });
+
+      const columns = [
+        { header: "name", key: "name", width: 30 },
+        { header: "code", key: "code", width: 18 },
+        { header: "department", key: "department", width: 25 },
+        { header: "level", key: "level", width: 16 },
+        { header: "status", key: "status", width: 16 },
+        { header: "description", key: "description", width: 40 },
+        { header: "eligibility", key: "eligibility", width: 35 },
+        { header: "benefits", key: "benefits", width: 35 },
+        { header: "requiredDocuments", key: "requiredDocuments", width: 35 },
+        { header: "applicationUrl", key: "applicationUrl", width: 30 },
+        { header: "startDate", key: "startDate", width: 15 },
+        { header: "endDate", key: "endDate", width: 15 },
+      ];
+
+      worksheet.columns = columns;
+
+      worksheet.addRow({
+        name: "PM Awas Yojana",
+        code: "PMAY-01",
+        department: "Housing & Urban Development",
+        level: "CENTRAL",
+        status: "ACTIVE",
+        description: "Housing for all scheme providing financial assistance",
+        eligibility: "Annual income below 3 Lacs",
+        benefits: "Financial grant up to Rs 2.5 Lacs",
+        requiredDocuments: "Aadhaar Card, Income Certificate, Bank Passbook",
+        applicationUrl: "https://pmaymis.gov.in",
+        startDate: "2024-01-01",
+        endDate: "2026-12-31",
+      });
+
+      const levels = SCHEME_LEVELS.map((l) => l.value);
+      const statuses = SCHEME_STATUSES.map((s) => s.value);
+
+      dropdownSheet.getColumn(1).values = ["Levels", ...levels];
+      dropdownSheet.getColumn(2).values = ["Statuses", ...statuses];
+
+      for (let i = 2; i <= 501; i++) {
+        // Level Dropdown (Column D)
+        worksheet.getCell(`D${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$A$2:$A$${levels.length + 1}`],
+          showErrorMessage: true,
+        };
+
+        // Status Dropdown (Column E)
+        worksheet.getCell(`E${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$B$2:$B$${statuses.length + 1}`],
+          showErrorMessage: true,
+        };
+      }
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Schemes_Import_Template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate Schemes template", err);
+      toast.error("Failed to generate Excel template");
+    }
+  };
 
   const params = useMemo(() => {
     const p: Record<string, any> = { page, limit: 20 };
@@ -67,23 +187,64 @@ export default function SchemeListPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-foreground">
               <FileText className="h-7 w-7 text-primary" />
               Government Schemes
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
               Central, State & Local welfare schemes
             </p>
           </div>
-          <PermissionGate module="schemes" action="create">
-            <Link to="/schemes/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Scheme
+          <div className="flex flex-wrap gap-2.5 sm:flex-nowrap sm:justify-end w-full sm:w-auto">
+            <PermissionGate module="schemes" action="read">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" />
+                Export All
               </Button>
-            </Link>
-          </PermissionGate>
+            </PermissionGate>
+
+            <PermissionGate module="schemes" action="create">
+              <Button
+                variant="outline"
+                className="gap-2 w-full sm:w-auto h-9 text-xs font-semibold hover:bg-muted border-border/60"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" />
+                Bulk Upload
+              </Button>
+            </PermissionGate>
+
+            <PermissionGate module="schemes" action="create">
+              <Link to="/schemes/new" className="w-full sm:w-auto">
+                <Button className="gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 text-white font-semibold shadow-md hover:shadow-lg transition-all h-9 text-xs px-4 border-none">
+                  <Plus className="h-4 w-4" />
+                  Add Scheme
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
         </div>
+
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={bulkCreateSchemes}
+          title="Import Government Schemes"
+          description={
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Upload an Excel or CSV file to import multiple government schemes.
+                Records are upserted matching on Scheme Code or Name.
+              </p>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
 
         {/* Stats */}
         {stats && (

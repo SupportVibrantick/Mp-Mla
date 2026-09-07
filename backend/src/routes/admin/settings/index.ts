@@ -41,6 +41,7 @@ PLATFORM_SETTING_DEFS.forEach((d) => {
 const PUBLIC_BRANDING_KEYS = [
   "org_name",
   "org_short_name",
+  "party_logo_url",
   "constituency_name",
   "representative_name",
   "representative_title",
@@ -117,6 +118,7 @@ export const getPublicBranding = catchAsync(async (req, res) => {
             in: [
               "org_name",
               "org_short_name",
+              "party_logo_url",
               "constituency_name",
               "representative_name",
               "representative_title",
@@ -127,9 +129,12 @@ export const getPublicBranding = catchAsync(async (req, res) => {
     ]);
     const tenantMap = new Map(tenantDbSettings.map((s) => [s.key, s.value]));
 
+    const partyLogo = tenantMap.get("party_logo_url") ?? tenant?.partyLogoUrl ?? platformMap.get("brand_logo_url") ?? "";
+
     const data: Record<string, string> = {
       org_name: tenantMap.get("org_name") ?? tenant?.name ?? "",
       org_short_name: tenantMap.get("org_short_name") ?? "",
+      party_logo_url: partyLogo,
       constituency_name:
         tenantMap.get("constituency_name") ?? tenant?.constituencyName ?? "",
       representative_name:
@@ -140,7 +145,7 @@ export const getPublicBranding = catchAsync(async (req, res) => {
         platformMap.get("brand_primary_color") ?? ALL_DEFAULT_SETTINGS["brand_primary_color"]?.value ?? "#2563eb",
       brand_secondary_color:
         platformMap.get("brand_secondary_color") ?? ALL_DEFAULT_SETTINGS["brand_secondary_color"]?.value ?? "#7c3aed",
-      brand_logo_url: platformMap.get("brand_logo_url") ?? "",
+      brand_logo_url: partyLogo || platformMap.get("brand_logo_url") || "",
       brand_favicon_url:
         platformMap.get("brand_favicon_url") ?? "",
       brand_login_bg: platformMap.get("brand_login_bg") ?? "gradient",

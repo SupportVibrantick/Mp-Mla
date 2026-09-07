@@ -99,8 +99,8 @@ export const PLATFORM_SETTING_DEFS = [
     value: "",
     type: "image",
     group: "branding",
-    label: "Logo",
-    description: "Organization logo image (PNG, JPG, SVG)",
+    label: "Party / Organization Logo",
+    description: "Party or Organization logo image (PNG, JPG, SVG)",
     order: 6,
   },
   {

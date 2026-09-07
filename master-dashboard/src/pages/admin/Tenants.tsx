@@ -73,8 +73,10 @@ import {
   PauseCircle,
   PlayCircle,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { getImageUrl } from "@/lib/utils";
 
 // ─── Schemas ────────────────────────────────────────────
 
@@ -1023,6 +1025,59 @@ export default function TenantsPage() {
                       )}
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="t-partyname">Party Name</Label>
+                      <Input id="t-partyname" placeholder="E.g., BJP / INC / AAP" {...createForm.register("partyName")} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="t-partylogo">Party Logo</Label>
+                      <div className="flex items-center gap-2">
+                        {createForm.watch("partyLogoUrl") ? (
+                          <div className="w-9 h-9 rounded border p-1 bg-muted shrink-0 flex items-center justify-center">
+                            <img src={getImageUrl(createForm.watch("partyLogoUrl"))} alt="Party Logo" className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-9 h-9 rounded border border-dashed flex items-center justify-center shrink-0 text-muted-foreground text-[10px] font-semibold">
+                            Logo
+                          </div>
+                        )}
+                        <Input
+                          id="t-partylogo"
+                          placeholder="Logo URL or upload file"
+                          className="text-xs"
+                          {...createForm.register("partyLogoUrl")}
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id="party-logo-file-create"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                createForm.setValue("partyLogoUrl", reader.result as string, { shouldDirty: true });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 text-xs px-2.5 h-9"
+                          onClick={() => document.getElementById("party-logo-file-create")?.click()}
+                        >
+                          <Upload className="h-3.5 w-3.5 mr-1" />
+                          Upload
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </TabsContent>
 
                 {/* Tab 2: Subscription & Limits */}
@@ -1252,13 +1307,57 @@ export default function TenantsPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2 col-span-2">
+                <div className="space-y-2">
                   <Label>Representative Photo URL</Label>
                   <Input {...editForm.register("representativePhoto")} />
                 </div>
                 <div className="space-y-2">
                   <Label>Party Name</Label>
-                  <Input {...editForm.register("partyName")} />
+                  <Input placeholder="E.g., BJP / INC / AAP" {...editForm.register("partyName")} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Party Logo</Label>
+                  <div className="flex items-center gap-2">
+                    {editForm.watch("partyLogoUrl") ? (
+                      <div className="w-9 h-9 rounded border p-1 bg-muted shrink-0 flex items-center justify-center">
+                        <img src={getImageUrl(editForm.watch("partyLogoUrl"))} alt="Party Logo" className="w-full h-full object-contain" />
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded border border-dashed flex items-center justify-center shrink-0 text-muted-foreground text-[10px] font-semibold">
+                        Logo
+                      </div>
+                    )}
+                    <Input
+                      placeholder="Logo URL or upload"
+                      className="text-xs"
+                      {...editForm.register("partyLogoUrl")}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="party-logo-file-edit"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            editForm.setValue("partyLogoUrl", reader.result as string, { shouldDirty: true });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 text-xs px-2 h-9"
+                      onClick={() => document.getElementById("party-logo-file-edit")?.click()}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 

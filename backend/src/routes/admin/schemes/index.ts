@@ -5,6 +5,8 @@ import { createScheme } from "./create.js";
 import { listSchemes, getScheme, getStats } from "./read.js";
 import { updateScheme } from "./update.js";
 import { deleteScheme } from "./delete.js";
+import { exportSchemes } from "./export.js";
+import { bulkCreateSchemes } from "./bulk.js";
 import {
   listApplications,
   createApplication,
@@ -35,6 +37,10 @@ const router = Router();
 
 // Schemes Global Stats
 router.get("/stats", requirePermission("schemes", "read"), getStats);
+
+// Export & Bulk Upload (must come BEFORE /:id to avoid ID conflict)
+router.get("/export", requirePermission("schemes", "read"), exportSchemes);
+router.post("/bulk", requirePermission("schemes", "create"), bulkCreateSchemes);
 
 // Schemes CRUD
 router.get("/", requirePermission("schemes", "read"), listSchemes);

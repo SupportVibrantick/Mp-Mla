@@ -144,3 +144,35 @@ export function normalizeLeaderCategory(value?: string) {
     return map[v];
 }
 
+export function normalizeSchemeStatus(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "ACTIVE" | "INACTIVE" | "UPCOMING" | "EXPIRED"> = {
+        ACTIVE: "ACTIVE",
+        INACTIVE: "INACTIVE",
+        UPCOMING: "UPCOMING",
+        EXPIRED: "EXPIRED",
+        PASSED: "EXPIRED",
+        CLOSED: "EXPIRED",
+        DISABLED: "INACTIVE",
+    };
+    return map[v];
+}
+
+export function normalizeSchemeLevel(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "CENTRAL" | "STATE" | "LOCAL"> = {
+        CENTRAL: "CENTRAL",
+        NATIONAL: "CENTRAL",
+        UNION: "CENTRAL",
+        STATE: "STATE",
+        PROVINCIAL: "STATE",
+        LOCAL: "LOCAL",
+        DISTRICT: "LOCAL",
+        MUNICIPAL: "LOCAL",
+        WARD: "LOCAL",
+    };
+    return map[v];
+}
+
