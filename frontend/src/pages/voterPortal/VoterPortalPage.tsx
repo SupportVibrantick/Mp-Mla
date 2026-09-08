@@ -616,15 +616,15 @@ export default function VoterPortalPage() {
           {/* ─── RIGHT PANEL (Pixel-Perfect Sign In Card) ─── */}
           <div className="w-full lg:w-[480px] shrink-0">
             <Card className="border-0 shadow-2xl bg-white dark:bg-slate-900/95 backdrop-blur-md rounded-[32px] p-8 md:p-10 relative">
-              <CardHeader className="p-0 mb-6">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-3xl font-extrabold text-slate-900 dark:text-white">
+              <CardHeader className="p-0 mb-6 space-y-2">
+                <div className="flex items-center justify-between gap-4">
+                  <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                     Voter Login
                   </CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-[#13538A]/30 text-[#13538A] dark:text-[#38bdf8] hover:bg-[#13538A]/10 text-xs font-bold gap-1.5 rounded-xl"
+                    className="border-[#13538A]/30 text-[#13538A] dark:text-[#38bdf8] hover:bg-[#13538A]/10 text-xs font-bold gap-1.5 rounded-xl shrink-0 h-9"
                     onClick={() => {
                       setSearchEpicNumber("");
                       setFoundApplications([]);
@@ -635,7 +635,7 @@ export default function VoterPortalPage() {
                     <span>Find App No.</span>
                   </Button>
                 </div>
-                <CardDescription className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                <CardDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                   Access your official constituency voter verification portal.
                 </CardDescription>
               </CardHeader>
@@ -643,26 +643,28 @@ export default function VoterPortalPage() {
               <CardContent className="p-0 space-y-6">
                 <Tabs defaultValue="application" className="w-full">
                   {/* Styled Dual-Tab Switcher */}
-                  <TabsList className="grid grid-cols-2 w-full bg-slate-100 dark:bg-slate-950 p-1.5 border border-slate-200 dark:border-slate-800 rounded-2xl mb-6">
+                  <TabsList className="grid grid-cols-2 h-auto w-full bg-slate-100 dark:bg-slate-950 p-1.5 border border-slate-200 dark:border-slate-800 rounded-2xl mb-6 gap-1 items-center">
                     <TabsTrigger
                       value="application"
-                      className="rounded-xl py-2.5 text-xs font-bold transition-all data-[state=active]:bg-[#13538A] data-[state=active]:text-white data-[state=active]:shadow-md"
+                      className="rounded-xl py-2.5 px-3 text-xs font-bold transition-all data-[state=active]:bg-[#13538A] data-[state=active]:text-white data-[state=active]:shadow-md flex items-center justify-center gap-1.5"
                     >
-                      <FileText className="w-4 h-4 mr-2" /> Application No.
+                      <FileText className="w-4 h-4" />
+                      <span>Application No.</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="mobile"
-                      className="rounded-xl py-2.5 text-xs font-bold transition-all data-[state=active]:bg-[#13538A] data-[state=active]:text-white data-[state=active]:shadow-md"
+                      className="rounded-xl py-2.5 px-3 text-xs font-bold transition-all data-[state=active]:bg-[#13538A] data-[state=active]:text-white data-[state=active]:shadow-md flex items-center justify-center gap-1.5"
                     >
-                      <Smartphone className="w-4 h-4 mr-2" /> Mobile No.
+                      <Smartphone className="w-4 h-4" />
+                      <span>Mobile No.</span>
                     </TabsTrigger>
                   </TabsList>
 
                   {/* ─── TAB 1: Application Number Login ─── */}
-                  <TabsContent value="application" className="space-y-5">
+                  <TabsContent value="application" className="space-y-5 mt-0">
                     <form onSubmit={handleApplicationLogin} className="space-y-5">
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between h-5">
                           <Label htmlFor="appNumber" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Application Number
                           </Label>
@@ -683,11 +685,24 @@ export default function VoterPortalPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between h-5">
                           <Label htmlFor="appPassword" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Password
                           </Label>
-                          <span className="text-xs text-slate-400 italic">Default: Application No.</span>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-slate-400 italic hidden sm:inline">Default: Application No.</span>
+                            <button
+                              type="button"
+                              className="font-bold text-[#13538A] dark:text-[#38bdf8] hover:underline"
+                              onClick={() => {
+                                setForgotMobile("");
+                                setForgotStep("MOBILE");
+                                setForgotModalOpen(true);
+                              }}
+                            >
+                              Forgot password?
+                            </button>
+                          </div>
                         </div>
                         <div className="relative">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -730,12 +745,17 @@ export default function VoterPortalPage() {
                   </TabsContent>
 
                   {/* ─── TAB 2: Mobile Number Login ─── */}
-                  <TabsContent value="mobile" className="space-y-5">
+                  <TabsContent value="mobile" className="space-y-5 mt-0">
                     <form onSubmit={handleMobileLogin} className="space-y-5">
                       <div className="space-y-2">
-                        <Label htmlFor="mobileNumber" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                          Registered Mobile Number
-                        </Label>
+                        <div className="flex items-center justify-between h-5">
+                          <Label htmlFor="mobileNumber" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Registered Mobile Number
+                          </Label>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            10-digit number
+                          </span>
+                        </div>
                         <div className="relative">
                           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                           <Input
@@ -749,7 +769,7 @@ export default function VoterPortalPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between h-5">
                           <Label htmlFor="mobilePassword" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Password
                           </Label>
