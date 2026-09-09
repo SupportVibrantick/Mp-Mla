@@ -169,8 +169,8 @@ export default function DemographicsPage() {
   const wardData = report?.wardComparison || [];
   const byZone = report?.byZone || [];
 
-  const zones = useMemo(
-    () => [...new Set(wardData.map((w: any) => w.zone).filter(Boolean))],
+  const zones: string[] = useMemo(
+    () => Array.from(new Set<string>(wardData.map((w: any) => w.zone).filter(Boolean))),
     [wardData],
   );
 

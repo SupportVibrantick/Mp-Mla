@@ -33,8 +33,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { voterListApi, wardsApi } from "@/lib/api";
+import api, { voterListApi, wardsApi, voterFamilyApi } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
+import { getImageUrl } from "@/lib/utils";
 import {
   Users,
   UserCheck,
@@ -57,6 +58,19 @@ import {
   ChevronLeft,
   ChevronRight,
   KeyRound,
+  Briefcase,
+  HeartHandshake,
+  PhoneCall,
+  UserPlus,
+  Calendar,
+  IndianRupee,
+  User,
+  MapPin,
+  Mail,
+  ShieldAlert,
+  Loader2,
+  X,
+  Camera,
 } from "lucide-react";
 
 // ══════════════════════════════════════════════════════════
@@ -86,6 +100,10 @@ export default function VoterListPage() {
   const [newPasswordInput, setNewPasswordInput] = useState("");
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
 
+  // Identity Verification Document Modal State
+  const [docModalVoter, setDocModalVoter] = useState<any>(null);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+
   // Single Voter Form State
   const [form, setForm] = useState({
     wardId: "",
@@ -104,14 +122,180 @@ export default function VoterListPage() {
     locality: "",
     phone: "",
     bloodGroup: "",
+    photoUrl: "",
     isDisabled: false,
   });
+
+  // Photo Upload States
+  const [uploadingVoterPhoto, setUploadingVoterPhoto] = useState(false);
+  const [uploadingMemberPhoto, setUploadingMemberPhoto] = useState(false);
+
+  const handleVoterPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("photo", file);
+    setUploadingVoterPhoto(true);
+    try {
+      const res = await api.post("/admin/voter-list/upload-photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data?.success) {
+        setForm((p) => ({ ...p, photoUrl: res.data.data.photoUrl }));
+        toast({ title: "Photo Uploaded", description: "Voter profile photo uploaded successfully." });
+      }
+    } catch (err: any) {
+      toast({ title: "Upload Failed", description: err.response?.data?.message || "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploadingVoterPhoto(false);
+    }
+  };
+
+  const handleMemberPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("photo", file);
+    setUploadingMemberPhoto(true);
+    try {
+      const res = await api.post("/admin/voter-list/upload-photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data?.success) {
+        setMemberForm((p) => ({ ...p, photoUrl: res.data.data.photoUrl }));
+        toast({ title: "Photo Uploaded", description: "Family member photo uploaded successfully." });
+      }
+    } catch (err: any) {
+      toast({ title: "Upload Failed", description: err.response?.data?.message || "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploadingMemberPhoto(false);
+    }
+  };
 
   // Bulk Upload State
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [bulkRawText, setBulkRawText] = useState("");
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkResult, setBulkResult] = useState<any>(null);
+
+  // ─── Family & Household State ──────────────────────────────
+  const [selectedFamilyVoter, setSelectedFamilyVoter] = useState<any>(null);
+  const [isFamilyOpen, setIsFamilyOpen] = useState(false);
+
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<any>(null);
+  const [deleteMemberId, setDeleteMemberId] = useState<string | null>(null);
+
+  const initialMemberForm = {
+    name: "",
+    relationType: "SPOUSE",
+    relationCustom: "",
+    gender: "FEMALE",
+    dateOfBirth: "",
+    age: "",
+    phone: "",
+    email: "",
+    photoUrl: "",
+    voterIdNumber: "",
+    isDependent: false,
+    isEmergencyContact: false,
+    isPrimaryContact: false,
+    sameAddress: true,
+    address: "",
+    bloodGroup: "",
+    occupationCategory: "PRIVATE_EMPLOYEE",
+    occupationTitle: "",
+    workingOrganization: "",
+    workingDescription: "",
+    incomeRange: "NOT_DISCLOSED",
+    remarks: "",
+  };
+
+  const [memberForm, setMemberForm] = useState(initialMemberForm);
+
+  const resetMemberForm = () => {
+    setMemberForm(initialMemberForm);
+    setEditingMember(null);
+  };
+
+  // ─── Family Queries & Mutations ───────────────────────────
+  const {
+    data: familyDataRes,
+    isLoading: isLoadingFamily,
+    refetch: refetchFamily,
+  } = useQuery({
+    queryKey: ["voter-family", selectedFamilyVoter?.id],
+    queryFn: () => voterFamilyApi.getFamily(selectedFamilyVoter.id),
+    enabled: !!selectedFamilyVoter?.id && isFamilyOpen,
+  });
+
+  const familyMembers = familyDataRes?.data?.data?.members || [];
+  const familyStats = familyDataRes?.data?.data?.stats || {
+    totalMembers: 0,
+    earningMembers: 0,
+    dependentsCount: 0,
+    emergencyContactsCount: 0,
+  };
+
+  const createMemberMutation = useMutation({
+    mutationFn: (data: any) =>
+      voterFamilyApi.createMember(selectedFamilyVoter.id, data),
+    onSuccess: () => {
+      refetchFamily();
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      setIsMemberModalOpen(false);
+      resetMemberForm();
+      toast({
+        title: "Success",
+        description: "Family member added successfully",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description:
+          err?.response?.data?.message || "Failed to add family member",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMemberMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      voterFamilyApi.updateMember(id, data),
+    onSuccess: () => {
+      refetchFamily();
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      setIsMemberModalOpen(false);
+      setEditingMember(null);
+      resetMemberForm();
+      toast({
+        title: "Success",
+        description: "Family member details updated successfully",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description:
+          err?.response?.data?.message || "Failed to update family member",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: (id: string) => voterFamilyApi.deleteMember(id),
+    onSuccess: () => {
+      refetchFamily();
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      setDeleteMemberId(null);
+      toast({
+        title: "Success",
+        description: "Family member removed",
+      });
+    },
+  });
 
   // ─── Queries ─────────────────────────────────────────────
   const { data: wardsRes } = useQuery({
@@ -326,6 +510,7 @@ export default function VoterListPage() {
       locality: "",
       phone: "",
       bloodGroup: "",
+      photoUrl: "",
       isDisabled: false,
     });
   }
@@ -355,6 +540,7 @@ export default function VoterListPage() {
       locality: voter.locality || "",
       phone: voter.phone || "",
       bloodGroup: voter.bloodGroup || "",
+      photoUrl: voter.photoUrl || "",
       isDisabled: voter.isDisabled || false,
     });
     setIsEditOpen(true);
@@ -794,9 +980,9 @@ export default function VoterListPage() {
                   <TableHead>Relative Name</TableHead>
                   <TableHead className="w-[90px]">Gender</TableHead>
                   <TableHead className="w-[70px]">Age</TableHead>
-                  {/* <TableHead className="w-[95px]">Blood Group</TableHead> */}
+                  <TableHead className="w-[140px]">Verification Doc</TableHead>
                   <TableHead>Ward & Locality</TableHead>
-                  <TableHead className="text-right w-[120px]">
+                  <TableHead className="text-right w-[140px]">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -835,7 +1021,7 @@ export default function VoterListPage() {
                 ) : voters.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={9}
+                      colSpan={10}
                       className="text-center py-12 text-muted-foreground"
                     >
                       <Users className="h-10 w-10 mx-auto mb-2 opacity-40" />
@@ -881,14 +1067,27 @@ export default function VoterListPage() {
                         {v.voterIdNumber}
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium text-foreground">
-                          {v.name}
-                        </div>
-                        {v.houseNo && (
-                          <div className="text-[11px] text-muted-foreground">
-                            H.No: {v.houseNo}
+                        <div className="flex items-center gap-2.5">
+                          {v.photoUrl ? (
+                            <img
+                              src={getImageUrl(v.photoUrl)}
+                              alt={v.name}
+                              className="h-8 w-8 rounded-full object-cover border border-indigo-200 dark:border-indigo-800 shadow-xs shrink-0"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200/50">
+                              {v.name.substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-medium text-foreground">{v.name}</div>
+                            {v.houseNo && (
+                              <div className="text-[11px] text-muted-foreground">
+                                H.No: {v.houseNo}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {v.relativeName ? (
@@ -921,15 +1120,38 @@ export default function VoterListPage() {
                       <TableCell className="text-xs font-medium">
                         {v.age ?? " - "}
                       </TableCell>
-                      {/* <TableCell>
-                        {v.bloodGroup ? (
-                          <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-600 border-rose-200 font-semibold">
-                            {v.bloodGroup}
-                          </Badge>
+                      <TableCell>
+                        {v.identityVerifications?.[0] ? (
+                          <div className="flex flex-col gap-1">
+                            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] border-emerald-300 font-bold gap-1 w-fit">
+                              <ShieldCheck className="h-3 w-3 text-emerald-600" />
+                              Verified
+                            </Badge>
+                            {v.identityVerifications[0].documentUrl ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-1.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 gap-1 w-fit shadow-xs"
+                                onClick={() => {
+                                  setDocModalVoter(v);
+                                  setIsDocModalOpen(true);
+                                }}
+                              >
+                                <FileText className="h-3 w-3 text-indigo-600" />
+                                View Doc
+                              </Button>
+                            ) : v.identityVerifications[0].aadhaarNumber ? (
+                              <span className="text-[10px] font-mono text-muted-foreground font-semibold">
+                                {v.identityVerifications[0].aadhaarNumber}
+                              </span>
+                            ) : null}
+                          </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
+                          <Badge variant="outline" className="text-slate-400 border-slate-200 text-[10px] font-normal">
+                            Unverified
+                          </Badge>
                         )}
-                      </TableCell> */}
+                      </TableCell>
                       <TableCell>
                         <div className="text-xs font-medium text-foreground">
                           {v.ward?.name
@@ -946,6 +1168,24 @@ export default function VoterListPage() {
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium gap-1"
+                            title="Manage Family & Household Details (परिवार एवं घरेलू विवरण)"
+                            onClick={() => {
+                              setSelectedFamilyVoter(v);
+                              setIsFamilyOpen(true);
+                            }}
+                          >
+                            <Users className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Family</span>
+                            {v._count?.familyMembers > 0 && (
+                              <Badge className="ml-0.5 px-1 py-0 text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 border-none font-bold">
+                                {v._count.familyMembers}
+                              </Badge>
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-muted-foreground hover:text-amber-600"
                             title="Reset Voter Portal Password"
@@ -957,6 +1197,20 @@ export default function VoterListPage() {
                           >
                             <KeyRound className="h-3.5 w-3.5" />
                           </Button>
+                          {v.identityVerifications?.[0]?.documentUrl && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                              title="View Aadhaar Verification Document"
+                              onClick={() => {
+                                setDocModalVoter(v);
+                                setIsDocModalOpen(true);
+                              }}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1039,6 +1293,57 @@ export default function VoterListPage() {
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-3">
+            {/* Voter Photo Upload */}
+            <div className="space-y-1 md:col-span-2">
+              <Label className="text-xs font-semibold">Voter Profile Photo</Label>
+              <div className="flex items-center gap-3 bg-muted/30 p-2.5 rounded-xl border border-border/60">
+                <div className="relative h-12 w-12 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center">
+                  {form.photoUrl ? (
+                    <img
+                      src={getImageUrl(form.photoUrl)}
+                      alt="Voter Photo"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-6 w-6 text-muted-foreground" />
+                  )}
+                  {uploadingVoterPhoto && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-1">
+                  <label
+                    htmlFor="voterPhotoUploadInput"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-xs transition-colors"
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    {form.photoUrl ? "Change Photo" : "Upload Voter Photo"}
+                    <input
+                      id="voterPhotoUploadInput"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleVoterPhotoUpload}
+                      disabled={uploadingVoterPhoto}
+                    />
+                  </label>
+                  {form.photoUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
+                      onClick={() => setForm((p) => ({ ...p, photoUrl: "" }))}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" /> Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-1 md:col-span-2">
               <Label className="text-xs font-semibold">Ward *</Label>
               <Select
@@ -1664,6 +1969,825 @@ export default function VoterListPage() {
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               )}
               Reset Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Family & Household Main Modal ─────────────────── */}
+      <Dialog
+        open={isFamilyOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsFamilyOpen(false);
+            setSelectedFamilyVoter(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-2 text-indigo-900 dark:text-indigo-300">
+              <div className="flex items-center gap-2">
+                <Users className="h-6 w-6 text-indigo-600" />
+                <span>Family & Household Details (परिवार एवं घरेलू विवरण)</span>
+              </div>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Manage family members, dependents, and working details for voter:{" "}
+              <strong className="text-foreground">{selectedFamilyVoter?.name}</strong>{" "}
+              (EPIC: <span className="font-mono">{selectedFamilyVoter?.voterIdNumber}</span>)
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedFamilyVoter && (
+            <div className="space-y-5 py-2">
+              {/* Summary Stats Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 p-3 rounded-xl flex items-center gap-3">
+                  <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-600 dark:text-indigo-400">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                      Total Family
+                    </span>
+                    <span className="text-lg font-extrabold text-indigo-900 dark:text-indigo-200">
+                      {familyStats.totalMembers} Members
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-3 rounded-xl flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                      Earning Members
+                    </span>
+                    <span className="text-lg font-extrabold text-emerald-900 dark:text-emerald-200">
+                      {familyStats.earningMembers} Working
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex items-center gap-3">
+                  <div className="p-2 bg-amber-500/10 rounded-lg text-amber-600 dark:text-amber-400">
+                    <HeartHandshake className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                      Dependents
+                    </span>
+                    <span className="text-lg font-extrabold text-amber-900 dark:text-amber-200">
+                      {familyStats.dependentsCount} Dependents
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 p-3 rounded-xl flex items-center gap-3">
+                  <div className="p-2 bg-rose-500/10 rounded-lg text-rose-600 dark:text-rose-400">
+                    <PhoneCall className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                      Emergency Contacts
+                    </span>
+                    <span className="text-lg font-extrabold text-rose-900 dark:text-rose-200">
+                      {familyStats.emergencyContactsCount} Contacts
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Toolbar */}
+              <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                <h4 className="text-sm font-bold flex items-center gap-2">
+                  <span>Household Members List</span>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {familyMembers.length}
+                  </Badge>
+                </h4>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    resetMemberForm();
+                    setIsMemberModalOpen(true);
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 text-xs shadow-sm"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span>Add Family Member</span>
+                </Button>
+              </div>
+
+              {/* Family Members Grid / Cards */}
+              {isLoadingFamily ? (
+                <div className="space-y-3 py-4">
+                  <Skeleton className="h-24 w-full rounded-xl" />
+                  <Skeleton className="h-24 w-full rounded-xl" />
+                </div>
+              ) : familyMembers.length === 0 ? (
+                <div className="text-center py-10 border border-dashed rounded-xl bg-slate-50/50 dark:bg-slate-900/30">
+                  <Users className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                  <p className="font-semibold text-sm">No Family Members Registered</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                    Click <strong>"+ Add Family Member"</strong> above to register parents, spouse, children, dependents, or household workers with occupation details.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {familyMembers.map((m: any) => (
+                    <Card
+                      key={m.id}
+                      className="border border-border/60 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
+                    >
+                      <CardContent className="p-4 space-y-3">
+                        {/* Member Top Bar */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-3">
+                            {m.photoUrl ? (
+                              <img
+                                src={getImageUrl(m.photoUrl)}
+                                alt={m.name}
+                                className="h-10 w-10 rounded-full object-cover border border-indigo-200 shadow-sm"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-200">
+                                {m.name.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <h5 className="font-bold text-sm text-foreground flex items-center gap-2">
+                                {m.name}
+                                {m.isEmergencyContact && (
+                                  <Badge className="bg-rose-500 text-white text-[10px] px-1.5 py-0">
+                                    Emergency
+                                  </Badge>
+                                )}
+                              </h5>
+                              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                                <Badge variant="secondary" className="text-[10px] uppercase font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                  {m.relationType === "OTHER" && m.relationCustom ? m.relationCustom : m.relationType}
+                                </Badge>
+                                <span>•</span>
+                                <span>{m.gender}</span>
+                                {m.computedAge !== null && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="font-semibold text-foreground">{m.computedAge} yrs</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-indigo-600"
+                              onClick={() => {
+                                setEditingMember(m);
+                                setMemberForm({
+                                  name: m.name || "",
+                                  relationType: m.relationType || "SPOUSE",
+                                  relationCustom: m.relationCustom || "",
+                                  gender: m.gender || "FEMALE",
+                                  dateOfBirth: m.dateOfBirth ? m.dateOfBirth.substring(0, 10) : "",
+                                  age: m.age ? String(m.age) : "",
+                                  phone: m.phone || "",
+                                  email: m.email || "",
+                                  photoUrl: m.photoUrl || "",
+                                  voterIdNumber: m.voterIdNumber || "",
+                                  isDependent: Boolean(m.isDependent),
+                                  isEmergencyContact: Boolean(m.isEmergencyContact),
+                                  isPrimaryContact: Boolean(m.isPrimaryContact),
+                                  sameAddress: m.sameAddress !== undefined ? Boolean(m.sameAddress) : true,
+                                  address: m.address || "",
+                                  bloodGroup: m.bloodGroup || "",
+                                  occupationCategory: m.occupationCategory || "PRIVATE_EMPLOYEE",
+                                  occupationTitle: m.occupationTitle || "",
+                                  workingOrganization: m.workingOrganization || "",
+                                  workingDescription: m.workingDescription || "",
+                                  incomeRange: m.incomeRange || "NOT_DISCLOSED",
+                                  remarks: m.remarks || "",
+                                });
+                                setIsMemberModalOpen(true);
+                              }}
+                            >
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-rose-600"
+                              onClick={() => setDeleteMemberId(m.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Extra Attributes & Address */}
+                        <div className="flex flex-wrap gap-1.5 text-[11px]">
+                          {m.voterIdNumber && (
+                            <Badge variant="outline" className="font-mono text-[10px] bg-slate-50 dark:bg-slate-900 border-slate-300">
+                              EPIC: {m.voterIdNumber}
+                            </Badge>
+                          )}
+                          {m.isDependent && (
+                            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] border-none">
+                              Dependent
+                            </Badge>
+                          )}
+                          {m.bloodGroup && (
+                            <Badge variant="outline" className="text-rose-600 border-rose-200 text-[10px]">
+                              Blood: {m.bloodGroup}
+                            </Badge>
+                          )}
+                          {m.phone && (
+                            <span className="text-muted-foreground flex items-center gap-1 font-mono">
+                              <PhoneCall className="h-3 w-3" /> {m.phone}
+                            </span>
+                          )}
+                          {m.sameAddress === false && m.address ? (
+                            <Badge variant="outline" className="text-[10px] bg-slate-50 dark:bg-slate-900 border-slate-300 flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-slate-500" />
+                              {m.address}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-emerald-600" />
+                              Same Address as Voter
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Occupation & Work Description Block */}
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-xl p-3 space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                              <Briefcase className="h-3.5 w-3.5 text-indigo-600" />
+                              {m.occupationTitle || m.occupationCategory?.replace(/_/g, " ") || "Occupation Not Specified"}
+                            </span>
+                            {m.occupationCategory && (
+                              <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 text-[9px] border-none font-semibold uppercase">
+                                {m.occupationCategory.replace(/_/g, " ")}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {m.workingOrganization && (
+                            <p className="text-[11px] text-muted-foreground font-medium">
+                              Organization: <span className="text-foreground font-semibold">{m.workingOrganization}</span>
+                            </p>
+                          )}
+
+                          {m.workingDescription ? (
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed italic bg-white dark:bg-slate-950 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800">
+                              "{m.workingDescription}"
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground/60 italic">No working description added.</p>
+                          )}
+
+                          {m.incomeRange && m.incomeRange !== "NOT_DISCLOSED" && (
+                            <div className="pt-1 flex items-center justify-end text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold gap-1">
+                              <IndianRupee className="h-3 w-3" />
+                              <span>Income: {m.incomeRange.replace("RANGE_", "").replace(/_/g, " - ")}</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="border-t pt-3">
+            <Button variant="outline" onClick={() => setIsFamilyOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Add / Edit Family Member Modal ─────────────────── */}
+      <Dialog
+        open={isMemberModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsMemberModalOpen(false);
+            resetMemberForm();
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-indigo-900 dark:text-indigo-300">
+              <UserPlus className="h-5 w-5 text-indigo-600" />
+              <span>{editingMember ? "Edit Family Member" : "Add New Family Member"}</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Enter household details and work description for voter's family member.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (editingMember) {
+                updateMemberMutation.mutate({
+                  id: editingMember.id,
+                  data: memberForm,
+                });
+              } else {
+                createMemberMutation.mutate(memberForm);
+              }
+            }}
+            className="space-y-4 py-2"
+          >
+            {/* Basic Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Full Name *</Label>
+                <Input
+                  required
+                  placeholder="Member Name"
+                  value={memberForm.name}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, name: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Relation Type *</Label>
+                <Select
+                  value={memberForm.relationType}
+                  onValueChange={(val) =>
+                    setMemberForm((p) => ({ ...p, relationType: val }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Relation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SPOUSE">Spouse (पति/पत्नी)</SelectItem>
+                    <SelectItem value="SON">Son (पुत्र)</SelectItem>
+                    <SelectItem value="DAUGHTER">Daughter (पुत्री)</SelectItem>
+                    <SelectItem value="FATHER">Father (पिता)</SelectItem>
+                    <SelectItem value="MOTHER">Mother (माता)</SelectItem>
+                    <SelectItem value="BROTHER">Brother (भाई)</SelectItem>
+                    <SelectItem value="SISTER">Sister (बहन)</SelectItem>
+                    <SelectItem value="GRANDFATHER">Grandfather (दादा/नाना)</SelectItem>
+                    <SelectItem value="GRANDMOTHER">Grandmother (दादी/नानी)</SelectItem>
+                    <SelectItem value="GRANDSON">Grandson (पोता/नाती)</SelectItem>
+                    <SelectItem value="GRANDDAUGHTER">Granddaughter (पोती/नातिन)</SelectItem>
+                    <SelectItem value="UNCLE">Uncle (चाचा/ताऊ/मामा)</SelectItem>
+                    <SelectItem value="AUNT">Aunt (चाची/ताई/मामी)</SelectItem>
+                    <SelectItem value="NEPHEW">Nephew (भतीजा/भांजा)</SelectItem>
+                    <SelectItem value="NIECE">Niece (भतीजी/भांजी)</SelectItem>
+                    <SelectItem value="DEPENDENT">Dependent (अाश्रित)</SelectItem>
+                    <SelectItem value="OTHER">Other (अन्य)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {memberForm.relationType === "OTHER" && (
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Custom Relation Description</Label>
+                  <Input
+                    placeholder="e.g. Maternal Uncle, Cousin, Household Worker"
+                    value={memberForm.relationCustom}
+                    onChange={(e) =>
+                      setMemberForm((p) => ({ ...p, relationCustom: e.target.value }))
+                    }
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Gender *</Label>
+                <Select
+                  value={memberForm.gender}
+                  onValueChange={(val) =>
+                    setMemberForm((p) => ({ ...p, gender: val }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">MALE</SelectItem>
+                    <SelectItem value="FEMALE">FEMALE</SelectItem>
+                    <SelectItem value="TRANSGENDER">TRANSGENDER</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Date of Birth (Source of Truth)</Label>
+                <Input
+                  type="date"
+                  value={memberForm.dateOfBirth}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, dateOfBirth: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Age (Snapshot Fallback)</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 30"
+                  value={memberForm.age}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, age: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">EPIC / Voter ID (Optional)</Label>
+                <Input
+                  placeholder="e.g. ABC1234567"
+                  value={memberForm.voterIdNumber}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, voterIdNumber: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Phone Number</Label>
+                <Input
+                  placeholder="10-digit mobile"
+                  value={memberForm.phone}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, phone: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs font-semibold">Profile Photo</Label>
+                <div className="flex items-center gap-3 bg-muted/30 p-2.5 rounded-xl border border-border/60">
+                  <div className="relative h-12 w-12 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center">
+                    {memberForm.photoUrl ? (
+                      <img
+                        src={getImageUrl(memberForm.photoUrl)}
+                        alt="Member Photo"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-6 w-6 text-muted-foreground" />
+                    )}
+                    {uploadingMemberPhoto && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <label
+                      htmlFor="memberPhotoUploadInput"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-xs transition-colors"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      {memberForm.photoUrl ? "Change Photo" : "Upload Photo"}
+                      <input
+                        id="memberPhotoUploadInput"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleMemberPhotoUpload}
+                        disabled={uploadingMemberPhoto}
+                      />
+                    </label>
+                    {memberForm.photoUrl && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => setMemberForm((p) => ({ ...p, photoUrl: "" }))}
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Checkboxes & Flags */}
+            <div className="flex flex-wrap items-center gap-4 bg-muted/40 p-3 rounded-xl text-xs border border-border/50">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={memberForm.isDependent}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, isDependent: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="font-medium">Is Dependent (अाश्रित)</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={memberForm.isEmergencyContact}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, isEmergencyContact: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="font-medium text-rose-700 dark:text-rose-400">Emergency Contact</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={memberForm.sameAddress}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, sameAddress: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="font-medium">Same Address as Voter</span>
+              </label>
+            </div>
+
+            {!memberForm.sameAddress && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Custom Address</Label>
+                <Input
+                  placeholder="Enter custom residential address"
+                  value={memberForm.address}
+                  onChange={(e) =>
+                    setMemberForm((p) => ({ ...p, address: e.target.value }))
+                  }
+                />
+              </div>
+            )}
+
+            {/* Occupation & Working Details Section */}
+            <div className="border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20 rounded-xl p-3 space-y-3">
+              <h5 className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4 text-indigo-600" />
+                <span>Occupation & Work Description (कार्य एवं रोजगार विवरण)</span>
+              </h5>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Occupation Category</Label>
+                  <Select
+                    value={memberForm.occupationCategory}
+                    onValueChange={(val) =>
+                      setMemberForm((p) => ({ ...p, occupationCategory: val }))
+                    }
+                  >
+                    <SelectTrigger className="bg-white dark:bg-slate-950">
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GOVERNMENT_EMPLOYEE">Government Employee</SelectItem>
+                      <SelectItem value="PRIVATE_EMPLOYEE">Private Employee</SelectItem>
+                      <SelectItem value="BUSINESS">Business / Trader</SelectItem>
+                      <SelectItem value="SELF_EMPLOYED">Self Employed</SelectItem>
+                      <SelectItem value="PROFESSIONAL">Professional (Doctor/CA/Lawyer)</SelectItem>
+                      <SelectItem value="SKILLED_WORKER">Skilled Worker</SelectItem>
+                      <SelectItem value="DAILY_WAGE">Daily Wage Worker</SelectItem>
+                      <SelectItem value="LABOURER">Labourer</SelectItem>
+                      <SelectItem value="FARMER">Farmer / Agriculture</SelectItem>
+                      <SelectItem value="DRIVER">Driver</SelectItem>
+                      <SelectItem value="SHOPKEEPER">Shopkeeper</SelectItem>
+                      <SelectItem value="STUDENT">Student</SelectItem>
+                      <SelectItem value="HOMEMAKER">Homemaker</SelectItem>
+                      <SelectItem value="RETIRED">Retired</SelectItem>
+                      <SelectItem value="PENSIONER">Pensioner</SelectItem>
+                      <SelectItem value="UNEMPLOYED">Unemployed</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Job Title / Designation</Label>
+                  <Input
+                    className="bg-white dark:bg-slate-950"
+                    placeholder="e.g. Senior Accountant, High School Student"
+                    value={memberForm.occupationTitle}
+                    onChange={(e) =>
+                      setMemberForm((p) => ({ ...p, occupationTitle: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Working Organization / Business Name</Label>
+                  <Input
+                    className="bg-white dark:bg-slate-950"
+                    placeholder="e.g. ABC Pvt Ltd, Local Retail Shop, Govt School"
+                    value={memberForm.workingOrganization}
+                    onChange={(e) =>
+                      setMemberForm((p) => ({ ...p, workingOrganization: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Working Description (Detailed Duties / Business Tasks)</Label>
+                  <textarea
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-white dark:bg-slate-950 px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="e.g. Handles financial audits, ledger management, GST documentation and monthly financial reporting."
+                    value={memberForm.workingDescription}
+                    onChange={(e) =>
+                      setMemberForm((p) => ({ ...p, workingDescription: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Monthly Income Bracket (Restricted Privacy)</Label>
+                  <Select
+                    value={memberForm.incomeRange}
+                    onValueChange={(val) =>
+                      setMemberForm((p) => ({ ...p, incomeRange: val }))
+                    }
+                  >
+                    <SelectTrigger className="bg-white dark:bg-slate-950">
+                      <SelectValue placeholder="Select Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NOT_DISCLOSED">Not Disclosed</SelectItem>
+                      <SelectItem value="BELOW_10000">Below ₹10,000 / month</SelectItem>
+                      <SelectItem value="RANGE_10000_25000">₹10,000 - ₹25,000 / month</SelectItem>
+                      <SelectItem value="RANGE_25000_50000">₹25,000 - ₹50,000 / month</SelectItem>
+                      <SelectItem value="RANGE_50000_100000">₹50,000 - ₹1,000,00 / month</SelectItem>
+                      <SelectItem value="ABOVE_100000">Above ₹1,00,000 / month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsMemberModalOpen(false);
+                  resetMemberForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  createMemberMutation.isPending || updateMemberMutation.isPending
+                }
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                {(createMemberMutation.isPending ||
+                  updateMemberMutation.isPending) && (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                {editingMember ? "Save Changes" : "Add Member"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Delete Family Member Confirmation Dialog ────────── */}
+      <Dialog
+        open={!!deleteMemberId}
+        onOpenChange={(open) => {
+          if (!open) setDeleteMemberId(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-rose-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              <span>Confirm Delete Family Member</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Are you sure you want to remove this family member from the household record?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteMemberId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteMemberMutation.isPending}
+              onClick={() => {
+                if (deleteMemberId) deleteMemberMutation.mutate(deleteMemberId);
+              }}
+            >
+              {deleteMemberMutation.isPending && (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Delete Member
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Voter Identity Verification Document Preview Modal ──────── */}
+      <Dialog open={isDocModalOpen} onOpenChange={setIsDocModalOpen}>
+        <DialogContent className="max-w-xl rounded-3xl shadow-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-indigo-900 dark:text-indigo-300 text-lg font-bold">
+              <ShieldCheck className="h-5 w-5 text-emerald-600" />
+              <span>Aadhaar Identity Verification Document</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Submitted verification document and identity details for voter {docModalVoter?.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {docModalVoter && (
+            <div className="space-y-4 py-2 text-xs">
+              <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Voter Name</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-sm">{docModalVoter.name}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">EPIC ID / App No.</span>
+                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm">
+                    {docModalVoter.voterIdNumber || docModalVoter.applicationNumber || "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Aadhaar Number</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                    {docModalVoter.identityVerifications?.[0]?.aadhaarNumber || "Uploaded Document"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Verification Status</span>
+                  <Badge className="bg-emerald-500 text-white text-[10px] font-bold mt-0.5">
+                    {docModalVoter.identityVerifications?.[0]?.status || "VERIFIED"}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Document Preview */}
+              <div className="space-y-2">
+                <Label className="font-bold text-xs">Uploaded Verification Document File</Label>
+                {docModalVoter.identityVerifications?.[0]?.documentUrl ? (
+                  <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-3 bg-slate-50 dark:bg-slate-950 text-center space-y-3">
+                    {docModalVoter.identityVerifications[0].documentUrl.endsWith(".pdf") ? (
+                      <div className="p-8 text-center bg-slate-100 dark:bg-slate-900 rounded-xl">
+                        <FileText className="w-12 h-12 mx-auto text-indigo-600 mb-2" />
+                        <p className="font-bold text-sm">PDF Document Uploaded</p>
+                      </div>
+                    ) : (
+                      <img
+                        src={getImageUrl(docModalVoter.identityVerifications[0].documentUrl)}
+                        alt="Aadhaar Verification Document"
+                        className="max-h-72 w-auto mx-auto rounded-xl object-contain border border-slate-300 dark:border-slate-700 shadow-md"
+                      />
+                    )}
+
+                    <div className="pt-2 flex justify-center gap-2">
+                      <a
+                        href={getImageUrl(docModalVoter.identityVerifications[0].documentUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md"
+                      >
+                        <Eye className="w-4 h-4" /> Open Full Document
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 border border-dashed rounded-2xl text-slate-400">
+                    <AlertCircle className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                    <p>No physical document file attached.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDocModalOpen(false)} className="rounded-xl">
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

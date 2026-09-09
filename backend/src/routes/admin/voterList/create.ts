@@ -8,6 +8,7 @@ import {
 import { syncVoterDemographics } from "./demographicsSync.js";
 import { generateApplicationNumber } from "../../../services/voterPortal/applicationNumber.service.js";
 import { createVoterAccountForVoter } from "../../../services/voterPortal/voterAuth.service.js";
+import { assertCanCreateVoters } from "../../../lib/quota.js";
 
 // ══════════════════════════════════════════════════════════
 // CREATE SINGLE VOTER
@@ -21,6 +22,9 @@ export async function createVoter(
   try {
     const tenantId = requireTenantId(req);
     const data = req.body;
+
+    // Check voter quota
+    await assertCanCreateVoters(tenantId, 1);
 
     // Verify ward exists for this tenant
     const ward = await prisma.ward.findFirst({
@@ -90,6 +94,7 @@ export async function createVoter(
         locality: data.locality?.trim() || null,
         phone: data.phone?.trim() || null,
         bloodGroup: data.bloodGroup?.trim() || null,
+        photoUrl: data.photoUrl?.trim() || null,
         isDisabled: data.isDisabled ?? false,
       },
       include: {

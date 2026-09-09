@@ -22,9 +22,48 @@ export interface User {
   avatarUrl: string | null;
   designation: string | null;
   department: string | null;
+  departmentId?: string | null;
+  departmentRef?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
   bio: string | null;
+  status?: string;
   forcePasswordChange: boolean;
   lastLoginAt: string | null;
+  createdAt?: string | null;
+  tenant?: {
+    id: string;
+    name: string;
+    constituencyName: string;
+    state: string;
+    district: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+    logoUrl?: string | null;
+    representativeName?: string | null;
+    representativeTitle?: string | null;
+    representativePhoto?: string | null;
+    partyName?: string | null;
+    partyLogoUrl?: string | null;
+    termStartDate?: string | null;
+    termEndDate?: string | null;
+    status?: string | null;
+    subscription?: {
+      status: string;
+      billingCycle: string;
+      currentPeriodEnd: string;
+      plan: {
+        name: string;
+        code: string;
+        maxUsers: number;
+        maxVoters: number;
+      };
+    } | null;
+  } | null;
 }
 
 export interface Permission {

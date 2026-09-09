@@ -85,9 +85,9 @@ function DiffView({ oldData, newData }: { oldData: any; newData: any }) {
         No data changes recorded
       </p>
     );
-  const allKeys = [
-    ...new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]),
-  ];
+  const allKeys = Array.from(
+    new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]),
+  );
   if (allKeys.length === 0)
     return (
       <p className="text-xs text-muted-foreground italic">

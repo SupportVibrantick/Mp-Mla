@@ -111,6 +111,19 @@ export async function listVoters(
           updatedAt: true,
           ward: { select: { id: true, name: true, wardNumber: true } },
           wardArea: { select: { id: true, name: true } },
+          identityVerifications: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              method: true,
+              status: true,
+              aadhaarNumber: true,
+              documentUrl: true,
+              verifiedAt: true,
+            },
+          },
+          _count: { select: { familyMembers: true } },
         },
       }),
       prisma.voter.count({ where }),
@@ -151,6 +164,12 @@ export async function getVoter(
       include: {
         ward: { select: { id: true, name: true, wardNumber: true } },
         wardArea: { select: { id: true, name: true } },
+        identityVerifications: {
+          orderBy: { createdAt: "desc" },
+        },
+        familyMembers: {
+          orderBy: { createdAt: "asc" },
+        },
         uploadBatch: {
           select: { id: true, fileName: true, createdAt: true },
         },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn, getImageUrl } from "@/lib/utils";
 import {
@@ -81,16 +81,42 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const [location] = useLocation();
   const [logoutOpen, setLogoutOpen] = useState(false);
 
+  const navContainerRef = useRef<HTMLDivElement>(null);
+
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(
     () => {
-      return {
+      const initial: Record<string, boolean> = {
         "Geography Management": location.startsWith("/geography"),
       };
+      if (location.startsWith("/schemes")) initial["Schemes"] = true;
+      return initial;
     },
   );
 
   const toggleSubmenu = (label: string) => {
     setOpenSubmenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  useLayoutEffect(() => {
+    const container = navContainerRef.current;
+    if (!container) return;
+
+    const savedScroll = sessionStorage.getItem("sidebar_scroll_pos");
+    if (savedScroll !== null) {
+      container.scrollTop = parseInt(savedScroll, 10);
+    } else {
+      const activeEl = container.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [location]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    sessionStorage.setItem(
+      "sidebar_scroll_pos",
+      e.currentTarget.scrollTop.toString(),
+    );
   };
 
   const navSections: NavSection[] = [
@@ -379,30 +405,31 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-transparent flex-shrink-0">
           {!collapsed && (
-            <div className="flex items-center gap-2 overflow-hidden">
-              {settings.brand_logo_url ? (
-                <div className="h-10 max-w-[160px] flex-shrink-0 flex items-center justify-start">
+            <div className="flex items-center gap-3 overflow-hidden">
+              { settings.brand_logo_url ? (
+                <div className="h-10 max-w-[150px] flex-shrink-0 flex items-center justify-start">
                   <img
-                    src={getImageUrl(settings.brand_logo_url)}
+                    src={getImageUrl( settings.brand_logo_url)}
                     alt="Logo"
-                    className="h-full w-auto object-contain"
+                    className="h-full w-auto object-contain drop-shadow-sm"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
                   />
                 </div>
               ) : (
-                <>
-                  <div className="bg-white/15 p-1.5 rounded-lg flex-shrink-0">
-                    <Shield className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <h1 className="font-heading font-extrabold text-sm leading-tight truncate text-white">
-                      {settings.org_name || "Constituency"}
-                    </h1>
-                    <p className="text-[10px] text-white/70 truncate uppercase tracking-widest font-semibold">
-                      {settings.org_short_name || "Management Portal"}
-                    </p>
-                  </div>
-                </>
+                <div className="bg-white/15 p-2 rounded-xl flex-shrink-0 shadow-inner">
+                  <Landmark className="h-5 w-5 text-white" />
+                </div>
               )}
+              <div className="flex flex-col min-w-0">
+                <h1 className="font-heading font-extrabold text-sm leading-tight truncate text-white">
+                  {settings.platform_name || "MP/MLA Constituency Platform"}
+                </h1>
+                <p className="text-[10px] text-white/75 truncate uppercase tracking-widest font-semibold">
+                  {user?.tenant?.constituencyName ? `${user.tenant.constituencyName}` : user?.tenant?.name || "Management Portal"}
+                </p>
+              </div>
             </div>
           )}
           {collapsed && (
@@ -412,11 +439,16 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                   <img
                     src={getImageUrl(settings.brand_logo_url)}
                     alt="Logo"
-                    className="h-full w-auto object-contain"
+                    className="h-full w-auto object-contain drop-shadow-sm"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
                   />
                 </div>
               ) : (
-                <Shield className="h-8 w-8 text-white" />
+                <div className="bg-white/15 p-2 rounded-xl flex items-center justify-center">
+                  <Landmark className="h-6 w-6 text-white" />
+                </div>
               )}
             </div>
           )}
@@ -434,7 +466,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto sidebar-scroll py-3 px-2 space-y-4">
+        <div
+          ref={navContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto sidebar-scroll py-3 px-2 space-y-4"
+        >
           {filteredSections.map((section, sectionIdx) => (
             <div key={section.title} className="space-y-1">
               {!collapsed ? (
@@ -467,6 +503,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
                 const content = (
                   <div
+                    data-active={isItemActive ? "true" : undefined}
                     onClick={(e) => {
                       if (hasChildren && !collapsed) {
                         e.preventDefault();
@@ -552,6 +589,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                                     )}
                                     <Link href={child.href}>
                                       <div
+                                        data-active={isChildActive ? "true" : undefined}
                                         className={cn(
                                           "flex items-center gap-2 pl-9 pr-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 text-xs mx-1",
                                           isChildActive

@@ -5,7 +5,6 @@ import {
   useUpdateSettings,
   useResetSettings,
   useTestEmail,
-  useTestWhatsApp,
   SETTING_GROUPS,
 } from "@/hooks/useSettings";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -55,10 +54,8 @@ import {
   Eye,
   EyeOff,
   Shield,
-  Bell,
   Palette,
   Database,
-  ClipboardList,
   User,
   Globe,
   Camera,
@@ -94,8 +91,6 @@ const LANGUAGES = [
   { code: "ar", label: "العربية (Arabic)" },
 ];
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
 const GROUP_ICONS: Record<string, any> = {
   profile: User,
   general: Settings,
@@ -103,14 +98,11 @@ const GROUP_ICONS: Record<string, any> = {
   location: MapPin,
   branding: Palette,
   security: Shield,
-  grievance: ClipboardList,
-  notifications: Bell,
   email_smtp: Mail,
   backup: Database,
   meetings: Calendar,
 };
 
-// Add profile, language & location to the group list for sidebar rendering
 const EXTENDED_GROUPS = [
   { id: "profile", label: "Profile", desc: "Your personal account details" },
   {
@@ -121,7 +113,7 @@ const EXTENDED_GROUPS = [
   {
     id: "location",
     label: "Location",
-    desc: "Manage your location preferences",
+    desc: "Set your office / constituency location",
   },
   ...SETTING_GROUPS,
 ];
@@ -492,7 +484,6 @@ function LocationSection() {
         const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
         update("coordinates", coords);
 
-        // Reverse geocoding using Nominatim (free, no API key required)
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
@@ -665,8 +656,6 @@ export default function SettingsPage() {
   const updateMut = useUpdateSettings();
   const resetMut = useResetSettings();
   const testEmailMut = useTestEmail();
-  const testWhatsAppMut = useTestWhatsApp();
-  const [testWhatsAppTo, setTestWhatsAppTo] = useState("");
 
   const [activeGroup, setActiveGroup] = useState("profile");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -1092,257 +1081,6 @@ export default function SettingsPage() {
               {/* Dynamic server-driven groups */}
               {!isCustomGroup &&
                 (() => {
-                  if (activeGroup === "notifications") {
-                    const smsEnabledSetting = groupSettings.find((s: any) => s.key === "sms_enabled");
-                    const smsProviderSetting = groupSettings.find((s: any) => s.key === "sms_provider");
-                    const smsApiKeySetting = groupSettings.find((s: any) => s.key === "sms_api_key");
-                    const smsSenderIdSetting = groupSettings.find((s: any) => s.key === "sms_sender_id");
-
-                    const whatsappEnabledSetting = groupSettings.find((s: any) => s.key === "whatsapp_enabled");
-                    const whatsappWabaIdSetting = groupSettings.find((s: any) => s.key === "whatsapp_waba_id");
-                    const whatsappPhoneIdSetting = groupSettings.find((s: any) => s.key === "whatsapp_phone_number_id");
-                    const whatsappBusinessPhoneSetting = groupSettings.find((s: any) => s.key === "whatsapp_business_phone");
-                    const whatsappApiKeySetting = groupSettings.find((s: any) => s.key === "whatsapp_api_key");
-
-                    const otherToggles = groupSettings.filter(
-                      (s: any) =>
-                        s.type === "boolean" &&
-                        s.key !== "sms_enabled" &&
-                        s.key !== "whatsapp_enabled"
-                    );
-
-                    return (
-                      <div className="space-y-6">
-                        {/* SMS Card */}
-                        {smsEnabledSetting && (
-                          <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
-                            <div className="p-6 space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1 pr-4">
-                                  <Label className="text-base font-semibold">{smsEnabledSetting.label}</Label>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {smsEnabledSetting.description}
-                                  </p>
-                                </div>
-                                <Switch
-                                  checked={(formValues["sms_enabled"] ?? smsEnabledSetting.value) === "true"}
-                                  onCheckedChange={(v) => updateValue("sms_enabled", v ? "true" : "false")}
-                                />
-                              </div>
-
-                              {(formValues["sms_enabled"] ?? smsEnabledSetting.value) === "true" && (
-                                <div className="pt-4 border-t space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                  <div className="grid gap-4 sm:grid-cols-2">
-                                    {smsProviderSetting && (
-                                      <div className="space-y-2">
-                                        <Label className="text-sm font-medium">{smsProviderSetting.label}</Label>
-                                        <Select
-                                          value={formValues["sms_provider"] ?? smsProviderSetting.value ?? ""}
-                                          onValueChange={(v) => updateValue("sms_provider", v)}
-                                        >
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select SMS Provider" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {(smsProviderSetting.options || []).map((o: string) => (
-                                              <SelectItem key={o} value={o}>
-                                                {o}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                        <p className="text-[10px] text-muted-foreground">{smsProviderSetting.description}</p>
-                                      </div>
-                                    )}
-
-                                    {smsSenderIdSetting && (
-                                      <div className="space-y-2">
-                                        <Label className="text-sm font-medium">{smsSenderIdSetting.label}</Label>
-                                        <Input
-                                          value={formValues["sms_sender_id"] ?? smsSenderIdSetting.value ?? ""}
-                                          onChange={(e) => updateValue("sms_sender_id", e.target.value)}
-                                          placeholder="e.g. CONSTY"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">{smsSenderIdSetting.description}</p>
-                                      </div>
-                                    )}
-
-                                    {smsApiKeySetting && (
-                                      <div className="space-y-2 sm:col-span-2">
-                                        <Label className="text-sm font-medium">{smsApiKeySetting.label}</Label>
-                                        <div className="flex gap-2">
-                                          <Input
-                                            type={showSecrets["sms_api_key"] ? "text" : "password"}
-                                            value={formValues["sms_api_key"] ?? smsApiKeySetting.value ?? ""}
-                                            onChange={(e) => updateValue("sms_api_key", e.target.value)}
-                                            className="font-mono"
-                                            placeholder="Enter SMS API Key"
-                                          />
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() =>
-                                              setShowSecrets((p) => ({ ...p, sms_api_key: !p.sms_api_key }))
-                                            }
-                                          >
-                                            {showSecrets["sms_api_key"] ? (
-                                              <EyeOff className="h-4 w-4" />
-                                            ) : (
-                                              <Eye className="h-4 w-4" />
-                                            )}
-                                          </Button>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground">{smsApiKeySetting.description}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* WhatsApp Card */}
-                        {whatsappEnabledSetting && (
-                          <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
-                            <div className="p-6 space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1 pr-4">
-                                  <Label className="text-base font-semibold">{whatsappEnabledSetting.label}</Label>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {whatsappEnabledSetting.description}
-                                  </p>
-                                </div>
-                                <Switch
-                                  checked={(formValues["whatsapp_enabled"] ?? whatsappEnabledSetting.value) === "true"}
-                                  onCheckedChange={(v) => updateValue("whatsapp_enabled", v ? "true" : "false")}
-                                />
-                              </div>
-
-                              {(formValues["whatsapp_enabled"] ?? whatsappEnabledSetting.value) === "true" && (
-                                <div className="pt-4 border-t space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                  <div className="grid gap-4 sm:grid-cols-2">
-                                    {whatsappWabaIdSetting && (
-                                      <div className="space-y-2">
-                                        <Label className="text-sm font-medium">{whatsappWabaIdSetting.label}</Label>
-                                        <Input
-                                          value={formValues["whatsapp_waba_id"] ?? whatsappWabaIdSetting.value ?? ""}
-                                          onChange={(e) => updateValue("whatsapp_waba_id", e.target.value)}
-                                          placeholder="Enter WhatsApp WABA ID (e.g. 1029384756)"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">{whatsappWabaIdSetting.description}</p>
-                                      </div>
-                                    )}
-
-                                    {whatsappPhoneIdSetting && (
-                                      <div className="space-y-2">
-                                        <Label className="text-sm font-medium">{whatsappPhoneIdSetting.label}</Label>
-                                        <Input
-                                          value={formValues["whatsapp_phone_number_id"] ?? whatsappPhoneIdSetting.value ?? ""}
-                                          onChange={(e) => updateValue("whatsapp_phone_number_id", e.target.value)}
-                                          placeholder="Enter Phone Number ID (e.g. 1098765432)"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">{whatsappPhoneIdSetting.description}</p>
-                                      </div>
-                                    )}
-
-                                    {whatsappBusinessPhoneSetting && (
-                                      <div className="space-y-2">
-                                        <Label className="text-sm font-medium">{whatsappBusinessPhoneSetting.label}</Label>
-                                        <Input
-                                          value={formValues["whatsapp_business_phone"] ?? whatsappBusinessPhoneSetting.value ?? ""}
-                                          onChange={(e) => updateValue("whatsapp_business_phone", e.target.value)}
-                                          placeholder="e.g. +91 98765 43210"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">{whatsappBusinessPhoneSetting.description}</p>
-                                      </div>
-                                    )}
-
-                                    {whatsappApiKeySetting && (
-                                      <div className="space-y-2 sm:col-span-2">
-                                        <Label className="text-sm font-medium">{whatsappApiKeySetting.label}</Label>
-                                        <div className="flex gap-2">
-                                          <Input
-                                            type={showSecrets["whatsapp_api_key"] ? "text" : "password"}
-                                            value={formValues["whatsapp_api_key"] ?? whatsappApiKeySetting.value ?? ""}
-                                            onChange={(e) => updateValue("whatsapp_api_key", e.target.value)}
-                                            className="font-mono"
-                                            placeholder="Enter WhatsApp Access Token / API Key"
-                                          />
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() =>
-                                              setShowSecrets((p) => ({ ...p, whatsapp_api_key: !p.whatsapp_api_key }))
-                                            }
-                                          >
-                                            {showSecrets["whatsapp_api_key"] ? (
-                                              <EyeOff className="h-4 w-4" />
-                                            ) : (
-                                              <Eye className="h-4 w-4" />
-                                            )}
-                                          </Button>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground">{whatsappApiKeySetting.description}</p>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Test WhatsApp Connection */}
-                                  <div className="pt-3 border-t">
-                                    <p className="text-xs font-semibold text-muted-foreground mb-2">Test WhatsApp Connection</p>
-                                    <div className="flex gap-2 max-w-sm">
-                                      <Input
-                                        placeholder="+91 98765 43210"
-                                        value={testWhatsAppTo}
-                                        onChange={(e) => setTestWhatsAppTo(e.target.value)}
-                                      />
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => testWhatsAppMut.mutate(testWhatsAppTo)}
-                                        disabled={!testWhatsAppTo || testWhatsAppMut.isPending}
-                                        className="shrink-0 gap-1.5"
-                                      >
-                                        {testWhatsAppMut.isPending ? (
-                                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                        ) : (
-                                          <Save className="h-3.5 w-3.5 opacity-0 hidden" />
-                                        )}
-                                        Send Test
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* General Notification Toggles */}
-                        {otherToggles.length > 0 && (
-                          <div className="space-y-3">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                              Notification Alerts
-                            </p>
-                            <div className="space-y-2">
-                              {otherToggles.map((s: any) => renderField(s))}
-                            </div>
-                          </div>
-                        )}
-
-                        {groupSettings.length === 0 && (
-                          <p className="text-sm text-muted-foreground py-8 text-center">
-                            No settings available for this group yet.
-                          </p>
-                        )}
-                      </div>
-                    );
-                  }
-
                   const booleans = groupSettings.filter(
                     (s: any) => s.type === "boolean",
                   );

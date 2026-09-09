@@ -40,6 +40,8 @@ const planFormSchema = z.object({
   description: z.string().optional(),
   priceMonthly: z.preprocess((v) => Number(v), z.number().min(0)),
   priceYearly: z.preprocess((v) => Number(v), z.number().min(0)),
+  maxUsers: z.preprocess((v) => Number(v), z.number().int().min(0)).default(0),
+  maxVoters: z.preprocess((v) => Number(v), z.number().int().min(0)).default(0),
   features: z.string().optional(),
   isPopular: z.boolean().default(false),
   sortOrder: z.preprocess((v) => Number(v), z.number().int().min(0)),
@@ -98,12 +100,11 @@ function calculateDiscountPercentage(
 ): number {
   if (!priceMonthly || !priceYearly || priceMonthly <= 0 || priceYearly <= 0)
     return 0;
-  const annualMonthlyCost = priceMonthly * 12;
-  if (annualMonthlyCost <= priceYearly) return 0;
-  const discount = Math.round(
-    ((annualMonthlyCost - priceYearly) / annualMonthlyCost) * 100,
+  const monthlyCostForYear = priceMonthly * 12;
+  if (priceYearly >= monthlyCostForYear) return 0;
+  return Math.round(
+    ((monthlyCostForYear - priceYearly) / monthlyCostForYear) * 100,
   );
-  return discount > 0 ? discount : 0;
 }
 
 export default function SubscriptionsPage() {
@@ -148,6 +149,8 @@ export default function SubscriptionsPage() {
       description: "",
       priceMonthly: 0,
       priceYearly: 0,
+      maxUsers: 0,
+      maxVoters: 0,
       features: "",
       sortOrder: 0,
       moduleIds: [],
@@ -164,6 +167,8 @@ export default function SubscriptionsPage() {
       description: "",
       priceMonthly: 0,
       priceYearly: 0,
+      maxUsers: 0,
+      maxVoters: 0,
       features: "",
       isPopular: false,
       sortOrder: 0,
@@ -180,6 +185,8 @@ export default function SubscriptionsPage() {
       description: plan.description || "",
       priceMonthly: plan.priceMonthly,
       priceYearly: plan.priceYearly,
+      maxUsers: plan.maxUsers ?? 0,
+      maxVoters: plan.maxVoters ?? 0,
       features: parseFeatures(plan.features).join("\n"),
       isPopular: !!plan.isPopular,
       sortOrder: plan.sortOrder || 0,
@@ -326,6 +333,37 @@ export default function SubscriptionsPage() {
                       {planForm.formState.errors.priceYearly && (
                         <p className="text-sm text-destructive font-medium">
                           {planForm.formState.errors.priceYearly.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 grid-cols-2 pt-1">
+                    <div className="space-y-2">
+                      <Label htmlFor="max-users">Max Users (0 = Unlimited)</Label>
+                      <Input
+                        id="max-users"
+                        type="number"
+                        placeholder="0"
+                        {...planForm.register("maxUsers")}
+                      />
+                      {planForm.formState.errors.maxUsers && (
+                        <p className="text-sm text-destructive font-medium">
+                          {planForm.formState.errors.maxUsers.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="max-voters">Max Voters (0 = Unlimited)</Label>
+                      <Input
+                        id="max-voters"
+                        type="number"
+                        placeholder="0"
+                        {...planForm.register("maxVoters")}
+                      />
+                      {planForm.formState.errors.maxVoters && (
+                        <p className="text-sm text-destructive font-medium">
+                          {planForm.formState.errors.maxVoters.message}
                         </p>
                       )}
                     </div>
@@ -667,6 +705,14 @@ export default function SubscriptionsPage() {
                           Save {planDiscount}%
                         </span>
                       )}
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-xs font-normal border-border/70">
+                        Users: {plan.maxUsers && plan.maxUsers > 0 ? plan.maxUsers : "Unlimited"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs font-normal border-border/70">
+                        Voters: {plan.maxVoters && plan.maxVoters > 0 ? Number(plan.maxVoters).toLocaleString() : "Unlimited"}
+                      </Badge>
                     </div>
                     <div className="mt-6 flex gap-3">
                       <Button

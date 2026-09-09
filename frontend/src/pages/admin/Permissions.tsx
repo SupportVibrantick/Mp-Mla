@@ -261,9 +261,9 @@ export default function PermissionsOverview() {
               )}
 
               <div className="grid gap-6">
-                {Object.entries(groupedPerms).map(([module, perms]) => {
+                {Object.entries(groupedPerms).map(([module, perms]: [string, any[]]) => {
                   const roleSet = rolePermissions[role] || new Set();
-                  const grantedInModule = perms.filter((p) =>
+                  const grantedInModule = perms.filter((p: any) =>
                     roleSet.has(p.id),
                   ).length;
                   const allGranted = grantedInModule === perms.length;
@@ -283,7 +283,7 @@ export default function PermissionsOverview() {
                             checked={allGranted}
                             onCheckedChange={() => {
                               const nextSet = new Set(roleSet);
-                              perms.forEach((p) => {
+                              perms.forEach((p: any) => {
                                 if (allGranted) nextSet.delete(p.id);
                                 else nextSet.add(p.id);
                               });
@@ -298,7 +298,7 @@ export default function PermissionsOverview() {
                       </div>
                       <CardContent className="p-0">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 divide-border/30">
-                          {perms.map((perm) => {
+                          {perms.map((perm: any) => {
                             const isGranted = roleSet.has(perm.id);
                             return (
                               <div
@@ -328,7 +328,6 @@ export default function PermissionsOverview() {
                                   onCheckedChange={() =>
                                     togglePermission(role, perm.id)
                                   }
-                                  scale={0.8}
                                 />
                               </div>
                             );
@@ -363,8 +362,8 @@ export default function PermissionsOverview() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
-                    {Object.entries(groupedPerms).map(([module, perms]) =>
-                      perms.map((perm, idx) => (
+                    {Object.entries(groupedPerms).map(([module, perms]: [string, any[]]) =>
+                      perms.map((perm: any, idx: number) => (
                         <tr
                           key={perm.id}
                           className={cn(

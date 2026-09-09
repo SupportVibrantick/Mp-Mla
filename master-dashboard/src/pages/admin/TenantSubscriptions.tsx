@@ -243,6 +243,7 @@ export default function TenantSubscriptionsPage() {
                 <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground text-xs font-bold uppercase tracking-wider">
                   <th className="p-4 font-semibold">Tenant</th>
                   <th className="p-4 font-semibold">Plan</th>
+                  <th className="p-4 font-semibold">Quota Usage</th>
                   <th className="p-4 font-semibold">MRR</th>
                   <th className="p-4 font-semibold">Renewal</th>
                   <th className="p-4 font-semibold">Status</th>
@@ -258,6 +259,9 @@ export default function TenantSubscriptionsPage() {
                       </td>
                       <td className="p-4">
                         <Skeleton className="h-4 w-20" />
+                      </td>
+                      <td className="p-4">
+                        <Skeleton className="h-4 w-28" />
                       </td>
                       <td className="p-4">
                         <Skeleton className="h-4 w-20" />
@@ -276,7 +280,7 @@ export default function TenantSubscriptionsPage() {
                 ) : tenantSubscriptions.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="p-8 text-center text-muted-foreground"
                     >
                       No tenant subscriptions found.
@@ -303,6 +307,22 @@ export default function TenantSubscriptionsPage() {
                           <p className="text-xs text-muted-foreground">
                             {subscription.billingCycle}
                           </p>
+                        </div>
+                      </td>
+                      <td className="p-4 text-xs">
+                        <div>
+                          <span className="font-semibold">Users: </span>
+                          <span>
+                            {subscription.tenant?._count?.users ?? 0}
+                            {subscription.plan?.maxUsers > 0 ? ` / ${subscription.plan.maxUsers}` : " (Unl.)"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-semibold">Voters: </span>
+                          <span>
+                            {(subscription.tenant?._count?.voters ?? 0).toLocaleString()}
+                            {subscription.plan?.maxVoters > 0 ? ` / ${subscription.plan.maxVoters.toLocaleString()}` : " (Unl.)"}
+                          </span>
                         </div>
                       </td>
                       <td className="p-4 font-bold">

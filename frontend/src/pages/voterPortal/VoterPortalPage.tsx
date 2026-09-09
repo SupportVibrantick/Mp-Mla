@@ -57,6 +57,16 @@ import {
   Hash,
   ChevronRight,
   HelpCircle,
+  Briefcase,
+  HeartHandshake,
+  Users,
+  Plus,
+  Trash2,
+  Heart,
+  IndianRupee,
+  Upload,
+  ShieldAlert,
+  X,
 } from "lucide-react";
 import { InteractiveMeshBackground } from "@/components/ui/InteractiveMeshBackground";
 
@@ -133,6 +143,127 @@ export default function VoterPortalPage() {
   // Photo Upload State
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
+  // Aadhaar Identity Verification State
+  const [verificationInfo, setVerificationInfo] = useState<any | null>(null);
+  const [aadhaarModalOpen, setAadhaarModalOpen] = useState(false);
+  const [aadhaarNumInput, setAadhaarNumInput] = useState("");
+  const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
+  const [uploadingAadhaar, setUploadingAadhaar] = useState(false);
+
+  // Family & Household Portal State
+  const [familyMembers, setFamilyMembers] = useState<any[]>([]);
+  const [loadingFamily, setLoadingFamily] = useState(false);
+  const [portalFamilyModalOpen, setPortalFamilyModalOpen] = useState(false);
+  const [editingPortalMember, setEditingPortalMember] = useState<any>(null);
+  const [savingPortalMember, setSavingPortalMember] = useState(false);
+
+  const initialPortalMemberForm = {
+    name: "",
+    relationType: "SPOUSE",
+    relationCustom: "",
+    gender: "FEMALE",
+    dateOfBirth: "",
+    age: "",
+    phone: "",
+    email: "",
+    photoUrl: "",
+    voterIdNumber: "",
+    isDependent: false,
+    isEmergencyContact: false,
+    sameAddress: true,
+    address: "",
+    bloodGroup: "",
+    occupationCategory: "PRIVATE_EMPLOYEE",
+    occupationTitle: "",
+    workingOrganization: "",
+    workingDescription: "",
+    incomeRange: "NOT_DISCLOSED",
+    remarks: "",
+  };
+
+  const [portalMemberForm, setPortalMemberForm] = useState(initialPortalMemberForm);
+
+  const fetchPortalFamily = async () => {
+    if (!token) return;
+    setLoadingFamily(true);
+    try {
+      const res = await api.get("/public/voter-portal/family", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setFamilyMembers(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Error loading family in portal:", err);
+    } finally {
+      setLoadingFamily(false);
+    }
+  };
+
+  useEffect(() => {
+    if (voter && token) {
+      fetchPortalFamily();
+    }
+  }, [voter, token]);
+
+  const handleSavePortalMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setSavingPortalMember(true);
+    try {
+      if (editingPortalMember) {
+        const res = await api.put(
+          `/public/voter-portal/family/${editingPortalMember.id}`,
+          portalMemberForm,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.data?.success) {
+          toast({ title: "Updated", description: "Family member updated successfully." });
+        }
+      } else {
+        const res = await api.post(
+          "/public/voter-portal/family",
+          portalMemberForm,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.data?.success) {
+          toast({ title: "Added", description: "Family member added successfully." });
+        }
+      }
+      setPortalFamilyModalOpen(false);
+      setEditingPortalMember(null);
+      setPortalMemberForm(initialPortalMemberForm);
+      fetchPortalFamily();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to save family member.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPortalMember(false);
+    }
+  };
+
+  const handleDeletePortalMember = async (id: string) => {
+    if (!token) return;
+    try {
+      const res = await api.delete(`/public/voter-portal/family/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        toast({ title: "Deleted", description: "Family member removed." });
+        fetchPortalFamily();
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Failed to delete family member.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Fetch logged in voter profile on mount or token change
   useEffect(() => {
     if (!token) {
@@ -152,6 +283,9 @@ export default function VoterPortalPage() {
           if (response.data.data.forcePasswordChange) {
             setForcePasswordChange(true);
           }
+          if (response.data.data.latestVerification) {
+            setVerificationInfo(response.data.data.latestVerification);
+          }
         }
       } catch (err: any) {
         toast({
@@ -165,7 +299,21 @@ export default function VoterPortalPage() {
       }
     }
 
+    const fetchVerification = async () => {
+      try {
+        const res = await api.get("/public/voter-portal/verification", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.success && res.data.data.latestVerification) {
+          setVerificationInfo(res.data.data.latestVerification);
+        }
+      } catch (err) {
+        console.error("Error loading verification status:", err);
+      }
+    };
+
     fetchProfile();
+    fetchVerification();
   }, [token]);
 
   const handleLogout = () => {
@@ -414,9 +562,24 @@ export default function VoterPortalPage() {
     }
   };
 
+  const isAadhaarVerified = Boolean(
+    voter?.isIdentityVerified ||
+    verificationInfo?.status === "VERIFIED" ||
+    verificationInfo?.status === "SUBMITTED"
+  );
+
   // 8. Open Edit Profile Modal
   const openEditProfileModal = () => {
     if (!voter) return;
+    if (!isAadhaarVerified) {
+      toast({
+        title: "Aadhaar Verification Required 🔒",
+        description: "Please upload your Aadhaar Card verification document first to unlock updating profile details.",
+        variant: "destructive",
+      });
+      setAadhaarModalOpen(true);
+      return;
+    }
     setEditName(voter.name || "");
     setEditRelativeName(voter.relativeName || "");
     setEditRelationType(voter.relationType || "F");
@@ -430,9 +593,77 @@ export default function VoterPortalPage() {
     setEditProfileModalOpen(true);
   };
 
+  // 8B. Upload Aadhaar Card Verification Handler
+  const handleUploadAadhaar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    if (!aadhaarNumInput.trim() && !aadhaarFile) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter your 12-digit Aadhaar number or select your document file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const cleanAadhaar = aadhaarNumInput.trim().replace(/\D/g, "");
+    if (cleanAadhaar && cleanAadhaar.length !== 12) {
+      toast({
+        title: "Invalid Aadhaar Number",
+        description: "Aadhaar Card number must be exactly 12 digits.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    if (cleanAadhaar) formData.append("aadhaarNumber", cleanAadhaar);
+    if (aadhaarFile) formData.append("document", aadhaarFile);
+
+    setUploadingAadhaar(true);
+    try {
+      const res = await api.post("/public/voter-portal/verification/upload", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data?.success) {
+        toast({ title: "Verified! 🎉", description: res.data.message });
+        setVerificationInfo(res.data.data);
+        setAadhaarModalOpen(false);
+        setAadhaarNumInput("");
+        setAadhaarFile(null);
+        if (voter) {
+          setVoter({ ...voter, isIdentityVerified: true });
+        }
+      }
+    } catch (err: any) {
+      toast({
+        title: "Upload Failed",
+        description: err.response?.data?.message || "Failed to upload Aadhaar document.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAadhaar(false);
+    }
+  };
+
   // 9. Save Profile Details
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAadhaarVerified) {
+      toast({
+        title: "Identity Verification Required 🔒",
+        description: "Please upload your Aadhaar Card verification document first to unlock updating profile details.",
+        variant: "destructive",
+      });
+      setAadhaarModalOpen(true);
+      return;
+    }
+
     setSavingProfile(true);
     try {
       const res = await api.put(
@@ -489,6 +720,33 @@ export default function VoterPortalPage() {
       toast({ title: "Upload Failed", description: err.response?.data?.message || "Failed to upload photo", variant: "destructive" });
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const [uploadingPortalMemberPhoto, setUploadingPortalMemberPhoto] = useState(false);
+
+  const handlePortalMemberPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    setUploadingPortalMemberPhoto(true);
+    try {
+      const res = await api.post("/public/voter-portal/upload-photo", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (res.data?.success) {
+        setPortalMemberForm((prev: any) => ({ ...prev, photoUrl: res.data.data.photoUrl }));
+        toast({ title: "Photo Uploaded", description: "Family member photo uploaded successfully." });
+      }
+    } catch (err: any) {
+      toast({ title: "Upload Failed", description: err.response?.data?.message || "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploadingPortalMemberPhoto(false);
     }
   };
 
@@ -986,7 +1244,7 @@ export default function VoterPortalPage() {
                     <div className="text-xs text-slate-500 dark:text-slate-400">
                       Voter: <span className="text-slate-900 dark:text-slate-200 font-semibold">{prof.voterName}</span>
                     </div>
-                    <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">App No: {prof.applicationNumber}</div>
+<div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">App No: {prof.applicationNumber}</div>
                   </div>
                   <Button size="sm" disabled={selectingProfile} className="bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-xl font-bold">
                     <span>Select</span>
@@ -997,6 +1255,8 @@ export default function VoterPortalPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+
 
         {/* ─── Forgot Password OTP Modal ─── */}
         <Dialog open={forgotModalOpen} onOpenChange={setForgotModalOpen}>
@@ -1191,13 +1451,92 @@ export default function VoterPortalPage() {
             </div>
           </div>
 
-          <Button
-            onClick={openEditProfileModal}
-            className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold gap-2 shadow-lg shadow-[#13538A]/25 rounded-2xl px-5 h-11"
-          >
-            <Edit2 className="w-4 h-4" /> Edit & Verify Details
-          </Button>
+          {isAadhaarVerified ? (
+            <Button
+              onClick={openEditProfileModal}
+              className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold gap-2 shadow-lg shadow-[#13538A]/25 rounded-2xl px-5 h-11"
+            >
+              <Edit2 className="w-4 h-4" /> Edit Profile Details
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setAadhaarModalOpen(true)}
+              className="bg-amber-600 hover:bg-amber-500 text-white font-bold gap-2 shadow-lg shadow-amber-600/25 rounded-2xl px-5 h-11"
+            >
+              <Lock className="w-4 h-4" /> Verify Aadhaar to Edit
+            </Button>
+          )}
         </div>
+
+        {/* ─── Aadhaar Identity Verification Banner Card ─── */}
+        {isAadhaarVerified ? (
+          <Card className="bg-gradient-to-r from-emerald-900/10 via-emerald-500/5 to-teal-900/10 border-emerald-500/30 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden mb-6">
+            <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  <ShieldCheck className="w-8 h-8" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Aadhaar Identity Verified (आधार पहचान पत्र सत्यापित)</h3>
+                    <Badge className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">VERIFIED</Badge>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 flex items-center gap-2">
+                    {verificationInfo?.aadhaarNumber ? (
+                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                        Aadhaar: {verificationInfo.aadhaarNumber}
+                      </span>
+                    ) : (
+                      <span>Aadhaar Verification Document Uploaded</span>
+                    )}
+                    {verificationInfo?.documentUrl && (
+                      <a
+                        href={getImageUrl(verificationInfo.documentUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-[#13538A] dark:text-[#38bdf8] underline hover:opacity-80 flex items-center gap-1"
+                      >
+                        <FileText className="w-3.5 h-3.5" /> View Uploaded Document
+                      </a>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-500/40 text-xs font-semibold px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50">
+                  🔓 Profile Editing Unlocked
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-amber-500/10 border-amber-500/40 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden mb-6">
+            <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Aadhaar Verification Required (आधार कार्ड सत्यापन आवश्यक)</h3>
+                    <Badge className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">LOCKED</Badge>
+                  </div>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1 max-w-xl font-medium">
+                    Profile updates are locked. Please upload your Aadhaar Card verification document image or PDF below to complete verification and unlock editing your profile details.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setAadhaarModalOpen(true)}
+                className="bg-amber-600 hover:bg-amber-500 text-white font-bold gap-2 shadow-lg shadow-amber-600/20 rounded-2xl px-5 h-11 shrink-0"
+              >
+                <ShieldCheck className="w-4 h-4" /> Upload Aadhaar Card
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Profile Information Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1270,6 +1609,185 @@ export default function VoterPortalPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Card 3: Family & Household Details (परिवार एवं घरेलू विवरण) */}
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-[#13538A] dark:text-[#38bdf8]" />
+              <span>Family & Household Details (परिवार एवं घरेलू विवरण)</span>
+            </CardTitle>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingPortalMember(null);
+                setPortalMemberForm(initialPortalMemberForm);
+                setPortalFamilyModalOpen(true);
+              }}
+              className="bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-xl font-bold text-xs gap-1.5 shadow-md"
+            >
+              <Plus className="w-4 h-4" /> Add Family Member
+            </Button>
+          </CardHeader>
+
+          <CardContent className="p-6 space-y-4">
+            {loadingFamily ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-[#13538A]" />
+              </div>
+            ) : familyMembers.length === 0 ? (
+              <div className="text-center py-8 border border-dashed rounded-2xl bg-slate-50/50 dark:bg-slate-950/40">
+                <Users className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+                <p className="font-bold text-sm text-slate-800 dark:text-slate-200">No Family Members Added</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                  Keep your family profile up to date by clicking <strong>"+ Add Family Member"</strong>.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {familyMembers.map((m) => (
+                  <div
+                    key={m.id}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3 relative group"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        {m.photoUrl ? (
+                          <img
+                            src={getImageUrl(m.photoUrl)}
+                            alt={m.name}
+                            className="w-10 h-10 rounded-full object-cover border border-[#13538A]/20 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8] font-extrabold flex items-center justify-center text-sm border border-[#13538A]/20">
+                            {m.name.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                            {m.name}
+                            {m.isEmergencyContact && (
+                              <Badge className="bg-rose-500 text-white text-[9px] px-1.5 py-0">
+                                Emergency
+                              </Badge>
+                            )}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                            <Badge variant="secondary" className="text-[10px] uppercase font-bold bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8]">
+                              {m.relationType === "OTHER" && m.relationCustom ? m.relationCustom : m.relationType}
+                            </Badge>
+                            <span>•</span>
+                            <span>{m.gender}</span>
+                            {m.computedAge !== null && (
+                              <>
+                                <span>•</span>
+                                <span className="font-bold text-slate-800 dark:text-slate-200">{m.computedAge} yrs</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-slate-400 hover:text-[#13538A]"
+                          onClick={() => {
+                            setEditingPortalMember(m);
+                            setPortalMemberForm({
+                              name: m.name || "",
+                              relationType: m.relationType || "SPOUSE",
+                              relationCustom: m.relationCustom || "",
+                              gender: m.gender || "FEMALE",
+                              dateOfBirth: m.dateOfBirth ? m.dateOfBirth.substring(0, 10) : "",
+                              age: m.age ? String(m.age) : "",
+                              phone: m.phone || "",
+                              email: m.email || "",
+                              photoUrl: m.photoUrl || "",
+                              voterIdNumber: m.voterIdNumber || "",
+                              isDependent: Boolean(m.isDependent),
+                              isEmergencyContact: Boolean(m.isEmergencyContact),
+                              sameAddress: m.sameAddress !== undefined ? Boolean(m.sameAddress) : true,
+                              address: m.address || "",
+                              bloodGroup: m.bloodGroup || "",
+                              occupationCategory: m.occupationCategory || "PRIVATE_EMPLOYEE",
+                              occupationTitle: m.occupationTitle || "",
+                              workingOrganization: m.workingOrganization || "",
+                              workingDescription: m.workingDescription || "",
+                              incomeRange: m.incomeRange || "NOT_DISCLOSED",
+                              remarks: m.remarks || "",
+                            });
+                            setPortalFamilyModalOpen(true);
+                          }}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-slate-400 hover:text-rose-600"
+                          onClick={() => handleDeletePortalMember(m.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Address & Extra Badges */}
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      {m.sameAddress === false && m.address ? (
+                        <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-lg">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          {m.address}
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2.5 py-1 rounded-lg">
+                          <MapPin className="w-3 h-3 text-emerald-500" />
+                          Same Address as Voter
+                        </span>
+                      )}
+
+                      {m.incomeRange && m.incomeRange !== "NOT_DISCLOSED" && (
+                        <span className="text-indigo-700 dark:text-indigo-300 font-semibold flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 px-2.5 py-1 rounded-lg">
+                          <IndianRupee className="w-3 h-3" />
+                          Income: {m.incomeRange.replace("RANGE_", "").replace(/_/g, " - ")}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Occupation & Working Description Box */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <Briefcase className="w-3.5 h-3.5 text-[#13538A] dark:text-[#38bdf8]" />
+                          {m.occupationTitle || m.occupationCategory?.replace(/_/g, " ") || "Occupation"}
+                        </span>
+                        {m.occupationCategory && (
+                          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] border-none font-bold uppercase">
+                            {m.occupationCategory.replace(/_/g, " ")}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {m.workingOrganization && (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                          Organization: <span className="font-bold text-slate-800 dark:text-slate-200">{m.workingOrganization}</span>
+                        </p>
+                      )}
+
+                      {m.workingDescription && (
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed italic bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                          "{m.workingDescription}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
 
       {/* Mandatory Security Setup Modal */}
@@ -1617,6 +2135,380 @@ export default function VoterPortalPage() {
               <Button type="submit" disabled={savingProfile} className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold rounded-xl h-12 px-5 shadow-lg">
                 {savingProfile ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Save Details
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {/* ─── Add / Edit Family Member Portal Modal ─── */}
+      <Dialog open={portalFamilyModalOpen} onOpenChange={setPortalFamilyModalOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white max-w-xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5 text-xl font-extrabold text-slate-900 dark:text-white">
+              <div className="p-2.5 rounded-xl bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8]">
+                <Users className="w-5 h-5" />
+              </div>
+              <span>{editingPortalMember ? "Edit Family Member" : "Add Family Member"}</span>
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+              Provide family member details along with their working description.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSavePortalMember} className="space-y-4 py-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="font-bold">Full Name *</Label>
+                <Input
+                  required
+                  placeholder="Member Name"
+                  value={portalMemberForm.name}
+                  onChange={(e) => setPortalMemberForm((p) => ({ ...p, name: e.target.value }))}
+                  className="rounded-xl h-11"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="font-bold">Relation *</Label>
+                <Select
+                  value={portalMemberForm.relationType}
+                  onValueChange={(val) => setPortalMemberForm((p) => ({ ...p, relationType: val }))}
+                >
+                  <SelectTrigger className="rounded-xl h-11">
+                    <SelectValue placeholder="Relation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SPOUSE">Spouse (पति/पत्नी)</SelectItem>
+                    <SelectItem value="SON">Son (पुत्र)</SelectItem>
+                    <SelectItem value="DAUGHTER">Daughter (पुत्री)</SelectItem>
+                    <SelectItem value="FATHER">Father (पिता)</SelectItem>
+                    <SelectItem value="MOTHER">Mother (माता)</SelectItem>
+                    <SelectItem value="BROTHER">Brother (भाई)</SelectItem>
+                    <SelectItem value="SISTER">Sister (बहन)</SelectItem>
+                    <SelectItem value="GRANDFATHER">Grandfather (दादा/नाना)</SelectItem>
+                    <SelectItem value="GRANDMOTHER">Grandmother (दादी/नानी)</SelectItem>
+                    <SelectItem value="GRANDSON">Grandson (पोता/नाती)</SelectItem>
+                    <SelectItem value="GRANDDAUGHTER">Granddaughter (पोती/नातिन)</SelectItem>
+                    <SelectItem value="UNCLE">Uncle (चाचा/ताऊ/मामा)</SelectItem>
+                    <SelectItem value="AUNT">Aunt (चाची/ताई/मामी)</SelectItem>
+                    <SelectItem value="NEPHEW">Nephew (भतीजा/भांजा)</SelectItem>
+                    <SelectItem value="NIECE">Niece (भतीजी/भांजी)</SelectItem>
+                    <SelectItem value="DEPENDENT">Dependent (अाश्रित)</SelectItem>
+                    <SelectItem value="OTHER">Other (अन्य)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {portalMemberForm.relationType === "OTHER" && (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="font-bold">Custom Relation</Label>
+                  <Input
+                    placeholder="e.g. Maternal Uncle, Cousin"
+                    value={portalMemberForm.relationCustom}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, relationCustom: e.target.value }))}
+                    className="rounded-xl h-11"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label className="font-bold">Gender *</Label>
+                <Select
+                  value={portalMemberForm.gender}
+                  onValueChange={(val) => setPortalMemberForm((p) => ({ ...p, gender: val }))}
+                >
+                  <SelectTrigger className="rounded-xl h-11">
+                    <SelectValue placeholder="Gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">MALE</SelectItem>
+                    <SelectItem value="FEMALE">FEMALE</SelectItem>
+                    <SelectItem value="TRANSGENDER">TRANSGENDER</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="font-bold">Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={portalMemberForm.dateOfBirth}
+                  onChange={(e) => setPortalMemberForm((p) => ({ ...p, dateOfBirth: e.target.value }))}
+                  className="rounded-xl h-11"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="font-bold">EPIC ID (Optional)</Label>
+                <Input
+                  placeholder="e.g. ABC1234567"
+                  value={portalMemberForm.voterIdNumber}
+                  onChange={(e) => setPortalMemberForm((p) => ({ ...p, voterIdNumber: e.target.value }))}
+                  className="rounded-xl h-11 uppercase font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="font-bold">Profile Photo</Label>
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                  <div className="relative h-12 w-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shrink-0 flex items-center justify-center">
+                    {portalMemberForm.photoUrl ? (
+                      <img
+                        src={getImageUrl(portalMemberForm.photoUrl)}
+                        alt="Member Photo"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-6 w-6 text-slate-400" />
+                    )}
+                    {uploadingPortalMemberPhoto && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <label
+                      htmlFor="portalMemberPhotoUploadInput"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md transition-colors"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      {portalMemberForm.photoUrl ? "Change Photo" : "Upload Photo"}
+                      <input
+                        id="portalMemberPhotoUploadInput"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePortalMemberPhotoUpload}
+                        disabled={uploadingPortalMemberPhoto}
+                      />
+                    </label>
+                    {portalMemberForm.photoUrl && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 rounded-xl"
+                        onClick={() => setPortalMemberForm((p: any) => ({ ...p, photoUrl: "" }))}
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Checkboxes & Address */}
+            <div className="space-y-3 bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={portalMemberForm.isDependent}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, isDependent: e.target.checked }))}
+                    className="h-4 w-4 rounded text-[#13538A]"
+                  />
+                  <span className="font-bold">Is Dependent</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={portalMemberForm.isEmergencyContact}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, isEmergencyContact: e.target.checked }))}
+                    className="h-4 w-4 rounded text-[#13538A]"
+                  />
+                  <span className="font-bold text-rose-600 dark:text-rose-400">Emergency Contact</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={portalMemberForm.sameAddress}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, sameAddress: e.target.checked }))}
+                    className="h-4 w-4 rounded text-[#13538A]"
+                  />
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Same Address as Voter</span>
+                </label>
+              </div>
+
+              {!portalMemberForm.sameAddress && (
+                <div className="space-y-1.5 pt-1">
+                  <Label className="font-bold">Custom Residential Address</Label>
+                  <Input
+                    placeholder="Enter separate address (if member lives elsewhere)"
+                    value={portalMemberForm.address}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, address: e.target.value }))}
+                    className="rounded-xl bg-white dark:bg-slate-900 h-11"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Occupation & Working Description */}
+            <div className="p-4 rounded-2xl bg-[#13538A]/5 border border-[#13538A]/20 space-y-3">
+              <h5 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Briefcase className="w-4 h-4 text-[#13538A] dark:text-[#38bdf8]" />
+                <span>Occupation & Work Description</span>
+              </h5>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="font-bold">Category</Label>
+                  <Select
+                    value={portalMemberForm.occupationCategory}
+                    onValueChange={(val) => setPortalMemberForm((p) => ({ ...p, occupationCategory: val }))}
+                  >
+                    <SelectTrigger className="rounded-xl bg-white dark:bg-slate-950 h-11">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GOVERNMENT_EMPLOYEE">Government Employee</SelectItem>
+                      <SelectItem value="PRIVATE_EMPLOYEE">Private Employee</SelectItem>
+                      <SelectItem value="BUSINESS">Business / Trader</SelectItem>
+                      <SelectItem value="SELF_EMPLOYED">Self Employed</SelectItem>
+                      <SelectItem value="PROFESSIONAL">Professional</SelectItem>
+                      <SelectItem value="SKILLED_WORKER">Skilled Worker</SelectItem>
+                      <SelectItem value="DAILY_WAGE">Daily Wage Worker</SelectItem>
+                      <SelectItem value="LABOURER">Labourer</SelectItem>
+                      <SelectItem value="FARMER">Farmer</SelectItem>
+                      <SelectItem value="DRIVER">Driver</SelectItem>
+                      <SelectItem value="SHOPKEEPER">Shopkeeper</SelectItem>
+                      <SelectItem value="STUDENT">Student</SelectItem>
+                      <SelectItem value="HOMEMAKER">Homemaker</SelectItem>
+                      <SelectItem value="RETIRED">Retired</SelectItem>
+                      <SelectItem value="PENSIONER">Pensioner</SelectItem>
+                      <SelectItem value="UNEMPLOYED">Unemployed</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="font-bold">Designation / Job Title</Label>
+                  <Input
+                    placeholder="e.g. Senior Accountant"
+                    value={portalMemberForm.occupationTitle}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, occupationTitle: e.target.value }))}
+                    className="rounded-xl bg-white dark:bg-slate-950 h-11"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="font-bold">Organization / Company</Label>
+                  <Input
+                    placeholder="e.g. ABC Pvt Ltd"
+                    value={portalMemberForm.workingOrganization}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, workingOrganization: e.target.value }))}
+                    className="rounded-xl bg-white dark:bg-slate-950 h-11"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="font-bold">Working Description (Tasks & Duties)</Label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. Handles financial audits, ledger management, and GST filing"
+                    value={portalMemberForm.workingDescription}
+                    onChange={(e) => setPortalMemberForm((p) => ({ ...p, workingDescription: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-[#13538A]"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="font-bold">Monthly Income Bracket</Label>
+                  <Select
+                    value={portalMemberForm.incomeRange}
+                    onValueChange={(val) => setPortalMemberForm((p) => ({ ...p, incomeRange: val }))}
+                  >
+                    <SelectTrigger className="rounded-xl bg-white dark:bg-slate-950 h-11">
+                      <SelectValue placeholder="Select Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NOT_DISCLOSED">Not Disclosed</SelectItem>
+                      <SelectItem value="BELOW_10000">Below ₹10,000 / month</SelectItem>
+                      <SelectItem value="RANGE_10000_25000">₹10,000 - ₹25,000 / month</SelectItem>
+                      <SelectItem value="RANGE_25000_50000">₹25,000 - ₹50,000 / month</SelectItem>
+                      <SelectItem value="RANGE_50000_100000">₹50,000 - ₹1,00,000 / month</SelectItem>
+                      <SelectItem value="ABOVE_100000">Above ₹1,00,000 / month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <Button type="button" variant="outline" onClick={() => setPortalFamilyModalOpen(false)} className="rounded-xl">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingPortalMember} className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold rounded-xl px-6">
+                {savingPortalMember ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Save Family Member
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {/* ─── Aadhaar Identity Verification Upload Modal ─── */}
+      <Dialog open={aadhaarModalOpen} onOpenChange={setAadhaarModalOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white max-w-lg rounded-3xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5 text-xl font-extrabold text-slate-900 dark:text-white">
+              <div className="p-2.5 rounded-xl bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8]">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <span>Aadhaar Identity Verification (आधार पहचान पत्र)</span>
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+              Upload your official Aadhaar Card document image or PDF to verify your identity and unlock profile editing.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleUploadAadhaar} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="aadhaarNum" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                12-Digit Aadhaar Card Number
+              </Label>
+              <Input
+                id="aadhaarNum"
+                placeholder="e.g. 1234 5678 9012"
+                maxLength={14}
+                value={aadhaarNumInput}
+                onChange={(e) => setAadhaarNumInput(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl h-12 font-mono"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="aadhaarDocFile" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Aadhaar Card Document File (Photo / Scan / PDF) *
+              </Label>
+              <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-center hover:border-[#13538A] transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-950/40">
+                <input
+                  id="aadhaarDocFile"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => setAadhaarFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <label htmlFor="aadhaarDocFile" className="cursor-pointer block">
+                  <Upload className="w-8 h-8 mx-auto text-[#13538A] dark:text-[#38bdf8] mb-1" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    {aadhaarFile ? aadhaarFile.name : "Click to select Aadhaar image or PDF"}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Supports JPG, PNG, WEBP, or PDF files up to 10MB</span>
+                </label>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setAadhaarModalOpen(false)} className="rounded-xl">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={uploadingAadhaar} className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold rounded-xl h-11 px-6 shadow-lg">
+                {uploadingAadhaar ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Submit Verification Document
               </Button>
             </DialogFooter>
           </form>

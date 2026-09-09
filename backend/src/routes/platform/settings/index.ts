@@ -9,6 +9,7 @@ import {
   updatePlatformSettings,
   resetPlatformSettings,
   testPlatformSmtpConnection,
+  testPlatformWhatsAppConnection,
 } from "../../../controllers/platform/settings.controller.js";
 import { createUploader, enforceStorageAndTrack } from "../../../lib/upload.js";
 
@@ -49,6 +50,12 @@ router.post(
   "/test-email",
   authorizePlatform("SUPER_ADMIN", "PLATFORM_ADMIN"),
   testPlatformSmtpConnection,
+);
+
+router.post(
+  "/test-whatsapp",
+  authorizePlatform("SUPER_ADMIN", "PLATFORM_ADMIN"),
+  testPlatformWhatsAppConnection,
 );
 
 export default router;

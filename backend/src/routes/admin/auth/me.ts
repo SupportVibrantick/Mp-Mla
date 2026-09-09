@@ -26,15 +26,74 @@ export async function getMe(
         avatarUrl: true,
         designation: true,
         department: true,
+        departmentId: true,
         bio: true,
         forcePasswordChange: true,
         lastLoginAt: true,
         lastLoginIp: true,
         createdAt: true,
+        departmentRef: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            constituencyName: true,
+            state: true,
+            district: true,
+            address: true,
+            phone: true,
+            email: true,
+            website: true,
+            logoUrl: true,
+            representativeName: true,
+            representativeTitle: true,
+            representativePhoto: true,
+            partyName: true,
+            partyLogoUrl: true,
+            termStartDate: true,
+            termEndDate: true,
+            status: true,
+            subscription: {
+              select: {
+                status: true,
+                billingCycle: true,
+                currentPeriodEnd: true,
+                plan: {
+                  select: {
+                    name: true,
+                    code: true,
+                    maxUsers: true,
+                    maxVoters: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
     if (!user) throw ApiError.notFound("User not found");
+
+    if (user.tenant) {
+      const partyLogoSetting = await prisma.tenantSetting.findUnique({
+        where: {
+          tenantId_key: {
+            tenantId: user.tenant.id,
+            key: "party_logo_url",
+          },
+        },
+      });
+      if (partyLogoSetting?.value) {
+        user.tenant.partyLogoUrl = partyLogoSetting.value;
+      }
+    }
 
     res.json({ success: true, data: user });
   } catch (error) {

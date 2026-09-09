@@ -3,32 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  Shield,
-  Lock,
-  Mail,
-  Eye,
-  EyeOff,
-  Loader2,
-  AlertCircle,
-  Building2,
-  ArrowRight,
-  Zap,
-  Share2,
-} from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { getImageUrl } from "@/lib/utils";
-import { InteractiveMeshBackground } from "@/components/ui/InteractiveMeshBackground";
+import "./Login.css";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -49,7 +27,6 @@ export default function Login() {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", rememberMe: true },
@@ -71,286 +48,404 @@ export default function Login() {
     }
   };
 
-  // Quick fill for demo
-  const fillDemo = (role: "platform_admin") => {
-    const creds = {
-      platform_admin: {
-        email: "superadmin@admin.mpmla.in",
-        password: "Platform@123456",
-      },
-    };
-    setValue("email", creds[role].email);
-    setValue("password", creds[role].password);
-    setError(null);
-  };
-
-  const orgName = settings?.org_name || "Constituency Management Portal";
+  const brandName = settings?.platform_name || settings?.platform_operator_name || "MP-MLA Platform";
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden font-sans bg-[#f4f7f6] dark:bg-slate-950 p-4 md:p-8">
-      {/* 3D Interactive Mesh Background Wave */}
-      <InteractiveMeshBackground />
+    <main className="login-page">
+      {/* ===================================================
+           LEFT / MARKETING PANEL
+      ==================================================== */}
+      <section className="marketing-panel">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
 
-      <div className="relative z-10 w-full max-w-7xl flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
-        {/* ─── LEFT PANEL (Branding & Feature Highlights) ─── */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center space-y-8 text-left lg:pl-4">
-          <div className="space-y-4">
-            {/* Workspace Badge */}
-            <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#13538A]/10 dark:bg-[#13538A]/20 border border-[#13538A]/20 text-[#13538A] dark:text-[#38bdf8] text-xs font-bold tracking-wider uppercase">
-              MASTER CONTROL PANEL
+        {/* Brand */}
+        <div className="brand">
+          {settings?.brand_logo_url ? (
+            <div className="h-9 max-w-[180px] flex items-center justify-center">
+              <img
+                src={getImageUrl(settings.brand_logo_url)}
+                alt="Logo"
+                className="h-full w-auto object-contain"
+              />
             </div>
-
-            {/* Logo & Headline */}
-            <div className="flex items-center gap-3">
-              {settings.brand_logo_url ? (
-                <div className="h-12 max-w-[180px] flex items-center justify-center">
-                  <img
-                    src={getImageUrl(settings.brand_logo_url)}
-                    alt="Logo"
-                    className="h-full w-auto object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="bg-[#13538A] p-2 rounded-xl text-white shadow-md shadow-[#13538A]/20">
-                    <Shield className="h-6 w-6" />
-                  </div>
-                  <span className="text-xl font-extrabold text-[#13538A] dark:text-white uppercase tracking-tight">
-                    {orgName}
-                  </span>
-                </div>
-              )}
+          ) : (
+            <div className="brand-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 2.8L20 7.2V16.8L12 21.2L4 16.8V7.2L12 2.8Z"
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M8 9.5L12 7.3L16 9.5V14.3L12 16.5L8 14.3V9.5Z"
+                  fill="white"
+                />
+              </svg>
             </div>
+          )}
 
-            <p className="text-[10px] tracking-widest text-[#5D28A8] dark:text-purple-400 font-extrabold uppercase mt-1">
-              SYSTEM ADMINISTRATION & TENANT MONITORING
-            </p>
-          </div>
-
-          {/* Heading */}
-          <div className="space-y-5">
-            <h1 className="font-['Ubuntu',sans-serif] text-[48px] font-extrabold tracking-tight text-[#111827] dark:text-white leading-[1.1]">
-              Master Dashboard
-            </h1>
-            <p className="font-['Ubuntu',sans-serif] text-[16px] text-[#111827] dark:text-slate-400 font-normal leading-[24px] tracking-normal">
-              Sign in to manage tenants, view global statistics, and control
-              platform operations.
-            </p>
-          </div>
-
-          {/* Three Feature Highlight Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
-            {/* Card 1 */}
-            <div className="bg-white/15 dark:bg-slate-900/10 backdrop-blur-md border border-white/20 dark:border-slate-800/20 rounded-[24px] p-5 hover:bg-white/35 dark:hover:bg-slate-900/30 hover:scale-[1.02] transition-all duration-300 shadow-sm">
-              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#13538A] dark:text-blue-400 w-fit mb-4">
-                <Shield className="h-5 w-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                Secure
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                Bank-level encryption and layered verification protocols.
-              </p>
-            </div>
-
-            {/* Card 2 */}
-            <div className="bg-white/15 dark:bg-slate-900/10 backdrop-blur-md border border-white/20 dark:border-slate-800/20 rounded-[24px] p-5 hover:bg-white/35 dark:hover:bg-slate-900/30 hover:scale-[1.02] transition-all duration-300 shadow-sm">
-              <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 w-fit mb-4">
-                <Zap className="h-5 w-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                Fast
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                Smooth sign-in flow with real-time session validation.
-              </p>
-            </div>
-
-            {/* Card 3 */}
-            <div className="bg-white/15 dark:bg-slate-900/10 backdrop-blur-md border border-white/20 dark:border-slate-800/20 rounded-[24px] p-5 hover:bg-white/35 dark:hover:bg-slate-900/30 hover:scale-[1.02] transition-all duration-300 shadow-sm">
-              <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 w-fit mb-4">
-                <Share2 className="h-5 w-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                Connected
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                One unified platform to manage tenants, roles, and global
-                configurations.
-              </p>
-            </div>
+          <div>
+            <div className="brand-name">{brandName}</div>
+            <span className="brand-subtitle">Master Dashboard</span>
           </div>
         </div>
 
-        {/* ─── RIGHT PANEL (Pixel-Perfect Sign In Card) ─── */}
-        <div className="w-full lg:w-[480px] shrink-0">
-          <Card className="border-0 shadow-2xl bg-white dark:bg-slate-900/90 backdrop-blur-md rounded-[32px] p-8 md:p-10 relative">
-            <CardHeader className="p-0 mb-6">
-              <CardTitle className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                Sign In
-              </CardTitle>
-              <CardDescription className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Continue to your Master Control workspace.
-              </CardDescription>
-            </CardHeader>
+        {/* Marketing Content */}
+        <div className="marketing-content">
+          <h1 className="marketing-title">
+            People
+            <br />
+            Power
+            <br />
+            Progress
+          </h1>
 
-            <CardContent className="p-0 space-y-6">
-              {/* Error Alert */}
-              {error && (
-                <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl text-xs text-red-700 dark:text-red-300 animate-in fade-in slide-in-from-top-2">
-                  <AlertCircle className="h-4.5 w-4.5 mt-0.5 shrink-0 text-red-500" />
-                  <div>
-                    <p className="font-bold">Login Failed</p>
-                    <p className="mt-0.5 opacity-90 leading-relaxed">{error}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Form */}
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                {/* Email Input */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
-                  >
-                    Email Address
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="admin@vibrantick.com"
-                      className={`h-12 pl-11 pr-4 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#13538A] focus:ring-4 focus:ring-[#13538A]/10 transition-all font-medium text-sm ${
-                        errors.email
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500/10"
-                          : ""
-                      }`}
-                      disabled={isSubmitting}
-                      {...register("email")}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-xs font-semibold text-red-500 mt-1 pl-1">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Password Input */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="password"
-                      className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
-                    >
-                      Password
-                    </Label>
-                    {/* <button
-                      type="button"
-                      onClick={() =>
-                        alert(
-                          "Please contact the main administrator to reset your password.",
-                        )
-                      }
-                      className="text-xs font-bold text-[#13538A] dark:text-[#38bdf8] hover:underline"
-                    >
-                      Forgot password?
-                    </button> */}
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      className={`h-12 pl-11 pr-11 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#13538A] focus:ring-4 focus:ring-[#13538A]/10 transition-all font-medium text-sm ${
-                        errors.password
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500/10"
-                          : ""
-                      }`}
-                      disabled={isSubmitting}
-                      {...register("password")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <p className="text-xs font-semibold text-red-500 mt-1 pl-1">
-                      {errors.password.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Keep Me Logged In */}
-                <div className="flex items-center pt-1">
-                  <label className="flex items-center gap-2.5 cursor-pointer text-slate-500 dark:text-slate-400 font-semibold text-xs sm:text-sm">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 text-[#13538A] focus:ring-[#13538A] cursor-pointer"
-                      {...register("rememberMe")}
-                    />
-                    <span>Remember me for 30 days</span>
-                  </label>
-                </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold text-sm sm:text-base shadow-lg shadow-[#13538A]/25 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4.5 w-4.5 animate-spin" />
-                      <span>Authenticating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Access Master Dashboard</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </form>
-
-              {/* Quick Fill for Demo */}
-              {/* <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-xs font-semibold text-slate-400 text-center mb-2.5 tracking-wide uppercase">
-                  Quick fill for demo:
-                </p>
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => fillDemo("platform_admin")}
-                    className="px-4 py-1.5 bg-[#13538A]/10 hover:bg-[#13538A]/20 text-[#13538A] dark:text-blue-300 rounded-full text-xs font-bold transition-all active:scale-95 dark:bg-blue-950/50 dark:hover:bg-blue-900/50 cursor-pointer"
-                  >
-                    Platform Admin
-                  </button>
-                </div>
-              </div> */}
-            </CardContent>
-          </Card>
-
-          {/* Copyright notice below card */}
-          <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-6 font-semibold">
-            © {new Date().getFullYear()}{" "}
-            {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All
-            rights reserved.
+          <p className="marketing-description">
+            A connected platform for stronger communities and brighter futures.
           </p>
+
+          {/* Dashboard Illustration */}
+          <div className="illustration">
+            {/* Dashboard Card */}
+            <div className="dashboard-card">
+              <div className="dashboard-header">
+                <div className="dashboard-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+
+              <div className="dashboard-body">
+                <aside className="dashboard-sidebar">
+                  <div className="side-line active"></div>
+                  <div className="side-line"></div>
+                  <div className="side-line"></div>
+                  <div className="side-line"></div>
+                  <div className="side-line"></div>
+                </aside>
+
+                <div className="dashboard-main">
+                  <div className="dashboard-heading"></div>
+
+                  <div className="chart">
+                    <div className="chart-bars">
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                      <div className="bar"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Analytics */}
+            <div className="floating-card">
+              <div className="floating-label">Platform Growth</div>
+              <div className="floating-value">+28.4%</div>
+              <div className="floating-chart">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+
+            {/* Person Illustration */}
+            <div className="person">
+              <div className="person-hair"></div>
+              <div className="person-head"></div>
+              <div className="person-body"></div>
+              <div className="person-arm"></div>
+              <div className="person-leg left"></div>
+              <div className="person-leg right"></div>
+            </div>
+          </div>
+
+          {/* Statistics */}
+          <div className="stats">
+            <div className="stat">
+              <div className="stat-value">500+</div>
+              <div className="stat-label">Organizations</div>
+            </div>
+
+            <div className="stat">
+              <div className="stat-value">10M+</div>
+              <div className="stat-label">People Managed</div>
+            </div>
+
+            <div className="stat">
+              <div className="stat-value">99.9%</div>
+              <div className="stat-label">Uptime</div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      {/* ===================================================
+           RIGHT / LOGIN PANEL
+      ==================================================== */}
+      <section className="login-panel">
+        <div className="login-container">
+          <h2 className="login-heading">Sign In</h2>
+          <p className="login-subtitle">Access your master dashboard</p>
+
+          {/* Error Alert */}
+          {error && (
+            <div
+              style={{
+                marginTop: "16px",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fecaca",
+                color: "#991b1b",
+                fontSize: "13px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form
+            className="login-form"
+            id="loginForm"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            {/* Email */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="email">
+                Email Address
+              </label>
+
+              <div className="input-wrapper">
+                <svg className="input-icon" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M4 6.5C4 5.67 4.67 5 5.5 5H18.5C19.33 5 20 5.67 20 6.5V17.5C20 18.33 19.33 19 18.5 19H5.5C4.67 19 4 18.33 4 17.5V6.5Z"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                  <path
+                    d="M5 7L12 12L19 7"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                </svg>
+
+                <input
+                  id="email"
+                  className="form-input"
+                  type="email"
+                  placeholder="Enter your email"
+                  autoComplete="email"
+                  disabled={isSubmitting}
+                  {...register("email")}
+                />
+              </div>
+              {errors.email && (
+                <p
+                  style={{
+                    color: "#dc2626",
+                    fontSize: "11px",
+                    marginTop: "4px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="password">
+                Password
+              </label>
+
+              <div className="input-wrapper">
+                <svg className="input-icon" viewBox="0 0 24 24" fill="none">
+                  <rect
+                    x="5"
+                    y="10"
+                    width="14"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                  <path
+                    d="M8 10V7.5C8 5.29 9.79 3.5 12 3.5C14.21 3.5 16 5.29 16 7.5V10"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
+                </svg>
+
+                <input
+                  id="password"
+                  className="form-input"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  disabled={isSubmitting}
+                  {...register("password")}
+                />
+
+                <button
+                  type="button"
+                  className="password-toggle"
+                  id="togglePassword"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    >
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg
+                      id="eyeIcon"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <path
+                        d="M2 12C4.5 7.5 8 5 12 5C16 5 19.5 7.5 22 12C19.5 16.5 16 19 12 19C8 19 4.5 16.5 2 12Z"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="3"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p
+                  style={{
+                    color: "#dc2626",
+                    fontSize: "11px",
+                    marginTop: "4px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {errors.password.message}
+                </p>
+              )}
+
+              <div className="form-options">
+                <label className="remember">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    {...register("rememberMe")}
+                  />
+                  Remember me
+                </label>
+
+                <a
+                  href="#"
+                  className="forgot-password"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert(
+                      "Please contact your system administrator to reset your password.",
+                    );
+                  }}
+                >
+                  Forgot password?
+                </a>
+              </div>
+            </div>
+
+            {/* Login */}
+            <button
+              type="submit"
+              className="login-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Loader2 className="animate-spin" size={16} /> Signing in...
+                </span>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+
+            {/* Divider */}
+            {/* <div className="divider">
+              <span>or continue with</span>
+            </div> */}
+
+            {/* Social */}
+            {/* <div className="social-login">
+              <button type="button" className="social-button">
+                <span className="google-icon">G</span>
+                Google
+              </button>
+
+              <button type="button" className="social-button">
+                <span className="microsoft-icon">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+                Microsoft
+              </button>
+            </div> */}
+
+            {/* Footer */}
+            <div className="login-footer">
+              Don't have an account?{" "}
+              <a
+                href="#"
+                className="admin-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert("Please contact system administrator.");
+                }}
+              >
+                Contact Admin
+              </a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
   );
 }

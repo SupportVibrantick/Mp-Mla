@@ -425,6 +425,7 @@ model Tenant {
   voterIdentityVerifications VoterIdentityVerification[]
   voterAccountMemberships    VoterAccountMembership[]
   voterApplicationSequence   VoterApplicationSequence?
+  voterFamilyMembers         VoterFamilyMember[]
 
   @@index([status])
   @@map("tenants")
@@ -467,6 +468,8 @@ model SubscriptionPlan {
   description  String?
   priceMonthly Float   @default(0)
   priceYearly  Float   @default(0)
+  maxUsers     Int     @default(0)
+  maxVoters    Int     @default(0)
   features     Json    @default("[]")
   isActive     Boolean @default(true)
   isPopular    Boolean @default(false)
@@ -2138,6 +2141,7 @@ model Voter {
   booth                 Booth?                      @relation(fields: [boothId], references: [id], onDelete: SetNull)
   identityVerifications VoterIdentityVerification[]
   accountMemberships    VoterAccountMembership[]
+  familyMembers         VoterFamilyMember[]
 
   @@unique([tenantId, voterIdNumber])
   @@unique([tenantId, applicationNumber])
@@ -2155,6 +2159,106 @@ model Voter {
   @@index([tenantId, wardId, boothNo])
   @@index([tenantId, wardId, sectionNo])
   @@map("voters")
+}
+
+// ════════════════════════════════════════════════════════
+// VOTER FAMILY & HOUSEHOLD MEMBERS
+// ════════════════════════════════════════════════════════
+
+enum VoterRelationType {
+  FATHER
+  MOTHER
+  SPOUSE
+  SON
+  DAUGHTER
+  BROTHER
+  SISTER
+  GRANDFATHER
+  GRANDMOTHER
+  GRANDSON
+  GRANDDAUGHTER
+  UNCLE
+  AUNT
+  NEPHEW
+  NIECE
+  DEPENDENT
+  OTHER
+}
+
+enum VoterOccupationCategory {
+  GOVERNMENT_EMPLOYEE
+  PRIVATE_EMPLOYEE
+  BUSINESS
+  SELF_EMPLOYED
+  PROFESSIONAL
+  SKILLED_WORKER
+  DAILY_WAGE
+  LABOURER
+  FARMER
+  DRIVER
+  SHOPKEEPER
+  STUDENT
+  HOMEMAKER
+  RETIRED
+  PENSIONER
+  UNEMPLOYED
+  OTHER
+}
+
+enum VoterIncomeRange {
+  BELOW_10000
+  RANGE_10000_25000
+  RANGE_25000_50000
+  RANGE_50000_100000
+  ABOVE_100000
+  NOT_DISCLOSED
+}
+
+model VoterFamilyMember {
+  id                 String                   @id @default(cuid())
+  tenantId           String
+  voterId            String
+
+  // Personal & Relationship Details
+  name               String
+  relationType       VoterRelationType
+  relationCustom     String?
+  gender             VoterGender
+  dateOfBirth        DateTime?
+  age                Int?
+  phone              String?
+  email              String?
+  photoUrl           String?
+  voterIdNumber      String?
+  isDependent        Boolean                  @default(false)
+  isEmergencyContact Boolean                  @default(false)
+  isPrimaryContact   Boolean                  @default(false)
+  sameAddress        Boolean                  @default(true)
+  address            String?
+  bloodGroup         String?                  @map("blood_group")
+
+  // Occupation & Working Details
+  occupationCategory VoterOccupationCategory?
+  occupationTitle    String?
+  workingOrganization String?
+  workingDescription String?
+  incomeRange        VoterIncomeRange?        @default(NOT_DISCLOSED)
+
+  // Metadata
+  remarks            String?
+  status             String                   @default("ACTIVE")
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  voter  Voter  @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([voterId])
+  @@index([relationType])
+  @@index([occupationCategory])
+  @@map("voter_family_members")
 }
 
 model VoterAccount {
@@ -2246,6 +2350,8 @@ model VoterIdentityVerification {
   status        VoterVerificationStatus
   provider      String?
   referenceId   String?
+  aadhaarNumber String?
+  documentUrl   String?
   verifiedAt    DateTime?
   failureReason String?
   createdAt     DateTime                @default(now())
@@ -2261,12 +2367,16 @@ model VoterIdentityVerification {
 
 enum VoterVerificationMethod {
   AADHAAR_OTP
+  AADHAAR_CARD_UPLOAD
+  DOCUMENT_UPLOAD
 }
 
 enum VoterVerificationStatus {
   PENDING
+  SUBMITTED
   VERIFIED
   FAILED
+  REJECTED
 }
 
 model BulkUploadJob {

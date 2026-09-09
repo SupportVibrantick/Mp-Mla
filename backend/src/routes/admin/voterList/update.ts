@@ -104,6 +104,9 @@ export async function updateVoter(
         ...(data.bloodGroup !== undefined && {
           bloodGroup: data.bloodGroup?.trim() || null,
         }),
+        ...(data.photoUrl !== undefined && {
+          photoUrl: data.photoUrl?.trim() || null,
+        }),
         ...(data.isDisabled !== undefined && { isDisabled: data.isDisabled }),
       },
       include: {

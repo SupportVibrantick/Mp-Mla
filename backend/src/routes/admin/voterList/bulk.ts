@@ -12,6 +12,7 @@ import {
 import { VoterGender, Prisma } from "@prisma/client";
 import logger from "../../../utils/logger.js";
 import { syncVoterDemographics } from "./demographicsSync.js";
+import { assertCanCreateVoters } from "../../../lib/quota.js";
 
 // ══════════════════════════════════════════════════════════
 // CONSTANTS
@@ -154,6 +155,9 @@ export async function bulkUploadVoters(
       });
       return;
     }
+
+    // Check voter quota before starting bulk upload
+    await assertCanCreateVoters(tenantId, rawRows.length);
 
     // ─── 1. Create BulkUploadJob ──────────────────────────
     const job = await prisma.bulkUploadJob.create({

@@ -27,6 +27,8 @@ export const createVoterSchema = z.object({
   locality: z.string().max(200).optional().nullable(),
 
   phone: z.string().max(20).optional().nullable(),
+  bloodGroup: z.string().max(20).optional().nullable(),
+  photoUrl: z.string().optional().nullable(),
 
   isDisabled: z.boolean().default(false),
 });
@@ -62,6 +64,7 @@ export const bulkVoterRowSchema = z.object({
   address: z.string().optional().nullable(),
   locality: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
+  bloodGroup: z.string().optional().nullable(),
   isDisabled: z.union([z.string(), z.boolean()]).optional().nullable(),
   wardAreaName: z.string().optional().nullable(),
 });

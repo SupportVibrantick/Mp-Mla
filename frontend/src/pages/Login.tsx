@@ -74,7 +74,7 @@ export default function Login() {
   };
 
   const repName = settings?.representative_name || "Shri Representative";
-  const orgName = settings?.org_name || "Constituency Management Portal";
+  const orgName = settings?.platform_name || "Constituency Management Portal";
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden font-sans bg-[#f4f7f6] dark:bg-slate-950 p-4 md:p-8">

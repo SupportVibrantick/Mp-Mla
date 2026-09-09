@@ -623,6 +623,8 @@ async function main() {
       description: "Basic constituency operations for small offices.",
       priceMonthly: 2999,
       priceYearly: 29990,
+      maxUsers: 5,
+      maxVoters: 10000,
       features: [
         "Dashboard",
         "Wards",
@@ -639,6 +641,8 @@ async function main() {
       description: "Full MP/MLA office workflow for growing teams.",
       priceMonthly: 7999,
       priceYearly: 79990,
+      maxUsers: 25,
+      maxVoters: 50000,
       features: [
         "Everything in Starter",
         "Leaders",
@@ -655,6 +659,8 @@ async function main() {
       description: "Complete platform access for MP/MLA offices.",
       priceMonthly: 19999,
       priceYearly: 199990,
+      maxUsers: 0,
+      maxVoters: 0,
       features: [
         "Everything in Professional",
         "Competitor Analysis",
@@ -675,6 +681,8 @@ async function main() {
         description: plan.description,
         priceMonthly: plan.priceMonthly,
         priceYearly: plan.priceYearly,
+        maxUsers: plan.maxUsers,
+        maxVoters: plan.maxVoters,
         features: plan.features,
         isActive: true,
         sortOrder: plan.sortOrder,

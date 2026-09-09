@@ -14,7 +14,7 @@ export const createUserSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string(),
   phone: phoneValidation,
-  designation: z.string().max(100).optional(),
+  designation: z.string().max(100).optional().nullable(),
   departmentId: z.string().optional().nullable(),
   role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"], {
     errorMap: () => ({

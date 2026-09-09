@@ -533,7 +533,7 @@ export const listTenantSubscriptions = async (
                 },
               },
               _count: {
-                select: { users: true },
+                select: { users: true, voters: true },
               },
             },
           },

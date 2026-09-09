@@ -134,6 +134,10 @@ router.get("/profile", requireVoterAuth, async (req: VoterAuthRequest, res: Resp
           where: { voterAccountId: req.voterAccountId },
           include: { voterAccount: { select: { forcePasswordChange: true } } },
         },
+        identityVerifications: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
       },
     });
 
@@ -145,11 +149,16 @@ router.get("/profile", requireVoterAuth, async (req: VoterAuthRequest, res: Resp
     const accountForceChange = voter.accountMemberships[0]?.voterAccount?.forcePasswordChange;
     const forcePasswordChange = accountForceChange !== undefined ? accountForceChange : voter.forcePasswordChange;
 
+    const latestVerification = voter.identityVerifications[0] || null;
+    const isIdentityVerified = latestVerification?.status === "VERIFIED" || latestVerification?.status === "SUBMITTED";
+
     res.json({
       success: true,
       data: {
         ...voter,
         forcePasswordChange,
+        isIdentityVerified,
+        latestVerification,
       },
     });
   } catch (error) {
@@ -160,6 +169,24 @@ router.get("/profile", requireVoterAuth, async (req: VoterAuthRequest, res: Resp
 // ─── 9. Update Voter Profile Details ────────────────────────
 router.put("/profile", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
   try {
+    // 🔒 RESTRICTION: Check if voter has uploaded verification document (Aadhaar Card)
+    const verification = await prisma.voterIdentityVerification.findFirst({
+      where: {
+        voterId: req.voterId!,
+        tenantId: req.tenantId!,
+        status: { in: ["VERIFIED", "SUBMITTED"] },
+      },
+    });
+
+    if (!verification) {
+      res.status(403).json({
+        success: false,
+        message: "Profile updates are locked! Please upload your Aadhaar Card verification document first to unlock updating profile details.",
+        code: "VERIFICATION_REQUIRED",
+      });
+      return;
+    }
+
     const { name, relativeName, relationType, gender, age, houseNo, address, locality, phone, bloodGroup } = req.body;
 
     const updated = await prisma.voter.update({
@@ -190,7 +217,6 @@ router.put("/profile", requireVoterAuth, async (req: VoterAuthRequest, res: Resp
         where: { id: req.voterAccountId! },
       });
       if (existingAccount && (existingAccount.mobile.startsWith("APP_") || existingAccount.mobile !== cleanPhone)) {
-        // Update account mobile if not colliding with another existing mobile
         const taken = await prisma.voterAccount.findUnique({ where: { mobile: cleanPhone } });
         if (!taken) {
           await prisma.voterAccount.update({
@@ -206,6 +232,79 @@ router.put("/profile", requireVoterAuth, async (req: VoterAuthRequest, res: Resp
     next(error);
   }
 });
+
+// ─── 9B. Identity Verification Endpoints ────────────────────
+router.get("/verification", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const verifications = await prisma.voterIdentityVerification.findMany({
+      where: { voterId: req.voterId!, tenantId: req.tenantId! },
+      orderBy: { createdAt: "desc" },
+    });
+    const latest = verifications[0] || null;
+    res.json({
+      success: true,
+      data: {
+        isVerified: latest?.status === "VERIFIED" || latest?.status === "SUBMITTED",
+        latestVerification: latest,
+        history: verifications,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  "/verification/upload",
+  requireVoterAuth,
+  voterUploader.single("document"),
+  async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { aadhaarNumber } = req.body;
+      const documentFile = req.file;
+
+      if (!aadhaarNumber && !documentFile) {
+        res.status(400).json({ success: false, message: "Aadhaar Card number or document file is required." });
+        return;
+      }
+
+      let documentUrl: string | undefined = undefined;
+      if (documentFile) {
+        documentUrl = getUploadPath(documentFile.filename, "voters");
+      }
+
+      const cleanAadhaar = aadhaarNumber ? aadhaarNumber.replace(/\D/g, "") : null;
+      if (cleanAadhaar && cleanAadhaar.length !== 12) {
+        res.status(400).json({ success: false, message: "Aadhaar Card number must be exactly 12 digits." });
+        return;
+      }
+
+      const maskedAadhaar = cleanAadhaar ? `XXXX-XXXX-${cleanAadhaar.slice(-4)}` : null;
+
+      const verification = await prisma.voterIdentityVerification.create({
+        data: {
+          tenantId: req.tenantId!,
+          voterId: req.voterId!,
+          method: "AADHAAR_CARD_UPLOAD",
+          status: "VERIFIED",
+          provider: "AADHAAR_CARD",
+          aadhaarNumber: maskedAadhaar,
+          documentUrl: documentUrl || null,
+          referenceId: `ADH-${Date.now()}`,
+          verifiedAt: new Date(),
+        },
+      });
+
+      res.json({
+        success: true,
+        data: verification,
+        message: "Aadhaar Card verification document uploaded and verified successfully! Profile editing is now unlocked.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // ─── 10. Upload Voter Profile Photo ─────────────────────────
 router.post(
@@ -232,5 +331,236 @@ router.post(
     }
   }
 );
+
+// ─── 10b. Upload Photo (General / Family Member) ───────────────
+router.post(
+  "/upload-photo",
+  requireVoterAuth,
+  voterUploader.single("photo"),
+  async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ success: false, message: "Photo file is required." });
+        return;
+      }
+
+      const photoUrl = getUploadPath(req.file.filename, "voters");
+      res.json({ success: true, data: { photoUrl }, message: "Photo uploaded successfully." });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ─── 11. GET Voter Family & Household Members ───────────────
+router.get("/family", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const voterId = req.voterId!;
+    const tenantId = req.tenantId!;
+
+    const members = await prisma.voterFamilyMember.findMany({
+      where: { voterId, tenantId, status: "ACTIVE" },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const enrichedMembers = members.map((m) => {
+      let computedAge = m.age;
+      if (m.dateOfBirth) {
+        const today = new Date();
+        const dob = new Date(m.dateOfBirth);
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+          age--;
+        }
+        computedAge = age >= 0 ? age : m.age;
+      }
+      return {
+        ...m,
+        computedAge,
+      };
+    });
+
+    res.json({ success: true, data: enrichedMembers });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 12. ADD Family Member from Voter Portal ────────────────
+router.post("/family", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const voterId = req.voterId!;
+    const tenantId = req.tenantId!;
+    const voter = await prisma.voter.findUnique({ where: { id: voterId } });
+
+    if (!voter) {
+      res.status(404).json({ success: false, message: "Voter profile not found." });
+      return;
+    }
+
+    const {
+      name,
+      relationType,
+      relationCustom,
+      gender,
+      dateOfBirth,
+      age,
+      phone,
+      email,
+      voterIdNumber,
+      isDependent,
+      isEmergencyContact,
+      sameAddress,
+      address,
+      bloodGroup,
+      occupationCategory,
+      occupationTitle,
+      workingOrganization,
+      workingDescription,
+      incomeRange,
+      remarks,
+    } = req.body;
+
+    if (!name || !name.trim()) {
+      res.status(400).json({ success: false, message: "Member name is required." });
+      return;
+    }
+    if (!relationType) {
+      res.status(400).json({ success: false, message: "Relation type is required." });
+      return;
+    }
+    if (!gender) {
+      res.status(400).json({ success: false, message: "Gender is required." });
+      return;
+    }
+
+    const member = await prisma.voterFamilyMember.create({
+      data: {
+        tenantId,
+        voterId,
+        name: name.trim(),
+        relationType,
+        relationCustom: relationType === "OTHER" ? (relationCustom?.trim() || null) : null,
+        gender,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+        age: age ? parseInt(String(age), 10) : null,
+        phone: phone?.trim() || null,
+        email: email?.trim() || null,
+        voterIdNumber: voterIdNumber?.trim() || null,
+        isDependent: Boolean(isDependent),
+        isEmergencyContact: Boolean(isEmergencyContact),
+        sameAddress: sameAddress !== undefined ? Boolean(sameAddress) : true,
+        address: sameAddress === false ? (address?.trim() || null) : (voter.address || null),
+        bloodGroup: bloodGroup?.trim() || null,
+        occupationCategory: occupationCategory || null,
+        occupationTitle: occupationTitle?.trim() || null,
+        workingOrganization: workingOrganization?.trim() || null,
+        workingDescription: workingDescription?.trim() || null,
+        incomeRange: incomeRange || "NOT_DISCLOSED",
+        remarks: remarks?.trim() || null,
+      },
+    });
+
+    res.status(201).json({ success: true, data: member, message: "Family member added successfully." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 13. UPDATE Family Member from Voter Portal ─────────────
+router.put("/family/:id", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = String(req.params.id);
+    const voterId = req.voterId!;
+    const tenantId = req.tenantId!;
+
+    const existing = await prisma.voterFamilyMember.findFirst({
+      where: { id, voterId, tenantId },
+    });
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: "Family member record not found." });
+      return;
+    }
+
+    const {
+      name,
+      relationType,
+      relationCustom,
+      gender,
+      dateOfBirth,
+      age,
+      phone,
+      email,
+      voterIdNumber,
+      isDependent,
+      isEmergencyContact,
+      sameAddress,
+      address,
+      bloodGroup,
+      occupationCategory,
+      occupationTitle,
+      workingOrganization,
+      workingDescription,
+      incomeRange,
+      remarks,
+    } = req.body;
+
+    const updated = await prisma.voterFamilyMember.update({
+      where: { id },
+      data: {
+        ...(name && { name: name.trim() }),
+        ...(relationType && { relationType }),
+        relationCustom: relationType === "OTHER" ? (relationCustom?.trim() || null) : (relationType ? null : existing.relationCustom),
+        ...(gender && { gender }),
+        dateOfBirth: dateOfBirth !== undefined ? (dateOfBirth ? new Date(dateOfBirth) : null) : existing.dateOfBirth,
+        age: age !== undefined ? (age ? parseInt(String(age), 10) : null) : existing.age,
+        phone: phone !== undefined ? (phone?.trim() || null) : existing.phone,
+        email: email !== undefined ? (email?.trim() || null) : existing.email,
+        voterIdNumber: voterIdNumber !== undefined ? (voterIdNumber?.trim() || null) : existing.voterIdNumber,
+        isDependent: isDependent !== undefined ? Boolean(isDependent) : existing.isDependent,
+        isEmergencyContact: isEmergencyContact !== undefined ? Boolean(isEmergencyContact) : existing.isEmergencyContact,
+        sameAddress: sameAddress !== undefined ? Boolean(sameAddress) : existing.sameAddress,
+        address: address !== undefined ? (address?.trim() || null) : existing.address,
+        bloodGroup: bloodGroup !== undefined ? (bloodGroup?.trim() || null) : existing.bloodGroup,
+        occupationCategory: occupationCategory !== undefined ? occupationCategory : existing.occupationCategory,
+        occupationTitle: occupationTitle !== undefined ? (occupationTitle?.trim() || null) : existing.occupationTitle,
+        workingOrganization: workingOrganization !== undefined ? (workingOrganization?.trim() || null) : existing.workingOrganization,
+        workingDescription: workingDescription !== undefined ? (workingDescription?.trim() || null) : existing.workingDescription,
+        incomeRange: incomeRange !== undefined ? incomeRange : existing.incomeRange,
+        remarks: remarks !== undefined ? (remarks?.trim() || null) : existing.remarks,
+      },
+    });
+
+    res.json({ success: true, data: updated, message: "Family member updated successfully." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 14. DELETE Family Member from Voter Portal ─────────────
+router.delete("/family/:id", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = String(req.params.id);
+    const voterId = req.voterId!;
+    const tenantId = req.tenantId!;
+
+    const existing = await prisma.voterFamilyMember.findFirst({
+      where: { id, voterId, tenantId },
+    });
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: "Family member record not found." });
+      return;
+    }
+
+    await prisma.voterFamilyMember.delete({ where: { id } });
+
+    res.json({ success: true, message: "Family member deleted successfully." });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

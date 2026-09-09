@@ -57,119 +57,124 @@ async function advanceSubscriptionPeriod(
 }
 
 export async function runSubscriptionSweep() {
-  const now = new Date();
-  logger.info("Running subscription sweep...");
+  try {
+    const now = new Date();
+    logger.info("Running subscription sweep...");
 
-  const trials = await prisma.tenantSubscription.findMany({
-    where: {
-      status: "TRIALING",
-      trialEndsAt: { lte: now },
-    },
-    include: { tenant: { select: { id: true, email: true, name: true } } },
-  });
-
-  for (const sub of trials) {
-    await prisma.$transaction(async (tx) => {
-      await tx.tenantSubscription.update({
-        where: { id: sub.id },
-        data: { status: "EXPIRED" },
-      });
-      await tx.tenant.update({
-        where: { id: sub.tenantId },
-        data: { status: "DEACTIVATED" },
-      });
-      await tx.user.updateMany({
-        where: { tenantId: sub.tenantId, status: "ACTIVE" },
-        data: { status: "INACTIVE" },
-      });
-    });
-    logger.info(`Trial expired for tenant ${sub.tenantId}. Tenant deactivated, users set to INACTIVE.`);
-  }
-
-  const dueSubs = await prisma.tenantSubscription.findMany({
-    where: {
-      status: { in: ["ACTIVE", "TRIALING"] },
-      currentPeriodEnd: { lte: now },
-    },
-    include: { plan: true, tenant: true },
-  });
-
-  for (const sub of dueSubs) {
-    const amount =
-      sub.billingCycle === "YEARLY"
-        ? sub.plan.priceYearly
-        : sub.plan.priceMonthly;
-
-    const existingPending = await prisma.payment.findFirst({
+    const trials = await prisma.tenantSubscription.findMany({
       where: {
-        subscriptionId: sub.id,
-        status: "PENDING",
-        createdAt: { gte: sub.currentPeriodStart },
+        status: "TRIALING",
+        trialEndsAt: { lte: now },
       },
+      include: { tenant: { select: { id: true, email: true, name: true } } },
     });
 
-    if (!existingPending && amount > 0) {
-      await prisma.payment.create({
-        data: {
-          tenantId: sub.tenantId,
+    for (const sub of trials) {
+      await prisma.$transaction(async (tx) => {
+        await tx.tenantSubscription.update({
+          where: { id: sub.id },
+          data: { status: "EXPIRED" },
+        });
+        await tx.tenant.update({
+          where: { id: sub.tenantId },
+          data: { status: "DEACTIVATED" },
+        });
+        await tx.user.updateMany({
+          where: { tenantId: sub.tenantId, status: "ACTIVE" },
+          data: { status: "INACTIVE" },
+        });
+      });
+      logger.info(`Trial expired for tenant ${sub.tenantId}. Tenant deactivated, users set to INACTIVE.`);
+    }
+
+    const dueSubs = await prisma.tenantSubscription.findMany({
+      where: {
+        status: { in: ["ACTIVE", "TRIALING"] },
+        currentPeriodEnd: { lte: now },
+      },
+      include: { plan: true, tenant: true },
+    });
+
+    for (const sub of dueSubs) {
+      const amount =
+        sub.billingCycle === "YEARLY"
+          ? sub.plan.priceYearly
+          : sub.plan.priceMonthly;
+
+      const existingPending = await prisma.payment.findFirst({
+        where: {
           subscriptionId: sub.id,
-          amount,
           status: "PENDING",
-          invoiceNumber: generateInvoiceNumber(),
-          notes: `Auto-generated invoice for period ending ${sub.currentPeriodEnd.toISOString().slice(0, 10)}`,
+          createdAt: { gte: sub.currentPeriodStart },
+        },
+      });
+
+      if (!existingPending && amount > 0) {
+        await prisma.payment.create({
+          data: {
+            tenantId: sub.tenantId,
+            subscriptionId: sub.id,
+            amount,
+            status: "PENDING",
+            invoiceNumber: generateInvoiceNumber(),
+            notes: `Auto-generated invoice for period ending ${sub.currentPeriodEnd.toISOString().slice(0, 10)}`,
+          },
+        });
+      }
+
+      await prisma.tenantSubscription.update({
+        where: { id: sub.id },
+        data: {
+          status: "PAST_DUE",
+          amountDue: { increment: amount },
+          nextPaymentDue: sub.currentPeriodEnd,
         },
       });
     }
 
-    await prisma.tenantSubscription.update({
-      where: { id: sub.id },
-      data: {
+    const pastDue = await prisma.tenantSubscription.findMany({
+      where: {
         status: "PAST_DUE",
-        amountDue: { increment: amount },
-        nextPaymentDue: sub.currentPeriodEnd,
+        nextPaymentDue: {
+          lte: new Date(now.getTime() - GRACE_DAYS * 24 * 60 * 60 * 1000),
+        },
+        amountDue: { gt: 0 },
       },
     });
-  }
 
-  const pastDue = await prisma.tenantSubscription.findMany({
-    where: {
-      status: "PAST_DUE",
-      nextPaymentDue: {
-        lte: new Date(now.getTime() - GRACE_DAYS * 24 * 60 * 60 * 1000),
+    for (const sub of pastDue) {
+      await prisma.tenantSubscription.update({
+        where: { id: sub.id },
+        data: { status: "SUSPENDED", suspendedAt: now },
+      });
+      await prisma.tenant.update({
+        where: { id: sub.tenantId },
+        data: { status: "SUSPENDED" },
+      });
+      logger.info(`Suspended tenant ${sub.tenantId} for overdue payment`);
+    }
+
+    const renewalWindow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const upcoming = await prisma.tenantSubscription.findMany({
+      where: {
+        status: { in: ["ACTIVE", "TRIALING"] },
+        nextPaymentDue: { gte: now, lte: renewalWindow },
       },
-      amountDue: { gt: 0 },
-    },
-  });
-
-  for (const sub of pastDue) {
-    await prisma.tenantSubscription.update({
-      where: { id: sub.id },
-      data: { status: "SUSPENDED", suspendedAt: now },
+      include: { tenant: true, plan: true },
     });
-    await prisma.tenant.update({
-      where: { id: sub.tenantId },
-      data: { status: "SUSPENDED" },
-    });
-    logger.info(`Suspended tenant ${sub.tenantId} for overdue payment`);
-  }
 
-  const renewalWindow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const upcoming = await prisma.tenantSubscription.findMany({
-    where: {
-      status: { in: ["ACTIVE", "TRIALING"] },
-      nextPaymentDue: { gte: now, lte: renewalWindow },
-    },
-    include: { tenant: true, plan: true },
-  });
-
-  const supportEmail = await getPlatformSetting("support_email");
-  for (const sub of upcoming) {
-    if (!sub.tenant.email) continue;
-    const subject = `Renewal reminder: ${sub.plan.name} plan`;
-    const html = `<p>Your subscription renews on ${sub.nextPaymentDue?.toLocaleDateString("en-IN")}. Amount due: INR ${sub.amountDue}. Contact ${supportEmail || "support"} to renew.</p>`;
-    await sendEmail(sub.tenantId, sub.tenant.email, subject, html).catch(
-      () => {},
-    );
+    const supportEmail = await getPlatformSetting("support_email");
+    for (const sub of upcoming) {
+      if (!sub.tenant.email) continue;
+      const subject = `Renewal reminder: ${sub.plan.name} plan`;
+      const html = `<p>Your subscription renews on ${sub.nextPaymentDue?.toLocaleDateString("en-IN")}. Amount due: INR ${sub.amountDue}. Contact ${supportEmail || "support"} to renew.</p>`;
+      await sendEmail(sub.tenantId, sub.tenant.email, subject, html).catch(
+        () => {},
+      );
+    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error("runSubscriptionSweep error:", message);
   }
 }
 

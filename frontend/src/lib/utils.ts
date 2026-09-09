@@ -30,7 +30,9 @@ export function getImageUrl(path: string | null | undefined): string {
   if (!path) return "";
 
   const normalizedPath = normalizeProtocolSlashes(path.trim());
-  if (/^https?:\/\//i.test(normalizedPath)) return normalizedPath;
+  if (/^https?:\/\//i.test(normalizedPath) || /^data:image\//i.test(normalizedPath)) {
+    return normalizedPath;
+  }
 
   const backendOrigin = getBackendOrigin(API_BASE_URL);
   const cleanPath = normalizedPath.startsWith("/")

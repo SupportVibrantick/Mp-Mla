@@ -1,6 +1,7 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
+import { createUploader, getUploadPath } from "../../../lib/upload.js";
 import {
   createVoterSchema,
   updateVoterSchema,
@@ -12,8 +13,32 @@ import { updateVoter, resetVoterPassword } from "./update.js";
 import { deleteVoter, bulkDeleteVoters } from "./delete.js";
 import { bulkUploadVoters, listBulkJobs, getBulkJob } from "./bulk.js";
 import { exportVoters, downloadSampleExcel } from "./export.js";
+import familyRouter from "./family.js";
 
+const voterUploader = createUploader("voters");
 const router = Router();
+
+// ─── Upload Voter / Family Member Photo Endpoint ────────
+router.post(
+  "/upload-photo",
+  requirePermission("voter_list", "update"),
+  voterUploader.single("photo"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ success: false, message: "Photo file is required." });
+        return;
+      }
+      const photoUrl = getUploadPath(req.file.filename, "voters");
+      res.json({ success: true, data: { photoUrl }, message: "Photo uploaded successfully." });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ─── Family & Household Sub-router ───────────────────────
+router.use("/", familyRouter);
 
 // ─── Sample Template Download (Excel with Dropdowns) ─────
 router.get(

@@ -96,6 +96,8 @@ export const getPublicBranding = catchAsync(async (req, res) => {
     where: {
       key: {
         in: [
+          "platform_name",
+          "platform_operator_name",
           "brand_primary_color",
           "brand_secondary_color",
           "brand_logo_url",
@@ -129,9 +131,11 @@ export const getPublicBranding = catchAsync(async (req, res) => {
     ]);
     const tenantMap = new Map(tenantDbSettings.map((s) => [s.key, s.value]));
 
-    const partyLogo = tenantMap.get("party_logo_url") ?? tenant?.partyLogoUrl ?? platformMap.get("brand_logo_url") ?? "";
+    const partyLogo = tenantMap.get("party_logo_url") ?? tenant?.partyLogoUrl ?? "";
 
     const data: Record<string, string> = {
+      platform_name: platformMap.get("platform_name") ?? "MP-MLA Platform",
+      platform_operator_name: platformMap.get("platform_operator_name") ?? "Platform Super Admin",
       org_name: tenantMap.get("org_name") ?? tenant?.name ?? "",
       org_short_name: tenantMap.get("org_short_name") ?? "",
       party_logo_url: partyLogo,
@@ -145,7 +149,7 @@ export const getPublicBranding = catchAsync(async (req, res) => {
         platformMap.get("brand_primary_color") ?? ALL_DEFAULT_SETTINGS["brand_primary_color"]?.value ?? "#2563eb",
       brand_secondary_color:
         platformMap.get("brand_secondary_color") ?? ALL_DEFAULT_SETTINGS["brand_secondary_color"]?.value ?? "#7c3aed",
-      brand_logo_url: partyLogo || platformMap.get("brand_logo_url") || "",
+      brand_logo_url: platformMap.get("brand_logo_url") ?? ALL_DEFAULT_SETTINGS["brand_logo_url"]?.value ?? "",
       brand_favicon_url:
         platformMap.get("brand_favicon_url") ?? "",
       brand_login_bg: platformMap.get("brand_login_bg") ?? "gradient",
@@ -156,6 +160,8 @@ export const getPublicBranding = catchAsync(async (req, res) => {
   }
 
   const data: Record<string, string> = {
+    platform_name: platformMap.get("platform_name") ?? "MP-MLA Platform",
+    platform_operator_name: platformMap.get("platform_operator_name") ?? "Platform Super Admin",
     org_name: "MP-MLA Platform",
     org_short_name: "Platform",
     brand_primary_color:
@@ -295,6 +301,15 @@ router.put(
           description: def.description,
         },
       });
+
+      if (key === "party_logo_url") {
+        await prisma.tenant
+          .update({
+            where: { id: tenantId },
+            data: { partyLogoUrl: value },
+          })
+          .catch(() => {});
+      }
 
       changed.push({
         key,

@@ -53,6 +53,7 @@ import {
   Target,
   BarChart3,
   Calendar,
+  MapPin,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import BirthdayWidget from "./dashboard/BirthdayWidget";
@@ -395,30 +396,30 @@ export default function Dashboard() {
       label: "Janata Sessions",
       desc: `${s.totalJanataTokens} citizen tokens`,
     },
-    {
-      id: "crm-contacts",
-      module: "crm",
-      to: "/crm/contacts",
-      icon: Users,
-      color: "text-amber-600 dark:text-amber-400",
-      bgColor: "bg-amber-50 dark:bg-amber-950/40",
-      borderTopColor: "border-t-amber-600 dark:border-t-amber-500",
-      value: s.totalContacts,
-      label: "CRM Contacts",
-      desc: "Citizen directory",
-    },
     // {
-    //   id: "documents",
-    //   module: "documents",
-    //   to: "/documents",
-    //   icon: FolderKanban,
-    //   color: "text-sky-600 dark:text-sky-400",
-    //   bgColor: "bg-sky-50 dark:bg-sky-950/40",
-    //   borderTopColor: "border-t-sky-600 dark:border-t-sky-500",
-    //   value: s.totalDocuments,
-    //   label: "Documents",
-    //   desc: "Digital repository",
+    //   id: "crm-contacts",
+    //   module: "crm",
+    //   to: "/crm/contacts",
+    //   icon: Users,
+    //   color: "text-amber-600 dark:text-amber-400",
+    //   bgColor: "bg-amber-50 dark:bg-amber-950/40",
+    //   borderTopColor: "border-t-amber-600 dark:border-t-amber-500",
+    //   value: s.totalContacts,
+    //   label: "CRM Contacts",
+    //   desc: "Citizen directory",
     // },
+    {
+      id: "events",
+      module: "events",
+      to: "/events",
+      icon: Calendar,
+      color: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-50 dark:bg-purple-950/40",
+      borderTopColor: "border-t-purple-600 dark:border-t-purple-500",
+      value: s.upcomingEvents ?? 0,
+      label: "Upcoming Events",
+      desc: `${s.totalEvents || 0} total scheduled`,
+    },
   ];
 
   return (
@@ -569,6 +570,141 @@ export default function Dashboard() {
         </div>
 
         <BirthdayWidget />
+
+        {/* ═══ Upcoming Events & Programs Section ═══ */}
+        {hasModule("events") && (
+          <Card className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-[0_4px_12px_rgba(0,0,0,0.02)] bg-white dark:bg-slate-900 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700">
+            <CardHeader className="pb-3 px-4 sm:px-6 border-b border-slate-100 dark:border-slate-800/60">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 shadow-sm shrink-0">
+                    <Calendar className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      Upcoming Events & Public Programs
+                      {(d.events?.upcomingCount ?? 0) > 0 && (
+                        <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-none font-semibold text-[11px] px-2 py-0.5">
+                          {d.events.upcomingCount} Upcoming
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Scheduled constituency rallies, public meetings, inspections & community programs
+                    </CardDescription>
+                  </div>
+                </div>
+                <Link to="/events">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-semibold h-8 px-3 rounded-full border border-slate-200/80 dark:border-slate-800 shadow-sm transition-all duration-200"
+                  >
+                    View All Events →
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              {d.events?.upcoming && d.events.upcoming.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {d.events.upcoming.map((evt: any) => {
+                    const evtDate = new Date(evt.startDate);
+                    const dayNum = evtDate.getDate();
+                    const monthStr = evtDate.toLocaleDateString("en-IN", { month: "short" }).toUpperCase();
+                    const dayOfWeek = evtDate.toLocaleDateString("en-IN", { weekday: "short" });
+                    const timeStr = evtDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+
+                    return (
+                      <div
+                        key={evt.id}
+                        onClick={() => navigate(`/events/${evt.id}`)}
+                        className="group relative rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 p-4 transition-all duration-300 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-600/50 cursor-pointer flex flex-col justify-between"
+                      >
+                        <div className="space-y-3">
+                          {/* Top bar: Date Badge + Type Badge */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-purple-600 text-white shadow-md shadow-purple-500/20 shrink-0">
+                                <span className="text-[10px] font-bold uppercase tracking-wider leading-none">{monthStr}</span>
+                                <span className="text-lg font-black leading-none mt-0.5">{dayNum}</span>
+                                <span className="text-[8px] font-semibold opacity-80 uppercase leading-none mt-0.5">{dayOfWeek}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-semibold uppercase tracking-wider border-purple-200 dark:border-purple-800/60 bg-purple-50/80 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"
+                                >
+                                  {evt.type?.replace("_", " ") || "EVENT"}
+                                </Badge>
+                                {evt.mode && evt.mode !== "OFFLINE" && (
+                                  <Badge variant="secondary" className="text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                                    {evt.mode}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform">
+                              →
+                            </span>
+                          </div>
+
+                          {/* Title */}
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
+                              {evt.title}
+                            </h4>
+                          </div>
+
+                          {/* Location & Time */}
+                          <div className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Clock className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                              <span className="font-medium">{timeStr}</span>
+                            </div>
+                            {(evt.location || evt.ward) && (
+                              <div className="flex items-center gap-1.5 truncate">
+                                <MapPin className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                                <span className="truncate">
+                                  {evt.ward ? `Ward ${evt.ward.wardNumber} - ${evt.ward.name}` : evt.location}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer: Organizer */}
+                        {evt.organizer?.name && (
+                          <div className="mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[11px] text-slate-400">
+                            <span>Organizer:</span>
+                            <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[150px]">
+                              {evt.organizer.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 px-4 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 shadow-inner">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No Upcoming Events Scheduled</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-4">
+                    There are no upcoming rallies, public meetings, or constituency events scheduled at the moment.
+                  </p>
+                  <Link to="/events">
+                    <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-xl shadow-md gap-1.5">
+                      + Schedule New Event
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* ═══ Row 3: Category Chart + Project Pie ═══ */}
         {(hasModule("community_groups") || hasModule("projects")) && (

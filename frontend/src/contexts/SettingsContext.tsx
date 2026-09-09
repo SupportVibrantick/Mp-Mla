@@ -42,9 +42,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Update Title
-    if (data.org_name) {
-      document.title = data.org_name;
-    }
+    const platformTitle = data.platform_name || data.platform_operator_name || "MP/MLA Constituency Management Portal";
+    document.title = platformTitle;
 
     // Update Favicon
     if (data.brand_favicon_url) {

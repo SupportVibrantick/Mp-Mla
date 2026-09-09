@@ -98,6 +98,7 @@ router.get(
       // Events
       totalEvents,
       upcomingEvents,
+      upcomingEventsList,
 
       // Recent Appointments
       recentAppointments,
@@ -296,7 +297,46 @@ router.get(
         where: { tenantId, isDeleted: false },
       }),
       prisma.event.count({
-        where: { tenantId, startDate: { gte: now }, isDeleted: false },
+        where: {
+          tenantId,
+          isDeleted: false,
+          status: { notIn: ["COMPLETED", "CANCELLED"] },
+          OR: [
+            { endDate: { gte: now } },
+            { startDate: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } },
+          ],
+        },
+      }),
+      prisma.event.findMany({
+        select: {
+          id: true,
+          eventCode: true,
+          title: true,
+          type: true,
+          status: true,
+          mode: true,
+          startDate: true,
+          endDate: true,
+          location: true,
+          address: true,
+          ward: {
+            select: { name: true, wardNumber: true },
+          },
+          organizer: {
+            select: { name: true },
+          },
+        },
+        where: {
+          tenantId,
+          isDeleted: false,
+          status: { notIn: ["COMPLETED", "CANCELLED"] },
+          OR: [
+            { endDate: { gte: now } },
+            { startDate: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } },
+          ],
+        },
+        orderBy: { startDate: "asc" },
+        take: 6,
       }),
 
       // ─── Recent Appointments
@@ -493,6 +533,13 @@ router.get(
         // ─── Appointment Data
         appointments: {
           recent: recentAppointments,
+        },
+
+        // ─── Events Data
+        events: {
+          total: totalEvents,
+          upcomingCount: upcomingEvents,
+          upcoming: upcomingEventsList,
         },
       },
     });

@@ -426,6 +426,16 @@ export const voterListApi = {
     api.get("/admin/voter-list/sample/excel", { responseType: "blob" }),
 };
 
+export const voterFamilyApi = {
+  getFamily: (voterId: string) => api.get(`/admin/voter-list/${voterId}/family`),
+  createMember: (voterId: string, data: any) =>
+    api.post(`/admin/voter-list/${voterId}/family`, data),
+  updateMember: (familyMemberId: string, data: any) =>
+    api.put(`/admin/voter-list/family/${familyMemberId}`, data),
+  deleteMember: (familyMemberId: string) =>
+    api.delete(`/admin/voter-list/family/${familyMemberId}`),
+};
+
 export const tasksApi = {
   list: (params?: any) => api.get("/admin/tasks", { params }),
   get: (id: string) => api.get(`/admin/tasks/${id}`),

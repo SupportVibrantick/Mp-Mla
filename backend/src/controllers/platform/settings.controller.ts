@@ -7,6 +7,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { getUploadPath, deleteFile } from "../../lib/upload.js";
 import { testSmtpConnection } from "../../lib/email.js";
+import { testWhatsAppConnection } from "../../lib/whatsapp.js";
 
 function parseIncomingSettings(req: Request) {
   if (Array.isArray(req.body?.settings)) {
@@ -213,6 +214,31 @@ export async function testPlatformSmtpConnection(
       res.status(400).json({
         success: false,
         message: result.error || "Failed to send test email",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function testPlatformWhatsAppConnection(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { to } = req.body;
+    if (!to) {
+      throw ApiError.badRequest("Recipient phone number 'to' is required");
+    }
+
+    const result = await testWhatsAppConnection("platform", to);
+    if (result.success) {
+      res.json(ApiResponse.success(null, "Test WhatsApp message sent successfully!"));
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.error || "Failed to send test WhatsApp message",
       });
     }
   } catch (error) {

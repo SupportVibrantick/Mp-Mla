@@ -29,6 +29,12 @@ export const SETTING_GROUPS = [
     desc: "Passwords, sessions",
   },
   {
+    id: "notifications",
+    label: "Notifications",
+    icon: "🔔",
+    desc: "SMS & WhatsApp alerts",
+  },
+  {
     id: "email_smtp",
     label: "Email & SMTP",
     icon: "📧",
@@ -125,6 +131,26 @@ export function useTestEmail() {
         title: "SMTP Test Failed",
         description:
           err?.response?.data?.message || "Failed to send test email.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useTestWhatsApp() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (to: string) =>
+      api.post("/platform/settings/test-whatsapp", { to }).then((r) => r.data),
+    onSuccess: (res) => {
+      toast({ title: "Success", description: res.message });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "WhatsApp Test Failed",
+        description:
+          err?.response?.data?.message || "Failed to send test WhatsApp message.",
         variant: "destructive",
       });
     },

@@ -5,6 +5,7 @@ import {
   useUpdateSettings,
   useResetSettings,
   useTestEmail,
+  useTestWhatsApp,
   SETTING_GROUPS,
 } from "@/hooks/useSettings";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -103,6 +104,7 @@ const GROUP_ICONS: Record<string, any> = {
   billing: CreditCard,
   branding: Palette,
   security: Shield,
+  notifications: Bell,
   email_smtp: Mail,
   backup: Database,
   meetings: Calendar,
@@ -600,12 +602,14 @@ export default function SettingsPage() {
   const updateMut = useUpdateSettings();
   const resetMut = useResetSettings();
   const testEmailMut = useTestEmail();
+  const testWhatsAppMut = useTestWhatsApp();
 
   const [activeGroup, setActiveGroup] = useState("profile");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [testEmailTo, setTestEmailTo] = useState("");
+  const [testWhatsAppTo, setTestWhatsAppTo] = useState("");
   const [imageFiles, setImageFiles] = useState<Record<string, File>>({});
   const [imagePreviews, setImagePreviews] = useState<Record<string, string>>(
     {},
@@ -1117,6 +1121,43 @@ export default function SettingsPage() {
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                   <Mail className="h-4 w-4" />
+                                )}
+                                Send Test
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Test Connection UI for WhatsApp */}
+                      {activeGroup === "notifications" && (
+                        <>
+                          <Separator className="my-6" />
+                          <div className="rounded-lg border p-5 bg-muted/20">
+                            <h3 className="text-sm font-semibold mb-1">
+                              Test WhatsApp Integration
+                            </h3>
+                            <p className="text-xs text-muted-foreground mb-4">
+                              Save your settings first, then enter a phone number with country code (e.g. +919876543210) to test sending a WhatsApp message.
+                            </p>
+                            <div className="flex gap-3 max-w-sm">
+                              <Input
+                                placeholder="+919876543210"
+                                type="tel"
+                                value={testWhatsAppTo}
+                                onChange={(e) => setTestWhatsAppTo(e.target.value)}
+                              />
+                              <Button
+                                onClick={() => testWhatsAppMut.mutate(testWhatsAppTo)}
+                                disabled={
+                                  !testWhatsAppTo || testWhatsAppMut.isPending
+                                }
+                                className="shrink-0 gap-2"
+                              >
+                                {testWhatsAppMut.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Bell className="h-4 w-4" />
                                 )}
                                 Send Test
                               </Button>
