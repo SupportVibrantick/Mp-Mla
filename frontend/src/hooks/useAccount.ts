@@ -18,6 +18,13 @@ export function useAccountInvoices() {
   });
 }
 
+export function useAccountUsage() {
+  return useQuery({
+    queryKey: ["account", "usage"],
+    queryFn: () => accountApi.getUsage().then((r) => r.data.data),
+  });
+}
+
 
 
 export function useAccountPlans() {

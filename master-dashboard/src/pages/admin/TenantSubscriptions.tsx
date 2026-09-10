@@ -324,6 +324,19 @@ export default function TenantSubscriptionsPage() {
                             {subscription.plan?.maxVoters > 0 ? ` / ${subscription.plan.maxVoters.toLocaleString()}` : " (Unl.)"}
                           </span>
                         </div>
+                        <div>
+                          <span className="font-semibold">Storage: </span>
+                          <span>
+                            {(subscription.tenant?.storageUsedMB ?? 0).toFixed(1)} MB
+                            {subscription.plan?.storageLimitMB > 0
+                              ? ` / ${
+                                  subscription.plan.storageLimitMB >= 1024
+                                    ? `${(subscription.plan.storageLimitMB / 1024).toFixed(0)} GB`
+                                    : `${subscription.plan.storageLimitMB} MB`
+                                }`
+                              : " (Unl.)"}
+                          </span>
+                        </div>
                       </td>
                       <td className="p-4 font-bold">
                         {formatCurrency(

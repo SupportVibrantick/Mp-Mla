@@ -62,7 +62,14 @@ router.get("/:id/download", requirePermission("documents", "download"), download
 
 // Version history
 router.get("/:id/versions", requirePermission("documents", "read"), listDocumentVersions);
-router.post("/:id/versions", requirePermission("documents", "create"), validate(uploadVersionSchema), uploadNewVersion);
+router.post(
+  "/:id/versions",
+  requirePermission("documents", "create"),
+  documentsUploader.single("file"),
+  enforceStorageAndTrack,
+  validate(uploadVersionSchema),
+  uploadNewVersion
+);
 
 // Document Linking
 router.post("/:id/link", requirePermission("documents", "create"), validate(linkDocumentSchema), linkDocument);

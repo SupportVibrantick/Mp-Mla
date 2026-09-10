@@ -40,6 +40,7 @@ export const createPlanSchema = z.object({
   priceYearly: z.coerce.number().min(0).default(0),
   maxUsers: z.coerce.number().int().min(0).optional().default(0),
   maxVoters: z.coerce.number().int().min(0).optional().default(0),
+  storageLimitMB: z.coerce.number().int().min(0).optional().default(0),
   features: z.any().optional().default([]),
   isActive: z.boolean().optional().default(true),
   isPopular: z.boolean().optional().default(false),

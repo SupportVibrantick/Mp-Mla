@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { API_BASE_URL } from "@/lib/api";
-
-const getFileUrl = (url: string) => {
-  if (!url) return "#";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const backendBase = API_BASE_URL.replace("/api", "");
-  return `${backendBase}${url}`;
-};
+import { API_BASE_URL, getFileUrl } from "@/lib/api";
 import {
   useSchemeApplication,
   useUpdateSchemeApplicationStatus,

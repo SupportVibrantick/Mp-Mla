@@ -18,8 +18,8 @@ export const updateDocumentSchema = z.object({
 });
 
 export const uploadVersionSchema = z.object({
-  fileName: z.string().min(1, "fileName is required"),
-  fileUrl: z.string().min(1, "fileUrl is required"),
+  fileName: z.string().optional().nullable(),
+  fileUrl: z.string().optional().nullable(),
   fileType: z.string().optional().nullable(),
   fileSize: z.coerce.number().int().optional().nullable(),
 });

@@ -1,6 +1,8 @@
 import prisma from "./prisma.js";
 import { ApiError } from "../utils/ApiError.js";
 import { syncVoterDemographics } from "../routes/admin/voterList/demographicsSync.js";
+import { deleteFileAndReleaseStorage } from "./upload.js";
+import { trackStorageRelease } from "./quota.js";
 
 export type RecycleEntityType =
   | "user"
@@ -1002,9 +1004,21 @@ export async function permanentlyDeleteRecycledRecord(entry: {
     case "contact":
       await prisma.contact.deleteMany({ where: { id: entry.recordId } });
       break;
-    case "document":
+    case "document": {
+      const doc = await prisma.document.findUnique({
+        where: { id: entry.recordId },
+        select: { fileUrl: true, fileSize: true, tenantId: true },
+      });
+      if (doc) {
+        if (doc.fileUrl) {
+          await deleteFileAndReleaseStorage(doc.fileUrl, doc.tenantId, doc.fileSize ?? undefined);
+        } else if (doc.fileSize) {
+          await trackStorageRelease(doc.tenantId, doc.fileSize, true);
+        }
+      }
       await prisma.document.deleteMany({ where: { id: entry.recordId } });
       break;
+    }
     case "correspondence":
       await prisma.correspondence.deleteMany({ where: { id: entry.recordId } });
       break;

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link, useLocation } from "wouter";
+import ReactSelect from "react-select";
 import {
   useDocument,
   useDeleteDocument,
@@ -9,6 +10,13 @@ import {
   useUnlinkDocument,
   DOCUMENT_LINK_MODULES,
 } from "@/hooks/useDocuments";
+import { useGrievances } from "@/hooks/useGrievances";
+import { useProjects } from "@/hooks/useProjects";
+import { useSchemeApplications } from "@/hooks/useSchemes";
+import { useEvents } from "@/hooks/useEvents";
+import { useAppointments } from "@/hooks/useAppointments";
+import { useTasks } from "@/hooks/useTasks";
+import { getFileUrl } from "@/lib/api";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,9 +87,92 @@ export default function DocumentDetailPage() {
   const unlinkMut = useUnlinkDocument();
 
   const [versionDlg, setVersionDlg] = useState(false);
-  const [versionForm, setVersionForm] = useState({ fileName: "", fileUrl: "", fileType: "", fileSize: "" });
+  const [selectedVersionFile, setSelectedVersionFile] = useState<File | null>(null);
+  const [versionForm, setVersionForm] = useState({ fileName: "", fileType: "", fileSize: "" });
   const [linkDlg, setLinkDlg] = useState(false);
   const [linkForm, setLinkForm] = useState({ module: "GRIEVANCE", recordId: "" });
+
+  // Module record queries for searchable linking
+  const { data: grievancesRes, isLoading: loadingGrievances } = useGrievances(
+    linkDlg && linkForm.module === "GRIEVANCE" ? { limit: 100 } : undefined
+  );
+  const { data: projectsRes, isLoading: loadingProjects } = useProjects(
+    linkDlg && linkForm.module === "PROJECT" ? { limit: 100 } : undefined
+  );
+  const { data: schemeAppsRes, isLoading: loadingSchemeApps } = useSchemeApplications(
+    linkDlg && linkForm.module === "SCHEME_APPLICATION" ? { limit: 100 } : undefined
+  );
+  const { data: eventsRes, isLoading: loadingEvents } = useEvents(
+    linkDlg && linkForm.module === "EVENT" ? { limit: 100 } : undefined
+  );
+  const { data: appointmentsRes, isLoading: loadingAppointments } = useAppointments(
+    linkDlg && linkForm.module === "APPOINTMENT" ? { limit: 100 } : undefined
+  );
+  const { data: tasksRes, isLoading: loadingTasks } = useTasks(
+    linkDlg && linkForm.module === "TASK" ? { limit: 100 } : undefined
+  );
+
+  const isRecordsLoading =
+    (linkForm.module === "GRIEVANCE" && loadingGrievances) ||
+    (linkForm.module === "PROJECT" && loadingProjects) ||
+    (linkForm.module === "SCHEME_APPLICATION" && loadingSchemeApps) ||
+    (linkForm.module === "EVENT" && loadingEvents) ||
+    (linkForm.module === "APPOINTMENT" && loadingAppointments) ||
+    (linkForm.module === "TASK" && loadingTasks);
+
+  const recordOptions = useMemo(() => {
+    if (linkForm.module === "GRIEVANCE") {
+      const list = grievancesRes?.data || (Array.isArray(grievancesRes) ? grievancesRes : []);
+      return (Array.isArray(list) ? list : []).map((g: any) => ({
+        value: g.id,
+        label: `${g.ticketNumber ? `[${g.ticketNumber}] ` : ""}${g.subject || g.description?.slice(0, 35) || "Grievance"}${g.complainantName ? ` • ${g.complainantName}` : ""}`,
+      }));
+    }
+    if (linkForm.module === "PROJECT") {
+      const list = projectsRes?.data || (Array.isArray(projectsRes) ? projectsRes : []);
+      return (Array.isArray(list) ? list : []).map((p: any) => ({
+        value: p.id,
+        label: `${p.name}${p.code ? ` (${p.code})` : ""}${p.category ? ` • ${p.category}` : ""}`,
+      }));
+    }
+    if (linkForm.module === "SCHEME_APPLICATION") {
+      const list = schemeAppsRes?.data || (Array.isArray(schemeAppsRes) ? schemeAppsRes : []);
+      return (Array.isArray(list) ? list : []).map((a: any) => ({
+        value: a.id,
+        label: `${a.applicationNumber ? `[${a.applicationNumber}] ` : ""}${a.applicantName || "Applicant"} • ${a.scheme?.name || a.schemeName || "Scheme"}`,
+      }));
+    }
+    if (linkForm.module === "EVENT") {
+      const list = eventsRes?.data || (Array.isArray(eventsRes) ? eventsRes : []);
+      return (Array.isArray(list) ? list : []).map((e: any) => ({
+        value: e.id,
+        label: `${e.title}${e.location ? ` • ${e.location}` : ""}`,
+      }));
+    }
+    if (linkForm.module === "APPOINTMENT") {
+      const list = appointmentsRes?.data || (Array.isArray(appointmentsRes) ? appointmentsRes : []);
+      return (Array.isArray(list) ? list : []).map((ap: any) => ({
+        value: ap.id,
+        label: `${ap.visitorName || "Visitor"} • ${ap.purpose || "Appointment"}`,
+      }));
+    }
+    if (linkForm.module === "TASK") {
+      const list = tasksRes?.data || (Array.isArray(tasksRes) ? tasksRes : []);
+      return (Array.isArray(list) ? list : []).map((t: any) => ({
+        value: t.id,
+        label: `${t.title}${t.priority ? ` • ${t.priority}` : ""}`,
+      }));
+    }
+    return [];
+  }, [
+    linkForm.module,
+    grievancesRes,
+    projectsRes,
+    schemeAppsRes,
+    eventsRes,
+    appointmentsRes,
+    tasksRes,
+  ]);
 
   const d = res?.data;
 
@@ -112,13 +203,24 @@ export default function DocumentDetailPage() {
   };
 
   const openVersionDlg = () => {
-    setVersionForm({ fileName: "", fileUrl: "", fileType: "", fileSize: "" });
+    setSelectedVersionFile(null);
+    setVersionForm({ fileName: "", fileType: "", fileSize: "" });
     setVersionDlg(true);
   };
   const saveVersion = async () => {
-    if (!versionForm.fileName || !versionForm.fileUrl) return;
-    await uploadVersionMut.mutateAsync({ id: d.id, data: versionForm });
-    setVersionDlg(false);
+    if (!selectedVersionFile) return;
+    const formData = new FormData();
+    formData.append("file", selectedVersionFile);
+    if (versionForm.fileName) formData.append("fileName", versionForm.fileName);
+    if (versionForm.fileType) formData.append("fileType", versionForm.fileType);
+    if (versionForm.fileSize) formData.append("fileSize", versionForm.fileSize);
+
+    try {
+      await uploadVersionMut.mutateAsync({ id: d.id, data: formData });
+      setVersionDlg(false);
+    } catch {
+      // toast is already handled in mutation onError
+    }
   };
 
   const openLinkDlg = () => {
@@ -134,7 +236,7 @@ export default function DocumentDetailPage() {
   const handleDownload = async () => {
     const res = await downloadMut.mutateAsync(d.id);
     if (res?.downloadUrl) {
-      window.open(res.downloadUrl, "_blank");
+      window.open(getFileUrl(res.downloadUrl), "_blank");
     }
   };
 
@@ -274,7 +376,7 @@ export default function DocumentDetailPage() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">File URL</span>
               <a
-                href={d.fileUrl}
+                href={getFileUrl(d.fileUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-primary hover:underline"
@@ -326,7 +428,7 @@ export default function DocumentDetailPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <a href={v.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        <a href={getFileUrl(v.fileUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           {v.fileName}
                         </a>
                       </TableCell>
@@ -408,52 +510,76 @@ export default function DocumentDetailPage() {
 
       {/* Version Dialog */}
       <Dialog open={versionDlg} onOpenChange={setVersionDlg}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Upload New Version</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>File Name <span className="text-destructive">*</span></Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Select New Version File <span className="text-destructive">*</span>
+              </Label>
+              <div className="border-2 border-dashed border-border/80 hover:border-primary/50 bg-muted/15 rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 relative hover:bg-muted/20">
+                <input
+                  type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file) {
+                      setSelectedVersionFile(file);
+                      setVersionForm({
+                        fileName: file.name,
+                        fileType: file.type || file.name.split(".").pop() || "",
+                        fileSize: String(file.size),
+                      });
+                    }
+                  }}
+                />
+                <Upload className="h-7 w-7 text-muted-foreground animate-bounce mt-1" />
+                <span className="text-sm font-semibold text-foreground text-center max-w-[280px] truncate">
+                  {selectedVersionFile ? selectedVersionFile.name : "Choose File or Drag & Drop"}
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  {selectedVersionFile
+                    ? formatBytes(selectedVersionFile.size)
+                    : "Supports PDF, DOC, DOCX, XLS, Images up to 50MB"}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>File Name</Label>
               <Input
                 value={versionForm.fileName}
                 onChange={(e) => setVersionForm((p) => ({ ...p, fileName: e.target.value }))}
-                placeholder="report-v2.pdf"
+                placeholder="e.g. report-v2.pdf"
               />
             </div>
-            <div className="space-y-2">
-              <Label>File URL <span className="text-destructive">*</span></Label>
-              <Input
-                value={versionForm.fileUrl}
-                onChange={(e) => setVersionForm((p) => ({ ...p, fileUrl: e.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>File Type</Label>
+                <Label className="text-xs text-muted-foreground">File Type</Label>
                 <Input
                   value={versionForm.fileType}
                   onChange={(e) => setVersionForm((p) => ({ ...p, fileType: e.target.value }))}
-                  placeholder="application/pdf"
+                  placeholder="e.g. pdf"
                 />
               </div>
               <div className="space-y-2">
-                <Label>File Size (bytes)</Label>
+                <Label className="text-xs text-muted-foreground">File Size</Label>
                 <Input
-                  type="number"
-                  value={versionForm.fileSize}
-                  onChange={(e) => setVersionForm((p) => ({ ...p, fileSize: e.target.value }))}
-                  placeholder="102400"
+                  disabled
+                  value={versionForm.fileSize ? formatBytes(Number(versionForm.fileSize)) : "—"}
+                  className="bg-muted/30"
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setVersionDlg(false)}>Cancel</Button>
-            <Button disabled={!versionForm.fileName || !versionForm.fileUrl || uploadVersionMut.isPending} onClick={saveVersion}>
+            <Button disabled={!selectedVersionFile || uploadVersionMut.isPending} onClick={saveVersion}>
               {uploadVersionMut.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Upload
+              Upload Version
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -461,7 +587,7 @@ export default function DocumentDetailPage() {
 
       {/* Link Dialog */}
       <Dialog open={linkDlg} onOpenChange={setLinkDlg}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Link Document</DialogTitle>
           </DialogHeader>
@@ -470,7 +596,7 @@ export default function DocumentDetailPage() {
               <Label>Module <span className="text-destructive">*</span></Label>
               <Select
                 value={linkForm.module}
-                onValueChange={(v) => setLinkForm((p) => ({ ...p, module: v }))}
+                onValueChange={(v) => setLinkForm({ module: v, recordId: "" })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -485,19 +611,98 @@ export default function DocumentDetailPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Record ID <span className="text-destructive">*</span></Label>
-              <Input
-                value={linkForm.recordId}
-                onChange={(e) => setLinkForm((p) => ({ ...p, recordId: e.target.value }))}
-                placeholder="Record ID to link"
+              <div className="flex items-center justify-between">
+                <Label>Select Record <span className="text-destructive">*</span></Label>
+                {isRecordsLoading && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    Fetching records...
+                  </span>
+                )}
+              </div>
+              <ReactSelect
+                isSearchable
+                isClearable
+                isLoading={isRecordsLoading}
+                placeholder={
+                  isRecordsLoading
+                    ? "Loading records..."
+                    : `Search & select ${linkForm.module.toLowerCase().replace("_", " ")}...`
+                }
+                noOptionsMessage={() => (isRecordsLoading ? "Loading..." : "No records found")}
+                options={recordOptions}
+                value={recordOptions.find((opt) => opt.value === linkForm.recordId) || null}
+                onChange={(val) =>
+                  setLinkForm((p) => ({ ...p, recordId: val ? val.value : "" }))
+                }
+                className="react-select-container text-sm"
+                classNamePrefix="react-select"
+                styles={{
+                  control: (base, state) => ({
+                    ...base,
+                    backgroundColor: "hsl(var(--background))",
+                    borderColor: state.isFocused ? "hsl(var(--primary))" : "hsl(var(--input))",
+                    boxShadow: state.isFocused ? "0 0 0 1px hsl(var(--primary))" : "none",
+                    borderRadius: "calc(var(--radius) - 2px)",
+                    minHeight: "40px",
+                    "&:hover": {
+                      borderColor: "hsl(var(--primary))",
+                    },
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    backgroundColor: "hsl(var(--popover))",
+                    color: "hsl(var(--popover-foreground))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "calc(var(--radius) - 2px)",
+                    boxShadow:
+                      "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                    zIndex: 9999,
+                  }),
+                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isSelected
+                      ? "hsl(var(--primary))"
+                      : state.isFocused
+                      ? "hsl(var(--accent))"
+                      : "transparent",
+                    color: state.isSelected
+                      ? "hsl(var(--primary-foreground))"
+                      : state.isFocused
+                      ? "hsl(var(--accent-foreground))"
+                      : "inherit",
+                    cursor: "pointer",
+                    fontSize: "0.875rem",
+                    padding: "8px 12px",
+                  }),
+                  singleValue: (base) => ({
+                    ...base,
+                    color: "hsl(var(--foreground))",
+                  }),
+                  input: (base) => ({
+                    ...base,
+                    color: "hsl(var(--foreground))",
+                  }),
+                  placeholder: (base) => ({
+                    ...base,
+                    color: "hsl(var(--muted-foreground))",
+                  }),
+                }}
+                menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
               />
+              {linkForm.recordId && (
+                <p className="text-[11px] text-muted-foreground font-mono truncate">
+                  Selected ID: {linkForm.recordId}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLinkDlg(false)}>Cancel</Button>
             <Button disabled={!linkForm.recordId || linkMut.isPending} onClick={saveLink}>
               {linkMut.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Link
+              Link Record
             </Button>
           </DialogFooter>
         </DialogContent>

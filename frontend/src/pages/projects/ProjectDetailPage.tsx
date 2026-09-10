@@ -20,6 +20,7 @@ import {
   useUpdateProject,
   useDeleteProjectAttachment,
 } from "@/hooks/useProjects";
+import { getFileUrl } from "@/lib/api";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -788,7 +789,7 @@ export default function ProjectDetailPage() {
                         <div className="bg-muted/10 border-t border-border/30 px-3.5 py-2 flex items-center justify-between gap-2 shrink-0">
                           <span className="text-[9px] font-semibold text-muted-foreground">Uploaded {format(new Date(att.createdAt), "dd MMM yy")}</span>
                           <div className="flex items-center gap-1.5">
-                            <a href={att.fileUrl} target="_blank" rel="noreferrer">
+                            <a href={getFileUrl(att.fileUrl)} target="_blank" rel="noreferrer">
                               <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground">
                                 <Download className="h-3.5 w-3.5" />
                               </Button>

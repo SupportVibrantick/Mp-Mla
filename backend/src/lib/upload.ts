@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import type { Request, Response, NextFunction } from "express";
-import { assertStorageQuota, trackStorageDelta } from "./quota.js";
+import { assertStorageQuota, trackStorageDelta, trackStorageRelease } from "./quota.js";
 import { ApiError } from "../utils/ApiError.js";
 import logger from "../utils/logger.js";
 
@@ -49,26 +49,16 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 async function quotaAwareFileFilter(
-  req: Request,
+  _req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) {
-  try {
-    // Check MIME type first
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      cb(new Error(`File type ${file.mimetype} is not allowed`));
-      return;
-    }
-
-    // Pre-flight quota check: does the tenant have headroom for MAX_FILE_BYTES?
-    const tenantId = req.tenantId || req.user?.tenantId;
-    if (tenantId) {
-      await assertStorageQuota(tenantId, MAX_FILE_BYTES);
-    }
-    cb(null, true);
-  } catch (error) {
-    cb(error as Error);
+  // Check MIME type
+  if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    cb(new Error(`File type ${file.mimetype} is not allowed`));
+    return;
   }
+  cb(null, true);
 }
 
 export const upload = multer({
@@ -105,8 +95,7 @@ export function createUploader(subDir: string) {
  * For each uploaded file:
  *   1. Re-checks the actual file size against the storage quota.
  *   2. Calls trackStorageDelta to increment storageUsedMB on the tenant.
- *   3. If the quota is exceeded (should be rare due to pre-flight check),
- *      deletes the file and throws HTTP 413.
+ *   3. If the quota is exceeded, deletes the file and throws HTTP 413 with detailed message.
  *
  * Usage in route handlers:
  *   router.post("/", upload.single("file"), async (req, res, next) => {
@@ -152,7 +141,7 @@ export async function enforceStorageAndTrack(
     // Hard quota check against actual byte size
     try {
       await assertStorageQuota(tenantId, totalBytes);
-    } catch {
+    } catch (quotaErr: any) {
       // Delete every uploaded file before rejecting
       for (const f of files) {
         try {
@@ -164,10 +153,12 @@ export async function enforceStorageAndTrack(
         }
       }
       next(
-        new ApiError(
-          413,
-          "Storage quota exceeded. Free up space or upgrade your plan.",
-        ),
+        quotaErr instanceof ApiError
+          ? quotaErr
+          : new ApiError(
+              413,
+              quotaErr?.message || "Storage quota exceeded. Free up space or upgrade your plan.",
+            ),
       );
       return;
     }
@@ -220,6 +211,39 @@ export function deleteFile(filePath: string): boolean {
     );
     if (fs.existsSync(absolutePath)) {
       fs.unlinkSync(absolutePath);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteFileAndReleaseStorage(
+  filePath: string,
+  tenantId?: string,
+  explicitSizeBytes?: number,
+): Promise<boolean> {
+  try {
+    const absolutePath = path.join(
+      UPLOAD_DIR,
+      "..",
+      filePath.replace("/uploads/", "uploads/"),
+    );
+    let sizeBytes = explicitSizeBytes || 0;
+    if (fs.existsSync(absolutePath)) {
+      if (!sizeBytes) {
+        try {
+          const stats = fs.statSync(absolutePath);
+          sizeBytes = stats.size;
+        } catch {
+          // ignore stat error
+        }
+      }
+      fs.unlinkSync(absolutePath);
+      if (tenantId && sizeBytes > 0) {
+        await trackStorageRelease(tenantId, sizeBytes, true);
+      }
       return true;
     }
     return false;

@@ -42,19 +42,71 @@ export async function assertCanCreateWard(_tenantId: string): Promise<void> {
 }
 
 export async function assertStorageQuota(
-  _tenantId: string,
-  _additionalBytes: number,
+  tenantId: string,
+  additionalBytes: number,
 ): Promise<void> {
-  // Unlimited storage
-  return;
+  const [subscription, tenant] = await Promise.all([
+    prisma.tenantSubscription.findUnique({
+      where: { tenantId },
+      include: { plan: true },
+    }),
+    prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { storageUsedMB: true, name: true },
+    }),
+  ]);
+
+  if (subscription?.plan && subscription.plan.storageLimitMB > 0) {
+    const additionalMB = additionalBytes / (1024 * 1024);
+    const currentUsedMB = tenant?.storageUsedMB ?? 0;
+    const projectedMB = currentUsedMB + additionalMB;
+
+    if (projectedMB > subscription.plan.storageLimitMB) {
+      throw new ApiError(
+        413,
+        `Storage quota limit exceeded (${currentUsedMB.toFixed(2)} MB / ${subscription.plan.storageLimitMB} MB used). Uploading ${additionalMB.toFixed(2)} MB would exceed your ${subscription.plan.name} plan limit. Please upgrade your subscription plan to upload more files.`,
+      );
+    }
+  }
 }
 
 export async function trackStorageDelta(
-  _tenantId: string,
-  _deltaBytes: number,
+  tenantId: string,
+  deltaBytes: number,
 ): Promise<void> {
-  // Unlimited storage tracking
-  return;
+  if (!tenantId || deltaBytes === 0) return;
+  const deltaMB = deltaBytes / (1024 * 1024);
+
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      storageUsedMB: {
+        increment: deltaMB,
+      },
+    },
+  });
+}
+
+export async function trackStorageRelease(
+  tenantId: string,
+  amount: number,
+  isBytes: boolean = true,
+): Promise<void> {
+  if (!tenantId || amount <= 0) return;
+  const releaseMB = isBytes ? amount / (1024 * 1024) : amount;
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { storageUsedMB: true },
+  });
+
+  if (tenant) {
+    const newUsedMB = Math.max(0, (tenant.storageUsedMB ?? 0) - releaseMB);
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { storageUsedMB: newUsedMB },
+    });
+  }
 }
 
 export async function getTenantUsage(tenantId: string) {
@@ -62,7 +114,7 @@ export async function getTenantUsage(tenantId: string) {
     await Promise.all([
       prisma.tenant.findUnique({
         where: { id: tenantId },
-        select: { id: true, name: true },
+        select: { id: true, name: true, storageUsedMB: true },
       }),
       prisma.user.count({ where: { tenantId } }),
       prisma.ward.count({ where: { tenantId, isDeleted: false } }),
@@ -89,8 +141,8 @@ export async function getTenantUsage(tenantId: string) {
       limit: null,
     },
     storage: {
-      usedMB: 0,
-      limitMB: null,
+      usedMB: Math.round((tenant?.storageUsedMB ?? 0) * 100) / 100,
+      limitMB: plan?.storageLimitMB && plan.storageLimitMB > 0 ? plan.storageLimitMB : null,
     },
     planName: plan?.name ?? null,
   };

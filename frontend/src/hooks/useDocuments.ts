@@ -38,9 +38,13 @@ function useDocMut(fn: (d: any) => Promise<any>, title: string) {
       toast({ title, description: res.message });
     },
     onError: (err: any) => {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Upload failed. Please check your storage quota.";
       toast({
-        title: "Error",
-        description: err?.response?.data?.message || "Failed",
+        title: "Upload Failed",
+        description: msg,
         variant: "destructive",
       });
     },

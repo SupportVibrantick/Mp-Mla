@@ -526,6 +526,7 @@ export const listTenantSubscriptions = async (
               name: true,
               constituencyName: true,
               status: true,
+              storageUsedMB: true,
               constituencies: {
                 select: {
                   type: true,

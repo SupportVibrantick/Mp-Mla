@@ -5,10 +5,25 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 // export const API_BASE_URL = "https://api-mp-mla.vibrantick.org/api";
 // const API_BASE_URL = "/api";
+
+export const getFileUrl = (url?: string | null): string => {
+  if (!url) return "#";
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("blob:") ||
+    url.startsWith("data:")
+  ) {
+    return url;
+  }
+  const backendBase = API_BASE_URL.replace(/\/api\/?$/, "");
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  return `${backendBase}${cleanPath}`;
+};
+
 // Create axios instances
 
 const api = axios.create({
-  // baseURL: API_BASE_URL,
   baseURL: API_BASE_URL,
   timeout: 30000,
 });

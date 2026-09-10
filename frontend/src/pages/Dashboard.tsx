@@ -58,6 +58,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import BirthdayWidget from "./dashboard/BirthdayWidget";
 import { useAuth } from "@/hooks/useAuth";
+import { StorageQuotaBanner } from "@/components/shared/StorageQuotaBanner";
 
 // ─── Helpers ────────────────────────────────────────────
 
@@ -425,6 +426,9 @@ export default function Dashboard() {
   return (
     <MainLayout title="Dashboard">
       <div className="space-y-6">
+        {/* Storage Quota Warning Banner */}
+        <StorageQuotaBanner warningOnly={true} />
+
         {/* ═══ Constituency Overview Banner ═══ */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#13538A] via-[#1a6aad] to-[#5D28A8] text-white p-6 sm:p-8 shadow-lg border border-white/10">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />

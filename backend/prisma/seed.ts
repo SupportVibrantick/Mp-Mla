@@ -625,6 +625,7 @@ async function main() {
       priceYearly: 29990,
       maxUsers: 5,
       maxVoters: 10000,
+      storageLimitMB: 500,
       features: [
         "Dashboard",
         "Wards",
@@ -643,6 +644,7 @@ async function main() {
       priceYearly: 79990,
       maxUsers: 25,
       maxVoters: 50000,
+      storageLimitMB: 2048,
       features: [
         "Everything in Starter",
         "Leaders",
@@ -661,6 +663,7 @@ async function main() {
       priceYearly: 199990,
       maxUsers: 0,
       maxVoters: 0,
+      storageLimitMB: 0,
       features: [
         "Everything in Professional",
         "Competitor Analysis",
@@ -683,6 +686,7 @@ async function main() {
         priceYearly: plan.priceYearly,
         maxUsers: plan.maxUsers,
         maxVoters: plan.maxVoters,
+        storageLimitMB: plan.storageLimitMB,
         features: plan.features,
         isActive: true,
         sortOrder: plan.sortOrder,

@@ -8,6 +8,7 @@ import {
   useAccountSubscription,
   useAccountInvoices,
   useAccountPlans,
+  useAccountUsage,
   useRequestPlanUpgrade,
   usePaymentCheckout,
 } from "../../hooks/useAccount";
@@ -22,8 +23,14 @@ import {
   FileText,
   CreditCard,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  HardDrive,
+  Users,
+  Vote,
+  Database,
+  AlertTriangle
 } from "lucide-react";
+import { StorageQuotaBanner, formatStorageSize } from "../../components/shared/StorageQuotaBanner";
 
 function calculateDiscountPercentage(priceMonthly?: number, priceYearly?: number): number {
   if (!priceMonthly || !priceYearly || priceMonthly <= 0 || priceYearly <= 0) return 0;
@@ -38,6 +45,7 @@ export default function BillingPage() {
     useAccountSubscription();
   const { data: invoices, isLoading: invLoading } = useAccountInvoices();
   const { data: plansData, isLoading: plansLoading } = useAccountPlans();
+  const { data: usage, isLoading: usageLoading } = useAccountUsage();
   const upgradeRequest = useRequestPlanUpgrade();
   const { initiatePayment, isLoading: isCheckoutLoading } = usePaymentCheckout();
   const [selectedCycle, setSelectedCycle] = useState("MONTHLY");
@@ -82,9 +90,27 @@ export default function BillingPage() {
     });
   };
 
+  const storageUsed = usage?.storage?.usedMB ?? 0;
+  const storageLimit = usage?.storage?.limitMB;
+  const storagePercent = storageLimit && storageLimit > 0
+    ? Math.min(100, Math.round((storageUsed / storageLimit) * 100))
+    : 0;
+
+  const usersUsed = usage?.users?.used ?? 0;
+  const usersLimit = usage?.users?.limit;
+  const usersPercent = usersLimit && usersLimit > 0
+    ? Math.min(100, Math.round((usersUsed / usersLimit) * 100))
+    : 0;
+
+  const votersUsed = usage?.voters?.used ?? 0;
+  const votersLimit = usage?.voters?.limit;
+  const votersPercent = votersLimit && votersLimit > 0
+    ? Math.min(100, Math.round((votersUsed / votersLimit) * 100))
+    : 0;
+
   return (
     <MainLayout title="Billing & Subscription">
-      <div className="space-y-12 max-w-6xl mx-auto p-4 md:p-8">
+      <div className="space-y-10 max-w-6xl mx-auto p-4 md:p-8">
         {/* Header Section */}
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -96,6 +122,135 @@ export default function BillingPage() {
           <p className="text-muted-foreground text-sm md:text-base mt-1">
             Manage your constituency organization plans, resource limits, and payment history.
           </p>
+        </div>
+
+        {/* Quota Banner if full/warning */}
+        <StorageQuotaBanner warningOnly={false} />
+
+        {/* Resource Usage Overview Cards */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          {/* Storage Usage Card */}
+          <div className={`rounded-2xl border p-5 shadow-xs transition-all ${
+            storagePercent >= 100
+              ? "border-destructive/50 bg-destructive/5 dark:bg-destructive/10"
+              : storagePercent >= 80
+                ? "border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10"
+                : "border-border/60 bg-card"
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className={`p-2 rounded-xl ${
+                  storagePercent >= 100
+                    ? "bg-destructive text-destructive-foreground"
+                    : storagePercent >= 80
+                      ? "bg-amber-500 text-white"
+                      : "bg-primary/10 text-primary"
+                }`}>
+                  <HardDrive className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Storage Used</h4>
+                  <p className="text-lg font-bold text-foreground">
+                    {formatStorageSize(storageUsed)}
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      {storageLimit && storageLimit > 0 ? `/ ${formatStorageSize(storageLimit)}` : "(Unlimited)"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              {storageLimit && storageLimit > 0 && (
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  storagePercent >= 100
+                    ? "bg-destructive/15 text-destructive"
+                    : storagePercent >= 80
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      : "bg-muted text-muted-foreground"
+                }`}>
+                  {storagePercent}%
+                </span>
+              )}
+            </div>
+            {storageLimit && storageLimit > 0 && (
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted/60 mt-2">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    storagePercent >= 100
+                      ? "bg-destructive"
+                      : storagePercent >= 80
+                        ? "bg-amber-500"
+                        : "bg-primary"
+                  }`}
+                  style={{ width: `${storagePercent}%` }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Users Quota Card */}
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Team Users</h4>
+                  <p className="text-lg font-bold text-foreground">
+                    {usersUsed}
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      {usersLimit && usersLimit > 0 ? `/ ${usersLimit}` : "(Unlimited)"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              {usersLimit && usersLimit > 0 && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  {usersPercent}%
+                </span>
+              )}
+            </div>
+            {usersLimit && usersLimit > 0 && (
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted/60 mt-2">
+                <div
+                  className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                  style={{ width: `${usersPercent}%` }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Voters Quota Card */}
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                  <Vote className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Voter Records</h4>
+                  <p className="text-lg font-bold text-foreground">
+                    {votersUsed.toLocaleString()}
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      {votersLimit && votersLimit > 0 ? `/ ${votersLimit.toLocaleString()}` : "(Unlimited)"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              {votersLimit && votersLimit > 0 && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  {votersPercent}%
+                </span>
+              )}
+            </div>
+            {votersLimit && votersLimit > 0 && (
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted/60 mt-2">
+                <div
+                  className="h-full rounded-full bg-purple-600 transition-all duration-500"
+                  style={{ width: `${votersPercent}%` }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Subscription Info Asymmetrical Grid */}
@@ -332,7 +487,19 @@ export default function BillingPage() {
                           </div>
                         )}
                       </div>
-                      
+
+                      <div className="flex flex-wrap gap-1.5 mb-6">
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/40">
+                          Users: {plan.maxUsers > 0 ? plan.maxUsers : "Unlimited"}
+                        </span>
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/40">
+                          Voters: {plan.maxVoters > 0 ? Number(plan.maxVoters).toLocaleString() : "Unlimited"}
+                        </span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                          Storage: {plan.storageLimitMB > 0 ? formatStorageSize(plan.storageLimitMB) : "Unlimited"}
+                        </span>
+                      </div>
+
                       <ul className="space-y-3 mb-8 text-sm">
                         {Array.isArray(plan.features) && plan.features.map((feat: string, idx: number) => (
                           <li key={idx} className="flex items-center gap-2.5 text-muted-foreground">

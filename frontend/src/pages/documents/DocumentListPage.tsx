@@ -43,6 +43,7 @@ import {
   Layers,
 } from "lucide-react";
 import { format } from "date-fns";
+import { StorageQuotaBanner } from "@/components/shared/StorageQuotaBanner";
 
 export default function DocumentListPage() {
   const [search, setSearch] = useState("");
@@ -95,6 +96,9 @@ export default function DocumentListPage() {
             </Link>
           </PermissionGate>
         </div>
+
+        {/* Storage Quota Warning Banner */}
+        <StorageQuotaBanner warningOnly={true} />
 
         {/* Stats */}
         {stats && (

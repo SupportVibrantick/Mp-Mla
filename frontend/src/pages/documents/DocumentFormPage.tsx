@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ArrowLeft, Save, FileText, Loader2, Upload } from "lucide-react";
+import { StorageQuotaBanner } from "@/components/shared/StorageQuotaBanner";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name required"),
@@ -143,6 +144,9 @@ export default function DocumentFormPage() {
             {isEdit ? `Edit ${d?.name}` : "Upload Document"}
           </h1>
         </div>
+
+        {/* Storage Quota Banner */}
+        {!isEdit && <StorageQuotaBanner warningOnly={false} />}
 
         <Card>
           <CardHeader>

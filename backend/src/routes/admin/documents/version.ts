@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import path from "path";
 import prisma from "../../../lib/prisma.js";
 import { ApiError } from "../../../utils/ApiError.js";
 import { requireTenantId } from "../../../utils/tenant.js";
@@ -19,13 +20,29 @@ export async function uploadNewVersion(
     const docId = req.params.id as string;
     const data = req.body;
 
+    let fileName = data.fileName;
+    let fileUrl = data.fileUrl;
+    let fileType = data.fileType;
+    let fileSize = data.fileSize;
+
+    if (req.file) {
+      fileUrl = `/uploads/documents/${req.file.filename}`;
+      if (!fileName) fileName = req.file.originalname;
+      if (!fileType) fileType = path.extname(req.file.originalname).replace(".", "");
+      if (!fileSize) fileSize = req.file.size;
+    }
+
+    if (!fileName || !fileUrl) {
+      throw ApiError.badRequest("File upload or fileUrl and fileName are required");
+    }
+
     const document = await prisma.document.findFirst({
       where: { id: docId, tenantId, isDeleted: false },
     });
     if (!document) throw ApiError.notFound("Document not found");
 
     // Validate size and extensions
-    validateFileProperties(data.fileName, data.fileSize);
+    validateFileProperties(fileName, fileSize);
 
     const nextVersion = document.version + 1;
 
@@ -35,10 +52,10 @@ export async function uploadNewVersion(
         data: {
           documentId: docId,
           version: nextVersion,
-          fileName: data.fileName,
-          fileUrl: data.fileUrl,
-          fileType: data.fileType || null,
-          fileSize: data.fileSize || null,
+          fileName: fileName,
+          fileUrl: fileUrl,
+          fileType: fileType || null,
+          fileSize: fileSize ? parseInt(String(fileSize), 10) : null,
           uploadedById: req.user!.id,
         },
       });
@@ -47,10 +64,10 @@ export async function uploadNewVersion(
       const updated = await tx.document.update({
         where: { id: docId },
         data: {
-          fileName: data.fileName,
-          fileUrl: data.fileUrl,
-          fileType: data.fileType || null,
-          fileSize: data.fileSize || null,
+          fileName: fileName,
+          fileUrl: fileUrl,
+          fileType: fileType || null,
+          fileSize: fileSize ? parseInt(String(fileSize), 10) : null,
           version: nextVersion,
         },
       });

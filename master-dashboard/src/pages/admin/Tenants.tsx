@@ -868,6 +868,18 @@ export default function TenantsPage() {
                     { label: "Plan", value: selectedTenant.subscription?.plan?.name || "No Plan" },
                     { label: "Status", value: STATUS_CONFIG[selectedTenant.status]?.label || selectedTenant.status },
                     { label: "Users", value: String(selectedTenant._count?.users || 0) },
+                    {
+                      label: "Storage Used",
+                      value: `${(selectedTenant.storageUsedMB ?? 0).toFixed(1)} MB ${
+                        selectedTenant.subscription?.plan?.storageLimitMB > 0
+                          ? `/ ${
+                              selectedTenant.subscription.plan.storageLimitMB >= 1024
+                                ? `${(selectedTenant.subscription.plan.storageLimitMB / 1024).toFixed(0)} GB`
+                                : `${selectedTenant.subscription.plan.storageLimitMB} MB`
+                            }`
+                          : "(Unlimited)"
+                      }`,
+                    },
                     { label: "MRR", value: formatCurrency(getTenantMrr(selectedTenant)) },
                     { label: "Created", value: new Date(selectedTenant.createdAt).toLocaleDateString("en-CA") },
                     { label: "Slug", value: getTenantSlug(selectedTenant) },
