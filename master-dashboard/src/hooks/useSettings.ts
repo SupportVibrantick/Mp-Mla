@@ -46,12 +46,12 @@ export const SETTING_GROUPS = [
     icon: "📅",
     desc: "Meeting reminders & scheduling",
   },
-  {
-    id: "backup",
-    label: "Backup",
-    icon: "💾",
-    desc: "Scheduled backups",
-  },
+  // {
+  //   id: "backup",
+  //   label: "Backup",
+  //   icon: "💾",
+  //   desc: "Scheduled backups",
+  // },
 ] as const;
 
 export function useSettings() {
