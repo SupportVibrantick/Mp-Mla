@@ -13,6 +13,11 @@ import { globalLimiter, authLimiter } from "./middleware/rateLimiter.js";
 
 dotenv.config();
 
+// Ensure BigInt can be safely serialized by JSON.stringify across all endpoints
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

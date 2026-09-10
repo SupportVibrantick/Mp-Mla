@@ -24,6 +24,7 @@ import ModulesPage from "@/pages/admin/Modules";
 import PaymentsPage from "@/pages/admin/Payments";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import PlatformUsersPage from "@/pages/admin/PlatformUsers";
+import BackupsPage from "@/pages/admin/Backups";
 import ProfilePage from "./pages/ProfilePage";
 
 function Router() {
@@ -98,6 +99,12 @@ function Router() {
       <Route path="/users">
         <ProtectedRoute module="users" action="read">
           <PlatformUsersPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/backups">
+        <ProtectedRoute module="backups" action="read">
+          <BackupsPage />
         </ProtectedRoute>
       </Route>
 

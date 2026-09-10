@@ -16,6 +16,7 @@ const ROLE_PERMISSIONS: Record<
     { module: "payments", actions: ["read", "create", "update", "delete"] },
     { module: "users", actions: ["read", "create", "update", "delete"] },
     { module: "settings", actions: ["read", "update"] },
+    { module: "backups", actions: ["read", "create", "delete", "restore"] },
   ],
   PLATFORM_ADMIN: [
     { module: "dashboard", actions: ["read"] },
@@ -25,6 +26,7 @@ const ROLE_PERMISSIONS: Record<
     { module: "payments", actions: ["read", "create", "update", "delete"] },
     { module: "users", actions: ["read", "create", "update"] },
     { module: "settings", actions: ["read", "update"] },
+    { module: "backups", actions: ["read"] },
   ],
   BILLING_MANAGER: [
     { module: "dashboard", actions: ["read"] },

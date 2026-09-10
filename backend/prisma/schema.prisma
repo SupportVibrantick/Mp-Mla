@@ -427,6 +427,7 @@ model Tenant {
   voterAccountMemberships    VoterAccountMembership[]
   voterApplicationSequence   VoterApplicationSequence?
   voterFamilyMembers         VoterFamilyMember[]
+  backups                    Backup[]
 
   @@index([status])
   @@map("tenants")
@@ -1828,17 +1829,26 @@ model PlatformSetting {
 // ════════════════════════════════════════════════════════
 
 model Backup {
-  id          String    @id @default(cuid())
-  fileName    String
-  fileSize    BigInt?
-  fileUrl     String?
-  status      String    @default("IN_PROGRESS")
-  type        String    @default("MANUAL")
-  triggeredBy String?
-  notes       String?
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
+  id             String    @id @default(cuid())
+  tenantId       String?
+  tenant         Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fileName       String
+  fileSize       BigInt?
+  fileUrl        String?
+  status         String    @default("IN_PROGRESS")
+  type           String    @default("MANUAL")
+  triggeredBy    String?
+  errorMessage   String?
+  restoredAt     DateTime?
+  restoredBy     String?
+  tablesIncluded String?
+  recordCounts   String?
+  notes          String?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
 
+  @@index([tenantId])
+  @@index([status])
   @@map("backups")
 }
 

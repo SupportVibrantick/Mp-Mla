@@ -26,6 +26,7 @@ import {
   Layers,
   Receipt,
   ArrowUpCircle,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -104,6 +105,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           module: "tenants",
         },
         { label: "Platform Users", icon: Users, href: "/users", module: "users" },
+        {
+          label: "Backups & Recovery",
+          icon: Database,
+          href: "/backups",
+          module: "backups",
+        },
       ],
     },
     {

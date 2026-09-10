@@ -418,3 +418,18 @@ export const paymentsApi = {
   createOrder: (data: any) => api.post("/platform/payments/order", data),
   verifyPayment: (data: any) => api.post("/platform/payments/verify", data),
 };
+
+export const backupsApi = {
+  list: (params?: any) => api.get("/platform/backups", { params }),
+  get: (id: string) => api.get(`/platform/backups/${id}`),
+  create: (data: { tenantId: string; notes?: string }) =>
+    api.post("/platform/backups", data),
+  restore: (id: string, data: { confirmRestore: boolean }) =>
+    api.post(`/platform/backups/${id}/restore`, data),
+  delete: (id: string) => api.delete(`/platform/backups/${id}`),
+  download: (id: string) =>
+    api.get(`/platform/backups/${id}/download`, { responseType: "blob" }),
+  triggerTenantBackup: (tenantId: string, data?: { notes?: string }) =>
+    api.post(`/platform/tenants/${tenantId}/backup`, data || {}),
+};
+

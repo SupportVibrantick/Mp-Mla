@@ -7,6 +7,7 @@ import paymentRoutes from "./payments/index.js";
 import dashboardRoutes from "./dashboard/index.js";
 import settingsRoutes from "./settings/index.js";
 import usersRoutes from "./users/index.js";
+import backupRoutes from "./backups/index.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/payments", paymentRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/users", usersRoutes);
+router.use("/backups", backupRoutes);
 
 export default router;

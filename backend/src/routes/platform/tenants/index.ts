@@ -23,6 +23,7 @@ import {
   activateTenant,
   deleteTenant,
 } from "../../../controllers/platform/tenants.controller.js";
+import { triggerTenantBackup } from "../../../controllers/platform/backups.controller.js";
 
 const router = Router();
 const readRoles = [
@@ -73,5 +74,6 @@ router.post(
   createTenantUser,
 );
 router.get("/:id/users", authorizePlatform(...readRoles), listTenantUsers);
+router.post("/:id/backup", authorizePlatform("SUPER_ADMIN"), triggerTenantBackup);
 
 export default router;
