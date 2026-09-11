@@ -106,7 +106,6 @@ interface RowError {
 }
 
 import { generateApplicationNumberBatch } from "../../../services/voterPortal/applicationNumber.service.js";
-import { createVoterAccountForVoter } from "../../../services/voterPortal/voterAuth.service.js";
 
 interface ValidatedVoter {
   tenantId: string;
@@ -373,7 +372,9 @@ export async function bulkUploadVoters(
         phone:
           safeString(getRowValue(row, "phone", "mobile", "contact")) || null,
         bloodGroup:
-          safeString(getRowValue(row, "bloodGroup", "blood_group", "bloodGroup")) || null,
+          safeString(
+            getRowValue(row, "bloodGroup", "blood_group", "bloodGroup"),
+          ) || null,
         isDisabled: normalizeBoolean(
           getRowValue(row, "isDisabled", "disabled", "is_disabled"),
         ),
@@ -385,7 +386,10 @@ export async function bulkUploadVoters(
 
     // Assign application numbers
     if (preValidRows.length > 0) {
-      const appNumbers = await generateApplicationNumberBatch(tenantId, preValidRows.length);
+      const appNumbers = await generateApplicationNumberBatch(
+        tenantId,
+        preValidRows.length,
+      );
       for (let i = 0; i < preValidRows.length; i++) {
         validRows.push({
           ...preValidRows[i],
@@ -412,22 +416,6 @@ export async function bulkUploadVoters(
           });
 
           successCount += result.count;
-
-          // Fetch created voters to generate voter accounts
-          const createdVoters = await prisma.voter.findMany({
-            where: {
-              tenantId,
-              uploadBatchId: job.id,
-              applicationNumber: { in: chunk.map((c) => c.applicationNumber) },
-            },
-            select: { id: true, applicationNumber: true, phone: true },
-          });
-
-          for (const v of createdVoters) {
-            if (v.applicationNumber) {
-              await createVoterAccountForVoter(tenantId, v.id, v.applicationNumber, v.phone ?? undefined);
-            }
-          }
 
           // If some were skipped (race condition duplicates)
           const skippedInChunk = chunk.length - result.count;

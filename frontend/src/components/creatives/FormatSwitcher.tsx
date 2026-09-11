@@ -22,15 +22,11 @@ export const FORMAT_PRESETS: FormatPreset[] = [
 interface FormatSwitcherProps {
   selectedFormat: string;
   onSelectFormat: (formatId: string) => void;
-  showSafeArea: boolean;
-  setShowSafeArea: (show: boolean) => void;
 }
 
 export function FormatSwitcher({
   selectedFormat,
   onSelectFormat,
-  showSafeArea,
-  setShowSafeArea,
 }: FormatSwitcherProps) {
   const currentFormat = FORMAT_PRESETS.find((f) => f.id === selectedFormat) || FORMAT_PRESETS[0];
 
@@ -44,7 +40,7 @@ export function FormatSwitcher({
               onClick={() => onSelectFormat(fmt.id)}
               className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1.5 ${
                 selectedFormat === fmt.id
-                  ? "bg-indigo-600 text-white shadow-md scale-[1.02]"
+                  ? "bg-[#047857] text-white shadow-md scale-[1.02]"
                   : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
               }`}
             >
@@ -56,20 +52,8 @@ export function FormatSwitcher({
 
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-[10px] font-mono bg-white dark:bg-slate-900">
-            {currentFormat.width} × {currentFormat.height} px {currentFormat.isPrint ? "(300 DPI)" : ""}
+            {currentFormat.width} × {currentFormat.height} px
           </Badge>
-
-          {currentFormat.isPrint && (
-            <label className="flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-400 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showSafeArea}
-                onChange={(e) => setShowSafeArea(e.target.checked)}
-                className="rounded text-indigo-600"
-              />
-              Show Safe Area / Bleed
-            </label>
-          )}
         </div>
       </div>
     </div>

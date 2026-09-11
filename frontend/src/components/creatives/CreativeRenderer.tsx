@@ -44,11 +44,23 @@ export function CreativeRenderer({
     if (elem.binding && slotValues[elem.binding] !== undefined) {
       return slotValues[elem.binding];
     }
+    if (elem.dynamicToken) {
+      const cleanToken = elem.dynamicToken.replace(/[{}]/g, "");
+      if (slotValues[cleanToken] !== undefined && slotValues[cleanToken] !== "") {
+        return slotValues[cleanToken];
+      }
+    }
     let val = elem.text || "";
     if (elem.dynamicToken || val.includes("{{")) {
       const repName = branding?.representativeName || settings?.representative_name || "Shri Rajesh Kumar";
       const repTitle = branding?.designation || `${settings?.representative_title || "MLA"}, ${settings?.org_name || "Green Valley Constituency"}`;
       const partyName = settings?.party_name || "BJP";
+
+      Object.entries(slotValues).forEach(([k, v]) => {
+        if (v !== undefined) {
+          val = val.replace(new RegExp(`{{${k}}}`, "g"), v);
+        }
+      });
 
       val = val
         .replace(/{{representativeName}}/g, repName)
@@ -144,13 +156,21 @@ export function CreativeRenderer({
                     fontStyle: elem.fontStyle || "normal",
                     textDecoration: elem.textDecoration || "none",
                     color: elem.color || "#0f172a",
+                    backgroundColor: elem.backgroundColor || "transparent",
+                    borderRadius: elem.borderRadius ? `${elem.borderRadius}px` : undefined,
+                    borderWidth: elem.borderWidth ? `${elem.borderWidth}px` : undefined,
+                    borderColor: elem.borderColor || undefined,
+                    borderStyle: elem.borderWidth ? "solid" : undefined,
                     textAlign: elem.align || "left",
                     lineHeight: elem.lineHeight || 1.3,
                     textTransform: elem.textTransform || "none",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
                     display: "flex",
-                    alignItems: "center",
+                    alignItems: elem.height && elem.height <= 80 ? "center" : "flex-start",
+                    justifyContent: elem.align === "center" ? "center" : elem.align === "right" ? "flex-end" : "flex-start",
+                    padding: elem.backgroundColor ? "14px 18px" : "2px 4px",
+                    boxSizing: "border-box",
                   }}
                 >
                   {textVal}

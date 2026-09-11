@@ -3,7 +3,7 @@ import { CanvasElement } from "@/types/creative";
 import { getImageUrl } from "@/lib/utils";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { useCreativeDesign } from "@/contexts/CreativeDesignContext";
-import { RotateCw, Copy, Trash2, UserCheck, Image as ImageIcon } from "lucide-react";
+import { RotateCw, Copy, Trash2, UserCheck, Image as ImageIcon, Plus } from "lucide-react";
 
 interface CreativeCanvasProps {
   canvasWidth: number;
@@ -15,7 +15,6 @@ interface CreativeCanvasProps {
   onUpdateElement: (id: string, updated: Partial<CanvasElement>) => void;
   onDeleteElement: (id: string) => void;
   onDuplicateElement: (id: string) => void;
-  showSafeArea?: boolean;
   readOnly?: boolean;
 }
 
@@ -29,7 +28,6 @@ export function CreativeCanvas({
   onUpdateElement,
   onDeleteElement,
   onDuplicateElement,
-  showSafeArea = false,
   readOnly = false,
 }: CreativeCanvasProps) {
   const { settings } = useSystemSettings();
@@ -52,14 +50,29 @@ export function CreativeCanvas({
 
   const selectedElement = elements.find((e) => e.id === selectedElementId);
 
-  // Resolve dynamic tokens from branding and system settings
+  // Resolve dynamic tokens from slot values, branding and system settings
   const resolveTokenText = (text?: string, token?: string): string => {
     let result = text || "";
+    const slotValues = designContext?.designState?.slotValues || {};
     const repName = branding?.representativeName || settings?.representative_name || "Shri Rajesh Kumar";
     const repTitle = branding?.designation || `${settings?.representative_title || "MLA"}, ${settings?.org_name || "Green Valley Constituency"}`;
     const partyName = settings?.party_name || "BJP";
 
+    // Direct token substitution
+    if (token) {
+      const cleanToken = token.replace(/[{}]/g, "");
+      if (slotValues[cleanToken] !== undefined && slotValues[cleanToken] !== "") {
+        return slotValues[cleanToken];
+      }
+    }
+
+    // Dynamic pattern replacement
     if (token || result.includes("{{")) {
+      Object.entries(slotValues).forEach(([k, v]) => {
+        if (v !== undefined) {
+          result = result.replace(new RegExp(`{{${k}}}`, "g"), v);
+        }
+      });
       result = result
         .replace(/{{representativeName}}/g, repName)
         .replace(/{{designation}}/g, repTitle)
@@ -192,12 +205,18 @@ export function CreativeCanvas({
           overflow: "hidden",
         }}
       >
-        {/* Safe Printing Area Guide */}
-        {showSafeArea && (
-          <div className="absolute inset-8 border-2 border-dashed border-rose-500/50 pointer-events-none z-50 flex items-start justify-end p-2">
-            <span className="text-[10px] font-bold text-rose-600 bg-white/90 px-1.5 py-0.5 rounded border border-rose-200">
-              Safe Trim Boundary (300 DPI)
-            </span>
+        {/* Blank Canvas Helper Placeholder */}
+        {elements.length === 0 && !readOnly && (
+          <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-slate-400 space-y-3 export-exclude pointer-events-none select-none">
+            <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 border-2 border-dashed border-slate-300">
+              <Plus className="w-8 h-8 text-slate-400" />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-slate-700 dark:text-slate-200">Blank Canvas Ready</p>
+              <p className="text-xs text-slate-400 max-w-xs mt-1">
+                Add text headings, shapes, badges, or leader branding from the left sidebar to start designing.
+              </p>
+            </div>
           </div>
         )}
 
@@ -249,13 +268,21 @@ export function CreativeCanvas({
                       fontStyle: elem.fontStyle || "normal",
                       textDecoration: elem.textDecoration || "none",
                       color: elem.color || "#0f172a",
+                      backgroundColor: elem.backgroundColor || "transparent",
+                      borderRadius: elem.borderRadius ? `${elem.borderRadius}px` : undefined,
+                      borderWidth: elem.borderWidth ? `${elem.borderWidth}px` : undefined,
+                      borderColor: elem.borderColor || undefined,
+                      borderStyle: elem.borderWidth ? "solid" : undefined,
                       textAlign: elem.align || "left",
                       lineHeight: elem.lineHeight || 1.3,
                       textTransform: elem.textTransform || "none",
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: elem.height && elem.height <= 80 ? "center" : "flex-start",
+                      justifyContent: elem.align === "center" ? "center" : elem.align === "right" ? "flex-end" : "flex-start",
+                      padding: elem.backgroundColor ? "14px 18px" : "2px 4px",
+                      boxSizing: "border-box",
                     }}
                   >
                     {textContent}
@@ -357,7 +384,7 @@ export function CreativeCanvas({
 
                 {/* BOUNDING BOX & ROTATION CONTROLS */}
                 {isSelected && !elem.locked && (
-                  <>
+                  <div className="export-exclude" data-export-exclude="true">
                     {/* Top Rotation Handle */}
                     <div
                       onMouseDown={(e) => handleMouseDownElement(e, elem, "rotate")}
@@ -416,7 +443,7 @@ export function CreativeCanvas({
                         <Trash2 className="w-3 h-3" /> Delete
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             );

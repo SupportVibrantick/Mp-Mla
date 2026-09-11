@@ -11,6 +11,7 @@ export type CreativeCategory =
   | "NATIONAL_DAYS"
   | "DEVELOPMENT_WORK"
   | "GENERAL"
+  | "OTHER"
   | "CUSTOM";
 
 export type TemplateStyle =

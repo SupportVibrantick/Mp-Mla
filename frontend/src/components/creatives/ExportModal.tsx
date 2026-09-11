@@ -119,21 +119,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
           </div>
 
-          {/* Print Bleed Option */}
-          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <div className="space-y-0.5">
-              <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Printer className="w-3.5 h-3.5 text-[#047857]" /> Print Safe Area & Bleed Marks
-              </span>
-              <p className="text-[10px] text-slate-500">Include 3mm print trim boundary guides</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={includeBleed}
-              onChange={(e) => setIncludeBleed(e.target.checked)}
-              className="w-4 h-4 text-[#047857] rounded border-slate-300 focus:ring-[#047857]"
-            />
-          </div>
+
 
           {/* File summary */}
           <div className="flex items-center justify-between text-slate-500 text-[11px] px-1">

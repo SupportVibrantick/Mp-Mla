@@ -1,46 +1,116 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { FileText, CheckCircle2, Clock, XCircle, Share2, Copy, Trash2, Edit3, Search, Filter } from "lucide-react";
-import { SavedCreativeItem, CreativeStatus } from "@/types/creative";
+import { FileText, Download, Copy, Trash2, Edit3, Search, Share2, CheckCircle2 } from "lucide-react";
+import { SavedCreativeItem } from "@/types/creative";
 import { getImageUrl } from "@/lib/utils";
+import { CreativeRenderer } from "./CreativeRenderer";
 
 interface SavedCreativeLibraryProps {
   savedCreatives: SavedCreativeItem[];
   onOpenCreative: (creative: SavedCreativeItem) => void;
-  onSubmitApproval: (id: string) => void;
-  onApproveCreative?: (id: string) => void;
-  onRejectCreative?: (id: string) => void;
+  onDownloadCreative?: (creative: SavedCreativeItem) => void;
+  onSubmitApproval?: (id: string) => void;
   onDeleteCreative: (id: string) => void;
   onDuplicateCreative?: (creative: SavedCreativeItem) => void;
   onShareCreative?: (id: string) => void;
 }
 
+function SavedCreativeThumbnail({ item }: { item: SavedCreativeItem }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.25);
+
+  let design: any = null;
+  try {
+    design = typeof item.designJson === "string" ? JSON.parse(item.designJson) : item.designJson;
+  } catch (e) {
+    design = null;
+  }
+
+  const w = design?.canvas?.width || 1080;
+  const h = design?.canvas?.height || 1080;
+  const bg = design?.canvas?.background || "linear-gradient(135deg, #fffbeb 0%, #fef3c7 40%, #fde68a 100%)";
+  const elements = design?.elements || [];
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateScale = () => {
+      if (containerRef.current) {
+        const clientWidth = containerRef.current.clientWidth;
+        setScale(clientWidth / w);
+      }
+    };
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [w]);
+
+  if (item.previewUrl) {
+    return <img src={getImageUrl(item.previewUrl)} alt={item.title} className="w-full h-full object-cover" />;
+  }
+
+  if (elements.length > 0) {
+    return (
+      <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-slate-50 dark:bg-slate-900 cursor-pointer">
+        <div
+          style={{
+            width: `${w}px`,
+            height: `${h}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+          className="absolute top-0 left-0 pointer-events-none select-none"
+        >
+          <CreativeRenderer
+            width={w}
+            height={h}
+            background={bg}
+            elements={elements}
+            slotValues={design?.slotValues || {}}
+            branding={design?.branding}
+            readOnly
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center text-center space-y-1 p-2">
+      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-[#047857] flex items-center justify-center font-bold text-lg shadow-sm">
+        {item.title[0]}
+      </div>
+      <span className="font-bold text-xs text-slate-800 dark:text-slate-200 line-clamp-1">
+        {item.title}
+      </span>
+      <span className="text-[10px] text-slate-500 font-semibold">{item.format}</span>
+    </div>
+  );
+}
+
 export function SavedCreativeLibrary({
   savedCreatives,
   onOpenCreative,
+  onDownloadCreative,
   onSubmitApproval,
-  onApproveCreative,
-  onRejectCreative,
   onDeleteCreative,
   onDuplicateCreative,
   onShareCreative,
 }: SavedCreativeLibraryProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [targetDeleteItem, setTargetDeleteItem] = useState<SavedCreativeItem | null>(null);
 
   const filteredCreatives = savedCreatives.filter((item) => {
-    const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
     const matchesSearch =
       !searchQuery ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
+    return matchesSearch;
   });
 
   const confirmDelete = () => {
@@ -61,38 +131,20 @@ export function SavedCreativeLibrary({
           </Badge>
         </CardTitle>
         <CardDescription className="text-xs text-slate-500">
-          Access your saved creative posters, manage approval workflows, or duplicate existing designs.
+          Access your saved creative posters, download high-resolution copies, or open them in the editor.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="p-4 space-y-4">
-        {/* Search & Filter Tabs Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="relative max-w-sm flex-1">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
-            <Input
-              placeholder="Search saved designs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 text-xs h-9 rounded-xl border-slate-200"
-            />
-          </div>
-
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-            {["ALL", "DRAFT", "PENDING_REVIEW", "APPROVED", "REJECTED"].map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all whitespace-nowrap ${
-                  statusFilter === st
-                    ? "bg-[#047857] text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-                }`}
-              >
-                {st === "ALL" ? "All" : st.replace("_", " ")}
-              </button>
-            ))}
-          </div>
+        {/* Search Bar */}
+        <div className="relative max-w-sm">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+          <Input
+            placeholder="Search saved designs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 text-xs h-9 rounded-xl border-slate-200"
+          />
         </div>
 
         {/* Saved Cards Grid */}
@@ -107,42 +159,30 @@ export function SavedCreativeLibrary({
             {filteredCreatives.map((item) => (
               <Card
                 key={item.id}
-                className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-md transition-all bg-white dark:bg-slate-950 flex flex-col justify-between"
+                className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-md transition-all bg-white dark:bg-slate-950 flex flex-col justify-between group"
               >
-                {/* Poster Thumbnail / Preview Header */}
-                <div className="h-44 bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center relative p-3 border-b border-slate-200/80 overflow-hidden">
-                  <Badge
-                    className={`absolute top-2 left-2 text-[10px] font-bold ${
-                      item.status === "APPROVED"
-                        ? "bg-emerald-500 text-white"
-                        : item.status === "PENDING_REVIEW"
-                        ? "bg-amber-500 text-white"
-                        : "bg-slate-700 text-white"
-                    }`}
-                  >
-                    {item.status}
-                  </Badge>
+                {/* Real Live Visual Poster Render Thumbnail */}
+                <div
+                  onClick={() => onOpenCreative(item)}
+                  className="w-full aspect-[4/5] bg-slate-100 dark:bg-slate-900 relative border-b border-slate-200/80 overflow-hidden cursor-pointer"
+                >
+                  <SavedCreativeThumbnail item={item} />
 
-                  {item.previewUrl ? (
-                    <img src={getImageUrl(item.previewUrl)} alt={item.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center text-center space-y-1 p-2">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-[#047857] flex items-center justify-center font-bold text-lg shadow-sm">
-                        {item.title[0]}
-                      </div>
-                      <span className="font-bold text-xs text-slate-800 dark:text-slate-200 line-clamp-1">
-                        {item.title}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-semibold">{item.format}</span>
-                    </div>
-                  )}
+                  <Badge className="absolute top-2 left-2 text-[10px] font-bold bg-emerald-600/95 text-white shadow-xs backdrop-blur-xs flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Ready
+                  </Badge>
                 </div>
 
                 {/* Card Content & Action Buttons */}
                 <CardContent className="p-3.5 space-y-3 flex-1 flex flex-col justify-between text-xs">
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 dark:text-white truncate">{item.title}</span>
+                      <span
+                        onClick={() => onOpenCreative(item)}
+                        className="font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-[#047857]"
+                      >
+                        {item.title}
+                      </span>
                       <span className="text-[10px] text-slate-400 font-mono">v{item.version}</span>
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1">
@@ -158,10 +198,20 @@ export function SavedCreativeLibrary({
                       size="sm"
                       variant="outline"
                       onClick={() => onOpenCreative(item)}
-                      className="rounded-xl h-8 text-xs flex-1 font-bold gap-1 border-slate-200 text-[#047857]"
+                      className="rounded-xl h-8 text-xs flex-1 font-bold gap-1 border-slate-200 text-[#047857] hover:bg-emerald-50"
                     >
                       <Edit3 className="w-3.5 h-3.5" /> Open
                     </Button>
+
+                    {onDownloadCreative && (
+                      <Button
+                        size="sm"
+                        onClick={() => onDownloadCreative(item)}
+                        className="rounded-xl h-8 text-xs flex-1 font-bold gap-1 bg-[#047857] hover:bg-[#064e3b] text-white shadow-xs"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </Button>
+                    )}
 
                     {onDuplicateCreative && (
                       <Button
@@ -187,16 +237,6 @@ export function SavedCreativeLibrary({
                       </Button>
                     )}
 
-                    {item.status === "DRAFT" && (
-                      <Button
-                        size="sm"
-                        onClick={() => onSubmitApproval(item.id)}
-                        className="rounded-xl h-8 text-xs bg-[#047857] hover:bg-[#064e3b] text-white font-bold"
-                      >
-                        Submit
-                      </Button>
-                    )}
-
                     <Button
                       size="icon"
                       variant="ghost"
@@ -205,6 +245,7 @@ export function SavedCreativeLibrary({
                         setDeleteModalOpen(true);
                       }}
                       className="h-8 w-8 text-slate-400 hover:text-rose-600 rounded-xl"
+                      title="Delete design"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Sparkles, Filter, Eye, CheckCircle2, Heart } from "lucide-react";
-import { CreativeTemplateDef, CreativeCategory } from "@/types/creative";
+import { CreativeTemplateDef } from "@/types/creative";
 import { CreativeRenderer } from "./CreativeRenderer";
 import { getTemplateElements } from "@/data/templateElementGenerator";
 
@@ -22,19 +22,12 @@ interface TemplateLibraryProps {
 }
 
 export const CATEGORIES: { value: string; label: string }[] = [
-  { value: "ALL", label: "All" },
+  { value: "ALL", label: "All Templates" },
   { value: "FAVORITES", label: "♥ Favorites" },
-  { value: "BIRTHDAY", label: "Birthday" },
-  { value: "MEETING", label: "Meeting" },
-  { value: "EVENTS", label: "Events" },
-  { value: "JANATA_DARBAR", label: "Janata Darbar" },
-  { value: "GOVT_SCHEME", label: "Government Schemes" },
-  { value: "AWARENESS", label: "Awareness" },
-  { value: "FESTIVAL", label: "Festival" },
-  { value: "NATIONAL_DAYS", label: "National Days" },
-  { value: "DEVELOPMENT_WORK", label: "Development Work" },
-  { value: "PUBLIC_ANNOUNCEMENT", label: "Announcements" },
-  { value: "GENERAL", label: "General" },
+  { value: "BIRTHDAY", label: "🎂 Birthday" },
+  { value: "MEETING", label: "🤝 Meeting" },
+  { value: "GENERAL", label: "📢 General" },
+  { value: "OTHER", label: "🎉 Other / Greetings" },
 ];
 
 function TemplatePosterThumbnail({
@@ -142,7 +135,7 @@ export function TemplateLibrary({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recommended" | "newest" | "most_used">("recommended");
 
-  // Filter templates matching canonical Prisma category identifiers
+  // Filter templates matching canonical category identifiers
   let filteredTemplates = templates.filter((tpl) => {
     let matchesCat = false;
     if (selectedCategory === "ALL") {
@@ -190,7 +183,7 @@ export function TemplateLibrary({
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
             <Input
-              placeholder="Search birthday, meeting, scheme..."
+              placeholder="Search birthday, meeting, general, other..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 text-xs h-9 rounded-xl border-slate-200"
@@ -312,4 +305,3 @@ export function TemplateLibrary({
     </Card>
   );
 }
-

@@ -23,12 +23,15 @@ export async function createVoterAccountForVoter(
   tenantId: string,
   voterId: string,
   applicationNumber: string,
-  mobileNumber?: string | null
+  mobileNumber?: string | null,
 ) {
   const cleanAppNum = applicationNumber.trim().toUpperCase();
   const initialPassword = cleanAppNum;
   const passwordHash = await bcrypt.hash(initialPassword, 10);
-  const mobile = mobileNumber && mobileNumber.trim() ? mobileNumber.trim() : `APP_${cleanAppNum}`;
+  const mobile =
+    mobileNumber && mobileNumber.trim()
+      ? mobileNumber.trim()
+      : `APP_${cleanAppNum}`;
 
   // Find or create VoterAccount by mobile
   let account = await prisma.voterAccount.findUnique({
@@ -67,7 +70,10 @@ export async function createVoterAccountForVoter(
  * Search voter applications by EPIC Number.
  * Returns all matching applications across active constituencies.
  */
-export async function searchApplicationByEpic(epicNumber: string, tenantId?: string) {
+export async function searchApplicationByEpic(
+  epicNumber: string,
+  tenantId?: string,
+) {
   const cleanEpic = epicNumber.trim().toUpperCase();
   const where: any = {
     voterIdNumber: { equals: cleanEpic, mode: "insensitive" },
@@ -85,15 +91,20 @@ export async function searchApplicationByEpic(epicNumber: string, tenantId?: str
   });
 
   if (voters.length === 0) {
-    throw ApiError.notFound("No voter application found matching this EPIC number.");
+    throw ApiError.notFound(
+      "No voter application found matching this EPIC number.",
+    );
   }
 
   return voters.map((voter) => ({
     applicationNumber: voter.applicationNumber,
     name: voter.name,
-    constituencyName: voter.tenant?.constituencyName || voter.tenant?.name || "",
+    constituencyName:
+      voter.tenant?.constituencyName || voter.tenant?.name || "",
     tenantId: voter.tenantId,
-    wardName: voter.ward ? `Ward #${voter.ward.wardNumber} - ${voter.ward.name}` : null,
+    wardName: voter.ward
+      ? `Ward #${voter.ward.wardNumber} - ${voter.ward.name}`
+      : null,
   }));
 }
 
@@ -103,7 +114,7 @@ export async function searchApplicationByEpic(epicNumber: string, tenantId?: str
 export async function loginWithApplicationNumber(
   applicationNumber: string,
   passwordInput: string,
-  tenantId?: string
+  tenantId?: string,
 ) {
   const cleanAppNum = applicationNumber.trim().toUpperCase();
   const cleanPassword = passwordInput.trim();
@@ -133,7 +144,12 @@ export async function loginWithApplicationNumber(
   // Auto-heal: If voter account membership is missing, create it automatically if initial password matches
   if (voter.accountMemberships.length === 0) {
     if (cleanPassword.toUpperCase() === cleanAppNum) {
-      await createVoterAccountForVoter(voter.tenantId, voter.id, voter.applicationNumber!, voter.phone);
+      await createVoterAccountForVoter(
+        voter.tenantId,
+        voter.id,
+        voter.applicationNumber!,
+        voter.phone,
+      );
       voter = await prisma.voter.findFirst({
         where: { id: voter.id },
         include: {
@@ -156,13 +172,18 @@ export async function loginWithApplicationNumber(
   const account = membership.voterAccount;
 
   if (account.status !== "ACTIVE") {
-    throw ApiError.forbidden("Your voter portal account is deactivated or suspended.");
+    throw ApiError.forbidden(
+      "Your voter portal account is deactivated or suspended.",
+    );
   }
 
   let isMatch = false;
 
   // If initial password change is pending, allow login with applicationNumber as default password
-  if (account.forcePasswordChange && cleanPassword.toUpperCase() === cleanAppNum) {
+  if (
+    account.forcePasswordChange &&
+    cleanPassword.toUpperCase() === cleanAppNum
+  ) {
     isMatch = true;
     const newHash = await bcrypt.hash(cleanAppNum, 10);
     await prisma.voterAccount.update({
@@ -172,7 +193,10 @@ export async function loginWithApplicationNumber(
   } else {
     isMatch = await bcrypt.compare(cleanPassword, account.passwordHash);
     if (!isMatch && cleanPassword.toUpperCase() === cleanAppNum) {
-      isMatch = await bcrypt.compare(cleanPassword.toUpperCase(), account.passwordHash);
+      isMatch = await bcrypt.compare(
+        cleanPassword.toUpperCase(),
+        account.passwordHash,
+      );
     }
   }
 
@@ -180,7 +204,8 @@ export async function loginWithApplicationNumber(
     throw ApiError.unauthorized("Invalid Application Number or Password");
   }
 
-  const forcePasswordChange = account.forcePasswordChange || voter.forcePasswordChange;
+  const forcePasswordChange =
+    account.forcePasswordChange || voter.forcePasswordChange;
 
   const token = jwt.sign(
     {
@@ -191,7 +216,7 @@ export async function loginWithApplicationNumber(
       voterId: voter.id,
     } as VoterTokenPayload,
     JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
+    { expiresIn: JWT_EXPIRES_IN },
   );
 
   await prisma.voterAccount.update({
@@ -216,19 +241,77 @@ export async function loginWithApplicationNumber(
 /**
  * Login with Mobile Number + Password
  */
-export async function loginWithMobile(mobileNumber: string, passwordInput: string) {
+export async function loginWithMobile(
+  mobileNumber: string,
+  passwordInput: string,
+) {
   const cleanMobile = mobileNumber.trim();
-  const account = await prisma.voterAccount.findUnique({
+  let account = await prisma.voterAccount.findUnique({
     where: { mobile: cleanMobile },
     include: {
       memberships: {
         include: {
           tenant: { select: { id: true, name: true, constituencyName: true } },
-          voter: { select: { id: true, name: true, applicationNumber: true, voterIdNumber: true, isDeleted: true } },
+          voter: {
+            select: {
+              id: true,
+              name: true,
+              applicationNumber: true,
+              voterIdNumber: true,
+              isDeleted: true,
+            },
+          },
         },
       },
     },
   });
+
+  // Auto-heal / Lazy Provisioning if account not created yet during bulk upload
+  if (!account) {
+    const matchingVoters = await prisma.voter.findMany({
+      where: { phone: cleanMobile, isDeleted: false, applicationNumber: { not: null } },
+      select: { id: true, tenantId: true, applicationNumber: true, phone: true },
+    });
+
+    const isPasswordMatch = matchingVoters.some(
+      (v) =>
+        v.applicationNumber &&
+        v.applicationNumber.toUpperCase() === passwordInput.trim().toUpperCase(),
+    );
+
+    if (isPasswordMatch) {
+      for (const v of matchingVoters) {
+        if (v.applicationNumber) {
+          await createVoterAccountForVoter(
+            v.tenantId,
+            v.id,
+            v.applicationNumber,
+            cleanMobile,
+          );
+        }
+      }
+
+      account = await prisma.voterAccount.findUnique({
+        where: { mobile: cleanMobile },
+        include: {
+          memberships: {
+            include: {
+              tenant: { select: { id: true, name: true, constituencyName: true } },
+              voter: {
+                select: {
+                  id: true,
+                  name: true,
+                  applicationNumber: true,
+                  voterIdNumber: true,
+                  isDeleted: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+  }
 
   if (!account) {
     throw ApiError.unauthorized("Invalid Mobile Number or Password");
@@ -243,9 +326,13 @@ export async function loginWithMobile(mobileNumber: string, passwordInput: strin
     throw ApiError.unauthorized("Invalid Mobile Number or Password");
   }
 
-  const activeMemberships = account.memberships.filter((m) => m.voter && !m.voter.isDeleted);
+  const activeMemberships = account.memberships.filter(
+    (m) => m.voter && !m.voter.isDeleted,
+  );
   if (activeMemberships.length === 0) {
-    throw ApiError.notFound("No active voter profile associated with this mobile number.");
+    throw ApiError.notFound(
+      "No active voter profile associated with this mobile number.",
+    );
   }
 
   // If multiple profiles exist, prompt user to select profile
@@ -274,7 +361,7 @@ export async function loginWithMobile(mobileNumber: string, passwordInput: strin
       voterId: membership.voterId,
     } as VoterTokenPayload,
     JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
+    { expiresIn: JWT_EXPIRES_IN },
   );
 
   await prisma.voterAccount.update({
@@ -292,7 +379,8 @@ export async function loginWithMobile(mobileNumber: string, passwordInput: strin
       applicationNumber: membership.voter.applicationNumber,
       voterIdNumber: membership.voter.voterIdNumber,
       tenantId: membership.tenantId,
-      constituencyName: membership.tenant.constituencyName || membership.tenant.name,
+      constituencyName:
+        membership.tenant.constituencyName || membership.tenant.name,
     },
   };
 }
@@ -300,12 +388,23 @@ export async function loginWithMobile(mobileNumber: string, passwordInput: strin
 /**
  * Select Constituency Profile when mobile is linked to multiple tenant profiles
  */
-export async function selectVoterProfile(voterAccountId: string, membershipId: string) {
+export async function selectVoterProfile(
+  voterAccountId: string,
+  membershipId: string,
+) {
   const membership = await prisma.voterAccountMembership.findFirst({
     where: { id: membershipId, voterAccountId },
     include: {
       tenant: { select: { id: true, name: true, constituencyName: true } },
-      voter: { select: { id: true, name: true, applicationNumber: true, voterIdNumber: true, isDeleted: true } },
+      voter: {
+        select: {
+          id: true,
+          name: true,
+          applicationNumber: true,
+          voterIdNumber: true,
+          isDeleted: true,
+        },
+      },
       voterAccount: true,
     },
   });
@@ -323,7 +422,7 @@ export async function selectVoterProfile(voterAccountId: string, membershipId: s
       voterId: membership.voterId,
     } as VoterTokenPayload,
     JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
+    { expiresIn: JWT_EXPIRES_IN },
   );
 
   return {
@@ -335,7 +434,8 @@ export async function selectVoterProfile(voterAccountId: string, membershipId: s
       applicationNumber: membership.voter.applicationNumber,
       voterIdNumber: membership.voter.voterIdNumber,
       tenantId: membership.tenantId,
-      constituencyName: membership.tenant.constituencyName || membership.tenant.name,
+      constituencyName:
+        membership.tenant.constituencyName || membership.tenant.name,
     },
   };
 }
@@ -345,13 +445,33 @@ export async function selectVoterProfile(voterAccountId: string, membershipId: s
  */
 export async function sendPasswordResetOtp(mobileNumber: string) {
   const cleanMobile = mobileNumber.trim();
-  const account = await prisma.voterAccount.findUnique({
+  let account = await prisma.voterAccount.findUnique({
     where: { mobile: cleanMobile },
   });
 
   if (!account) {
+    const voter = await prisma.voter.findFirst({
+      where: { phone: cleanMobile, isDeleted: false, applicationNumber: { not: null } },
+      select: { id: true, tenantId: true, applicationNumber: true, phone: true },
+    });
+    if (voter && voter.applicationNumber) {
+      const { account: newAccount } = await createVoterAccountForVoter(
+        voter.tenantId,
+        voter.id,
+        voter.applicationNumber,
+        cleanMobile,
+      );
+      account = newAccount;
+    }
+  }
+
+  if (!account) {
     // Return success to prevent mobile enumeration attack
-    return { success: true, message: "If an account exists for this mobile number, an OTP code has been sent." };
+    return {
+      success: true,
+      message:
+        "If an account exists for this mobile number, an OTP code has been sent.",
+    };
   }
 
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -380,7 +500,11 @@ export async function sendPasswordResetOtp(mobileNumber: string) {
 /**
  * Verify OTP and Reset Password
  */
-export async function verifyOtpAndResetPassword(mobileNumber: string, otpCode: string, newPassword: string) {
+export async function verifyOtpAndResetPassword(
+  mobileNumber: string,
+  otpCode: string,
+  newPassword: string,
+) {
   const cleanMobile = mobileNumber.trim();
   const otpRecord = await prisma.voterOtp.findFirst({
     where: {
@@ -416,13 +540,21 @@ export async function verifyOtpAndResetPassword(mobileNumber: string, otpCode: s
 
   await prisma.voterOtp.delete({ where: { id: otpRecord.id } });
 
-  return { success: true, message: "Password reset successfully. You can now login with your new password." };
+  return {
+    success: true,
+    message:
+      "Password reset successfully. You can now login with your new password.",
+  };
 }
 
 /**
  * Change Password (for logged in voter or force password change flow)
  */
-export async function changeVoterPassword(voterAccountId: string, currentPassword: string, newPassword: string) {
+export async function changeVoterPassword(
+  voterAccountId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
   const account = await prisma.voterAccount.findUnique({
     where: { id: voterAccountId },
   });
@@ -441,7 +573,8 @@ export async function changeVoterPassword(voterAccountId: string, currentPasswor
     });
     if (
       membership?.voter?.applicationNumber &&
-      currentPassword.trim().toUpperCase() === membership.voter.applicationNumber.toUpperCase()
+      currentPassword.trim().toUpperCase() ===
+        membership.voter.applicationNumber.toUpperCase()
     ) {
       isMatch = true;
     }

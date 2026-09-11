@@ -7,6 +7,7 @@ import {
 } from "@/types/creative";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { getTemplateElements } from "@/data/templateElementGenerator";
+import { MASTER_CREATIVE_TEMPLATES } from "@/data/creativeTemplates";
 import api from "@/lib/api";
 
 export interface CreativeDesignState {
@@ -73,25 +74,27 @@ interface CreativeDesignContextType {
   redo: () => void;
   saveDesign: () => Promise<void>;
   loadDesign: (designJson: any, id?: string, title?: string) => void;
+  startBlankCanvas: (format?: CreativeFormat) => void;
 }
 
 const DEFAULT_INITIAL_STATE: CreativeDesignState = {
   metadata: {
-    title: "Happy Birthday Classic Wish",
+    title: MASTER_CREATIVE_TEMPLATES[0].name,
+    templateId: MASTER_CREATIVE_TEMPLATES[0].id,
     category: "BIRTHDAY",
     format: "SQUARE_POST",
   },
   canvas: {
     width: 1080,
     height: 1080,
-    background: "linear-gradient(135deg, #fffdfa 0%, #fef3c7 40%, #fde68a 100%)",
+    background: MASTER_CREATIVE_TEMPLATES[0].bgGradient,
   },
   slotValues: {
-    headingText: "Happy Birthday",
-    subheadingText: "Wishing you a life filled with happiness, good health, and success!",
-    messageText: "May your special day bring good health, success and prosperity. Stay blessed!",
-    sloganText: "सेवा • समर्पण • विकास",
-    footerText: "सेवा • समर्पण • विकास",
+    headingText: MASTER_CREATIVE_TEMPLATES[0].headingText || "जन्मदिन की हार्दिक शुभकामनाएं",
+    subheadingText: MASTER_CREATIVE_TEMPLATES[0].subheadingText || "सुख, उत्तम स्वास्थ्य एवं दीर्घायु जीवन की मंगलकामनाएं",
+    messageText: MASTER_CREATIVE_TEMPLATES[0].messageText || "ईश्वर से आपके उत्तम स्वास्थ्य, दीर्घायु एवं यशस्वी जीवन की मंगलकामना करते हैं। आपके नेतृत्व में हमारा क्षेत्र निरंतर प्रगति के नए कीर्तिमान स्थापित करे।",
+    sloganText: MASTER_CREATIVE_TEMPLATES[0].sloganText || "सेवा • समर्पण • सुशासन",
+    footerText: MASTER_CREATIVE_TEMPLATES[0].footerText || "सेवा • समर्पण • सुशासन",
     repNameText: "Shri Rajesh Kumar",
     repDesignationText: "MLA, Green Valley Constituency",
   },
@@ -101,113 +104,18 @@ const DEFAULT_INITIAL_STATE: CreativeDesignState = {
     designation: "MLA, Green Valley Constituency",
     leaderPhotoUrl: "",
     partyLogoUrl: "",
-    footerText: "सेवा • समर्पण • विकास",
+    footerText: "सेवा • समर्पण • सुशासन",
   },
   theme: {
-    primary: "#ea580c",
-    secondary: "#047857",
+    primary: MASTER_CREATIVE_TEMPLATES[0].primaryColor || "#ea580c",
+    secondary: MASTER_CREATIVE_TEMPLATES[0].secondaryColor || "#c2410c",
     accent: "#f59e0b",
   },
-  elements: [
-    {
-      id: "slogan-badge",
-      name: "Top Tagline",
-      type: "text",
-      x: 80,
-      y: 80,
-      width: 440,
-      height: 50,
-      text: "सेवा • समर्पण • विकास",
-      fontSize: 24,
-      fontFamily: "Noto Sans Devanagari",
-      fontWeight: "bold",
-      color: "#ea580c",
-      align: "center",
-      dynamicToken: "{{sloganText}}",
-      editable: true,
-    },
-    {
-      id: "main-heading",
-      name: "Main Heading",
-      type: "text",
-      x: 540,
-      y: 240,
-      width: 500,
-      height: 90,
-      text: "Happy Birthday",
-      fontSize: 82,
-      fontFamily: "Great Vibes",
-      fontWeight: "bold",
-      color: "#ea580c",
-      align: "left",
-      dynamicToken: "{{headingText}}",
-      editable: true,
-    },
-    {
-      id: "message-text",
-      name: "Wish Message",
-      type: "text",
-      x: 540,
-      y: 340,
-      width: 480,
-      height: 180,
-      text: "May your special day bring good health, success and prosperity. Stay blessed!",
-      fontSize: 26,
-      fontFamily: "Noto Sans Devanagari",
-      color: "#334155",
-      align: "left",
-      lineHeight: 1.5,
-      dynamicToken: "{{messageText}}",
-      editable: true,
-    },
-    {
-      id: "leader-photo",
-      name: "Leader Photo",
-      type: "leader_photo",
-      x: 60,
-      y: 460,
-      width: 440,
-      height: 580,
-      dynamicToken: "{{leaderPhoto}}",
-      borderRadius: 24,
-      borderWidth: 4,
-      borderColor: "#ffffff",
-      shadowColor: "rgba(0,0,0,0.15)",
-      shadowBlur: 20,
-      editable: true,
-    },
-    {
-      id: "party-logo",
-      name: "Party Logo",
-      type: "logo",
-      x: 860,
-      y: 50,
-      width: 150,
-      height: 150,
-      dynamicToken: "{{partyLogo}}",
-      editable: true,
-    },
-    {
-      id: "footer-banner",
-      name: "Bottom Slogan Bar",
-      type: "footer",
-      x: 0,
-      y: 980,
-      width: 1080,
-      height: 100,
-      backgroundColor: "#064e3b",
-      color: "#ffffff",
-      text: "Shri Rajesh Kumar | MLA, Green Valley Constituency",
-      fontSize: 32,
-      fontFamily: "Noto Sans Devanagari",
-      align: "left",
-      editable: true,
-    },
-  ],
+  elements: getTemplateElements(MASTER_CREATIVE_TEMPLATES[0]),
   settings: {
     showGrid: false,
     snapToGrid: false,
-    showSafeArea: true,
+    showSafeArea: false,
   },
 };
 
@@ -391,6 +299,43 @@ export const CreativeDesignProvider: React.FC<{ children: React.ReactNode }> = (
       };
       pushHistory(next);
       return next;
+    });
+  };
+
+  const startBlankCanvas = (format: CreativeFormat = "SQUARE_POST") => {
+    setDesignState((prev) => {
+      const width = format === "PORTRAIT_POST" ? 1080 : format === "BANNER_WIDE" ? 1200 : 1080;
+      const height = format === "PORTRAIT_POST" ? 1350 : format === "BANNER_WIDE" ? 630 : 1080;
+
+      const blankState: CreativeDesignState = {
+        id: undefined,
+        metadata: {
+          title: "Blank Design",
+          category: "GENERAL",
+          format,
+        },
+        canvas: {
+          width,
+          height,
+          background: "#ffffff",
+        },
+        slotValues: {},
+        branding: prev.branding,
+        theme: {
+          primary: "#047857",
+          secondary: "#064e3b",
+          accent: "#f59e0b",
+        },
+        elements: [],
+        settings: {
+          showGrid: false,
+          snapToGrid: false,
+          showSafeArea: false,
+        },
+      };
+      setSelectedElementId(null);
+      pushHistory(blankState);
+      return blankState;
     });
   };
 
@@ -616,6 +561,7 @@ export const CreativeDesignProvider: React.FC<{ children: React.ReactNode }> = (
         redo,
         saveDesign,
         loadDesign,
+        startBlankCanvas,
       }}
     >
       {children}
