@@ -4,10 +4,13 @@ import {
   useMeetings,
   useMeetingStats,
   useDeleteMeeting,
+  useBulkCreateMeetings,
   getStatusInfo,
   MEETING_STATUSES
 } from "@/hooks/useMeetings";
 import { format } from "date-fns";
+import ExcelJS from "exceljs";
+import { toast } from "sonner";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +50,7 @@ import {
   Layers,
   Monitor,
   Loader2,
+  FileUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -65,6 +69,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PermissionGate } from "@/components/auth/PermissionGate";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 
 export default function MeetingListPage() {
   const [search, setSearch] = useState("");
@@ -72,6 +77,7 @@ export default function MeetingListPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [meetingToDelete, setMeetingToDelete] = useState<any | null>(null);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   const { data: mRes, isLoading } = useMeetings({
     search: search || undefined,
@@ -82,6 +88,7 @@ export default function MeetingListPage() {
 
   const { data: statsRes } = useMeetingStats();
   const deleteMut = useDeleteMeeting();
+  const { mutateAsync: bulkCreateMeetings } = useBulkCreateMeetings();
 
   const meetings = mRes?.data || [];
   const stats = statsRes?.data || { total: 0, scheduled: 0, completed: 0, cancelled: 0 };
@@ -92,9 +99,98 @@ export default function MeetingListPage() {
     setTypeFilter("all");
   };
 
+  const downloadSampleTemplate = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Meetings");
+
+      worksheet.columns = [
+        { header: "title", key: "title", width: 30 },
+        { header: "date", key: "date", width: 15 },
+        { header: "startTime", key: "startTime", width: 12 },
+        { header: "endTime", key: "endTime", width: 12 },
+        { header: "location", key: "location", width: 25 },
+        { header: "type", key: "type", width: 16 },
+        { header: "status", key: "status", width: 16 },
+        { header: "description", key: "description", width: 35 },
+        { header: "agenda", key: "agenda", width: 35 },
+        { header: "virtualLink", key: "virtualLink", width: 30 },
+        { header: "attendeeCount", key: "attendeeCount", width: 15 },
+      ];
+
+      worksheet.addRow({
+        title: "Ward Committee Review Meeting",
+        date: "2026-09-20",
+        startTime: "10:00",
+        endTime: "11:30",
+        location: "Community Center Hall, Ward 4",
+        type: "IN_PERSON",
+        status: "SCHEDULED",
+        description: "Quarterly progress and citizen concerns review",
+        agenda: "1. Sanitation updates 2. Street lighting 3. Open Q&A",
+        virtualLink: "",
+        attendeeCount: 25,
+      });
+
+      worksheet.addRow({
+        title: "Online Public Grievance Discussion",
+        date: "2026-09-22",
+        startTime: "15:00",
+        endTime: "16:00",
+        location: "Google Meet",
+        type: "VIRTUAL",
+        status: "SCHEDULED",
+        description: "Virtual session with youth wing leaders",
+        agenda: "Digital voter registration drive planning",
+        virtualLink: "https://meet.google.com/xyz-abcd-efg",
+        attendeeCount: 50,
+      });
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Meetings_Import_Template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate Meetings template", err);
+      toast.error("Failed to generate template");
+    }
+  };
+
   return (
     <MainLayout title="Meetings">
       <div className="space-y-6">
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={async (data) => {
+            await bulkCreateMeetings(data);
+          }}
+          title="Import Meetings & Engagements"
+          description={
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Upload an Excel (.xlsx) or CSV file to import multiple meetings at once.
+                Meetings are created or upserted based on Title and Date.
+              </p>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -126,6 +222,15 @@ export default function MeetingListPage() {
               </Button>
             </div>
             <PermissionGate module="meeting" action="create">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-xs border-border/60 bg-card hover:bg-muted font-semibold"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-3.5 w-3.5" />
+                Bulk Upload
+              </Button>
               <Link href="/meetings/new">
                 <Button className="gap-2 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 font-bold">
                   <Plus className="h-3.5 w-3.5" />

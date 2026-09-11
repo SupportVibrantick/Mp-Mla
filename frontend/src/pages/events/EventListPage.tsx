@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import ExcelJS from "exceljs";
+import { toast } from "sonner";
 import {
   useEvents,
   useEventStats,
   useDeleteEvent,
   useChangeEventStatus,
+  useBulkCreateEvents,
   getEventStatusInfo
 } from "@/hooks/useEvents";
 import { PermissionGate } from "@/components/auth/PermissionGate";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,7 +48,8 @@ import {
   Users,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  FileUp,
 } from "lucide-react";
 
 export default function EventListPage() {
@@ -52,6 +57,7 @@ export default function EventListPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   const { data: eventsData, isLoading } = useEvents({
     search: search || undefined,
@@ -62,6 +68,7 @@ export default function EventListPage() {
   const { data: statsRes } = useEventStats();
   const deleteMut = useDeleteEvent();
   const statusMut = useChangeEventStatus();
+  const { mutateAsync: bulkCreateEvents } = useBulkCreateEvents();
 
   const events = eventsData?.data || [];
   const stats = statsRes?.data || { total: 0, scheduled: 0, active: 0, completed: 0, cancelled: 0 };
@@ -76,22 +83,120 @@ export default function EventListPage() {
     await statusMut.mutateAsync({ id, status });
   };
 
+  const downloadSampleTemplate = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Events");
+
+      worksheet.columns = [
+        { header: "title", key: "title", width: 30 },
+        { header: "type", key: "type", width: 16 },
+        { header: "startDate", key: "startDate", width: 20 },
+        { header: "endDate", key: "endDate", width: 20 },
+        { header: "location", key: "location", width: 25 },
+        { header: "mode", key: "mode", width: 14 },
+        { header: "status", key: "status", width: 14 },
+        { header: "wardNumber", key: "wardNumber", width: 14 },
+        { header: "expectedFootfall", key: "expectedFootfall", width: 16 },
+        { header: "budget", key: "budget", width: 14 },
+        { header: "description", key: "description", width: 35 },
+      ];
+
+      worksheet.addRow({
+        title: "Constituency Vikas Yatra & Rally",
+        type: "RALLY",
+        startDate: "2026-10-10 09:00",
+        endDate: "2026-10-10 13:00",
+        location: "Main Market Ground",
+        mode: "PHYSICAL",
+        status: "SCHEDULED",
+        wardNumber: 4,
+        expectedFootfall: 1500,
+        budget: 50000,
+        description: "Public rally and project inauguration",
+      });
+
+      worksheet.addRow({
+        title: "Youth Dialogue Town Hall",
+        type: "TOWN_HALL",
+        startDate: "2026-10-15 16:00",
+        endDate: "2026-10-15 18:00",
+        location: "Auditorium Hall",
+        mode: "HYBRID",
+        status: "SCHEDULED",
+        wardNumber: 1,
+        expectedFootfall: 300,
+        budget: 15000,
+        description: "Interactive session on local employment and skills",
+      });
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Events_Import_Template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate Events template", err);
+      toast.error("Failed to generate template");
+    }
+  };
+
   return (
     <MainLayout title="Events & Rallies">
       <div className="space-y-6">
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={async (data) => {
+            await bulkCreateEvents(data);
+          }}
+          title="Import Events & Rallies"
+          description={
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Upload an Excel (.xlsx) or CSV file to import multiple events at once.
+                Events are created or matched based on Title and Start Date.
+              </p>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Events & Rallies</h1>
-          <p className="text-muted-foreground">Manage constituency events, rallies, meetings, and public forums.</p>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Events & Rallies</h1>
+            <p className="text-muted-foreground">Manage constituency events, rallies, meetings, and public forums.</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <PermissionGate module="events" action="create">
+              <Button
+                variant="outline"
+                className="gap-2 font-bold rounded-xl shadow-sm h-11 border-border/60 bg-card hover:bg-muted text-xs"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" /> Bulk Upload
+              </Button>
+              <Link href="/events/new">
+                <Button className="gap-2 font-bold rounded-xl shadow-sm h-11 bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 text-xs">
+                  <Plus className="h-4 w-4" /> Create Event
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
         </div>
-        <PermissionGate module="events" action="create">
-          <Link href="/events/new">
-            <Button className="gap-2 font-bold rounded-xl shadow-sm h-11 bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90">
-              <Plus className="h-4 w-4" /> Create Event
-            </Button>
-          </Link>
-        </PermissionGate>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

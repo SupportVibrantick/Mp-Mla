@@ -176,3 +176,185 @@ export function normalizeSchemeLevel(value?: string) {
     return map[v];
 }
 
+export function normalizeMeetingStatus(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "SCHEDULED" | "COMPLETED" | "CANCELLED"> = {
+        SCHEDULED: "SCHEDULED",
+        PENDING: "SCHEDULED",
+        UPCOMING: "SCHEDULED",
+        PLANNED: "SCHEDULED",
+        COMPLETED: "COMPLETED",
+        DONE: "COMPLETED",
+        FINISHED: "COMPLETED",
+        CANCELLED: "CANCELLED",
+        CANCELED: "CANCELLED",
+    };
+    return map[v];
+}
+
+export function normalizeMeetingType(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "ONLINE" | "OFFLINE"> = {
+        ONLINE: "ONLINE",
+        VIRTUAL: "ONLINE",
+        ZOOM: "ONLINE",
+        MEET: "ONLINE",
+        OFFLINE: "OFFLINE",
+        PHYSICAL: "OFFLINE",
+        IN_PERSON: "OFFLINE",
+        PERSON: "OFFLINE",
+    };
+    return map[v];
+}
+
+export function normalizeEventType(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, any> = {
+        PUBLIC_MEETING: "PUBLIC_MEETING",
+        PUBLIC: "PUBLIC_MEETING",
+        JANATA_DARBAR: "JANATA_DARBAR",
+        DARBAR: "JANATA_DARBAR",
+        CONSTITUENCY_VISIT: "CONSTITUENCY_VISIT",
+        VISIT: "CONSTITUENCY_VISIT",
+        VILLAGE_VISIT: "VILLAGE_VISIT",
+        DEVELOPMENT_INAUGURATION: "DEVELOPMENT_INAUGURATION",
+        INAUGURATION: "DEVELOPMENT_INAUGURATION",
+        PUBLIC_HEARING: "PUBLIC_HEARING",
+        HEARING: "PUBLIC_HEARING",
+        OFFICIAL_MEETING: "OFFICIAL_MEETING",
+        OFFICIAL: "OFFICIAL_MEETING",
+        COMMUNITY_EVENT: "COMMUNITY_EVENT",
+        COMMUNITY: "COMMUNITY_EVENT",
+        PRESS_CONFERENCE: "PRESS_CONFERENCE",
+        PRESS: "PRESS_CONFERENCE",
+    };
+    return map[v];
+}
+
+export function normalizeEventStatus(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, any> = {
+        DRAFT: "DRAFT",
+        SCHEDULED: "SCHEDULED",
+        UPCOMING: "SCHEDULED",
+        PLANNED: "SCHEDULED",
+        ONGOING: "ONGOING",
+        RUNNING: "ONGOING",
+        IN_PROGRESS: "ONGOING",
+        COMPLETED: "COMPLETED",
+        DONE: "COMPLETED",
+        CANCELLED: "CANCELLED",
+        CANCELED: "CANCELLED",
+        POSTPONED: "POSTPONED",
+    };
+    return map[v];
+}
+
+export function normalizeEventMode(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "OFFLINE" | "ONLINE" | "HYBRID"> = {
+        OFFLINE: "OFFLINE",
+        PHYSICAL: "OFFLINE",
+        IN_PERSON: "OFFLINE",
+        ONLINE: "ONLINE",
+        VIRTUAL: "ONLINE",
+        HYBRID: "HYBRID",
+        MIXED: "HYBRID",
+    };
+    return map[v];
+}
+
+export function normalizeJanataSessionType(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "JANATA_DARBAR" | "PUBLIC_HEARING"> = {
+        JANATA_DARBAR: "JANATA_DARBAR",
+        DARBAR: "JANATA_DARBAR",
+        JANATA: "JANATA_DARBAR",
+        PUBLIC_HEARING: "PUBLIC_HEARING",
+        HEARING: "PUBLIC_HEARING",
+    };
+    return map[v];
+}
+
+export function normalizeJanataSessionStatus(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "SCHEDULED" | "ONGOING" | "COMPLETED" | "CANCELLED"> = {
+        SCHEDULED: "SCHEDULED",
+        PLANNED: "SCHEDULED",
+        UPCOMING: "SCHEDULED",
+        ONGOING: "ONGOING",
+        RUNNING: "ONGOING",
+        COMPLETED: "COMPLETED",
+        DONE: "COMPLETED",
+        CANCELLED: "CANCELLED",
+        CANCELED: "CANCELLED",
+    };
+    return map[v];
+}
+
+export function normalizeJanataTokenStatus(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, "WAITING" | "CALLED" | "IN_PROGRESS" | "RESOLVED" | "REFERRED" | "ABSENT"> = {
+        WAITING: "WAITING",
+        PENDING: "WAITING",
+        CALLED: "CALLED",
+        IN_PROGRESS: "IN_PROGRESS",
+        PROCESSING: "IN_PROGRESS",
+        RESOLVED: "RESOLVED",
+        CLOSED: "RESOLVED",
+        REFERRED: "REFERRED",
+        ABSENT: "ABSENT",
+        MISSED: "ABSENT",
+    };
+    return map[v];
+}
+
+export function normalizeAppointmentType(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, any> = {
+        MLA_MP_MEETING: "MLA_MP_MEETING",
+        MP_MLA_MEETING: "MLA_MP_MEETING",
+        MLA_MEETING: "MLA_MP_MEETING",
+        MP_MEETING: "MLA_MP_MEETING",
+        PUBLIC_GRIEVANCE: "PUBLIC_GRIEVANCE",
+        GRIEVANCE: "PUBLIC_GRIEVANCE",
+        OFFICE_APPOINTMENT: "OFFICE_APPOINTMENT",
+        OFFICE: "OFFICE_APPOINTMENT",
+        DEVELOPMENT_DISCUSSION: "DEVELOPMENT_DISCUSSION",
+        DEVELOPMENT: "DEVELOPMENT_DISCUSSION",
+        OFFICIAL_MEETING: "OFFICIAL_MEETING",
+        OFFICIAL: "OFFICIAL_MEETING",
+    };
+    return map[v];
+}
+
+export function normalizeAppointmentStatus(value?: string) {
+    if (!value) return undefined;
+    const v = value.trim().replace(/\s+/g, '_').toUpperCase();
+    const map: Record<string, any> = {
+        PENDING: "PENDING",
+        REQUESTED: "PENDING",
+        APPROVED: "APPROVED",
+        CONFIRMED: "APPROVED",
+        ACCEPTED: "APPROVED",
+        REJECTED: "REJECTED",
+        DECLINED: "REJECTED",
+        RESCHEDULED: "RESCHEDULED",
+        COMPLETED: "COMPLETED",
+        DONE: "COMPLETED",
+        CANCELLED: "CANCELLED",
+        CANCELED: "CANCELLED",
+    };
+    return map[v];
+}
+
+

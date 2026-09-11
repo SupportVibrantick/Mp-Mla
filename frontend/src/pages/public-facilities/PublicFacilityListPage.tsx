@@ -79,7 +79,7 @@ export default function PublicFacilityListPage() {
   const { data: statsRes } = usePublicFacilityStats(
     wardFilter !== "all" ? wardFilter : undefined,
   );
-  const { data: wardsRes } = useWards({ limit: 100 });
+  const { data: wardsRes } = useWards({ limit: 500 });
   const { mutateAsync: bulkCreatePublicFacilities } =
     useBulkCreatePublicFacilities();
 
@@ -170,18 +170,25 @@ export default function PublicFacilityListPage() {
       { header: "inchargeIsActive", key: "inchargeIsActive", width: 15 },
     ];
 
+    // Determine sample wards dynamically from real system wards
+    const sampleWard1 = wards && wards.length > 0 ? wards[0].wardNumber : 1;
+    const sampleWard2 =
+      wards && wards.length > 1
+        ? wards[1].wardNumber
+        : sampleWard1;
+
     // Sample: institution with one incharge
     worksheet.addRow({
       name: "Govt Senior Secondary School",
       category: "SCHOOL",
       subcategory: "Senior Secondary",
-      address: "Main Road, Sector 5",
-      wardNumber: 3,
+      address: `Main Road, Sector 5, Ward ${sampleWard1}`,
+      wardNumber: sampleWard1,
       contactNo: "0172-2740001",
       email: "school5@edu.gov.in",
       website: "",
       status: "ACTIVE",
-      description: "Government school serving ward 3",
+      description: `Government school serving ward ${sampleWard1}`,
       capacity: 1200,
       establishedDate: "1985-06-15",
       inchargeName: "Dr. Ramesh Kumar",
@@ -199,7 +206,7 @@ export default function PublicFacilityListPage() {
       category: "",
       subcategory: "",
       address: "",
-      wardNumber: 3,
+      wardNumber: sampleWard1,
       contactNo: "",
       email: "",
       website: "",
@@ -221,8 +228,8 @@ export default function PublicFacilityListPage() {
       name: "Shiv Mandir",
       category: "TEMPLE",
       subcategory: "",
-      address: "Temple Road, Old City",
-      wardNumber: 1,
+      address: `Temple Road, Old City, Ward ${sampleWard2}`,
+      wardNumber: sampleWard2,
       contactNo: "",
       email: "",
       website: "",

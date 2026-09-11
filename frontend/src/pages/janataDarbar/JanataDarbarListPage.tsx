@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import ExcelJS from "exceljs";
+import { toast } from "sonner";
 import {
   useJanataSessions,
   useDeleteJanataSession,
   useTransitionJanataSession,
+  useBulkCreateJanataSessions,
   getDarbarStatusInfo,
 } from "@/hooks/useJanataDarbar";
 import { PermissionGate } from "@/components/auth/PermissionGate";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { MainLayout } from "@/components/layout/MainLayout";
 import {
   Card,
@@ -57,18 +61,21 @@ import {
   HelpCircle,
   TrendingUp,
   Loader2,
+  FileUp,
 } from "lucide-react";
 
 export default function JanataDarbarListPage() {
   const { data: sessionsRes, isLoading } = useJanataSessions();
   const deleteMut = useDeleteJanataSession();
   const transitionMut = useTransitionJanataSession();
+  const { mutateAsync: bulkCreateJanataSessions } = useBulkCreateJanataSessions();
 
   const sessions = sessionsRes?.data || [];
   const [sessionToDelete, setSessionToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   const handleStartSession = async (id: string) => {
     await transitionMut.mutateAsync({ id, status: "ONGOING" });
@@ -76,6 +83,73 @@ export default function JanataDarbarListPage() {
 
   const handleCloseSession = async (id: string) => {
     await transitionMut.mutateAsync({ id, status: "COMPLETED" });
+  };
+
+  const downloadSampleTemplate = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("JanataDarbarSessions");
+
+      worksheet.columns = [
+        { header: "title", key: "title", width: 30 },
+        { header: "date", key: "date", width: 15 },
+        { header: "startTime", key: "startTime", width: 12 },
+        { header: "endTime", key: "endTime", width: 12 },
+        { header: "venue", key: "venue", width: 30 },
+        { header: "status", key: "status", width: 16 },
+        { header: "sessionType", key: "sessionType", width: 18 },
+        { header: "maxTokens", key: "maxTokens", width: 14 },
+        { header: "description", key: "description", width: 35 },
+        { header: "instructions", key: "instructions", width: 35 },
+      ];
+
+      worksheet.addRow({
+        title: "Weekly Public Darbar - North Zone",
+        date: "2026-09-25",
+        startTime: "09:30",
+        endTime: "13:30",
+        venue: "MP Constituency Office Main Hall",
+        status: "SCHEDULED",
+        sessionType: "REGULAR",
+        maxTokens: 150,
+        description: "Open citizen grievance redressal hearing",
+        instructions: "Please bring identity proof and original application documents",
+      });
+
+      worksheet.addRow({
+        title: "Special Farmers & Rural Hearing",
+        date: "2026-09-28",
+        startTime: "10:00",
+        endTime: "14:00",
+        venue: "Kisan Bhavan, Block 2",
+        status: "SCHEDULED",
+        sessionType: "SPECIAL",
+        maxTokens: 200,
+        description: "Special session dedicated to agricultural and rural welfare schemes",
+        instructions: "Aadhaar and land record copies required for scheme applications",
+      });
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Janata_Darbar_Sessions_Template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate Janata Darbar template", err);
+      toast.error("Failed to generate template");
+    }
   };
 
   // Compute local stats from listing data
@@ -93,6 +167,25 @@ export default function JanataDarbarListPage() {
   return (
     <MainLayout title="Janata Darbar Hearings">
       <div className="space-y-6">
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={async (data) => {
+            await bulkCreateJanataSessions(data);
+          }}
+          title="Import Janata Darbar Sessions"
+          description={
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Upload an Excel (.xlsx) or CSV file to import multiple Janata Darbar sessions.
+                Sessions are created or updated based on Title and Session Date.
+              </p>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -103,13 +196,22 @@ export default function JanataDarbarListPage() {
               grievances queue.
             </p>
           </div>
-          <PermissionGate module="janata_darbar" action="create">
-            <Link href="/janata-darbar/new">
-              <Button className="gap-2 font-bold rounded-xl shadow-sm h-11 bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90">
-                <Plus className="h-4 w-4" /> Start New Session
+          <div className="flex items-center gap-2 flex-wrap">
+            <PermissionGate module="janata_darbar" action="create">
+              <Button
+                variant="outline"
+                className="gap-2 font-bold rounded-xl shadow-sm h-11 border-border/60 bg-card hover:bg-muted text-xs"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4" /> Bulk Upload
               </Button>
-            </Link>
-          </PermissionGate>
+              <Link href="/janata-darbar/new">
+                <Button className="gap-2 font-bold rounded-xl shadow-sm h-11 bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 text-xs">
+                  <Plus className="h-4 w-4" /> Start New Session
+                </Button>
+              </Link>
+            </PermissionGate>
+          </div>
         </div>
 
         {/* Stats Section */}

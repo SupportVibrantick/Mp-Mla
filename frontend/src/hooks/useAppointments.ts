@@ -188,3 +188,20 @@ export function useCancelAppointment() {
     },
   });
 }
+
+export function useBulkCreateAppointments() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any[]) => {
+      const { data: res } = await api.post("/admin/appointments/bulk", data);
+      return res;
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success(res?.message || "Appointments imported successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to bulk import appointments");
+    },
+  });
+}

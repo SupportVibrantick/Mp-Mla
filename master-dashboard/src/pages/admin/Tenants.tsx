@@ -74,7 +74,9 @@ import {
   PlayCircle,
   Trash2,
   Upload,
+  Clock,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { getImageUrl } from "@/lib/utils";
 
@@ -521,10 +523,13 @@ export default function TenantsPage() {
       status: tenant.status,
       users: tenant._count?.users || 0,
       mrr: getTenantMrr(tenant),
+      lastLogin: tenant.lastLoginAt
+        ? `${new Date(tenant.lastLoginAt).toLocaleDateString("en-IN")} ${new Date(tenant.lastLoginAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}${tenant.lastLoginUser?.name ? ` (${tenant.lastLoginUser.name})` : ""}`
+        : "Never",
       createdAt: new Date(tenant.createdAt).toLocaleDateString("en-IN"),
     }));
 
-    const header = ["Tenant", "Constituency", "Plan", "Status", "Users", "MRR", "Created"];
+    const header = ["Tenant", "Constituency", "Plan", "Status", "Users", "MRR", "Last Login", "Created"];
     const csv = [
       header.join(","),
       ...rows.map((row: any) =>
@@ -535,6 +540,7 @@ export default function TenantsPage() {
           row.status,
           row.users,
           row.mrr,
+          row.lastLogin,
           row.createdAt,
         ]
           .map((value) => `"${String(value).replace(/"/g, '""')}"`)
@@ -664,6 +670,7 @@ export default function TenantsPage() {
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">Status</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">Users</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">MRR</th>
+                  <th className="px-4 py-3.5 font-semibold text-muted-foreground">Last Login</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground">Created</th>
                   <th className="px-4 py-3.5 font-semibold text-muted-foreground text-right">Actions</th>
                 </tr>
@@ -682,6 +689,7 @@ export default function TenantsPage() {
                       <td className="px-4 py-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-4 w-14" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-4 w-20" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-4 w-24" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-4 w-24" /></td>
                       <td className="px-4 py-4 text-right"><Skeleton className="h-8 w-8 ml-auto rounded" /></td>
                     </tr>
@@ -742,6 +750,28 @@ export default function TenantsPage() {
                         </td>
                         <td className="px-4 py-4 font-medium">{t._count?.users || 0}</td>
                         <td className="px-4 py-4 font-semibold">{formatCurrency(getTenantMrr(t))}</td>
+                        <td className="px-4 py-4">
+                          {t.lastLoginAt ? (
+                            <div>
+                              <div className="font-medium text-foreground text-xs flex items-center gap-1.5">
+                                <Clock className="h-3 w-3 text-primary shrink-0" />
+                                {formatDistanceToNow(new Date(t.lastLoginAt), { addSuffix: true })}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                {new Date(t.lastLoginAt).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                                {t.lastLoginUser?.name ? ` • ${t.lastLoginUser.name}` : ""}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/60 italic">Never</span>
+                          )}
+                        </td>
                         <td className="px-4 py-4 text-muted-foreground">
                           {new Date(t.createdAt).toLocaleDateString("en-IN")}
                         </td>
@@ -881,6 +911,12 @@ export default function TenantsPage() {
                       }`,
                     },
                     { label: "MRR", value: formatCurrency(getTenantMrr(selectedTenant)) },
+                    {
+                      label: "Last Login",
+                      value: selectedTenant.lastLoginAt
+                        ? `${new Date(selectedTenant.lastLoginAt).toLocaleString("en-IN")}${selectedTenant.lastLoginUser?.name ? ` (${selectedTenant.lastLoginUser.name})` : ""}`
+                        : "Never logged in",
+                    },
                     { label: "Created", value: new Date(selectedTenant.createdAt).toLocaleDateString("en-CA") },
                     { label: "Slug", value: getTenantSlug(selectedTenant) },
                     { label: "Tenant ID", value: selectedTenant.id },
@@ -1644,6 +1680,7 @@ function TenantUsersDialog({ open, onOpenChange, tenant }: UsersDialogProps) {
                   <th className="px-3 py-2.5 font-semibold text-muted-foreground">Role</th>
                   <th className="px-3 py-2.5 font-semibold text-muted-foreground">Department</th>
                   <th className="px-3 py-2.5 font-semibold text-muted-foreground">Status</th>
+                  <th className="px-3 py-2.5 font-semibold text-muted-foreground">Last Login</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
@@ -1654,11 +1691,12 @@ function TenantUsersDialog({ open, onOpenChange, tenant }: UsersDialogProps) {
                       <td className="px-3 py-3"><Skeleton className="h-3.5 w-16 rounded" /></td>
                       <td className="px-3 py-3"><Skeleton className="h-3 w-20" /></td>
                       <td className="px-3 py-3"><Skeleton className="h-3.5 w-12 rounded" /></td>
+                      <td className="px-3 py-3"><Skeleton className="h-3 w-20" /></td>
                     </tr>
                   ))
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-3 py-8 text-center text-muted-foreground italic">
+                    <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground italic">
                       No users registered in this tenant workspace.
                     </td>
                   </tr>
@@ -1685,6 +1723,16 @@ function TenantUsersDialog({ open, onOpenChange, tenant }: UsersDialogProps) {
                         }`}>
                           {u.status}
                         </span>
+                      </td>
+                      <td className="px-3 py-3 text-muted-foreground">
+                        {u.lastLoginAt ? (
+                          <div className="flex items-center gap-1 font-medium text-foreground">
+                            <Clock className="h-3 w-3 text-primary shrink-0" />
+                            <span>{formatDistanceToNow(new Date(u.lastLoginAt), { addSuffix: true })}</span>
+                          </div>
+                        ) : (
+                          <span className="italic text-muted-foreground/60">Never</span>
+                        )}
                       </td>
                     </tr>
                   ))

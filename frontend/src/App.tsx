@@ -85,6 +85,7 @@ import CompetitorFormPage from "./pages/competitors/CompetitorFormPage";
 import CompetitorDashboard from "./pages/competitors/CompetitorDashboard";
 import CompetitorDetailPage from "./pages/competitors/CompetitorDetailPage";
 import VoterListPage from "./pages/voterList/VoterListPage";
+import CreativeStudioPage from "./pages/creatives/CreativeStudioPage";
 
 // Geography management pages
 import GeographyPage from "./pages/geography/GeographyPage";
@@ -310,6 +311,12 @@ function Router() {
       <Route path="/demographics">
         <ProtectedRoute module="demographics" action="read">
           <DemographicsPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/creatives">
+        <ProtectedRoute module="creative" action="read">
+          <CreativeStudioPage />
         </ProtectedRoute>
       </Route>
 

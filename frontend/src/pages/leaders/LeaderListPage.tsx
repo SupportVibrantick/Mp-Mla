@@ -127,7 +127,7 @@ export default function LeaderListPage() {
 
   const { data: res, isLoading } = useLeaders(params);
   const { data: statsRes } = useLeaderStats();
-  const { data: wardsRes } = useWards({ limit: 100 });
+  const { data: wardsRes } = useWards({ limit: 500 });
   const deleteMut = useDeleteLeader();
   const { mutateAsync: bulkCreateLeaders } = useBulkCreateLeaders();
 
@@ -175,6 +175,9 @@ export default function LeaderListPage() {
   const downloadSampleTemplate = async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Leaders");
+    const dropdownSheet = workbook.addWorksheet("DropdownData", {
+      state: "hidden",
+    });
 
     worksheet.columns = [
       { header: "name", key: "name", width: 25 },
@@ -185,7 +188,7 @@ export default function LeaderListPage() {
       { header: "dateOfBirth", key: "dateOfBirth", width: 15 },
       { header: "gender", key: "gender", width: 10 },
       { header: "address", key: "address", width: 30 },
-      { header: "wardNumber", key: "wardNumber", width: 12 },
+      { header: "wardNumber", key: "wardNumber", width: 14 },
       { header: "phone", key: "phone", width: 15 },
       { header: "altPhone", key: "altPhone", width: 15 },
       { header: "email", key: "email", width: 25 },
@@ -194,12 +197,17 @@ export default function LeaderListPage() {
       { header: "twitterUrl", key: "twitterUrl", width: 25 },
       { header: "instagramUrl", key: "instagramUrl", width: 25 },
       { header: "relation", key: "relation", width: 15 },
-      // { header: "influence", key: "influence", width: 12 },
       { header: "notes", key: "notes", width: 30 },
-
       { header: "tags", key: "tags", width: 25 },
       { header: "isActive", key: "isActive", width: 10 },
     ];
+
+    // Determine sample wards dynamically from real system wards
+    const sampleWard1 = wards && wards.length > 0 ? wards[0].wardNumber : 1;
+    const sampleWard2 =
+      wards && wards.length > 1
+        ? wards[1].wardNumber
+        : sampleWard1;
 
     // Sample rows
     worksheet.addRow({
@@ -210,8 +218,8 @@ export default function LeaderListPage() {
       partyName: "BJP",
       dateOfBirth: "1975-06-15",
       gender: "Male",
-      address: "123 Main Road, Ward 5",
-      wardNumber: 5,
+      address: `123 Main Road, Ward ${sampleWard1}`,
+      wardNumber: sampleWard1,
       phone: "9876543210",
       altPhone: "9876543211",
       email: "rajesh@example.com",
@@ -220,9 +228,7 @@ export default function LeaderListPage() {
       twitterUrl: "",
       instagramUrl: "",
       relation: "Supporter",
-      // influence: "High",
       notes: "Key party worker since 2010",
-
       tags: "party, senior",
       isActive: "TRUE",
     });
@@ -235,8 +241,8 @@ export default function LeaderListPage() {
       partyName: "",
       dateOfBirth: "1982-03-22",
       gender: "Female",
-      address: "45 Gandhi Nagar",
-      wardNumber: 3,
+      address: `45 Gandhi Nagar, Ward ${sampleWard2}`,
+      wardNumber: sampleWard2,
       phone: "9123456789",
       altPhone: "",
       email: "meena@example.com",
@@ -245,44 +251,78 @@ export default function LeaderListPage() {
       twitterUrl: "",
       instagramUrl: "",
       relation: "Alliance",
-      // influence: "Medium",
       notes: "",
-
       tags: "women, community",
       isActive: "TRUE",
     });
 
-    // Data validations
-    const categoryValues = LEADER_CATEGORIES.map((c) => c.value).join(",");
+    const categoryList = LEADER_CATEGORIES.map((c) => c.value);
+    const genderList = ["Male", "Female", "Other"];
+    const relationList = [
+      "Supporter",
+      "Neutral",
+      "Alliance",
+      "Opposition",
+      "Other",
+    ];
+    const activeList = ["TRUE", "FALSE"];
+    const wardList = (wards || [])
+      .map((w: any) => String(w.wardNumber))
+      .filter(Boolean)
+      .sort((a: string, b: string) => Number(a) - Number(b));
+
+    // Populate DropdownData hidden sheet
+    dropdownSheet.getColumn(1).values = ["Categories", ...categoryList];
+    dropdownSheet.getColumn(2).values = ["Genders", ...genderList];
+    dropdownSheet.getColumn(3).values = ["Relations", ...relationList];
+    dropdownSheet.getColumn(4).values = ["ActiveStatus", ...activeList];
+    dropdownSheet.getColumn(5).values = ["WardNumbers", ...wardList];
+
     const maxRows = 500;
 
-    for (let i = 2; i <= maxRows; i++) {
-      // Category dropdown
+    for (let i = 2; i <= maxRows + 1; i++) {
+      // Category dropdown (Column B)
       worksheet.getCell(`B${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: [`"${categoryValues}"`],
+        formulae: [`=DropdownData!$A$2:$A$${categoryList.length + 1}`],
+        showErrorMessage: true,
       };
-      // Gender dropdown
+
+      // Gender dropdown (Column G)
       worksheet.getCell(`G${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: ['"Male,Female,Other"'],
+        formulae: [`=DropdownData!$B$2:$B$${genderList.length + 1}`],
+        showErrorMessage: true,
       };
-      // Relation dropdown
+
+      // WardNumber dropdown (Column I)
+      if (wardList.length > 0) {
+        worksheet.getCell(`I${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`=DropdownData!$E$2:$E$${wardList.length + 1}`],
+          showErrorMessage: true,
+          errorTitle: "Invalid Ward Number",
+          error: "Please select a valid Ward Number from the dropdown list.",
+        };
+      }
+
+      // Relation dropdown (Column Q)
       worksheet.getCell(`Q${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: ['"Supporter,Neutral,Alliance,Opposition,Other"'],
+        formulae: [`=DropdownData!$C$2:$C$${relationList.length + 1}`],
+        showErrorMessage: true,
       };
-      // formulae: ['"High,Medium,Low"'],
-      // };
 
-      // isActive dropdown
-      worksheet.getCell(`U${i}`).dataValidation = {
+      // isActive dropdown (Column T)
+      worksheet.getCell(`T${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
-        formulae: ['"TRUE,FALSE"'],
+        formulae: [`=DropdownData!$D$2:$D$${activeList.length + 1}`],
+        showErrorMessage: true,
       };
     }
 
@@ -320,7 +360,7 @@ export default function LeaderListPage() {
       {
         field: "category",
         required: "YES",
-        description: `One of: ${categoryValues}`,
+        description: `One of: ${categoryList.join(", ")}`,
       },
       {
         field: "dateOfBirth",
@@ -330,12 +370,14 @@ export default function LeaderListPage() {
       {
         field: "wardNumber",
         required: "No",
-        description: "Ward number (must exist in system)",
+        description: `Ward number from system (Configured Wards: ${wardList.join(", ") || "None configured"})`,
       },
-      { field: "relation", required: "No", description: "Supporter, Neutral, Alliance, Opposition, Other" },
-      // { field: "influence", required: "No", description: "High, Medium, Low" },
+      {
+        field: "relation",
+        required: "No",
+        description: "Supporter, Neutral, Alliance, Opposition, Other",
+      },
       { field: "gender", required: "No", description: "Male, Female, Other" },
-
       { field: "tags", required: "No", description: "Comma-separated tags" },
       {
         field: "isActive",

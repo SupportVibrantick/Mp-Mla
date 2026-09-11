@@ -37,6 +37,7 @@ import {
   FileText,
   Contact2,
   FolderOpen,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -293,6 +294,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           icon: CalendarDays,
           href: "/events",
           module: "events",
+        },
+        {
+          label: "Creative Studio",
+          icon: Palette,
+          href: "/creatives",
+          module: "creative",
         },
         {
           label: "Janata Darbar",

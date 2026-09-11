@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import ExcelJS from "exceljs";
 import {
   useAppointments,
   useAppointmentStats,
@@ -10,10 +11,12 @@ import {
   useRescheduleAppointment,
   useCompleteAppointment,
   useCancelAppointment,
+  useBulkCreateAppointments,
   getStatusInfo,
   APPOINTMENT_STATUSES,
 } from "@/hooks/useAppointments";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { BulkUploadModal } from "@/components/shared/BulkUploadModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +75,7 @@ import {
   Loader2,
   CalendarClock,
   Notebook,
+  FileUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,6 +92,7 @@ export default function AppointmentListPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   // Dialog States
   const [activeAppointment, setActiveAppointment] = useState<any>(null);
@@ -120,6 +125,7 @@ export default function AppointmentListPage() {
   const rescheduleMutation = useRescheduleAppointment();
   const completeMutation = useCompleteAppointment();
   const cancelMutation = useCancelAppointment();
+  const { mutateAsync: bulkCreateAppointments } = useBulkCreateAppointments();
 
   const appointments = apptRes?.data || [];
   const stats = statsRes?.data || {
@@ -136,6 +142,82 @@ export default function AppointmentListPage() {
     setSearch("");
     setStatusFilter("all");
     setTypeFilter("all");
+  };
+
+  const downloadSampleTemplate = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Appointments");
+
+      worksheet.columns = [
+        { header: "title", key: "title", width: 30 },
+        { header: "requesterName", key: "requesterName", width: 20 },
+        { header: "requesterPhone", key: "requesterPhone", width: 16 },
+        { header: "requesterEmail", key: "requesterEmail", width: 22 },
+        { header: "requesterDesignation", key: "requesterDesignation", width: 22 },
+        { header: "requesterOrg", key: "requesterOrg", width: 22 },
+        { header: "date", key: "date", width: 15 },
+        { header: "startTime", key: "startTime", width: 12 },
+        { header: "endTime", key: "endTime", width: 12 },
+        { header: "type", key: "type", width: 20 },
+        { header: "status", key: "status", width: 16 },
+        { header: "location", key: "location", width: 25 },
+        { header: "purpose", key: "purpose", width: 35 },
+      ];
+
+      worksheet.addRow({
+        title: "Discussion on Ward 8 Water Pipeline Project",
+        requesterName: "Suresh Verma",
+        requesterPhone: "9876543210",
+        requesterEmail: "suresh.verma@example.com",
+        requesterDesignation: "President",
+        requesterOrg: "Model Town RWA",
+        date: "2026-09-24",
+        startTime: "11:00",
+        endTime: "11:30",
+        type: "OFFICIAL_MEETING",
+        status: "PENDING",
+        location: "Camp Office Room 2",
+        purpose: "Representation regarding delay in water pipeline installation",
+      });
+
+      worksheet.addRow({
+        title: "Citizen Redressal - Pension Scheme Delay",
+        requesterName: "Ramesh Sharma",
+        requesterPhone: "9123456780",
+        requesterEmail: "ramesh@example.com",
+        requesterDesignation: "Citizen",
+        requesterOrg: "",
+        date: "2026-09-26",
+        startTime: "12:00",
+        endTime: "12:30",
+        type: "PUBLIC_GRIEVANCE",
+        status: "APPROVED",
+        location: "Constituency HQ Reception",
+        purpose: "Senior citizen pension documentation verification assistance",
+      });
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Appointments_Import_Template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate Appointments template", err);
+      toast.error("Failed to generate template");
+    }
   };
 
   const handleApprove = async () => {
@@ -213,6 +295,25 @@ export default function AppointmentListPage() {
   return (
     <MainLayout title="Appointments">
       <div className="space-y-6">
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          open={isBulkImportOpen}
+          onOpenChange={setIsBulkImportOpen}
+          onUpload={async (data) => {
+            await bulkCreateAppointments(data);
+          }}
+          title="Import Appointments"
+          description={
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Upload an Excel (.xlsx) or CSV file to import multiple appointments.
+                Appointments are created or updated based on Title, Requester, Date, and Time.
+              </p>
+            </div>
+          }
+          onDownloadSample={downloadSampleTemplate}
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -244,6 +345,15 @@ export default function AppointmentListPage() {
               </Button>
             </div>
             <PermissionGate module="appointments" action="create">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-xs border-border/60 bg-card hover:bg-muted font-semibold rounded-xl h-10"
+                onClick={() => setIsBulkImportOpen(true)}
+              >
+                <FileUp className="h-3.5 w-3.5" />
+                Bulk Upload
+              </Button>
               <Link href="/appointments/new">
                 <Button className="gap-2 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 font-bold rounded-xl shadow-sm h-10">
                   <Plus className="h-4 w-4" />

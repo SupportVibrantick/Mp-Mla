@@ -409,6 +409,9 @@ model Tenant {
   auditLogs                  AuditLog[]
   settings                   TenantSetting[]
   ownMetrics                 OwnMetricEntry[]
+  creativeTemplates          CreativeTemplate[]
+  creativeAssets             CreativeAsset[]
+  savedCreatives             SavedCreative[]
   planUpgradeRequests        PlanUpgradeRequest[]
   payments                   Payment[]
   voters                     Voter[]
@@ -3594,4 +3597,151 @@ model CorrespondenceTimeline {
   @@index([correspondenceId])
   @@index([createdAt])
   @@map("correspondence_timeline")
+}
+
+// ════════════════════════════════════════════════════════
+// CREATIVE STUDIO & AD CREATIVE BUILDER MODELS
+// ════════════════════════════════════════════════════════
+
+enum CreativeCategory {
+  BIRTHDAY
+  MEETING
+  EVENTS
+  JANATA_DARBAR
+  GOVT_SCHEME
+  PUBLIC_ANNOUNCEMENT
+  AWARENESS
+  ACHIEVEMENT
+  FESTIVAL
+  NATIONAL_DAYS
+  DEVELOPMENT_WORK
+  GENERAL
+  CUSTOM
+}
+
+enum CreativeFormat {
+  SQUARE_POST
+  PORTRAIT_POST
+  STORY_STATUS
+  LANDSCAPE_POST
+  PRINT_A4
+  PRINT_A3
+  BANNER_WIDE
+  CUSTOM
+}
+
+enum CreativeStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  READY_TO_PUBLISH
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum CreativeAssetType {
+  LEADER_PHOTO
+  PARTY_LOGO
+  TENANT_LOGO
+  ICON
+  STICKER
+  BACKGROUND
+  FRAME
+  DECORATION
+  BADGE
+  WATERMARK
+  OTHER
+}
+
+model CreativeTemplate {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  category         CreativeCategory @default(GENERAL)
+  description      String?
+  thumbnailUrl     String?
+  previewUrl       String?
+  format           CreativeFormat   @default(SQUARE_POST)
+  width            Int              @default(1080)
+  height           Int              @default(1080)
+  layoutConfig     Json
+  defaultContent   Json?
+  defaultColors    Json?
+  supportedFormats Json?
+  isSystemTemplate Boolean          @default(true)
+  isTenantTemplate Boolean          @default(false)
+  isActive         Boolean          @default(true)
+  isPremium        Boolean          @default(false)
+  tenantId         String?
+  createdBy        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  savedCreatives SavedCreative[]
+
+  @@index([category])
+  @@index([format])
+  @@index([tenantId])
+  @@index([isSystemTemplate])
+  @@map("creative_templates")
+}
+
+model CreativeAsset {
+  id           String            @id @default(cuid())
+  tenantId     String?
+  name         String
+  type         CreativeAssetType @default(OTHER)
+  fileUrl      String
+  thumbnailUrl String?
+  mimeType     String?
+  fileSize     Int?
+  width        Int?
+  height       Int?
+  metadata     Json?
+  isSystem     Boolean           @default(false)
+  isActive     Boolean           @default(true)
+  createdBy    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([isSystem])
+  @@map("creative_assets")
+}
+
+model SavedCreative {
+  id              String           @id @default(cuid())
+  tenantId        String
+  createdBy       String
+  templateId      String?
+  title           String
+  category        CreativeCategory @default(GENERAL)
+  format          CreativeFormat   @default(SQUARE_POST)
+  designJson      Json
+  previewUrl      String?
+  exportUrl       String?
+  status          CreativeStatus   @default(DRAFT)
+  version         Int              @default(1)
+  rejectionReason String?
+  approvedById    String?
+  approvedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template CreativeTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([createdBy])
+  @@index([status])
+  @@index([category])
+  @@map("saved_creatives")
 }

@@ -36,6 +36,7 @@ import schemeRoutes from "./schemes/index.js";
 import crmRoutes from "./crm/index.js";
 import documentRoutes from "./documents/index.js";
 import correspondenceRoutes from "./correspondence/index.js";
+import creativeRoutes from "./creatives/index.js";
 
 const router = Router();
 
@@ -83,6 +84,7 @@ router.use("/correspondence", requireModule("correspondence"), correspondenceRou
 router.use("/competitor-analysis", requireModule("competitors"), competitorRoutes);
 router.use("/dashboard", requireModule("dashboard"), dashboardRoutes);
 router.use("/voter-list", requireModule("voter_list"), voterListRoutes);
+router.use("/creatives", creativeRoutes);
 router.use("/constituency", requireModule("constituency"), constituencyRoutes);
 
 export default router;

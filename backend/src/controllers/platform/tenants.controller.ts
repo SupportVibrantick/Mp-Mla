@@ -305,6 +305,20 @@ export const listTenants = async (
           _count: {
             select: { users: true },
           },
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              lastLoginAt: true,
+              lastLoginIp: true,
+            },
+            orderBy: {
+              lastLoginAt: { sort: "desc", nulls: "last" },
+            },
+            take: 1,
+          },
         },
       }),
       prisma.tenant.count({ where }),
@@ -336,11 +350,22 @@ export const listTenants = async (
 
     const mappedTenants = tenants.map((t: any) => {
       const constituency = t.constituencies?.[0];
+      const latestUser = t.users?.[0];
       return {
         ...t,
         constituencies: undefined,
         constituencyType: constituency?.type || "ASSEMBLY",
         constituencyCode: constituency?.code || null,
+        lastLoginAt: latestUser?.lastLoginAt || null,
+        lastLoginUser: latestUser
+          ? {
+              id: latestUser.id,
+              name: latestUser.name,
+              email: latestUser.email,
+              role: latestUser.role,
+              lastLoginIp: latestUser.lastLoginIp,
+            }
+          : null,
       };
     });
 
@@ -390,9 +415,11 @@ export const getTenantById = async (
             email: true,
             role: true,
             status: true,
+            lastLoginAt: true,
+            lastLoginIp: true,
           },
-          where: {
-            role: "SYSTEM_ADMIN",
+          orderBy: {
+            lastLoginAt: { sort: "desc", nulls: "last" },
           },
         },
         constituencies: {
@@ -412,11 +439,22 @@ export const getTenantById = async (
     }
 
     const constituency = (tenant as any).constituencies?.[0];
+    const latestUser = (tenant as any).users?.find((u: any) => u.lastLoginAt) || (tenant as any).users?.[0];
     const responseTenant = {
       ...tenant,
       constituencies: undefined,
       constituencyType: constituency?.type || "ASSEMBLY",
       constituencyCode: constituency?.code || null,
+      lastLoginAt: latestUser?.lastLoginAt || null,
+      lastLoginUser: latestUser
+        ? {
+            id: latestUser.id,
+            name: latestUser.name,
+            email: latestUser.email,
+            role: latestUser.role,
+            lastLoginIp: latestUser.lastLoginIp,
+          }
+        : null,
     };
 
     res.status(200).json(ApiResponse.success(responseTenant));

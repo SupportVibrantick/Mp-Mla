@@ -13,6 +13,8 @@ export const ALWAYS_ENABLED_MODULES = new Set([
   "notifications",
   "recycle_bin",
   "data_import",
+  "creative",
+  "creatives",
 ]);
 
 const accessCache = new Map<

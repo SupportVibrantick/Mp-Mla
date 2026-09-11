@@ -235,6 +235,12 @@ const ALL_PERMISSIONS = [
   { module: "voter_list", action: "update", description: "Edit voter" },
   { module: "voter_list", action: "delete", description: "Delete voter" },
   { module: "voter_list", action: "export", description: "Export voter list" },
+
+  { module: "creative", action: "create", description: "Create poster creative" },
+  { module: "creative", action: "read", description: "View creative studio" },
+  { module: "creative", action: "update", description: "Edit creative template" },
+  { module: "creative", action: "delete", description: "Delete creative" },
+  { module: "creative", action: "approve", description: "Approve creative poster" },
 ];
 
 // ═══════════════════════════════════════════════════════════

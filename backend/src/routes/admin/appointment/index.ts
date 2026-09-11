@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requirePermission } from "../../../middleware/permission.js";
 import { validate } from "../../../middleware/validate.js";
 import { createAppointment } from "./create.js";
+import { bulkCreateAppointments } from "./bulk.js";
 import { listAppointments, getAppointment, getCalendar, getStats } from "./read.js";
 import { updateAppointment } from "./update.js";
 import { deleteAppointment } from "./delete.js";
@@ -30,6 +31,7 @@ router.get("/calendar", requirePermission("appointments", "read"), getCalendar);
 
 // CRUD
 router.get("/", requirePermission("appointments", "read"), listAppointments);
+router.post("/bulk", requirePermission("appointments", "create"), bulkCreateAppointments);
 router.get("/:id", requirePermission("appointments", "read"), getAppointment);
 router.post("/", requirePermission("appointments", "create"), validate(createAppointmentSchema), createAppointment);
 router.put("/:id", requirePermission("appointments", "update"), validate(updateAppointmentSchema), updateAppointment);

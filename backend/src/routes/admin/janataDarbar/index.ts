@@ -24,11 +24,14 @@ import {
   createTokenSchema,
   referTokenSchema,
 } from "../../../schemas/admin/janataDarbar/index.js";
+import { bulkCreateJanataSessions } from "./bulk.js";
 
 const router = Router();
 
-// Sessions CRUD
+// Sessions CRUD & Bulk
 router.get("/", requirePermission("janata_darbar", "read"), listSessions);
+router.post("/bulk", requirePermission("janata_darbar", "create"), bulkCreateJanataSessions);
+router.post("/sessions/bulk", requirePermission("janata_darbar", "create"), bulkCreateJanataSessions);
 router.get("/:id", requirePermission("janata_darbar", "read"), getSession);
 router.post("/", requirePermission("janata_darbar", "create"), validate(createSessionSchema), createSession);
 router.put("/:id", requirePermission("janata_darbar", "update"), validate(updateSessionSchema), updateSession);

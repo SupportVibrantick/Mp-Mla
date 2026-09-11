@@ -24,6 +24,8 @@ const MODULES = [
   "settings",
   "branding",
   "leaders",
+  "creative",
+  "creatives",
 ];
 
 const ACTIONS = ["read", "create", "update", "delete", "export"];

@@ -399,3 +399,20 @@ export function useCreateTaskFromToken() {
     },
   });
 }
+
+export function useBulkCreateJanataSessions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any[]) => {
+      const { data: res } = await api.post("/admin/janata-darbar/sessions/bulk", data);
+      return res;
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["janataSessions"] });
+      toast.success(res?.message || "Janata Darbar sessions imported successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to bulk import Janata Darbar sessions");
+    },
+  });
+}

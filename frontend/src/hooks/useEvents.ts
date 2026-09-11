@@ -464,3 +464,20 @@ export function useEventTimeline(id: string) {
     enabled: !!id && id !== "new",
   });
 }
+
+export function useBulkCreateEvents() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any[]) => {
+      const { data: res } = await api.post("/admin/events/bulk", data);
+      return res;
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success(res?.message || "Events imported successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to bulk import events");
+    },
+  });
+}

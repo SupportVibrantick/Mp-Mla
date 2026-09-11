@@ -14,6 +14,7 @@ import { getReport, upsertReport } from "./report.js";
 import { getEventTasks, createEventTask } from "./tasks.js";
 import { getTimeline } from "./timeline.js";
 import { exportEvents } from "./export.js";
+import { bulkCreateEvents } from "./bulk.js";
 import {
   createEventSchema,
   updateEventSchema,
@@ -32,10 +33,11 @@ const eventMediaUploader = createUploader("documents");
 
 const router = Router();
 
-// Stats, calendar, export routes registered BEFORE parameterized :id routes
+// Stats, calendar, export, bulk routes registered BEFORE parameterized :id routes
 router.get("/stats", requirePermission("events", "read"), getStats);
 router.get("/calendar", requirePermission("events", "read"), getCalendar);
 router.get("/export", requirePermission("events", "read"), exportEvents);
+router.post("/bulk", requirePermission("events", "create"), bulkCreateEvents);
 
 // CRUD
 router.get("/", requirePermission("events", "read"), listEvents);
