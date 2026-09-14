@@ -89,7 +89,7 @@ export function Header({ title }: { title: string }) {
                     {user?.email}
                   </p>
                   <p className="text-[10px] uppercase tracking-wider font-bold text-primary mt-1">
-                    {user?.role?.replace("_", " ")}
+                    {user?.role?.replace(/_/g, " ")}
                   </p>
                 </div>
               </DropdownMenuLabel>

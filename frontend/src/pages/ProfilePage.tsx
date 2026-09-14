@@ -280,7 +280,7 @@ export default function ProfilePage() {
                       <ShieldCheck className="h-6 w-6 text-primary fill-primary/10" />
                     </h1>
                     <Badge className="bg-gradient-to-r from-primary to-indigo-600 text-white font-extrabold text-[11px] px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md border border-white/10">
-                      {user?.role?.replace("_", " ") || "SYSTEM ADMIN"}
+                      {user?.role?.replace(/_/g, " ") || "SYSTEM ADMIN"}
                     </Badge>
                   </div>
 
@@ -500,7 +500,7 @@ export default function ProfilePage() {
                       System Security Role
                     </p>
                     <p className="font-extrabold text-primary uppercase text-base">
-                      {user?.role?.replace("_", " ") || "SYSTEM ADMIN"}
+                      {user?.role?.replace(/_/g, " ") || "SYSTEM ADMIN"}
                     </p>
                   </div>
                 </div>

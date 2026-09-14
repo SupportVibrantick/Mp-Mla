@@ -223,7 +223,7 @@ export default function Dashboard() {
 
   const grievanceCategoryData = d.grievances.byCategory.map(
     (c: any, i: number) => ({
-      name: c.category.replace("_", " "),
+      name: (c.category || "").replace(/_/g, " "),
       value: c.count,
       fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
     }),
@@ -232,21 +232,21 @@ export default function Dashboard() {
   const projectPieData = d.projects.byStatus
     .filter((p: any) => p.count > 0)
     .map((p: any) => ({
-      name: PROJECT_STATUS[p.status]?.label || p.status,
+      name: PROJECT_STATUS[p.status]?.label || (p.status || "").replace(/_/g, " "),
       value: p.count,
       color: PROJECT_STATUS[p.status]?.color || "#6b7280",
     }));
 
   const institutionPieData = (d.institutions?.byCategory || []).map(
     (c: any, i: number) => ({
-      name: c.category.replace("_", " "),
+      name: (c.category || "").replace(/_/g, " "),
       value: c.count,
       color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
     }),
   );
 
   const communityTypeData = (d.communityGroups?.byType || []).map((t: any) => ({
-    name: t.type.replace("_", " "),
+    name: (t.type || "").replace(/_/g, " "),
     count: t.count,
   }));
 
@@ -639,7 +639,7 @@ export default function Dashboard() {
                                   variant="outline"
                                   className="text-[10px] font-semibold uppercase tracking-wider border-purple-200 dark:border-purple-800/60 bg-purple-50/80 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"
                                 >
-                                  {evt.type?.replace("_", " ") || "EVENT"}
+                                  {evt.type?.replace(/_/g, " ") || "EVENT"}
                                 </Badge>
                                 {evt.mode && evt.mode !== "OFFLINE" && (
                                   <Badge variant="secondary" className="text-[9px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
@@ -1170,13 +1170,13 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[600px]">
+                    <table className="w-full text-sm min-w-[650px]">
                       <thead className="text-[10px] text-muted-foreground uppercase bg-muted/30">
                         <tr>
-                          <th className="px-4 py-3 text-left font-semibold">
-                            Ticket
+                          <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">
+                            Ticket #
                           </th>
-                          <th className="px-4 py-3 text-left font-semibold">
+                          <th className="px-4 py-3 text-left font-semibold min-w-[220px]">
                             Subject
                           </th>
                           <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell">
@@ -1188,10 +1188,10 @@ export default function Dashboard() {
                           <th className="px-4 py-3 text-left font-semibold">
                             Status
                           </th>
-                          <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell">
+                          <th className="px-4 py-3 text-left font-semibold hidden sm:table-cell whitespace-nowrap">
                             Age
                           </th>
-                          <th className="px-4 py-3" />
+                          <th className="px-4 py-3 text-right font-semibold">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -1204,20 +1204,32 @@ export default function Dashboard() {
                               key={g.id}
                               className="hover:bg-muted/20 transition-colors"
                             >
-                              <td className="px-4 py-3 align-middle">
-                                <span
+                              <td className="px-4 py-3 align-middle whitespace-nowrap">
+                                <button
+                                  type="button"
                                   onClick={() =>
                                     navigate("/public-requests/detail", {
                                       state: { id: g.id },
                                     })
                                   }
-                                  className="inline-flex items-center font-mono text-xs font-semibold px-2 py-0.5 rounded bg-muted text-primary hover:text-primary-foreground hover:bg-primary transition-all duration-200 cursor-pointer"
+                                  className="inline-flex items-center gap-1 font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white shadow-xs transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                  title={`View Request #${g.ticketNumber}`}
                                 >
                                   {g.ticketNumber}
-                                </span>
+                                </button>
                               </td>
-                              <td className="px-4 py-3 align-middle font-medium text-foreground max-w-[120px] sm:max-w-[180px] truncate text-xs sm:text-sm">
-                                {g.subject || g.category}
+                              <td className="px-4 py-3 align-middle min-w-[220px] max-w-[340px]">
+                                <div
+                                  className="font-medium text-foreground text-xs sm:text-sm line-clamp-1 hover:line-clamp-none transition-all cursor-default"
+                                  title={g.subject || g.category}
+                                >
+                                  {(g.subject || g.category || "").replace(/_/g, " ")}
+                                </div>
+                                {g.category && g.subject && g.subject !== g.category && (
+                                  <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block mt-0.5 truncate">
+                                    {g.category.replace(/_/g, " ")}
+                                  </span>
+                                )}
                               </td>
                               <td className="px-4 py-3 align-middle text-muted-foreground text-xs sm:text-sm hidden sm:table-cell">
                                 {g.complainantName || "—"}
@@ -1233,10 +1245,10 @@ export default function Dashboard() {
                                   {g.priority}
                                 </Badge>
                               </td>
-                              <td className="px-4 py-3 align-middle">
+                              <td className="px-4 py-3 align-middle whitespace-nowrap">
                                 <span
                                   className={cn(
-                                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                                    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border",
                                     st.bg,
                                     st.text,
                                   )}
@@ -1247,7 +1259,7 @@ export default function Dashboard() {
                                       st.dot,
                                     )}
                                   />
-                                  {g.status.replace("_", " ")}
+                                  {g.status.replace(/_/g, " ")}
                                 </span>
                               </td>
                               <td className="px-4 py-3 align-middle text-xs text-muted-foreground whitespace-nowrap hidden sm:table-cell">
@@ -1255,18 +1267,19 @@ export default function Dashboard() {
                                   addSuffix: true,
                                 })}
                               </td>
-                              <td className="px-4 py-3 align-middle text-right">
+                              <td className="px-4 py-3 align-middle text-right whitespace-nowrap">
                                 <Button
                                   variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-lg hover:bg-muted"
+                                  size="sm"
+                                  className="h-8 px-2.5 text-xs font-semibold text-primary hover:bg-primary/10 rounded-lg transition-colors inline-flex items-center gap-1"
                                   onClick={() =>
                                     navigate("/public-requests/detail", {
                                       state: { id: g.id },
                                     })
                                   }
                                 >
-                                  <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                  <Eye className="h-3.5 w-3.5" />
+                                  <span className="hidden md:inline">View</span>
                                 </Button>
                               </td>
                             </tr>

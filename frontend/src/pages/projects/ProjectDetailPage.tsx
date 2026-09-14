@@ -779,7 +779,7 @@ export default function ProjectDetailPage() {
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-foreground truncate">{att.fileName}</p>
                             <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider mt-0.5">
-                              {att.classification.replace("_", " ")}
+                              {att.classification.replace(/_/g, " ")}
                             </p>
                             {att.fileSize && (
                               <p className="text-[9px] text-muted-foreground mt-0.5 font-semibold">Size: {att.fileSize} KB</p>

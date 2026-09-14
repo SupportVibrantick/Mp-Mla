@@ -627,7 +627,7 @@ export default function DocumentDetailPage() {
                 placeholder={
                   isRecordsLoading
                     ? "Loading records..."
-                    : `Search & select ${linkForm.module.toLowerCase().replace("_", " ")}...`
+                    : `Search & select ${linkForm.module.toLowerCase().replace(/_/g, " ")}...`
                 }
                 noOptionsMessage={() => (isRecordsLoading ? "Loading..." : "No records found")}
                 options={recordOptions}

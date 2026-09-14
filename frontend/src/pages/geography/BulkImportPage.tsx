@@ -358,35 +358,118 @@ function rowHasMeaningfulData(row: Record<string, unknown>): boolean {
   return Object.values(row).some((value) => !isBlankValue(value));
 }
 
-function isTemplateInstructionRow(row: Record<string, unknown>): boolean {
-  const values = Object.values(row)
-    .map((value) =>
-      String(value ?? "")
-        .trim()
-        .toLowerCase(),
-    )
-    .filter(Boolean);
+function isInstructionValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  const s = String(value).trim().toLowerCase();
+  if (!s) return false;
 
-  if (!values.length) {
+  // Common instruction keywords at the start
+  if (
+    s.startsWith("required") ||
+    s.startsWith("optional") ||
+    s.startsWith("dropdown") ||
+    s.startsWith("sample") ||
+    s.startsWith("example") ||
+    s.startsWith("instruction") ||
+    s.startsWith("hint") ||
+    s.startsWith("select ") ||
+    s.startsWith("enter ") ||
+    s.startsWith("choose ")
+  ) {
     return true;
   }
 
-  const instructionWords = new Set([
-    "required",
-    "optional",
-    "required*",
-    "optional*",
-    "required (text)",
-    "optional (text)",
-    "optional (decimal)",
-    "required (decimal)",
-  ]);
+  // Exact type and format specifications
+  if (
+    s === "assembly or parliamentary" ||
+    s === "town or village" ||
+    s === "urban or rural" ||
+    s === "urban, rural, semi-urban" ||
+    s === "true or false" ||
+    s === "yes/no" ||
+    s === "yes or no" ||
+    s === "yes / no" ||
+    s === "yyyy-mm-dd" ||
+    s === "dd-mm-yyyy" ||
+    s === "dd/mm/yyyy" ||
+    s === "number" ||
+    s === "integer" ||
+    s === "decimal" ||
+    s === "text" ||
+    s === "email" ||
+    s === "phone"
+  ) {
+    return true;
+  }
 
-  const instructionCount = values.filter((value) =>
-    instructionWords.has(value),
-  ).length;
+  // Bracket hints or choices: e.g. (dropdown), (integer), (decimal), (text), (epic no.), (0-100), (f/h/m/o)
+  if (
+    /\((dropdown|integer|decimal|text|epic|one row|0-100|f\/h\/m\/o)\)/i.test(s) ||
+    /^(true\s+or\s+false|yes\s*\/\s*no|yes\s+or\s+no)$/i.test(s) ||
+    /^[a-z0-9_-]+\s+or\s+[a-z0-9_-]+$/i.test(s) ||
+    /^dropdown\s*\(.*?\)$/i.test(s) ||
+    /^(number|integer|decimal|date)\s*\(.*?\)$/i.test(s)
+  ) {
+    return true;
+  }
 
-  return instructionCount === values.length;
+  return false;
+}
+
+function isTemplateInstructionRow(row: Record<string, unknown>): boolean {
+  const entries = Object.entries(row).filter(
+    ([key, value]) => !key.startsWith("__unknown_") && !isBlankValue(value),
+  );
+
+  if (!entries.length) {
+    return true;
+  }
+
+  const values = entries.map(([, value]) => value);
+  const instructionCount = values.filter(isInstructionValue).length;
+
+  // 1. If any primary identifier field is an instruction keyword (e.g. name is "Required", wardNumber is "Required (integer)", etc.)
+  const primaryKeys = [
+    "name",
+    "wardNumber",
+    "wardName",
+    "boothName",
+    "boothNumber",
+    "slNo",
+    "voterIdNumber",
+    "districtName",
+    "state",
+  ];
+  for (const key of primaryKeys) {
+    if (row[key] !== undefined && row[key] !== null) {
+      if (isInstructionValue(row[key])) {
+        return true;
+      }
+    }
+  }
+
+  // 2. If the row contains instruction values AND >= 40% of non-empty cells match instruction patterns
+  if (instructionCount > 0 && instructionCount >= Math.ceil(values.length * 0.4)) {
+    return true;
+  }
+
+  // 3. Fallback: stringify entire row and check if it contains multiple instruction keywords
+  const combined = values.map((v) => String(v).toLowerCase()).join(" ");
+  if (
+    combined.includes("required") ||
+    combined.includes("optional") ||
+    combined.includes("dropdown") ||
+    combined.includes("yyyy-mm-dd") ||
+    combined.includes("assembly or parliamentary") ||
+    combined.includes("town or village") ||
+    combined.includes("urban or rural")
+  ) {
+    if (instructionCount >= 1 && values.length <= 4) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function canonicalHeaderForColumn(

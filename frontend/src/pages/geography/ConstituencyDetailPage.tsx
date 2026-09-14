@@ -352,14 +352,14 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               className="h-9 text-xs"
               onClick={() => navigate(`/geography/constituencies?edit=${c.id}`)}
             >
               <Edit className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> Edit
-            </Button>
+            </Button> */}
             <Button
               variant="outline"
               size="sm"

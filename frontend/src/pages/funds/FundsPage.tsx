@@ -145,7 +145,7 @@ export default function FundsPage() {
   const piData =
     o?.byType
       ?.map((t: any) => ({
-        name: t.fundType,
+        name: getFundTypeInfo(t.fundType).label || (t.fundType || "").replace(/_/g, " "),
         value: t.allocated,
         color: getFundTypeInfo(t.fundType).color,
       }))
@@ -344,7 +344,7 @@ export default function FundsPage() {
                     <CardContent className="px-3 sm:px-6 pt-4">
                       <div className="h-56">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={o.byType}>
+                          <BarChart data={(o.byType || []).map((b: any) => ({ ...b, fundType: (b.fundType || "").replace(/_/g, " ") }))}>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                             <XAxis dataKey="fundType" fontSize={10} tickLine={false} />
                             <YAxis

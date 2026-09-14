@@ -415,7 +415,7 @@ export default function WardDetailPage() {
                           AREA_TYPE_COLORS[area.areaType] || "bg-muted text-muted-foreground border-border"
                         )}
                       >
-                        {area.areaType.replace("_", " ")}
+                        {area.areaType.replace(/_/g, " ")}
                       </Badge>
                     </div>
                     {area.landmark && (
@@ -499,7 +499,7 @@ export default function WardDetailPage() {
                             </TableCell>
                             <TableCell className="py-4 px-4 align-middle">
                               <Badge variant="secondary" className="text-[10px] font-semibold px-2 py-0.5 border">
-                                {a.areaType.replace("_", " ")}
+                                {a.areaType.replace(/_/g, " ")}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">
@@ -984,7 +984,7 @@ export default function WardDetailPage() {
                                 variant="outline"
                                 className="text-[10px] font-bold border-border/80 px-2.5 py-0.5 capitalize shadow-none"
                               >
-                                {cg.type.replace("_", " ")}
+                                {cg.type.replace(/_/g, " ")}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right font-mono py-4 px-4 text-xs font-bold text-foreground">

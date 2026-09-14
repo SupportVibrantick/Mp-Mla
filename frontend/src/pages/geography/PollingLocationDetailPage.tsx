@@ -219,12 +219,12 @@ export default function PollingLocationDetailPage() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <PermissionGate module="constituency" action="update">
-              <Link to={`/geography/polling-locations?edit=${location.id}`}>
+              {/* <Link to={`/geography/polling-locations?edit=${location.id}`}>
                 <Button variant="outline" size="sm" className="h-9 text-xs">
                   <Edit className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   Edit
                 </Button>
-              </Link>
+              </Link> */}
 
               <Button
                 variant="outline"

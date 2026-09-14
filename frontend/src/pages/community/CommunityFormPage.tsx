@@ -305,7 +305,7 @@ export default function CommunityFormPage() {
 
                         {areas.map((a: any) => (
                           <SelectItem key={a.id} value={a.id}>
-                            {a.name} ({a.areaType.replace("_", " ")})
+                            {a.name} ({a.areaType.replace(/_/g, " ")})
                           </SelectItem>
                         ))}
                       </SelectContent>

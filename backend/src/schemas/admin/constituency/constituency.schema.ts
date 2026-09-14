@@ -15,11 +15,18 @@ const dateOnlySchema = z
   .optional()
   .nullable();
 
+const optionalIdSchema = z
+  .string()
+  .optional()
+  .nullable()
+  .or(z.literal(""))
+  .transform((v) => (v === "" ? null : v));
+
 export const createConstituencySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   code: z.string().max(50).optional().nullable(),
   type: z.enum(["ASSEMBLY", "PARLIAMENTARY"]).default("ASSEMBLY"),
-  districtId: z.string().cuid().optional().nullable(),
+  districtId: optionalIdSchema,
   description: z.string().max(500).optional().nullable(),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
@@ -58,7 +65,7 @@ export const createDistrictSchema = z.object({
 export const updateDistrictSchema = createDistrictSchema.partial();
 
 export const createBlockSchema = z.object({
-  districtId: z.string().cuid("Invalid district ID"),
+  districtId: z.string().min(1, "District ID is required"),
   name: z.string().min(2).max(100),
   code: z.string().max(50).optional().nullable(),
   latitude: z.number().optional().nullable(),
@@ -69,13 +76,9 @@ export const createBlockSchema = z.object({
 export const updateBlockSchema = createBlockSchema.partial();
 
 export const createTownVillageSchema = z.object({
-  districtId: z.string().cuid("Invalid district ID"),
-  blockId: z.string().cuid("Invalid block ID").optional().nullable(),
-  constituencyId: z
-    .string()
-    .cuid("Invalid constituency ID")
-    .optional()
-    .nullable(),
+  districtId: z.string().min(1, "District ID is required"),
+  blockId: optionalIdSchema,
+  constituencyId: optionalIdSchema,
   name: z.string().min(2).max(100),
   code: z.string().max(50).optional().nullable(),
   type: z.enum(["TOWN", "VILLAGE"]).default("VILLAGE"),
@@ -101,8 +104,8 @@ export const createWardGeomSchema = z.object({
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
   boundaryGeoJson: geoJsonSchema,
-  constituencyId: z.string().cuid().optional().nullable(),
-  townVillageId: z.string().cuid().optional().nullable(),
+  constituencyId: optionalIdSchema,
+  townVillageId: optionalIdSchema,
 });
 
 export const updateWardGeomSchema = createWardGeomSchema.partial();
@@ -122,18 +125,10 @@ export const updatePollingLocationSchema =
   createPollingLocationSchema.partial();
 
 export const createBoothSchema = z.object({
-  constituencyId: z.string().cuid("Invalid constituency ID"),
-  wardId: z.string().cuid("Invalid ward ID").optional().nullable(),
-  townVillageId: z
-    .string()
-    .cuid("Invalid town/village ID")
-    .optional()
-    .nullable(),
-  pollingLocationId: z
-    .string()
-    .cuid("Invalid polling location ID")
-    .optional()
-    .nullable(),
+  constituencyId: z.string().min(1, "Constituency ID is required"),
+  wardId: optionalIdSchema,
+  townVillageId: optionalIdSchema,
+  pollingLocationId: optionalIdSchema,
   boothNumber: z
     .number()
     .int()

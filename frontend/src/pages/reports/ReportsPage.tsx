@@ -549,7 +549,7 @@ export default function ReportsPage() {
                     <CardContent>
                       <div className="h-[260px]">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={d.byCategory}>
+                          <BarChart data={d.byCategory.map((c: any) => ({ ...c, category: (c.category || "").replace(/_/g, " ") }))}>
                             <CartesianGrid
                               strokeDasharray="3 3"
                               opacity={0.1}
@@ -579,7 +579,7 @@ export default function ReportsPage() {
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={d.byStatus}
+                              data={d.byStatus.map((s: any) => ({ ...s, status: (s.status || "").replace(/_/g, " ") }))}
                               cx="50%"
                               cy="50%"
                               innerRadius={50}
@@ -587,7 +587,7 @@ export default function ReportsPage() {
                               dataKey="count"
                               nameKey="status"
                               label={({ status, percent }: any) =>
-                                `${status} ${(percent * 100).toFixed(0)}%`
+                                `${(status || "").replace(/_/g, " ")} ${(percent * 100).toFixed(0)}%`
                               }
                             >
                               {d.byStatus.map((_: any, i: number) => (
@@ -709,19 +709,19 @@ export default function ReportsPage() {
                             <TableCell className="max-w-[180px] truncate text-xs sm:text-sm py-4 px-4 font-bold text-foreground">
                               {g.subject || g.category}
                             </TableCell>
-                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
-                              {g.category}
+                            <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground capitalize">
+                              {(g.category || "").replace(/_/g, " ")}
                             </TableCell>
                             <TableCell className="text-xs py-4 px-4 font-semibold text-foreground">
                               #{g.ward?.wardNumber} {g.ward?.name}
                             </TableCell>
                             <TableCell className="py-4 px-4 align-middle">
                               <Badge variant="outline" className="text-[10px] font-bold">
-                                {g.priority}
+                                {(g.priority || "").replace(/_/g, " ")}
                               </Badge>
                             </TableCell>
                             <TableCell className="py-4 px-4 align-middle">
-                              <Badge className="text-[10px] font-bold">{g.status}</Badge>
+                              <Badge className="text-[10px] font-bold">{(g.status || "").replace(/_/g, " ")}</Badge>
                             </TableCell>
                             <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {format(new Date(g.createdAt), "dd MMM yyyy")}
@@ -777,7 +777,7 @@ export default function ReportsPage() {
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             data={d.byCategory.map((c: any) => ({
-                              name: c.category,
+                              name: (c.category || "").replace(/_/g, " "),
                               budget: Math.round(c.budget / 100000),
                             }))}
                           >
@@ -810,7 +810,7 @@ export default function ReportsPage() {
                           <PieChart>
                             <Pie
                               data={d.byFund.map((f: any) => ({
-                                name: f.fundType,
+                                name: (f.fundType || "").replace(/_/g, " "),
                                 value: f.count,
                               }))}
                               cx="50%"
@@ -886,7 +886,7 @@ export default function ReportsPage() {
                               </div>
                             </TableCell>
                             <TableCell className="py-4 px-4 align-middle">
-                              <Badge className="text-[10px] font-bold">{p.status}</Badge>
+                              <Badge className="text-[10px] font-bold">{(p.status || "").replace(/_/g, " ")}</Badge>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -981,7 +981,7 @@ export default function ReportsPage() {
                                 variant="secondary"
                                 className="text-[10px] font-bold"
                               >
-                                {w.areaType}
+                                {(w.areaType || "").replace(/_/g, " ")}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center font-bold text-xs text-foreground/80 py-4 px-4">
@@ -1134,7 +1134,7 @@ export default function ReportsPage() {
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="text-[10px]">
-                                {s.level}
+                                {(s.level || "").replace(/_/g, " ")}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right font-mono text-xs">
@@ -1199,7 +1199,7 @@ export default function ReportsPage() {
                   <CardContent>
                     <div className="h-[260px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={d.byCategory}>
+                        <BarChart data={(d.byCategory || []).map((c: any) => ({ ...c, category: (c.category || "").replace(/_/g, " ") }))}>
                           <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                           <XAxis dataKey="category" fontSize={9} />
                           <YAxis fontSize={10} />
@@ -1242,7 +1242,7 @@ export default function ReportsPage() {
                               {i.contactNo || "—"}
                             </TableCell>
                             <TableCell className="py-4 px-4 align-middle">
-                              <Badge className="text-[10px] font-bold">{i.status}</Badge>
+                              <Badge className="text-[10px] font-bold">{(i.status || "").replace(/_/g, " ")}</Badge>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1361,7 +1361,7 @@ export default function ReportsPage() {
                                 variant="secondary"
                                 className="text-[10px] font-bold"
                               >
-                                {w.areaType}
+                                {(w.areaType || "").replace(/_/g, " ")}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">

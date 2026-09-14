@@ -124,7 +124,19 @@ export async function startValidationJob(
         if (rowValues.every(v => v === "" || v === "undefined" || v === "null")) continue;
 
         // Skip instruction helper rows (contain keywords like "Required", "Optional", "Dropdown")
-        const INSTRUCTION_WORDS = ["required", "optional", "dropdown", "yyyy-mm-dd", "number (", "integer"];
+        const INSTRUCTION_WORDS = [
+          "required",
+          "optional",
+          "dropdown",
+          "yyyy-mm-dd",
+          "number (",
+          "integer",
+          "assembly or parliamentary",
+          "town or village",
+          "urban or rural",
+          "true or false",
+          "yes/no",
+        ];
         const lowerJoined = rowValues.join(" ").toLowerCase();
         if (INSTRUCTION_WORDS.some(kw => lowerJoined.includes(kw))) continue;
 

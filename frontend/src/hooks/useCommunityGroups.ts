@@ -69,7 +69,7 @@ export function getTypeInfo(type: string) {
   return (
     COMMUNITY_TYPES.find((t) => t.value === type) || {
       value: type,
-      label: type.replace("_", " "),
+      label: type.replace(/_/g, " "),
       icon: "📋",
     }
   );

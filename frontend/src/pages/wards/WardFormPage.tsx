@@ -1141,7 +1141,7 @@ export default function WardFormPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="text-xs">
-                          {area.areaType.replace("_", " ")}
+                          {area.areaType.replace(/_/g, " ")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono">
@@ -1590,7 +1590,7 @@ export default function WardFormPage() {
                   <SelectContent>
                     {AREA_TYPES.map((t) => (
                       <SelectItem key={t} value={t}>
-                        {t.replace("_", " ")}
+                        {t.replace(/_/g, " ")}
                       </SelectItem>
                     ))}
                   </SelectContent>

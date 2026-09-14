@@ -291,7 +291,7 @@ export default function GrievanceDetailPage() {
                   • {format(new Date(g.createdAt), "dd MMM yyyy, hh:mm a")}
                 </span>
                 <span>• {g.daysSinceCreated} days old</span>
-                <span>• via {(g.source || "OFFICE").replace("_", " ")}</span>
+                <span>• via {(g.source || "OFFICE").replace(/_/g, " ")}</span>
               </div>
             </div>
           </div>
@@ -512,7 +512,7 @@ export default function GrievanceDetailPage() {
                           <div className="flex-1 min-w-0 pb-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Badge variant="outline" className="text-[9px] font-bold py-0 h-5">
-                                {e.action.replace("_", " ")}
+                                {e.action.replace(/_/g, " ")}
                               </Badge>
                               {e.fromStatus && e.toStatus && (
                                 <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
@@ -618,7 +618,7 @@ export default function GrievanceDetailPage() {
                 <div className="flex justify-between items-center py-0.5 border-t border-border/30 pt-2.5">
                   <span className="text-muted-foreground uppercase text-[10px] tracking-wider">Source Channel</span>
                   <Badge variant="outline" className="text-[10px] font-bold uppercase">
-                    {(g.source || "OFFICE").replace("_", " ")}
+                    {(g.source || "OFFICE").replace(/_/g, " ")}
                   </Badge>
                 </div>
               </CardContent>

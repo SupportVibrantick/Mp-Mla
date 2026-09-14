@@ -414,7 +414,7 @@ export default function DistrictDetailPage({ id }: { id: string }) {
               Refresh
             </Button>
 
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               className="h-9 text-xs"
@@ -424,7 +424,7 @@ export default function DistrictDetailPage({ id }: { id: string }) {
             >
               <Edit className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
               Edit
-            </Button>
+            </Button> */}
 
             <Button
               variant="outline"
