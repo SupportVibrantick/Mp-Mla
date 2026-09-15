@@ -6,15 +6,29 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 import catchAsync from "../../../utils/catchAsync.js";
 import { requireTenantId } from "../../../utils/tenant.js";
 
+import { getRecycledRecordIds, isRecordInRecycleBin } from "../../../lib/recycleBin.js";
+
 /**
  * GET /api/admin/users
  */
 export const listUsers = catchAsync(async (req: Request, res: Response) => {
   const tenantId = requireTenantId(req);
   const { page, limit, skip } = parsePagination(req.query);
-  const { role, status, departmentId, search } = req.query as Record<string, string>;
+  const { role, status, departmentId, search } = req.query as Record<
+    string,
+    string
+  >;
 
-  const where: any = { tenantId };
+  // Exclude users currently in Recycle Bin
+  const recycledIds = await getRecycledRecordIds("user", tenantId);
+
+  const where: any = {
+    tenantId,
+    isDeleted: false,
+  };
+  if (recycledIds.length > 0) {
+    where.id = { notIn: recycledIds };
+  }
   if (role) where.role = role;
   if (status) where.status = status;
   if (departmentId && departmentId !== "all") where.departmentId = departmentId;
@@ -85,8 +99,13 @@ export const getUser = catchAsync(async (req: Request, res: Response) => {
     throw ApiError.badRequest("User ID required");
   }
 
+  const isRecycled = await isRecordInRecycleBin("user", userId, tenantId);
+  if (isRecycled) {
+    throw ApiError.notFound("User not found");
+  }
+
   const user = await prisma.user.findFirst({
-    where: { id: userId, tenantId },
+    where: { id: userId, tenantId, isDeleted: false } as any,
     select: {
       id: true,
       name: true,

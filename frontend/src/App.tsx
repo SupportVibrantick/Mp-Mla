@@ -147,6 +147,21 @@ function Router() {
           <GrievanceDetailPage />
         </ProtectedRoute>
       </Route>
+      <Route path="/public-requests/:id">
+        <ProtectedRoute module="grievances" action="read">
+          <GrievanceDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/grievances">
+        <ProtectedRoute module="grievances" action="read">
+          <GrievanceListPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/grievances/:id">
+        <ProtectedRoute module="grievances" action="read">
+          <GrievanceDetailPage />
+        </ProtectedRoute>
+      </Route>
       <Route path="/departments">
         <ProtectedRoute module="departments" action="read">
           <DepartmentListPage />

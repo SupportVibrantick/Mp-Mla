@@ -83,7 +83,9 @@ export default function CommunityDetailPage() {
   }
 
   const info = getTypeInfo(group.type);
-  const totalMembers = group.memberCount || 0;
+  const totalMembers = (group.maleMembers || 0) + (group.femaleMembers || 0) > 0
+    ? (group.maleMembers || 0) + (group.femaleMembers || 0)
+    : (group.memberCount || 0);
   const malePercent = totalMembers
     ? ((group.maleMembers || 0) / totalMembers) * 100
     : 0;

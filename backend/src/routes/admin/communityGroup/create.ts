@@ -22,6 +22,12 @@ export const createCommunityGroup = catchAsync(async (req, res) => {
     data.wardAreaId = null;
   if (data.headEmail === "") delete data.headEmail;
 
+  const male = Number(data.maleMembers) || 0;
+  const female = Number(data.femaleMembers) || 0;
+  data.maleMembers = male;
+  data.femaleMembers = female;
+  data.memberCount = (male + female > 0) ? (male + female) : (Number(data.memberCount) || 0);
+
   // Verify ward exists
   const ward = await prisma.ward.findFirst({
     where: { id: data.wardId, tenantId, isDeleted: false },

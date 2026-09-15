@@ -132,6 +132,7 @@ export default function PublicFacilityFormPage() {
   const [icDialog, setIcDialog] = useState(false);
   const [editingIcIdx, setEditingIcIdx] = useState<number | null>(null);
   const [icForm, setIcForm] = useState<InchargeLocal>({ ...emptyIncharge });
+  const [icErrors, setIcErrors] = useState<Record<string, string>>({});
 
   // Category groups
   const categoryGroups = useMemo(() => {
@@ -169,23 +170,78 @@ export default function PublicFacilityFormPage() {
   const openAddIc = () => {
     setEditingIcIdx(null);
     setIcForm({ ...emptyIncharge, isNew: true });
+    setIcErrors({});
     setIcDialog(true);
   };
 
   const openEditIc = (idx: number) => {
     setEditingIcIdx(idx);
     setIcForm({ ...localIncharges[idx] });
+    setIcErrors({});
     setIcDialog(true);
   };
 
+  const validateIcLocal = () => {
+    const errs: Record<string, string> = {};
+    if (!icForm.name?.trim()) {
+      errs.name = "Name is required";
+    }
+    if (!icForm.designation?.trim()) {
+      errs.designation = "Designation is required";
+    }
+    const cleanPhone = icForm.contactNo?.replace(/\D/g, "") || "";
+    if (!cleanPhone) {
+      errs.contactNo = "Contact number is required";
+    } else if (cleanPhone.length !== 10) {
+      errs.contactNo = "Enter a valid 10-digit mobile number";
+    }
+    if (icForm.adharNumber) {
+      const cleanAadhaar = icForm.adharNumber.replace(/\D/g, "");
+      if (cleanAadhaar.length !== 12) {
+        errs.adharNumber = "Aadhaar must be exactly 12 digits";
+      }
+    }
+    if (icForm.email && icForm.email.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(icForm.email.trim())) {
+        errs.email = "Invalid email address format";
+      }
+    }
+    if (icForm.dateOfBirth) {
+      const dob = new Date(icForm.dateOfBirth);
+      const today = new Date();
+      if (dob > today) {
+        errs.dateOfBirth = "Date of birth cannot be in future";
+      }
+    }
+    if (icForm.appointedDate && icForm.dateOfBirth) {
+      const dob = new Date(icForm.dateOfBirth);
+      const appDate = new Date(icForm.appointedDate);
+      if (appDate < dob) {
+        errs.appointedDate = "Appointed date cannot be before DOB";
+      }
+    }
+    setIcErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const saveIcLocal = () => {
-    if (!icForm.name || !icForm.designation || !icForm.contactNo) return;
+    if (!validateIcLocal()) return;
+
+    const formattedIc: InchargeLocal = {
+      ...icForm,
+      name: icForm.name.trim(),
+      designation: icForm.designation.trim(),
+      contactNo: icForm.contactNo.replace(/\D/g, ""),
+      email: icForm.email ? icForm.email.trim() : "",
+      adharNumber: icForm.adharNumber ? icForm.adharNumber.replace(/\D/g, "") : "",
+    };
+
     if (editingIcIdx !== null) {
       setLocalIncharges((prev) =>
-        prev.map((ic, i) => (i === editingIcIdx ? { ...icForm } : ic)),
+        prev.map((ic, i) => (i === editingIcIdx ? { ...formattedIc } : ic)),
       );
     } else {
-      setLocalIncharges((prev) => [...prev, { ...icForm, isNew: true }]);
+      setLocalIncharges((prev) => [...prev, { ...formattedIc, isNew: true }]);
     }
     setIcDialog(false);
   };
@@ -590,11 +646,16 @@ export default function PublicFacilityFormPage() {
                 </Label>
                 <Input
                   value={icForm.name}
-                  onChange={(e) =>
-                    setIcForm((p) => ({ ...p, name: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setIcForm((p) => ({ ...p, name: e.target.value }));
+                    if (icErrors.name) setIcErrors((p) => ({ ...p, name: "" }));
+                  }}
                   placeholder="Full name"
+                  className={icErrors.name ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
+                {icErrors.name && (
+                  <p className="text-[11px] text-destructive font-medium">{icErrors.name}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>
@@ -602,11 +663,16 @@ export default function PublicFacilityFormPage() {
                 </Label>
                 <Input
                   value={icForm.designation}
-                  onChange={(e) =>
-                    setIcForm((p) => ({ ...p, designation: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setIcForm((p) => ({ ...p, designation: e.target.value }));
+                    if (icErrors.designation) setIcErrors((p) => ({ ...p, designation: "" }));
+                  }}
                   placeholder="e.g. Principal"
+                  className={icErrors.designation ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
+                {icErrors.designation && (
+                  <p className="text-[11px] text-destructive font-medium">{icErrors.designation}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -616,22 +682,35 @@ export default function PublicFacilityFormPage() {
                 </Label>
                 <Input
                   value={icForm.contactNo}
-                  onChange={(e) =>
-                    setIcForm((p) => ({ ...p, contactNo: e.target.value }))
-                  }
-                  placeholder="9876543210"
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setIcForm((p) => ({ ...p, contactNo: clean }));
+                    if (icErrors.contactNo) setIcErrors((p) => ({ ...p, contactNo: "" }));
+                  }}
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                  className={icErrors.contactNo ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
+                {icErrors.contactNo && (
+                  <p className="text-[11px] text-destructive font-medium">{icErrors.contactNo}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Aadhaar Number</Label>
                 <Input
                   value={icForm.adharNumber || ""}
-                  onChange={(e) =>
-                    setIcForm((p) => ({ ...p, adharNumber: e.target.value }))
-                  }
-                  placeholder="1234 5678 9012"
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/\D/g, "").slice(0, 12);
+                    setIcForm((p) => ({ ...p, adharNumber: clean }));
+                    if (icErrors.adharNumber) setIcErrors((p) => ({ ...p, adharNumber: "" }));
+                  }}
+                  placeholder="12-digit Aadhaar"
                   maxLength={12}
+                  className={icErrors.adharNumber ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
+                {icErrors.adharNumber && (
+                  <p className="text-[11px] text-destructive font-medium">{icErrors.adharNumber}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -640,11 +719,16 @@ export default function PublicFacilityFormPage() {
                 <Input
                   type="email"
                   value={icForm.email}
-                  onChange={(e) =>
-                    setIcForm((p) => ({ ...p, email: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setIcForm((p) => ({ ...p, email: e.target.value }));
+                    if (icErrors.email) setIcErrors((p) => ({ ...p, email: "" }));
+                  }}
                   placeholder="email@domain.com"
+                  className={icErrors.email ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
+                {icErrors.email && (
+                  <p className="text-[11px] text-destructive font-medium">{icErrors.email}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -652,21 +736,32 @@ export default function PublicFacilityFormPage() {
                 <Label>Date of Birth</Label>
                 <Input
                   type="date"
+                  max={new Date().toISOString().split("T")[0]}
                   value={icForm.dateOfBirth}
-                  onChange={(e) =>
-                    setIcForm((p) => ({ ...p, dateOfBirth: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setIcForm((p) => ({ ...p, dateOfBirth: e.target.value }));
+                    if (icErrors.dateOfBirth) setIcErrors((p) => ({ ...p, dateOfBirth: "" }));
+                  }}
+                  className={icErrors.dateOfBirth ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
+                {icErrors.dateOfBirth && (
+                  <p className="text-[11px] text-destructive font-medium">{icErrors.dateOfBirth}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Appointed Date</Label>
                 <Input
                   type="date"
                   value={icForm.appointedDate}
-                  onChange={(e) =>
-                    setIcForm((p) => ({ ...p, appointedDate: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setIcForm((p) => ({ ...p, appointedDate: e.target.value }));
+                    if (icErrors.appointedDate) setIcErrors((p) => ({ ...p, appointedDate: "" }));
+                  }}
+                  className={icErrors.appointedDate ? "border-destructive focus-visible:ring-destructive/20" : ""}
                 />
+                {icErrors.appointedDate && (
+                  <p className="text-[11px] text-destructive font-medium">{icErrors.appointedDate}</p>
+                )}
               </div>
             </div>
           </div>

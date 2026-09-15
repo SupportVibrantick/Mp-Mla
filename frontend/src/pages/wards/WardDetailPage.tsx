@@ -107,9 +107,19 @@ export default function WardDetailPage() {
     }
   };
 
+  const wardTitle =
+    ward?.wardName || (ward?.wardNumber ? `Ward ${ward.wardNumber}` : "Ward Detail");
+
   if (isLoading) {
     return (
-      <MainLayout title="Ward Detail">
+      <MainLayout
+        title="Ward Detail"
+        breadcrumbs={[
+          { label: "Geography", href: "/geography" },
+          { label: "Wards", href: "/geography/wards" },
+          { label: "Ward Detail" },
+        ]}
+      >
         <div className="space-y-6">
           <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-6 gap-4">
@@ -125,11 +135,18 @@ export default function WardDetailPage() {
 
   if (!ward) {
     return (
-      <MainLayout title="Ward Detail">
+      <MainLayout
+        title="Ward Detail"
+        breadcrumbs={[
+          { label: "Geography", href: "/geography" },
+          { label: "Wards", href: "/geography/wards" },
+          { label: "Ward not found" },
+        ]}
+      >
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <Map className="h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Ward not found</p>
-          <Link to="/wards">
+          <Link to="/geography/wards">
             <Button variant="outline">Back to Wards</Button>
           </Link>
         </div>
@@ -153,12 +170,19 @@ export default function WardDetailPage() {
       .reduce((s: number, g: any) => s + g.count, 0) || 0;
 
   return (
-    <MainLayout title="Ward Detail">
+    <MainLayout
+      title={wardTitle}
+      breadcrumbs={[
+        { label: "Geography", href: "/geography" },
+        { label: "Wards", href: "/geography/wards" },
+        { label: wardTitle },
+      ]}
+    >
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link to="/wards">
+            <Link to="/geography/wards">
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-muted border border-border/40">
                 <ArrowLeft className="h-4 w-4 text-muted-foreground" />
               </Button>

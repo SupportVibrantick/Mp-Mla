@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link, useLocation } from "wouter";
 import {
   format,
   subDays,
@@ -91,6 +92,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Activity,
+  Eye,
 } from "lucide-react";
 
 type ReportType =
@@ -194,6 +196,7 @@ function getActivityModuleLabel(module: string): string {
 }
 
 export default function ReportsPage() {
+  const [, navigate] = useLocation();
   const [active, setActive] = useState<ReportType>("grievance");
   const [dateRange, setDateRange] = useState<DateRange>("this_month");
   const [wardFilter, setWardFilter] = useState("all");
@@ -698,16 +701,30 @@ export default function ReportsPage() {
                           <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Priority</TableHead>
                           <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
                           <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Date</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {d.rows.slice(0, 100).map((g: any) => (
                           <TableRow key={g.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
-                            <TableCell className="font-mono text-xs py-4 px-4 font-bold text-primary">
-                              {g.ticketNumber}
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate("/public-requests/detail", { state: { id: g.id } })}
+                                className="h-7 px-2.5 rounded-lg font-mono text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white border border-primary/20 transition-all cursor-pointer"
+                              >
+                                #{g.ticketNumber}
+                              </Button>
                             </TableCell>
-                            <TableCell className="max-w-[180px] truncate text-xs sm:text-sm py-4 px-4 font-bold text-foreground">
-                              {g.subject || g.category}
+                            <TableCell className="max-w-[220px] py-4 px-4">
+                              <span
+                                onClick={() => navigate("/public-requests/detail", { state: { id: g.id } })}
+                                className="text-xs sm:text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer hover:underline block truncate"
+                                title={g.subject || g.category}
+                              >
+                                {g.subject || g.category}
+                              </span>
                             </TableCell>
                             <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground capitalize">
                               {(g.category || "").replace(/_/g, " ")}
@@ -725,6 +742,17 @@ export default function ReportsPage() {
                             </TableCell>
                             <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground">
                               {format(new Date(g.createdAt), "dd MMM yyyy")}
+                            </TableCell>
+                            <TableCell className="text-right py-4 px-4 align-middle">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate("/public-requests/detail", { state: { id: g.id } })}
+                                className="gap-1 text-xs h-8 rounded-lg font-bold border-border/60 hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                View
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -854,16 +882,28 @@ export default function ReportsPage() {
                             Progress
                           </TableHead>
                           <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {d.rows.slice(0, 100).map((p: any) => (
                           <TableRow key={p.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
-                            <TableCell className="font-mono text-xs py-4 px-4 font-bold text-primary">
-                              {p.projectCode}
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Link
+                                to={`/projects/${p.id}`}
+                                className="inline-flex items-center h-7 px-2.5 rounded-lg font-mono text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white border border-primary/20 transition-all cursor-pointer"
+                              >
+                                #{p.projectCode}
+                              </Link>
                             </TableCell>
-                            <TableCell className="max-w-[180px] truncate text-xs sm:text-sm py-4 px-4 font-bold text-foreground">
-                              {p.name}
+                            <TableCell className="max-w-[180px] py-4 px-4">
+                              <Link
+                                to={`/projects/${p.id}`}
+                                className="text-xs sm:text-sm font-bold text-foreground hover:text-primary transition-colors cursor-pointer hover:underline block truncate"
+                                title={p.name}
+                              >
+                                {p.name}
+                              </Link>
                             </TableCell>
                             <TableCell className="text-xs py-4 px-4 font-semibold text-foreground">
                               #{p.ward?.wardNumber} {p.ward?.name}
@@ -887,6 +927,18 @@ export default function ReportsPage() {
                             </TableCell>
                             <TableCell className="py-4 px-4 align-middle">
                               <Badge className="text-[10px] font-bold">{(p.status || "").replace(/_/g, " ")}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right py-4 px-4 align-middle">
+                              <Link to={`/projects/${p.id}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 text-xs h-8 rounded-lg font-bold border-border/60 hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  View
+                                </Button>
+                              </Link>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -970,8 +1022,13 @@ export default function ReportsPage() {
                       <TableBody>
                         {d.wards.map((w: any) => (
                           <TableRow key={w.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
-                            <TableCell className="font-bold text-xs sm:text-sm py-4 px-4 text-foreground">
-                              #{w.wardNumber} {w.name}
+                            <TableCell className="py-4 px-4 align-middle">
+                              <Link
+                                to={`/wards/${w.id}`}
+                                className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors cursor-pointer hover:underline block truncate"
+                              >
+                                #{w.wardNumber} {w.name}
+                              </Link>
                             </TableCell>
                             <TableCell className="text-right font-mono text-xs py-4 px-4 font-semibold text-foreground/80">
                               {w.totalPopulation.toLocaleString()}
@@ -1224,13 +1281,20 @@ export default function ReportsPage() {
                           <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
                           <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Contact</TableHead>
                           <TableHead className="h-12 px-4 text-left text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
+                          <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {d.rows.map((i: any) => (
                           <TableRow key={i.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">
-                            <TableCell className="font-bold text-xs sm:text-sm py-4 px-4 text-foreground">
-                              {i.name}
+                            <TableCell className="max-w-[200px] py-4 px-4">
+                              <Link
+                                to={`/public-facilities/${i.id}`}
+                                className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors cursor-pointer hover:underline block truncate"
+                                title={i.name}
+                              >
+                                {i.name}
+                              </Link>
                             </TableCell>
                             <TableCell className="text-xs py-4 px-4 font-semibold text-muted-foreground capitalize">
                               {i.category.replace(/_/g, " ")}
@@ -1243,6 +1307,18 @@ export default function ReportsPage() {
                             </TableCell>
                             <TableCell className="py-4 px-4 align-middle">
                               <Badge className="text-[10px] font-bold">{(i.status || "").replace(/_/g, " ")}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right py-4 px-4 align-middle">
+                              <Link to={`/public-facilities/${i.id}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 text-xs h-8 rounded-lg font-bold border-border/60 hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  View
+                                </Button>
+                              </Link>
                             </TableCell>
                           </TableRow>
                         ))}

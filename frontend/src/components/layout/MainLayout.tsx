@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
-import { Header } from "./Header";
+import { Header, type BreadcrumbItem } from "./Header";
 import { useAuth } from "@/hooks/useAuth";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
+export type { BreadcrumbItem };
+
 interface MainLayoutProps {
   children: React.ReactNode;
   title?: string;
+  breadcrumbs?: BreadcrumbItem[];
 }
 
-export function MainLayout({ children, title = "Dashboard" }: MainLayoutProps) {
+export function MainLayout({
+  children,
+  title = "Dashboard",
+  breadcrumbs,
+}: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
   const { settings } = useSystemSettings();
@@ -29,7 +36,7 @@ export function MainLayout({ children, title = "Dashboard" }: MainLayoutProps) {
           sidebarCollapsed ? "ml-20" : "ml-[280px]"
         )}
       >
-        <Header title={title} />
+        <Header title={title} breadcrumbs={breadcrumbs} />
         <main className="flex-1 p-6 overflow-x-hidden">
           <motion.div
             initial={{ opacity: 0, y: 10 }}

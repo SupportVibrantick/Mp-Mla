@@ -63,10 +63,14 @@ export async function deleteUser(
       deletedById: req.user.id,
     });
 
-    // Soft delete -> set INACTIVE
+    // Soft delete -> set isDeleted: true, deletedAt: new Date(), status: INACTIVE
     await prisma.user.update({
       where: { id: userId },
-      data: { status: "INACTIVE" },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        status: "INACTIVE",
+      },
     });
 
     // Revoke all refresh tokens

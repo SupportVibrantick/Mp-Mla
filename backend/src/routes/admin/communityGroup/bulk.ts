@@ -61,6 +61,10 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
             const safeString = (val: any) => (val !== undefined && val !== null ? String(val) : undefined);
             const safeInt = (val: any) => (val !== undefined && val !== null && !isNaN(parseInt(val, 10)) ? parseInt(val, 10) : undefined);
 
+            const male = safeInt(maleMembers) ?? 0;
+            const female = safeInt(femaleMembers) ?? 0;
+            const total = (male + female > 0) ? (male + female) : (safeInt(memberCount) ?? 0);
+
             const groupData: any = {
                 tenantId,
                 name: String(name),
@@ -68,9 +72,9 @@ export const bulkCreateCommunityGroups = catchAsync(async (req: Request, res: Re
                 wardId,
                 address: safeString(address),
                 description: safeString(description),
-                memberCount: safeInt(memberCount),
-                maleMembers: safeInt(maleMembers),
-                femaleMembers: safeInt(femaleMembers),
+                memberCount: total,
+                maleMembers: male,
+                femaleMembers: female,
                 headName: safeString(headName),
                 headPhone: safeString(headPhone),
                 headEmail: safeString(headEmail),

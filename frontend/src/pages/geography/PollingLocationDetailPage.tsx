@@ -150,7 +150,14 @@ export default function PollingLocationDetailPage() {
   ======================================================= */
 
   return (
-    <MainLayout title={`${location.name} - Polling Location`}>
+    <MainLayout
+      title={`${location.name} - Polling Location`}
+      breadcrumbs={[
+        { label: "Geography", href: "/geography" },
+        { label: "Polling Locations", href: "/geography/polling-locations" },
+        { label: location.name },
+      ]}
+    >
       <div className="space-y-6">
         {/* =================================================
             HEADER

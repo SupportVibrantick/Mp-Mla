@@ -301,7 +301,14 @@ export default function ConstituencyDetailPage({ id }: { id: string }) {
   };
 
   return (
-    <MainLayout title={`${c.name} Details`}>
+    <MainLayout
+      title={`${c.name} Details`}
+      breadcrumbs={[
+        { label: "Geography", href: "/geography" },
+        { label: "Constituencies", href: "/geography/constituencies" },
+        { label: c.name },
+      ]}
+    >
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-border/40 pb-4">

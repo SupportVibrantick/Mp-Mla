@@ -27,6 +27,16 @@ export const updateCommunityGroup = catchAsync(async (req, res) => {
   if (data.wardAreaId === "") data.wardAreaId = null;
   if (data.headEmail === "") delete data.headEmail;
 
+  const male = data.maleMembers !== undefined ? (Number(data.maleMembers) || 0) : (old.maleMembers || 0);
+  const female = data.femaleMembers !== undefined ? (Number(data.femaleMembers) || 0) : (old.femaleMembers || 0);
+  if (data.maleMembers !== undefined) data.maleMembers = male;
+  if (data.femaleMembers !== undefined) data.femaleMembers = female;
+  if (data.maleMembers !== undefined || data.femaleMembers !== undefined) {
+    data.memberCount = (male + female > 0) ? (male + female) : (data.memberCount !== undefined ? (Number(data.memberCount) || 0) : (old.memberCount || 0));
+  } else if (data.memberCount !== undefined) {
+    data.memberCount = Number(data.memberCount) || 0;
+  }
+
   const nextWardId = data.wardId || old.wardId;
 
   if (data.wardId) {

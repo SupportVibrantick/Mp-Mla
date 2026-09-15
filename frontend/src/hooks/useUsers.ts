@@ -71,6 +71,7 @@ export function useDeleteUser() {
     mutationFn: (id: string) => usersApi.delete(id).then((r) => r.data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: ["recycle-bin"] });
       toast({ title: "User Deleted", description: res.message });
     },
     onError: (err: any) => {

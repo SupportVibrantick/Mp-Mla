@@ -43,6 +43,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -489,14 +490,43 @@ export default function DocumentDetailPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <PermissionGate module="documents" action="delete">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive"
-                            onClick={() => unlinkMut.mutate({ id: d.id, linkId: l.id })}
-                          >
-                            <Unlink className="h-3.5 w-3.5" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                title="Unlink Record"
+                              >
+                                <Unlink className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Unlink this {l.module.toLowerCase().replace(/_/g, " ")}?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to unlink record{" "}
+                                  <span className="font-mono font-medium text-foreground">
+                                    {l.recordId}
+                                  </span>
+                                  ? The linked record will remain intact, and only the association with this document will be removed.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() =>
+                                    unlinkMut.mutate({ id: d.id, linkId: l.id })
+                                  }
+                                >
+                                  Unlink Record
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </PermissionGate>
                       </TableCell>
                     </TableRow>
@@ -657,9 +687,8 @@ export default function DocumentDetailPage() {
                     borderRadius: "calc(var(--radius) - 2px)",
                     boxShadow:
                       "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                    zIndex: 9999,
+                    zIndex: 50,
                   }),
-                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                   option: (base, state) => ({
                     ...base,
                     backgroundColor: state.isSelected
@@ -689,7 +718,6 @@ export default function DocumentDetailPage() {
                     color: "hsl(var(--muted-foreground))",
                   }),
                 }}
-                menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
               />
               {linkForm.recordId && (
                 <p className="text-[11px] text-muted-foreground font-mono truncate">

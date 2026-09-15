@@ -290,7 +290,13 @@ export default function BoothsPage() {
   const isSaving = createMut.isPending || updateMut.isPending;
 
   return (
-    <MainLayout title="Polling Booths">
+    <MainLayout
+      title="Polling Booths"
+      breadcrumbs={[
+        { label: "Geography", href: "/geography" },
+        { label: "Booths" },
+      ]}
+    >
       <div className="space-y-6">
         {/* =====================================================
             HEADER
@@ -361,36 +367,51 @@ export default function BoothsPage() {
             TABLE
         ===================================================== */}
 
-        <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm overflow-hidden">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent border-b border-border/50">
-                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Booth</TableHead>
-                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Constituency</TableHead>
-                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Ward</TableHead>
-                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Town / Village</TableHead>
-                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Polling Location</TableHead>
-                    <TableHead className="h-12 px-4 text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Status</TableHead>
-                    <TableHead className="h-12 px-4 text-right text-[10px] tracking-wider uppercase font-semibold text-muted-foreground py-4 bg-muted/20">Actions</TableHead>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/60">
+                    <TableHead className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                      Booth
+                    </TableHead>
+                    <TableHead className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                      Constituency
+                    </TableHead>
+                    <TableHead className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                      Ward
+                    </TableHead>
+                    <TableHead className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                      Town / Village
+                    </TableHead>
+                    <TableHead className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                      Polling Location
+                    </TableHead>
+                    <TableHead className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                      Status
+                    </TableHead>
+                    <TableHead className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-muted-foreground text-right">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
                   {isLoading ? (
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <TableRow key={index} className="border-b border-border/40">
-                        {Array.from({ length: 7 }).map((_, idx) => (
-                          <TableCell key={idx} className="py-4 px-4">
-                            <Skeleton className="h-4 w-full" />
-                          </TableCell>
-                        ))}
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="border-b border-border/40">
+                        <TableCell colSpan={7} className="py-4 px-4">
+                          <Skeleton className="h-6 w-full" />
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : booths.length === 0 ? (
-                    <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={7} className="h-32 text-center text-xs text-muted-foreground">
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="py-12 text-center text-muted-foreground text-sm font-medium"
+                      >
                         No booths found.
                       </TableCell>
                     </TableRow>
@@ -399,19 +420,23 @@ export default function BoothsPage() {
                       <TableRow key={booth.id} className="hover:bg-muted/10 border-b border-border/40">
                         {/* Name & Number */}
                         <TableCell className="py-4 px-4 align-middle">
-                          <div className="flex items-center gap-2">
-                            <div className="rounded-lg bg-primary/10 p-2 font-mono text-xs font-bold text-primary">
-                              #{booth.boothNumber}
-                            </div>
-                            <div>
-                              <div className="font-bold text-foreground">{booth.boothName}</div>
-                              {booth.code && (
-                                <div className="text-[10px] font-mono text-muted-foreground">
-                                  {booth.code}
+                          <Link href={`/geography/booths/${booth.id}`}>
+                            <div className="flex items-center gap-2 cursor-pointer group">
+                              <div className="rounded-lg bg-primary/10 p-2 font-mono text-xs font-bold text-primary group-hover:bg-primary/20 transition-colors">
+                                #{booth.boothNumber}
+                              </div>
+                              <div>
+                                <div className="font-bold text-foreground group-hover:text-primary transition-colors">
+                                  {booth.boothName}
                                 </div>
-                              )}
+                                {booth.code && (
+                                  <div className="text-[10px] font-mono text-muted-foreground">
+                                    {booth.code}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          </Link>
                         </TableCell>
 
                         {/* Constituency */}
@@ -452,6 +477,19 @@ export default function BoothsPage() {
                         {/* Actions */}
                         <TableCell className="py-4 px-4 align-middle text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <PermissionGate module="constituency" action="read">
+                              <Link href={`/geography/booths/${booth.id}`}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg hover:bg-muted"
+                                  title="View Details"
+                                >
+                                  <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                </Button>
+                              </Link>
+                            </PermissionGate>
+
                             <PermissionGate module="constituency" action="update">
                               <Button
                                 variant="ghost"

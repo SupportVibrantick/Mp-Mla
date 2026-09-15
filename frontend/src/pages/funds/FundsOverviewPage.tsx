@@ -11,6 +11,7 @@ import {
   getFundTypeInfo,
   getTxnTypeInfo,
   formatCurrency,
+  formatChartCurrency,
 } from "@/hooks/useFunds";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -388,8 +389,8 @@ export default function FundsOverviewPage() {
                           <YAxis
                             fontSize={10}
                             tickLine={false}
-                            width={45}
-                            tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`}
+                            width={55}
+                            tickFormatter={formatChartCurrency}
                           />
                           <Tooltip
                             formatter={(v: number) => formatCurrency(v)}
@@ -438,8 +439,8 @@ export default function FundsOverviewPage() {
                         <YAxis
                           fontSize={10}
                           tickLine={false}
-                          width={45}
-                          tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`}
+                          width={55}
+                          tickFormatter={formatChartCurrency}
                         />
                         <Tooltip
                           formatter={(v: number) => formatCurrency(v)}

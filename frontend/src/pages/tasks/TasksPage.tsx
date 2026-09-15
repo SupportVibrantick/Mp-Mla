@@ -29,7 +29,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -49,6 +52,16 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +116,7 @@ export default function TasksPage() {
 
   // Focus entity
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [taskToDelete, setTaskToDelete] = useState<any>(null);
 
   // Forms state
   const [taskForm, setTaskForm] = useState({
@@ -164,32 +178,53 @@ export default function TasksPage() {
   const projects = projRes?.data || [];
   const grievances = grievancesRes?.data?.grievances || [];
 
-  const taskFormFilteredOfficers = taskForm.departmentId
-    ? officers.filter((o: any) => o.departmentId === taskForm.departmentId)
-    : officers;
+  const renderOfficerOptions = (selectedDeptId?: string) => {
+    if (!selectedDeptId || selectedDeptId === "none") {
+      if (officers.length === 0) {
+        return <SelectItem disabled value="_none_">No active officers available</SelectItem>;
+      }
+      return officers.map((o: any) => (
+        <SelectItem key={o.id} value={o.id}>
+          {o.name} ({o.designation || o.role})
+        </SelectItem>
+      ));
+    }
 
-  const assignFormFilteredOfficers = assignForm.departmentId
-    ? officers.filter((o: any) => o.departmentId === assignForm.departmentId)
-    : officers;
+    const deptOfficers = officers.filter((o: any) => o.departmentId === selectedDeptId);
 
-  const bulkAssignFormFilteredOfficers = bulkAssignForm.departmentId
-    ? officers.filter((o: any) => o.departmentId === bulkAssignForm.departmentId)
-    : officers;
+    if (deptOfficers.length === 0) {
+      return (
+        <SelectItem disabled value="_empty_">
+          No officers found in this department
+        </SelectItem>
+      );
+    }
+
+    return deptOfficers.map((o: any) => (
+      <SelectItem key={o.id} value={o.id}>
+        {o.name} ({o.designation || o.role})
+      </SelectItem>
+    ));
+  };
 
   const handleTaskFormDeptChange = (deptId: string) => {
     const nextDeptId = deptId === "none" ? "" : deptId;
-    const filtered = nextDeptId
+    const deptOfficers = nextDeptId
       ? officers.filter((o: any) => o.departmentId === nextDeptId)
       : officers;
-    const stillValid = filtered.some((o: any) => o.id === taskForm.assignedToId);
-    setTaskForm((p) => ({
-      ...p,
-      departmentId: nextDeptId,
-      assignedToId: stillValid ? p.assignedToId : (filtered[0]?.id || ""),
-    }));
+    setTaskForm((p) => {
+      const stillValid = deptOfficers.some((o: any) => o.id === p.assignedToId);
+      const nextAssignedToId = stillValid ? p.assignedToId : (deptOfficers[0]?.id || "");
+      return {
+        ...p,
+        departmentId: nextDeptId,
+        assignedToId: nextAssignedToId,
+      };
+    });
   };
 
   const handleTaskFormOfficerChange = (officerId: string) => {
+    if (!officerId || officerId === "_empty_" || officerId === "_none_") return;
     const officer = officers.find((o: any) => o.id === officerId);
     setTaskForm((p) => ({
       ...p,
@@ -200,18 +235,22 @@ export default function TasksPage() {
 
   const handleAssignFormDeptChange = (deptId: string) => {
     const nextDeptId = deptId === "none" ? "" : deptId;
-    const filtered = nextDeptId
+    const deptOfficers = nextDeptId
       ? officers.filter((o: any) => o.departmentId === nextDeptId)
       : officers;
-    const stillValid = filtered.some((o: any) => o.id === assignForm.assignedToId);
-    setAssignForm((p) => ({
-      ...p,
-      departmentId: nextDeptId,
-      assignedToId: stillValid ? p.assignedToId : (filtered[0]?.id || ""),
-    }));
+    setAssignForm((p) => {
+      const stillValid = deptOfficers.some((o: any) => o.id === p.assignedToId);
+      const nextAssignedToId = stillValid ? p.assignedToId : (deptOfficers[0]?.id || "");
+      return {
+        ...p,
+        departmentId: nextDeptId,
+        assignedToId: nextAssignedToId,
+      };
+    });
   };
 
   const handleAssignFormOfficerChange = (officerId: string) => {
+    if (!officerId || officerId === "_empty_" || officerId === "_none_") return;
     const officer = officers.find((o: any) => o.id === officerId);
     setAssignForm((p) => ({
       ...p,
@@ -222,18 +261,22 @@ export default function TasksPage() {
 
   const handleBulkAssignFormDeptChange = (deptId: string) => {
     const nextDeptId = deptId === "none" ? "" : deptId;
-    const filtered = nextDeptId
+    const deptOfficers = nextDeptId
       ? officers.filter((o: any) => o.departmentId === nextDeptId)
       : officers;
-    const stillValid = filtered.some((o: any) => o.id === bulkAssignForm.assignedToId);
-    setBulkAssignForm((p) => ({
-      ...p,
-      departmentId: nextDeptId,
-      assignedToId: stillValid ? p.assignedToId : (filtered[0]?.id || ""),
-    }));
+    setBulkAssignForm((p) => {
+      const stillValid = deptOfficers.some((o: any) => o.id === p.assignedToId);
+      const nextAssignedToId = stillValid ? p.assignedToId : (deptOfficers[0]?.id || "");
+      return {
+        ...p,
+        departmentId: nextDeptId,
+        assignedToId: nextAssignedToId,
+      };
+    });
   };
 
   const handleBulkAssignFormOfficerChange = (officerId: string) => {
+    if (!officerId || officerId === "_empty_" || officerId === "_none_") return;
     const officer = officers.find((o: any) => o.id === officerId);
     setBulkAssignForm((p) => ({
       ...p,
@@ -264,28 +307,22 @@ export default function TasksPage() {
       // Clear state so it doesn't open on reload/back
       window.history.replaceState({ ...state, openCreate: false }, "");
 
+      const deptId = state.departmentId || "";
+      const filtered = deptId
+        ? officers.filter((o: any) => o.departmentId === deptId)
+        : [];
+      const defaultAssignee = filtered[0]?.id || officers[0]?.id || "";
+
       setTaskForm((p) => ({
         ...p,
         title: state.title || "",
         description: state.description || "",
         grievanceId: state.grievanceId || "",
         projectId: state.projectId || "",
-        departmentId: state.departmentId || "",
-        assignedToId: "", // will be filtered
+        departmentId: deptId,
+        assignedToId: defaultAssignee,
       }));
       setAddDlg(true);
-
-      // If department is provided, set the default officer of that department if any
-      if (state.departmentId) {
-        const filtered = officers.filter((o: any) => o.departmentId === state.departmentId);
-        if (filtered.length > 0) {
-          setTaskForm((p) => ({
-            ...p,
-            departmentId: state.departmentId,
-            assignedToId: filtered[0].id,
-          }));
-        }
-      }
     }
   }, [officers]);
 
@@ -327,10 +364,14 @@ export default function TasksPage() {
     setEditDlg(false);
   };
 
-  const handleDeleteTask = async (id: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      await deleteMut.mutateAsync(id);
-    }
+  const handleDeleteTask = (task: any) => {
+    setTaskToDelete(task);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    await deleteMut.mutateAsync(taskToDelete.id);
+    setTaskToDelete(null);
   };
 
   const handleAssignTask = async () => {
@@ -453,7 +494,7 @@ export default function TasksPage() {
                     status: "TODO",
                     dueDate: "",
                     assignedToId: officers[0]?.id || "",
-                    departmentId: officers[0]?.departmentId || "",
+                    departmentId: "",
                     projectId: "",
                     grievanceId: "",
                   });
@@ -765,7 +806,7 @@ export default function TasksPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeleteTask(t.id)}
+                              onClick={() => handleDeleteTask(t)}
                               title="Delete Task"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -863,24 +904,6 @@ export default function TasksPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Assign Officer <span className="text-destructive">*</span></Label>
-              <Select
-                value={taskForm.assignedToId}
-                onValueChange={handleTaskFormOfficerChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Assignee" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {taskFormFilteredOfficers.map((o: any) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name} ({o.designation || o.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Department</Label>
@@ -892,7 +915,7 @@ export default function TasksPage() {
                     <SelectValue placeholder="Department" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="none">— None —</SelectItem>
+                    <SelectItem value="none">— None (All Officers) —</SelectItem>
                     {departments.map((d: any) => (
                       <SelectItem key={d.id} value={d.id}>
                         {d.name}
@@ -920,6 +943,25 @@ export default function TasksPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Assign Officer <span className="text-destructive">*</span></Label>
+              <Select
+                value={taskForm.assignedToId}
+                onValueChange={handleTaskFormOfficerChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Assignee" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {renderOfficerOptions(taskForm.departmentId)}
+                </SelectContent>
+              </Select>
+              {taskForm.departmentId && officers.filter((o: any) => o.departmentId === taskForm.departmentId).length === 0 && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                  No officers are currently assigned to this department.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -981,24 +1023,6 @@ export default function TasksPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Assign Officer <span className="text-destructive">*</span></Label>
-              <Select
-                value={taskForm.assignedToId}
-                onValueChange={handleTaskFormOfficerChange}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {taskFormFilteredOfficers.map((o: any) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name} ({o.designation || o.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Department</Label>
@@ -1010,7 +1034,7 @@ export default function TasksPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="none">— None —</SelectItem>
+                    <SelectItem value="none">— None (All Officers) —</SelectItem>
                     {departments.map((d: any) => (
                       <SelectItem key={d.id} value={d.id}>
                         {d.name}
@@ -1039,6 +1063,25 @@ export default function TasksPage() {
                 </Select>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Assign Officer <span className="text-destructive">*</span></Label>
+              <Select
+                value={taskForm.assignedToId}
+                onValueChange={handleTaskFormOfficerChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Assignee" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {renderOfficerOptions(taskForm.departmentId)}
+                </SelectContent>
+              </Select>
+              {taskForm.departmentId && officers.filter((o: any) => o.departmentId === taskForm.departmentId).length === 0 && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                  No officers are currently assigned to this department.
+                </p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDlg(false)}>Cancel</Button>
@@ -1058,24 +1101,6 @@ export default function TasksPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Officer <span className="text-destructive">*</span></Label>
-              <Select
-                value={assignForm.assignedToId}
-                onValueChange={handleAssignFormOfficerChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Assignee" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {assignFormFilteredOfficers.map((o: any) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name} ({o.designation || o.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label>Department</Label>
               <Select
                 value={assignForm.departmentId || "none"}
@@ -1085,7 +1110,7 @@ export default function TasksPage() {
                   <SelectValue placeholder="Select Department" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="none">— None —</SelectItem>
+                  <SelectItem value="none">— None (All Officers) —</SelectItem>
                   {departments.map((d: any) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.name}
@@ -1093,6 +1118,25 @@ export default function TasksPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Officer <span className="text-destructive">*</span></Label>
+              <Select
+                value={assignForm.assignedToId}
+                onValueChange={handleAssignFormOfficerChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Assignee" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {renderOfficerOptions(assignForm.departmentId)}
+                </SelectContent>
+              </Select>
+              {assignForm.departmentId && officers.filter((o: any) => o.departmentId === assignForm.departmentId).length === 0 && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                  No officers are currently assigned to this department.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -1113,24 +1157,6 @@ export default function TasksPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Assign Officer <span className="text-destructive">*</span></Label>
-              <Select
-                value={bulkAssignForm.assignedToId}
-                onValueChange={handleBulkAssignFormOfficerChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Assignee" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {bulkAssignFormFilteredOfficers.map((o: any) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label>Department</Label>
               <Select
                 value={bulkAssignForm.departmentId || "none"}
@@ -1140,7 +1166,7 @@ export default function TasksPage() {
                   <SelectValue placeholder="Select Department" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="none">— None —</SelectItem>
+                  <SelectItem value="none">— None (All Officers) —</SelectItem>
                   {departments.map((d: any) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.name}
@@ -1148,6 +1174,25 @@ export default function TasksPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Assign Officer <span className="text-destructive">*</span></Label>
+              <Select
+                value={bulkAssignForm.assignedToId}
+                onValueChange={handleBulkAssignFormOfficerChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Assignee" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {renderOfficerOptions(bulkAssignForm.departmentId)}
+                </SelectContent>
+              </Select>
+              {bulkAssignForm.departmentId && officers.filter((o: any) => o.departmentId === bulkAssignForm.departmentId).length === 0 && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                  No officers are currently assigned to this department.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -1192,6 +1237,36 @@ export default function TasksPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-extrabold text-foreground text-base">
+              Delete Task &ldquo;{taskToDelete?.title}&rdquo;?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              Are you sure you want to delete this task? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0 mt-4">
+            <AlertDialogCancel
+              disabled={deleteMut.isPending}
+              className="border-border/60 hover:bg-muted font-semibold"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMut.isPending}
+              className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+              onClick={confirmDeleteTask}
+            >
+              {deleteMut.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Delete Task
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

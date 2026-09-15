@@ -105,7 +105,14 @@ export default function BoothDetailPage() {
   const pollingLocation = booth.pollingLocation;
 
   return (
-    <MainLayout title={`${booth.boothName} Details`}>
+    <MainLayout
+      title={`${booth.boothName || `Booth ${booth.boothNumber}`} Details`}
+      breadcrumbs={[
+        { label: "Geography", href: "/geography" },
+        { label: "Booths", href: "/geography/booths" },
+        { label: booth.boothName || `Booth ${booth.boothNumber}` },
+      ]}
+    >
       <div className="space-y-6">
         {/* =================================================
             HEADER

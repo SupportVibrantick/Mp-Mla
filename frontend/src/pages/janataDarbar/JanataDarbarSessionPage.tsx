@@ -107,6 +107,7 @@ export default function JanataDarbarSessionPage() {
 
   // Dialog States
   const [tokenDlg, setTokenDlg] = useState(false);
+  const [tokenErrors, setTokenErrors] = useState<Record<string, string>>({});
   const [tokenForm, setTokenForm] = useState({
     visitorName: "",
     visitorPhone: "",
@@ -149,23 +150,54 @@ export default function JanataDarbarSessionPage() {
   // Waiting queue list
   const waitingQueue = queue.filter((t: any) => t.status === "WAITING");
 
+  const validateTokenForm = () => {
+    const errs: Record<string, string> = {};
+    if (!tokenForm.visitorName || !tokenForm.visitorName.trim()) {
+      errs.visitorName = "Visitor name is required";
+    } else if (tokenForm.visitorName.trim().length < 2) {
+      errs.visitorName = "Visitor name must be at least 2 characters";
+    }
+
+    if (tokenForm.visitorPhone && tokenForm.visitorPhone.trim()) {
+      const cleanPhone = tokenForm.visitorPhone.replace(/\D/g, "");
+      if (cleanPhone.length !== 10) {
+        errs.visitorPhone = "Must be a valid 10-digit mobile number";
+      }
+    }
+
+    if (tokenForm.visitorEmail && tokenForm.visitorEmail.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tokenForm.visitorEmail.trim())) {
+        errs.visitorEmail = "Invalid email address format";
+      }
+    }
+
+    if (!tokenForm.issueSummary || !tokenForm.issueSummary.trim()) {
+      errs.issueSummary = "Issue summary is required";
+    } else if (tokenForm.issueSummary.trim().length < 3) {
+      errs.issueSummary = "Issue summary must be at least 3 characters";
+    }
+
+    setTokenErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleRegisterToken = async () => {
-    if (!tokenForm.visitorName || !tokenForm.issueSummary) {
-      toast.error("Visitor Name and Issue Summary are required.");
+    if (!validateTokenForm()) {
       return;
     }
     await registerTokenMut.mutateAsync({
       id,
       payload: {
-        visitorName: tokenForm.visitorName,
-        phone: tokenForm.visitorPhone || null,
+        visitorName: tokenForm.visitorName.trim(),
+        phone: tokenForm.visitorPhone ? tokenForm.visitorPhone.replace(/\D/g, "") : null,
         address: tokenForm.visitorAddress || null,
-        purpose: tokenForm.issueSummary || null,
+        purpose: tokenForm.issueSummary.trim() || null,
         departmentId:
           tokenForm.departmentId === "none" ? null : tokenForm.departmentId,
       },
     });
     setTokenDlg(false);
+    setTokenErrors({});
     setTokenForm({
       visitorName: "",
       visitorPhone: "",
@@ -614,7 +646,13 @@ export default function JanataDarbarSessionPage() {
         </div>
 
         {/* DIALOG: Register Token */}
-        <Dialog open={tokenDlg} onOpenChange={setTokenDlg}>
+        <Dialog
+          open={tokenDlg}
+          onOpenChange={(open) => {
+            setTokenDlg(open);
+            if (!open) setTokenErrors({});
+          }}
+        >
           <DialogContent className="rounded-2xl max-w-sm">
             <DialogHeader>
               <DialogTitle className="text-sm font-bold text-foreground">
@@ -623,30 +661,39 @@ export default function JanataDarbarSessionPage() {
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Visitor Name</Label>
+                <Label className="text-xs font-semibold">
+                  Visitor Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   placeholder="e.g. Ramesh Kumar"
-                  className="rounded-xl border-border/50 text-xs h-10"
+                  className={`rounded-xl text-xs h-10 border-border/50 focus-visible:ring-primary/20 ${tokenErrors.visitorName ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                   value={tokenForm.visitorName}
-                  onChange={(e) =>
-                    setTokenForm({ ...tokenForm, visitorName: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setTokenForm((p) => ({ ...p, visitorName: e.target.value }));
+                    if (tokenErrors.visitorName) setTokenErrors((p) => ({ ...p, visitorName: "" }));
+                  }}
                 />
+                {tokenErrors.visitorName && (
+                  <p className="text-[11px] text-destructive font-medium">{tokenErrors.visitorName}</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Visitor Phone</Label>
+                  <Label className="text-xs font-semibold">Visitor Phone (Optional)</Label>
                   <Input
-                    placeholder="e.g. 9876543210"
-                    className="rounded-xl border-border/50 text-xs h-10"
+                    placeholder="10-digit number"
+                    maxLength={10}
+                    className={`rounded-xl text-xs h-10 border-border/50 focus-visible:ring-primary/20 ${tokenErrors.visitorPhone ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                     value={tokenForm.visitorPhone}
-                    onChange={(e) =>
-                      setTokenForm({
-                        ...tokenForm,
-                        visitorPhone: e.target.value,
-                      })
-                    }
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setTokenForm((p) => ({ ...p, visitorPhone: clean }));
+                      if (tokenErrors.visitorPhone) setTokenErrors((p) => ({ ...p, visitorPhone: "" }));
+                    }}
                   />
+                  {tokenErrors.visitorPhone && (
+                    <p className="text-[11px] text-destructive font-medium">{tokenErrors.visitorPhone}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">
@@ -654,26 +701,28 @@ export default function JanataDarbarSessionPage() {
                   </Label>
                   <Input
                     placeholder="Email"
-                    className="rounded-xl border-border/50 text-xs h-10"
+                    type="email"
+                    className={`rounded-xl text-xs h-10 border-border/50 focus-visible:ring-primary/20 ${tokenErrors.visitorEmail ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                     value={tokenForm.visitorEmail}
-                    onChange={(e) =>
-                      setTokenForm({
-                        ...tokenForm,
-                        visitorEmail: e.target.value,
-                      })
-                    }
+                    onChange={(e) => {
+                      setTokenForm((p) => ({ ...p, visitorEmail: e.target.value }));
+                      if (tokenErrors.visitorEmail) setTokenErrors((p) => ({ ...p, visitorEmail: "" }));
+                    }}
                   />
+                  {tokenErrors.visitorEmail && (
+                    <p className="text-[11px] text-destructive font-medium">{tokenErrors.visitorEmail}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">
-                  Department Concerns
+                  Department Concerns (Optional)
                 </Label>
                 <select
                   className="w-full bg-background border border-border/50 rounded-xl px-3 h-10 text-xs font-medium focus:outline-none"
                   value={tokenForm.departmentId}
                   onChange={(e) =>
-                    setTokenForm({ ...tokenForm, departmentId: e.target.value })
+                    setTokenForm((p) => ({ ...p, departmentId: e.target.value }))
                   }
                 >
                   <option value="none">-- General / No Department --</option>
@@ -685,15 +734,21 @@ export default function JanataDarbarSessionPage() {
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Issue Summary</Label>
+                <Label className="text-xs font-semibold">
+                  Issue Summary <span className="text-destructive">*</span>
+                </Label>
                 <Textarea
                   placeholder="Briefly summarize the visitor's issue or grievance..."
-                  className="rounded-xl border-border/50 text-xs min-h-[70px]"
+                  className={`rounded-xl text-xs min-h-[70px] border-border/50 focus-visible:ring-primary/20 ${tokenErrors.issueSummary ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                   value={tokenForm.issueSummary}
-                  onChange={(e) =>
-                    setTokenForm({ ...tokenForm, issueSummary: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setTokenForm((p) => ({ ...p, issueSummary: e.target.value }));
+                    if (tokenErrors.issueSummary) setTokenErrors((p) => ({ ...p, issueSummary: "" }));
+                  }}
                 />
+                {tokenErrors.issueSummary && (
+                  <p className="text-[11px] text-destructive font-medium">{tokenErrors.issueSummary}</p>
+                )}
               </div>
             </div>
             <DialogFooter className="gap-2">
@@ -707,9 +762,11 @@ export default function JanataDarbarSessionPage() {
               </Button>
               <Button
                 size="sm"
-                className="rounded-xl h-9 text-xs font-bold bg-slate-900 text-white"
+                disabled={registerTokenMut.isPending}
+                className="rounded-xl h-9 text-xs font-bold bg-slate-900 text-white hover:bg-slate-800"
                 onClick={handleRegisterToken}
               >
+                {registerTokenMut.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
                 Register Token
               </Button>
             </DialogFooter>
@@ -727,7 +784,7 @@ export default function JanataDarbarSessionPage() {
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">
-                  Select Target Department
+                  Select Target Department <span className="text-destructive">*</span>
                 </Label>
                 <select
                   className="w-full bg-background border border-border/50 rounded-xl px-3 h-10 text-xs font-medium focus:outline-none"
@@ -767,9 +824,11 @@ export default function JanataDarbarSessionPage() {
               </Button>
               <Button
                 size="sm"
+                disabled={referTokenMut.isPending || !referForm.departmentId}
                 className="rounded-xl h-9 text-xs font-bold bg-slate-900 text-white"
                 onClick={handleReferToken}
               >
+                {referTokenMut.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
                 Submit Referral
               </Button>
             </DialogFooter>

@@ -914,21 +914,83 @@ router.get(
       email,
     } = req.query as Record<string, string>;
 
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: {
-        name: true,
-        constituencyName: true,
-        representativeName: true,
-        representativeTitle: true,
-        state: true,
-        district: true,
-      },
-    });
+    const [tenant, tenantDbSettings, repProfile] = await Promise.all([
+      prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: {
+          name: true,
+          constituencyName: true,
+          representativeName: true,
+          representativeTitle: true,
+          state: true,
+          district: true,
+        },
+      }),
+      prisma.tenantSetting.findMany({
+        where: {
+          tenantId,
+          key: {
+            in: [
+              "org_name",
+              "constituency_name",
+              "representative_name",
+              "representative_title",
+            ],
+          },
+        },
+      }),
+      prisma.representativeProfile.findFirst({
+        where: { tenantId },
+        select: {
+          name: true,
+          title: true,
+          constituency: {
+            select: { name: true },
+          },
+        },
+      }),
+    ]);
 
     if (!tenant) {
       throw new ApiError(404, "Tenant not found");
     }
+
+    const tenantMap = new Map(tenantDbSettings.map((s) => [s.key, s.value]));
+
+    const repName =
+      (req.query.representativeName as string) ||
+      tenantMap.get("representative_name") ||
+      repProfile?.name ||
+      tenant.representativeName ||
+      "Shri Representative";
+
+    const repTitle =
+      (req.query.representativeTitle as string) ||
+      tenantMap.get("representative_title") ||
+      repProfile?.title ||
+      tenant.representativeTitle ||
+      "Member of Legislative Assembly";
+
+    const constName =
+      (req.query.constituencyName as string) ||
+      tenantMap.get("constituency_name") ||
+      repProfile?.constituency?.name ||
+      tenant.constituencyName ||
+      "Constituency";
+
+    const orgName =
+      tenantMap.get("org_name") ||
+      tenant.name ||
+      "Constituency Administration Portal";
+
+    const pdfTenant = {
+      name: orgName,
+      constituencyName: constName,
+      representativeName: repName,
+      representativeTitle: repTitle,
+      state: tenant.state,
+      district: tenant.district,
+    };
 
     const where: any = { tenantId, isDeleted: false };
     if (wardId && wardId !== "all") where.wardId = wardId;
@@ -1440,7 +1502,7 @@ router.get(
     const pdfStream = createReportPdfStream({
       title: `${type === "consolidated" ? "CONSOLIDATED EXECUTIVE" : type.toUpperCase()} GOVERNANCE REPORT`,
       type,
-      tenant,
+      tenant: pdfTenant,
       generatedBy: req.user?.name || req.user?.email || "Platform Admin",
       referenceNumber,
       dateRangeText,

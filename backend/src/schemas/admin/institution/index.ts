@@ -40,15 +40,39 @@ const STATUSES = [
   "PROPOSED",
 ] as const;
 
+const phoneValidation = z
+  .string()
+  .min(1, "Contact number is required")
+  .regex(/^\+?[0-9\s-]{10,15}$/, "Invalid contact number. Must contain 10-15 digits");
+
+const adharValidation = z.preprocess(
+  (val) => (val === "" || val === null ? undefined : typeof val === "string" ? val.replace(/\s+/g, "") : val),
+  z
+    .string()
+    .regex(/^\d{12}$/, "Aadhaar number must be exactly 12 digits")
+    .optional()
+    .nullable()
+);
+
+const dateOfBirthValidation = z
+  .string()
+  .datetime()
+  .optional()
+  .nullable()
+  .refine(
+    (val) => !val || new Date(val) <= new Date(),
+    { message: "Date of birth cannot be in the future" }
+  );
+
 const inchargeInlineSchema = z.object({
   name: z.string().min(1, "Incharge name required"),
   designation: z.string().min(1, "Designation required"),
-  contactNo: z.string().min(1, "Contact number required"),
-  email: z.string().email().optional().or(z.literal("")),
-  dateOfBirth: z.string().datetime().optional(),
-  appointedDate: z.string().datetime().optional(),
-  photoUrl: z.string().optional(),
-  adharNumber: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
+  contactNo: phoneValidation,
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  dateOfBirth: dateOfBirthValidation,
+  appointedDate: z.string().datetime().optional().nullable(),
+  photoUrl: z.string().optional().nullable(),
+  adharNumber: adharValidation,
   isActive: z.boolean().default(true),
 });
 
@@ -61,7 +85,7 @@ export const createInstitutionSchema = z.object({
   longitude: z.number().optional(),
   wardId: z.string().min(1, "Ward is required"),
   contactNo: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
   website: z.string().optional(),
   status: z.enum(STATUSES).default("ACTIVE"),
   description: z.string().optional(),
@@ -78,12 +102,12 @@ export const updateInstitutionSchema = createInstitutionSchema
 export const createInchargeSchema = z.object({
   name: z.string().min(1, "Name required"),
   designation: z.string().min(1, "Designation required"),
-  contactNo: z.string().min(1, "Contact number required"),
-  email: z.string().email().optional().or(z.literal("")),
-  dateOfBirth: z.string().datetime().optional(),
-  photoUrl: z.string().optional(),
-  appointedDate: z.string().datetime().optional(),
-  adharNumber: z.string().optional().or(z.literal("")).transform((val) => val === "" ? undefined : val),
+  contactNo: phoneValidation,
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  dateOfBirth: dateOfBirthValidation,
+  photoUrl: z.string().optional().nullable(),
+  appointedDate: z.string().datetime().optional().nullable(),
+  adharNumber: adharValidation,
   isActive: z.boolean().default(true),
 });
 

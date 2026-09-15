@@ -93,7 +93,14 @@ export default function TownVillageDetailPage() {
   const natureLabel = item.nature === "URBAN" ? "Urban" : "Rural";
 
   return (
-    <MainLayout title={item.name}>
+    <MainLayout
+      title={item.name}
+      breadcrumbs={[
+        { label: "Geography", href: "/geography" },
+        { label: "Towns / Villages", href: "/geography/town-villages" },
+        { label: item.name },
+      ]}
+    >
       <div className="space-y-6">
         {/* HEADER */}
 

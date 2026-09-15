@@ -130,9 +130,12 @@ export default function PublicFacilityDetailPage() {
     navigate("/public-facilities");
   };
 
+  const [inchargeErrors, setInchargeErrors] = useState<Record<string, string>>({});
+
   const openAddIncharge = () => {
     setEditingIncharge(null);
     setInchargeForm({ ...emptyIncharge });
+    setInchargeErrors({});
     setInchargeDialog(true);
   };
 
@@ -148,20 +151,65 @@ export default function PublicFacilityDetailPage() {
       appointedDate: ic.appointedDate ? ic.appointedDate.split("T")[0] : "",
       isActive: ic.isActive,
     });
+    setInchargeErrors({});
     setInchargeDialog(true);
   };
 
+  const validateInchargeForm = () => {
+    const errs: Record<string, string> = {};
+    if (!inchargeForm.name?.trim()) {
+      errs.name = "Name is required";
+    }
+    if (!inchargeForm.designation?.trim()) {
+      errs.designation = "Designation is required";
+    }
+    const cleanPhone = inchargeForm.contactNo?.replace(/\D/g, "") || "";
+    if (!cleanPhone) {
+      errs.contactNo = "Contact number is required";
+    } else if (cleanPhone.length !== 10) {
+      errs.contactNo = "Enter a valid 10-digit mobile number";
+    }
+    if (inchargeForm.adharNumber) {
+      const cleanAadhaar = inchargeForm.adharNumber.replace(/\D/g, "");
+      if (cleanAadhaar.length !== 12) {
+        errs.adharNumber = "Aadhaar must be exactly 12 digits";
+      }
+    }
+    if (inchargeForm.email && inchargeForm.email.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inchargeForm.email.trim())) {
+        errs.email = "Invalid email address format";
+      }
+    }
+    if (inchargeForm.dateOfBirth) {
+      const dob = new Date(inchargeForm.dateOfBirth);
+      const today = new Date();
+      if (dob > today) {
+        errs.dateOfBirth = "Date of birth cannot be in future";
+      }
+    }
+    if (inchargeForm.appointedDate && inchargeForm.dateOfBirth) {
+      const dob = new Date(inchargeForm.dateOfBirth);
+      const appDate = new Date(inchargeForm.appointedDate);
+      if (appDate < dob) {
+        errs.appointedDate = "Appointed date cannot be before DOB";
+      }
+    }
+    setInchargeErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const saveIncharge = async () => {
-    if (
-      !inchargeForm.name ||
-      !inchargeForm.designation ||
-      !inchargeForm.contactNo
-    )
-      return;
+    if (!validateInchargeForm()) return;
+
     const payload: any = {
       ...inchargeForm,
-      email: inchargeForm.email || undefined,
-      adharNumber: inchargeForm.adharNumber || undefined,
+      name: inchargeForm.name.trim(),
+      designation: inchargeForm.designation.trim(),
+      contactNo: inchargeForm.contactNo.replace(/\D/g, ""),
+      email: inchargeForm.email ? inchargeForm.email.trim() : undefined,
+      adharNumber: inchargeForm.adharNumber
+        ? inchargeForm.adharNumber.replace(/\D/g, "")
+        : undefined,
       dateOfBirth: inchargeForm.dateOfBirth
         ? new Date(inchargeForm.dateOfBirth).toISOString()
         : undefined,
@@ -587,12 +635,16 @@ export default function PublicFacilityDetailPage() {
                 </Label>
                 <Input
                   value={inchargeForm.name}
-                  onChange={(e) =>
-                    setInchargeForm((p) => ({ ...p, name: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setInchargeForm((p) => ({ ...p, name: e.target.value }));
+                    if (inchargeErrors.name) setInchargeErrors((p) => ({ ...p, name: "" }));
+                  }}
                   placeholder="Full name"
-                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                  className={`h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20 ${inchargeErrors.name ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                 />
+                {inchargeErrors.name && (
+                  <p className="text-[11px] text-destructive font-medium">{inchargeErrors.name}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -600,15 +652,19 @@ export default function PublicFacilityDetailPage() {
                 </Label>
                 <Input
                   value={inchargeForm.designation}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setInchargeForm((p) => ({
                       ...p,
                       designation: e.target.value,
-                    }))
-                  }
+                    }));
+                    if (inchargeErrors.designation) setInchargeErrors((p) => ({ ...p, designation: "" }));
+                  }}
                   placeholder="e.g. Principal, SHO"
-                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                  className={`h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20 ${inchargeErrors.designation ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                 />
+                {inchargeErrors.designation && (
+                  <p className="text-[11px] text-destructive font-medium">{inchargeErrors.designation}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -618,30 +674,41 @@ export default function PublicFacilityDetailPage() {
                 </Label>
                 <Input
                   value={inchargeForm.contactNo}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/\D/g, "").slice(0, 10);
                     setInchargeForm((p) => ({
                       ...p,
-                      contactNo: e.target.value,
-                    }))
-                  }
-                  placeholder="9876543210"
-                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                      contactNo: clean,
+                    }));
+                    if (inchargeErrors.contactNo) setInchargeErrors((p) => ({ ...p, contactNo: "" }));
+                  }}
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                  className={`h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20 ${inchargeErrors.contactNo ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                 />
+                {inchargeErrors.contactNo && (
+                  <p className="text-[11px] text-destructive font-medium">{inchargeErrors.contactNo}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aadhaar Number</Label>
                 <Input
                   value={inchargeForm.adharNumber || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/\D/g, "").slice(0, 12);
                     setInchargeForm((p) => ({
                       ...p,
-                      adharNumber: e.target.value,
-                    }))
-                  }
-                  placeholder="1234 5678 9012"
+                      adharNumber: clean,
+                    }));
+                    if (inchargeErrors.adharNumber) setInchargeErrors((p) => ({ ...p, adharNumber: "" }));
+                  }}
+                  placeholder="12-digit Aadhaar"
                   maxLength={12}
-                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                  className={`h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20 ${inchargeErrors.adharNumber ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                 />
+                {inchargeErrors.adharNumber && (
+                  <p className="text-[11px] text-destructive font-medium">{inchargeErrors.adharNumber}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -650,12 +717,16 @@ export default function PublicFacilityDetailPage() {
                 <Input
                   type="email"
                   value={inchargeForm.email}
-                  onChange={(e) =>
-                    setInchargeForm((p) => ({ ...p, email: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setInchargeForm((p) => ({ ...p, email: e.target.value }));
+                    if (inchargeErrors.email) setInchargeErrors((p) => ({ ...p, email: "" }));
+                  }}
                   placeholder="email@domain.com"
-                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                  className={`h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20 ${inchargeErrors.email ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                 />
+                {inchargeErrors.email && (
+                  <p className="text-[11px] text-destructive font-medium">{inchargeErrors.email}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -663,29 +734,38 @@ export default function PublicFacilityDetailPage() {
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date of Birth</Label>
                 <Input
                   type="date"
+                  max={new Date().toISOString().split("T")[0]}
                   value={inchargeForm.dateOfBirth}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setInchargeForm((p) => ({
                       ...p,
                       dateOfBirth: e.target.value,
-                    }))
-                  }
-                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                    }));
+                    if (inchargeErrors.dateOfBirth) setInchargeErrors((p) => ({ ...p, dateOfBirth: "" }));
+                  }}
+                  className={`h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20 ${inchargeErrors.dateOfBirth ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                 />
+                {inchargeErrors.dateOfBirth && (
+                  <p className="text-[11px] text-destructive font-medium">{inchargeErrors.dateOfBirth}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Appointed Date</Label>
                 <Input
                   type="date"
                   value={inchargeForm.appointedDate}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setInchargeForm((p) => ({
                       ...p,
                       appointedDate: e.target.value,
-                    }))
-                  }
-                  className="h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20"
+                    }));
+                    if (inchargeErrors.appointedDate) setInchargeErrors((p) => ({ ...p, appointedDate: "" }));
+                  }}
+                  className={`h-10 bg-muted/20 border-border/60 focus-visible:ring-primary/20 ${inchargeErrors.appointedDate ? "border-destructive focus-visible:ring-destructive/20" : ""}`}
                 />
+                {inchargeErrors.appointedDate && (
+                  <p className="text-[11px] text-destructive font-medium">{inchargeErrors.appointedDate}</p>
+                )}
               </div>
             </div>
             {editingIncharge && (

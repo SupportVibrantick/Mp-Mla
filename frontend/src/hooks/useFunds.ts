@@ -79,6 +79,29 @@ export function getTxnTypeInfo(t: string) {
 export function formatCurrency(amount: number): string {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
+
+export function formatChartCurrency(val: number): string {
+  if (!val || val === 0 || isNaN(val)) return "₹0";
+  const abs = Math.abs(val);
+  const sign = val < 0 ? "-" : "";
+  if (abs >= 10000000) {
+    const cr = abs / 10000000;
+    const formatted = parseFloat(cr.toFixed(2));
+    return `${sign}₹${formatted}Cr`;
+  }
+  if (abs >= 100000) {
+    const l = abs / 100000;
+    const formatted = parseFloat(l.toFixed(2));
+    return `${sign}₹${formatted}L`;
+  }
+  if (abs >= 1000) {
+    const k = abs / 1000;
+    const formatted = parseFloat(k.toFixed(2));
+    return `${sign}₹${formatted}k`;
+  }
+  return `${sign}₹${abs}`;
+}
+
 function useFundMut(fn: (d: any) => Promise<any>, title: string) {
   const qc = useQueryClient();
   const { toast } = useToast();

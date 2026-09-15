@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -96,6 +97,10 @@ export default function CommunityFormPage() {
   // Populate on edit
   useEffect(() => {
     if (!group || !isEdit) return;
+    const male = group.maleMembers || 0;
+    const female = group.femaleMembers || 0;
+    const total = (male + female > 0) ? (male + female) : (group.memberCount || 0);
+
     reset({
       name: group.name,
       type: group.type,
@@ -103,9 +108,9 @@ export default function CommunityFormPage() {
       wardAreaId: group.wardAreaId || null,
       address: group.address || "",
       description: group.description || "",
-      memberCount: group.memberCount || 0,
-      maleMembers: group.maleMembers || 0,
-      femaleMembers: group.femaleMembers || 0,
+      memberCount: total,
+      maleMembers: male,
+      femaleMembers: female,
       headName: group.headName || "",
       headPhone: group.headPhone || "",
       headEmail: group.headEmail || "",
@@ -118,8 +123,15 @@ export default function CommunityFormPage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
+      const male = Number(data.maleMembers) || 0;
+      const female = Number(data.femaleMembers) || 0;
+      const total = (male + female > 0) ? (male + female) : (Number(data.memberCount) || 0);
+
       const payload: any = {
         ...data,
+        maleMembers: male,
+        femaleMembers: female,
+        memberCount: total,
         wardAreaId: data.wardAreaId || null,
         headEmail: data.headEmail || undefined,
         foundedDate: data.foundedDate
@@ -355,25 +367,29 @@ export default function CommunityFormPage() {
         {/* Members */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" /> Members
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" /> Members
+              </CardTitle>
+              <Badge variant="secondary" className="text-[10px] font-semibold">
+                Auto-calculated
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Total Members</Label>
-                <Input
-                  type="number"
-                  {...register("memberCount")}
-                  placeholder="0"
-                />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Male Members</Label>
                 <Input
                   type="number"
-                  {...register("maleMembers")}
+                  min="0"
+                  {...register("maleMembers", {
+                    onChange: (e) => {
+                      const m = parseInt(e.target.value, 10) || 0;
+                      const f = parseInt(watch("femaleMembers") as any, 10) || 0;
+                      setValue("memberCount", m + f);
+                    },
+                  })}
                   placeholder="0"
                 />
               </div>
@@ -381,8 +397,28 @@ export default function CommunityFormPage() {
                 <Label>Female Members</Label>
                 <Input
                   type="number"
-                  {...register("femaleMembers")}
+                  min="0"
+                  {...register("femaleMembers", {
+                    onChange: (e) => {
+                      const f = parseInt(e.target.value, 10) || 0;
+                      const m = parseInt(watch("maleMembers") as any, 10) || 0;
+                      setValue("memberCount", m + f);
+                    },
+                  })}
                   placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Total Members</Label>
+                  <span className="text-[10px] text-muted-foreground font-medium">Male + Female</span>
+                </div>
+                <Input
+                  type="number"
+                  min="0"
+                  {...register("memberCount")}
+                  placeholder="0"
+                  className="bg-muted/40 font-semibold"
                 />
               </div>
             </div>

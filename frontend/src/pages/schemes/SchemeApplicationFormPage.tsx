@@ -77,11 +77,11 @@ export default function SchemeApplicationFormPage() {
   const onSubmit = async (data: FV) => {
     const payload: any = {
       ...data,
-      beneficiaryPhone: data.beneficiaryPhone || undefined,
-      beneficiaryEmail: data.beneficiaryEmail || undefined,
-      address: data.address || undefined,
-      wardId: data.wardId || undefined,
-      notes: data.notes || undefined,
+      beneficiaryPhone: data.beneficiaryPhone || null,
+      beneficiaryEmail: data.beneficiaryEmail || null,
+      address: data.address || null,
+      wardId: data.wardId || null,
+      notes: data.notes || null,
     };
     if (isEdit && id) {
       await updateMut.mutateAsync({ id, data: payload });

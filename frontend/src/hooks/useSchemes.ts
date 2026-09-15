@@ -58,6 +58,7 @@ function useSchemeMut(fn: (d: any) => Promise<any>, title: string) {
     mutationFn: fn,
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["schemes"] });
+      qc.invalidateQueries({ queryKey: ["scheme-applications"] });
       toast({ title, description: res.message });
     },
     onError: (err: any) => {

@@ -64,22 +64,28 @@ function omitSystemFields<T extends Record<string, any>>(obj: T) {
 export async function isRecordInRecycleBin(
   entityType: RecycleEntityType,
   recordId: string,
+  tenantId?: string,
 ): Promise<boolean> {
+  const where: any = {
+    entityType,
+    recordId,
+    restoredAt: null,
+  };
+  if (tenantId) where.tenantId = tenantId;
   const count = await (prisma as any).recycleBinEntry.count({
-    where: {
-      entityType,
-      recordId,
-      restoredAt: null,
-    },
+    where,
   });
   return count > 0;
 }
 
 export async function getRecycledRecordIds(
   entityType: RecycleEntityType,
+  tenantId?: string,
 ): Promise<string[]> {
+  const where: any = { entityType, restoredAt: null };
+  if (tenantId) where.tenantId = tenantId;
   const records = await (prisma as any).recycleBinEntry.findMany({
-    where: { entityType, restoredAt: null },
+    where,
     select: { recordId: true },
   });
   return records.map((r: { recordId: string }) => r.recordId);
@@ -850,11 +856,21 @@ async function restoreUser(payload: unknown) {
     if (existing) {
       await tx.user.update({
         where: { id: userObj.id as string },
-        data: { ...(userUpdateData as any), status: "ACTIVE" },
+        data: {
+          ...(userUpdateData as any),
+          status: "ACTIVE",
+          isDeleted: false,
+          deletedAt: null,
+        },
       });
     } else {
       await tx.user.create({
-        data: { ...(userData as any), status: "ACTIVE" },
+        data: {
+          ...(userData as any),
+          status: "ACTIVE",
+          isDeleted: false,
+          deletedAt: null,
+        },
       });
     }
 
@@ -969,9 +985,15 @@ export async function permanentlyDeleteRecycledRecord(entry: {
 }) {
   switch (entry.entityType as RecycleEntityType) {
     case "user":
-      await prisma.userPermission.deleteMany({ where: { userId: entry.recordId } });
-      await prisma.refreshToken.deleteMany({ where: { userId: entry.recordId } });
-      await (prisma as any).auditLog.deleteMany({ where: { userId: entry.recordId } }).catch(() => {});
+      await prisma.userPermission.deleteMany({
+        where: { userId: entry.recordId },
+      });
+      await prisma.refreshToken.deleteMany({
+        where: { userId: entry.recordId },
+      });
+      await (prisma as any).auditLog
+        .deleteMany({ where: { userId: entry.recordId } })
+        .catch(() => {});
       await prisma.user.deleteMany({ where: { id: entry.recordId } });
       break;
     case "voter":
@@ -1011,7 +1033,11 @@ export async function permanentlyDeleteRecycledRecord(entry: {
       });
       if (doc) {
         if (doc.fileUrl) {
-          await deleteFileAndReleaseStorage(doc.fileUrl, doc.tenantId, doc.fileSize ?? undefined);
+          await deleteFileAndReleaseStorage(
+            doc.fileUrl,
+            doc.tenantId,
+            doc.fileSize ?? undefined,
+          );
         } else if (doc.fileSize) {
           await trackStorageRelease(doc.tenantId, doc.fileSize, true);
         }
@@ -1034,12 +1060,18 @@ export async function permanentlyDeleteRecycledRecord(entry: {
     case "ward":
       await prisma.voter.deleteMany({ where: { wardId: entry.recordId } });
       await prisma.wardArea.deleteMany({ where: { wardId: entry.recordId } });
-      await prisma.wardCouncillor.deleteMany({ where: { wardId: entry.recordId } });
-      await prisma.demographics.deleteMany({ where: { wardId: entry.recordId } });
+      await prisma.wardCouncillor.deleteMany({
+        where: { wardId: entry.recordId },
+      });
+      await prisma.demographics.deleteMany({
+        where: { wardId: entry.recordId },
+      });
       await prisma.ward.deleteMany({ where: { id: entry.recordId } });
       break;
     case "ward_area":
-      await prisma.demographics.deleteMany({ where: { wardAreaId: entry.recordId } });
+      await prisma.demographics.deleteMany({
+        where: { wardAreaId: entry.recordId },
+      });
       await prisma.wardArea.deleteMany({ where: { id: entry.recordId } });
       break;
     case "project_milestone":

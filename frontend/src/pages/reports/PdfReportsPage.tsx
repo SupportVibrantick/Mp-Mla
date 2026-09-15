@@ -124,6 +124,9 @@ export default function PdfReportsPage() {
       await downloadPdf(moduleType, {
         wardId: wardFilter !== "all" ? wardFilter : undefined,
         dateRange,
+        representativeName: repName,
+        representativeTitle: settings?.representative_title || undefined,
+        constituencyName: constituencyName,
       });
     } finally {
       setIsGenerating(false);
@@ -138,6 +141,9 @@ export default function PdfReportsPage() {
       await emailPdf(selectedModule, emailAddress, {
         wardId: wardFilter !== "all" ? wardFilter : undefined,
         dateRange,
+        representativeName: repName,
+        representativeTitle: settings?.representative_title || undefined,
+        constituencyName: constituencyName,
       });
     } finally {
       setIsSendingEmail(false);

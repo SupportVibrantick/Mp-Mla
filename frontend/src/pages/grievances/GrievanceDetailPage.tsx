@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import {
   useGrievance,
   useChangeGrievanceStatus,
@@ -94,8 +94,10 @@ const TL_COLORS: Record<string, string> = {
 
 export default function GrievanceDetailPage() {
   const [, navigate] = useLocation();
-  // Get ID from state instead of params
-  const id = (window.history.state as any)?.id;
+  const params = useParams<{ id?: string }>();
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  // Get ID from state, route param, or query param
+  const id = (window.history.state as any)?.id || params?.id || searchParams?.get("id");
   const { data: res, isLoading } = useGrievance(id);
   const statusMut = useChangeGrievanceStatus();
   const assignMut = useAssignGrievance();

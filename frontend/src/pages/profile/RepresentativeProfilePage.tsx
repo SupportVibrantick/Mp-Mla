@@ -140,15 +140,17 @@ export default function RepresentativeProfilePage() {
         {/* Profile Card Header */}
         <Card className="border border-border/50 bg-card rounded-3xl overflow-hidden shadow-xl">
           <div className="h-40 bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-900 relative" />
-          <CardContent className="p-8 relative">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 -mt-20 sm:-mt-16 mb-6">
-              <Avatar className="h-32 w-32 border-4 border-card shadow-2xl">
-                <AvatarImage src={profile.photoUrl} />
-                <AvatarFallback className="bg-primary/10 text-primary text-4xl">
-                  <User className="h-16 w-16" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center sm:text-left space-y-1 flex-1">
+          <CardContent className="p-8 pt-4 relative">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 mb-6">
+              <div className="relative -mt-20 sm:-mt-20 shrink-0">
+                <Avatar className="h-32 w-32 border-4 border-card shadow-2xl bg-card">
+                  <AvatarImage src={profile.photoUrl} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-4xl">
+                    <User className="h-16 w-16" />
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              <div className="text-center sm:text-left space-y-1 flex-1 pb-1">
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
                   {profile.name || "Representative Name"}
                 </h1>

@@ -114,6 +114,11 @@ export async function createApplication(
         notes: data.notes || null,
         createdById: req.user!.id,
       },
+      include: {
+        scheme: { select: { id: true, name: true, department: true } },
+        assignedTo: { select: { id: true, name: true, email: true, phone: true } },
+        ward: { select: { id: true, name: true, wardNumber: true } },
+      },
     });
 
     await createAuditLog({
@@ -196,8 +201,13 @@ export async function updateApplication(
         beneficiaryPhone: data.beneficiaryPhone,
         beneficiaryEmail: data.beneficiaryEmail,
         address: data.address,
-        wardId: data.wardId,
+        wardId: data.wardId === "" ? null : (data.wardId !== undefined ? data.wardId : undefined),
         notes: data.notes,
+      },
+      include: {
+        scheme: { select: { id: true, name: true, department: true } },
+        assignedTo: { select: { id: true, name: true, email: true, phone: true } },
+        ward: { select: { id: true, name: true, wardNumber: true } },
       },
     });
 
@@ -284,6 +294,11 @@ export async function assignApplication(
     const updated = await prisma.schemeApplication.update({
       where: { id: appId },
       data: { assignedToId },
+      include: {
+        scheme: { select: { id: true, name: true, department: true } },
+        assignedTo: { select: { id: true, name: true, email: true, phone: true } },
+        ward: { select: { id: true, name: true, wardNumber: true } },
+      },
     });
 
     await createAuditLog({

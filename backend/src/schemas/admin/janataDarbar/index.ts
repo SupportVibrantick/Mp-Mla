@@ -31,10 +31,15 @@ export const updateSessionSchema = sessionBaseSchema.partial();
 
 export const createTokenSchema = z.object({
   visitorName: z.string().min(1, "Visitor name is required"),
-  phone: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-  purpose: z.string().optional().nullable(),
-  wardId: z.string().optional().nullable(),
+  phone: z
+    .string()
+    .regex(/^\+?[0-9\s-]{10,15}$/, "Invalid phone number format")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  address: z.string().optional().nullable().or(z.literal("")),
+  purpose: z.string().optional().nullable().or(z.literal("")),
+  wardId: z.string().optional().nullable().or(z.literal("")),
 });
 
 export const referTokenSchema = z.object({

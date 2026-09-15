@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn, getImageUrl } from "@/lib/utils";
 import {
@@ -84,15 +84,47 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
   const navContainerRef = useRef<HTMLDivElement>(null);
 
+  const isChildRouteActive = (childHref: string, currentLoc: string) => {
+    if (currentLoc === childHref) return true;
+    if (childHref === "/geography/wards") {
+      return (
+        currentLoc.startsWith("/geography/wards") ||
+        currentLoc.startsWith("/wards")
+      );
+    }
+    if (childHref === "/geography") {
+      return currentLoc === "/geography";
+    }
+    return currentLoc.startsWith(childHref);
+  };
+
+  const isParentRouteActive = (item: NavItem, currentLoc: string) => {
+    if (currentLoc === item.href) return true;
+    if (item.children && item.children.length > 0) {
+      return item.children.some((c) => isChildRouteActive(c.href, currentLoc));
+    }
+    return currentLoc.startsWith(item.href);
+  };
+
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(
     () => {
       const initial: Record<string, boolean> = {
-        "Geography Management": location.startsWith("/geography"),
+        "Geography Management":
+          location.startsWith("/geography") || location.startsWith("/wards"),
       };
       if (location.startsWith("/schemes")) initial["Schemes"] = true;
       return initial;
     },
   );
+
+  useEffect(() => {
+    if (location.startsWith("/geography") || location.startsWith("/wards")) {
+      setOpenSubmenus((prev) => ({ ...prev, "Geography Management": true }));
+    }
+    if (location.startsWith("/schemes")) {
+      setOpenSubmenus((prev) => ({ ...prev, "Schemes": true }));
+    }
+  }, [location]);
 
   const toggleSubmenu = (label: string) => {
     setOpenSubmenus((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -502,11 +534,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                   item.children && item.children.length > 0
                 );
                 const isSubmenuOpen = !!openSubmenus[item.label];
-                // An item is active if its href matches location, OR if any of its children matches location
-                const isItemActive =
-                  location === item.href ||
-                  (hasChildren &&
-                    item.children!.some((c) => location === c.href));
+                const isItemActive = isParentRouteActive(item, location);
 
                 const content = (
                   <div
@@ -586,7 +614,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                                 if (child.group) {
                                   lastGroup = child.group;
                                 }
-                                const isChildActive = location === child.href;
+                                const isChildActive = isChildRouteActive(child.href, location);
                                 return (
                                   <div key={child.href} className="space-y-0.5">
                                     {showGroupHeader && (

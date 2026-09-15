@@ -52,7 +52,7 @@ export async function login(
     const matches = tenantId
       ? []
       : await prisma.user.findMany({
-          where: { email: normalizedEmail },
+          where: { email: normalizedEmail, isDeleted: false } as any,
           take: 2,
           orderBy: { createdAt: "asc" },
         });
@@ -65,7 +65,7 @@ export async function login(
 
     const user = tenantId
       ? await prisma.user.findFirst({
-          where: { tenantId, email: normalizedEmail },
+          where: { tenantId, email: normalizedEmail, isDeleted: false } as any,
         })
       : (matches[0] ?? null);
 

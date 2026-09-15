@@ -25,7 +25,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "wouter";
 
-export function Header({ title }: { title: string }) {
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+export function Header({
+  title,
+  breadcrumbs,
+}: {
+  title: string;
+  breadcrumbs?: BreadcrumbItem[];
+}) {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -37,10 +48,36 @@ export function Header({ title }: { title: string }) {
           <h2 className="text-xl font-heading font-semibold text-foreground tracking-tight">
             {title}
           </h2>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Home</span>
-            <span>/</span>
-            <span className="text-foreground font-medium">{title}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground flex-wrap">
+            <Link href="/dashboard">
+              <span className="hover:text-foreground cursor-pointer transition-colors">Home</span>
+            </Link>
+            {breadcrumbs && breadcrumbs.length > 0 ? (
+              breadcrumbs.map((b, idx) => {
+                const isLast = idx === breadcrumbs.length - 1;
+                return (
+                  <div key={idx} className="flex items-center gap-1.5 sm:gap-2">
+                    <span>/</span>
+                    {b.href && !isLast ? (
+                      <Link href={b.href}>
+                        <span className="hover:text-foreground cursor-pointer transition-colors">
+                          {b.label}
+                        </span>
+                      </Link>
+                    ) : (
+                      <span className={isLast ? "text-foreground font-medium" : ""}>
+                        {b.label}
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <>
+                <span>/</span>
+                <span className="text-foreground font-medium">{title}</span>
+              </>
+            )}
           </div>
         </div>
 

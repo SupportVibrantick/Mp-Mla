@@ -383,7 +383,7 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
   }
 
   // ── 3. OTHER TEMPLATE (Celebrations, Achievements & Festive Greetings) ───
-  if (category === "OTHER" || type === "other") {
+  if (category === "OTHER" || (type as string) === "other" || type === "festival" || type === "national_day" || type === "achievement") {
     const crimsonColor = "#b91c1c";
     return [
       {

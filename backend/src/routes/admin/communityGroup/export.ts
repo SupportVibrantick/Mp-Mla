@@ -23,21 +23,29 @@ export const exportCommunityGroups = catchAsync(async (req: Request, res: Respon
         orderBy: { name: "asc" }
     });
 
-    const exportData = data.map(item => ({
-        name: item.name,
-        type: item.type,
-        wardNumber: item.ward.wardNumber,
-        wardName: item.ward.name,
-        address: item.address || "",
-        description: item.description || "",
-        memberCount: item.memberCount || 0,
-        headName: item.headName || "",
-        headPhone: item.headPhone || "",
-        headEmail: item.headEmail || "",
-        isActive: item.isActive ? "TRUE" : "FALSE",
-        registrationNo: item.registrationNo || "",
-        createdAt: item.createdAt.toISOString()
-    }));
+    const exportData = data.map(item => {
+        const male = item.maleMembers || 0;
+        const female = item.femaleMembers || 0;
+        const total = (male + female > 0) ? (male + female) : (item.memberCount || 0);
+
+        return {
+            name: item.name,
+            type: item.type,
+            wardNumber: item.ward.wardNumber,
+            wardName: item.ward.name,
+            address: item.address || "",
+            description: item.description || "",
+            memberCount: total,
+            maleMembers: male,
+            femaleMembers: female,
+            headName: item.headName || "",
+            headPhone: item.headPhone || "",
+            headEmail: item.headEmail || "",
+            isActive: item.isActive ? "TRUE" : "FALSE",
+            registrationNo: item.registrationNo || "",
+            createdAt: item.createdAt.toISOString()
+        };
+    });
 
     res.json({
         success: true,

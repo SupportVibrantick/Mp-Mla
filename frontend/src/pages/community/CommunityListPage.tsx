@@ -737,7 +737,12 @@ export default function CommunityListPage() {
                           </TableCell>
                           <TableCell className="py-4 px-4 align-middle text-right text-xs sm:text-sm font-semibold text-foreground">
                             <div className="flex flex-col items-end">
-                              <span className="font-mono font-bold">{g.memberCount?.toLocaleString() || 0}</span>
+                              <span className="font-mono font-bold">
+                                {(((g.maleMembers || 0) + (g.femaleMembers || 0) > 0)
+                                  ? ((g.maleMembers || 0) + (g.femaleMembers || 0))
+                                  : (g.memberCount || 0)
+                                ).toLocaleString()}
+                              </span>
                               {(g.maleMembers > 0 || g.femaleMembers > 0) && (
                                 <p className="text-[9px] font-medium mt-0.5">
                                   <span className="text-blue-500">M: {g.maleMembers}</span>

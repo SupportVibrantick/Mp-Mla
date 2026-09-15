@@ -215,17 +215,17 @@ export default function LeaderDetailPage() {
         {/* Header/Cover Card */}
         <Card className="border border-border/50 bg-card rounded-2xl overflow-hidden shadow-sm">
           <div className="h-32 bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950/90 relative" />
-          <div className="px-6 pb-6 relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-10">
+          <div className="px-6 pb-6 pt-2 relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
-              <div className="relative">
+              <div className="relative -mt-12 shrink-0">
                 {l.photoUrl ? (
                   <img
                     src={l.photoUrl}
                     alt={l.name}
-                    className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-md"
+                    className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-md bg-card"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-4 border-card shadow-md">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-4 border-card shadow-md bg-card">
                     {l.name
                       .split(" ")
                       .map((n: string) => n[0])
@@ -239,7 +239,7 @@ export default function LeaderDetailPage() {
                   </span>
                 )}
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 pb-1">
                 <h1 className="text-2xl font-extrabold tracking-tight text-foreground flex items-center justify-center sm:justify-start gap-2">
                   {l.name}
                 </h1>
@@ -250,7 +250,7 @@ export default function LeaderDetailPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2 justify-center sm:justify-end">
+            <div className="flex gap-2 justify-center sm:justify-end pb-1">
               <Link to="/leaders">
                 <Button variant="outline" size="sm" className="gap-1 border-border/60 text-xs font-bold">
                   <ArrowLeft className="h-3.5 w-3.5" /> Back

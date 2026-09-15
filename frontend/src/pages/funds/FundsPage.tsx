@@ -14,6 +14,7 @@ import {
   TXN_TYPES,
   getFundTypeInfo,
   formatCurrency,
+  formatChartCurrency,
 } from "@/hooks/useFunds";
 import { useProjects } from "@/hooks/useProjects";
 import { PermissionGate } from "@/components/auth/PermissionGate";
@@ -350,8 +351,8 @@ export default function FundsPage() {
                             <YAxis
                               fontSize={10}
                               tickLine={false}
-                              width={45}
-                              tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`}
+                              width={55}
+                              tickFormatter={formatChartCurrency}
                             />
                             <Tooltip
                               formatter={(v: number) => formatCurrency(v)}
