@@ -201,7 +201,7 @@ export function InteractiveMeshBackground() {
     <canvas
       ref={canvasRef}
       id="threejs-auth-background"
-      className="absolute inset-0 w-full h-full pointer-events-none z-0 block bg-[#f3f7fa] dark:bg-[#030712] transition-colors duration-300"
+      className="fixed inset-0 w-full h-full pointer-events-none z-0 block bg-[#f3f7fa] dark:bg-[#030712] transition-colors duration-300"
     />
   );
 }

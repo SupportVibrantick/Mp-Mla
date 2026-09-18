@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { JanataSessionType, JanataSessionStatus, JanataTokenStatus } from "@prisma/client";
+import {
+  JanataSessionType,
+  JanataSessionStatus,
+  JanataTokenStatus,
+} from "@prisma/client";
 
 function isEndTimeAfterStartTime(startTime: string, endTime: string): boolean {
   const start = parseInt(startTime.replace(":", ""), 10);
@@ -10,22 +14,31 @@ function isEndTimeAfterStartTime(startTime: string, endTime: string): boolean {
 export const sessionBaseSchema = z.object({
   title: z.string().min(1, "Title is required"),
   type: z.nativeEnum(JanataSessionType),
-  date: z.string().or(z.date()).transform((val) => new Date(val)),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Start time must be in HH:MM format"),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "End time must be in HH:MM format"),
+  date: z
+    .string()
+    .or(z.date())
+    .transform((val) => new Date(val)),
+  startTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Start time must be in HH:MM format"),
+  endTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "End time must be in HH:MM format"),
   location: z.string().min(1, "Location is required"),
   description: z.string().optional().nullable(),
 });
 
-export const createSessionSchema = sessionBaseSchema.superRefine((data, ctx) => {
-  if (!isEndTimeAfterStartTime(data.startTime, data.endTime)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "End time must be after start time",
-      path: ["endTime"],
-    });
-  }
-});
+export const createSessionSchema = sessionBaseSchema.superRefine(
+  (data, ctx) => {
+    if (!isEndTimeAfterStartTime(data.startTime, data.endTime)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End time must be after start time",
+        path: ["endTime"],
+      });
+    }
+  },
+);
 
 export const updateSessionSchema = sessionBaseSchema.partial();
 
