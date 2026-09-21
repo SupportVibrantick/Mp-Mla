@@ -423,6 +423,18 @@ export const voterListApi = {
   get: (id: string) => api.get(`/admin/voter-list/${id}`),
   create: (data: any) => api.post("/admin/voter-list", data),
   update: (id: string, data: any) => api.put(`/admin/voter-list/${id}`, data),
+  toggleOurVoter: (id: string, isOurVoter?: boolean) =>
+    api.patch(`/admin/voter-list/${id}/toggle-our-voter`, { isOurVoter }),
+  updateLeaning: (
+    id: string,
+    data: { voterLeaning?: string; voterCadreNotes?: string; isOurVoter?: boolean },
+  ) => api.patch(`/admin/voter-list/${id}/leaning`, data),
+  bulkTag: (data: {
+    ids: string[];
+    isOurVoter?: boolean;
+    voterLeaning?: string;
+    voterCadreNotes?: string;
+  }) => api.post("/admin/voter-list/bulk-tag", data),
   resetPassword: (id: string, data?: { newPassword?: string }) =>
     api.post(`/admin/voter-list/${id}/reset-password`, data),
   delete: (id: string) => api.delete(`/admin/voter-list/${id}`),

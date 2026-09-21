@@ -3,6 +3,14 @@ import { z } from "zod";
 // ── Valid enum values ──
 const VOTER_GENDERS = ["MALE", "FEMALE", "TRANSGENDER"] as const;
 const RELATION_TYPES = ["F", "H", "M"] as const; // Father, Husband, Mother
+export const VOTER_LEANINGS = [
+  "OUR_VOTER",
+  "SUPPORTER",
+  "NEUTRAL",
+  "OPPOSITION",
+  "INFLUENCER",
+  "UNKNOWN",
+] as const;
 
 // ══════════════════════════════════════════════════════════
 // CREATE VOTER SCHEMA (Single)
@@ -31,6 +39,11 @@ export const createVoterSchema = z.object({
   photoUrl: z.string().optional().nullable(),
 
   isDisabled: z.boolean().default(false),
+
+  // Political Leaning & Canvassing Tracking
+  isOurVoter: z.boolean().optional().default(false),
+  voterLeaning: z.enum(VOTER_LEANINGS).optional().default("UNKNOWN"),
+  voterCadreNotes: z.string().max(1000).optional().nullable(),
 });
 
 export type CreateVoterInput = z.infer<typeof createVoterSchema>;
@@ -67,6 +80,9 @@ export const bulkVoterRowSchema = z.object({
   bloodGroup: z.string().optional().nullable(),
   isDisabled: z.union([z.string(), z.boolean()]).optional().nullable(),
   wardAreaName: z.string().optional().nullable(),
+  isOurVoter: z.union([z.string(), z.boolean()]).optional().nullable(),
+  voterLeaning: z.string().optional().nullable(),
+  voterCadreNotes: z.string().optional().nullable(),
 });
 
 export type BulkVoterRow = z.infer<typeof bulkVoterRowSchema>;
@@ -86,10 +102,34 @@ export const voterListQuerySchema = z.object({
   gender: z.enum(VOTER_GENDERS).optional(),
   ageMin: z.coerce.number().int().optional(),
   ageMax: z.coerce.number().int().optional(),
+  isOurVoter: z.union([z.string(), z.boolean()]).optional(),
+  voterLeaning: z.string().optional(),
   sortBy: z
-    .enum(["name", "age", "voterIdNumber", "slNo", "createdAt"])
+    .enum(["name", "age", "voterIdNumber", "slNo", "createdAt", "isOurVoter", "voterLeaning"])
     .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
 export type VoterListQuery = z.infer<typeof voterListQuerySchema>;
+
+// ══════════════════════════════════════════════════════════
+// QUICK ACTIONS SCHEMAS
+// ══════════════════════════════════════════════════════════
+
+export const toggleOurVoterSchema = z.object({
+  isOurVoter: z.boolean().optional(),
+});
+
+export const updateVoterLeaningSchema = z.object({
+  voterLeaning: z.enum(VOTER_LEANINGS).optional(),
+  voterCadreNotes: z.string().max(1000).optional().nullable(),
+  isOurVoter: z.boolean().optional(),
+});
+
+export const bulkTagVotersSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, "At least one voter ID required"),
+  isOurVoter: z.boolean().optional(),
+  voterLeaning: z.enum(VOTER_LEANINGS).optional(),
+  voterCadreNotes: z.string().max(1000).optional().nullable(),
+});
+

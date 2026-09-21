@@ -5,11 +5,20 @@ import { createUploader, getUploadPath } from "../../../lib/upload.js";
 import {
   createVoterSchema,
   updateVoterSchema,
+  toggleOurVoterSchema,
+  updateVoterLeaningSchema,
+  bulkTagVotersSchema,
 } from "../../../schemas/admin/voterList/index.js";
 
 import { listVoters, getVoter, getVoterStats } from "./read.js";
 import { createVoter } from "./create.js";
-import { updateVoter, resetVoterPassword } from "./update.js";
+import {
+  updateVoter,
+  resetVoterPassword,
+  toggleOurVoter,
+  updateVoterLeaning,
+  bulkTagVoters,
+} from "./update.js";
 import { deleteVoter, bulkDeleteVoters } from "./delete.js";
 import { bulkUploadVoters, listBulkJobs, getBulkJob } from "./bulk.js";
 import { exportVoters, downloadSampleExcel } from "./export.js";
@@ -86,6 +95,13 @@ router.post(
 );
 
 router.post(
+  "/bulk-tag",
+  requirePermission("voter_list", "update"),
+  validate(bulkTagVotersSchema),
+  bulkTagVoters,
+);
+
+router.post(
   "/bulk-delete",
   requirePermission("voter_list", "delete"),
   bulkDeleteVoters,
@@ -129,6 +145,20 @@ router.put(
   requirePermission("voter_list", "update"),
   validate(updateVoterSchema),
   updateVoter,
+);
+
+router.patch(
+  "/:id/toggle-our-voter",
+  requirePermission("voter_list", "update"),
+  validate(toggleOurVoterSchema),
+  toggleOurVoter,
+);
+
+router.patch(
+  "/:id/leaning",
+  requirePermission("voter_list", "update"),
+  validate(updateVoterLeaningSchema),
+  updateVoterLeaning,
 );
 
 router.post(

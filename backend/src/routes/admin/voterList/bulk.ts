@@ -9,7 +9,7 @@ import {
   sendAdminNotification,
   buildActivityEmailHtml,
 } from "../../../lib/email.js";
-import { VoterGender, Prisma } from "@prisma/client";
+import { VoterGender, VoterLeaning, Prisma } from "@prisma/client";
 import logger from "../../../utils/logger.js";
 import { syncVoterDemographics } from "./demographicsSync.js";
 import { assertCanCreateVoters } from "../../../lib/quota.js";
@@ -21,6 +21,14 @@ import { assertCanCreateVoters } from "../../../lib/quota.js";
 const BATCH_SIZE = 5000; // Records per createMany batch
 const VALID_GENDERS = ["MALE", "FEMALE", "TRANSGENDER"];
 const VALID_RELATION_TYPES = ["F", "H", "M"];
+const VALID_LEANINGS = [
+  "OUR_VOTER",
+  "SUPPORTER",
+  "NEUTRAL",
+  "OPPOSITION",
+  "INFLUENCER",
+  "UNKNOWN",
+];
 
 // ══════════════════════════════════════════════════════════
 // HELPERS
@@ -63,6 +71,17 @@ function normalizeRelationType(val: any): string | null {
   if (s === "HUSBAND" || s === "H") return "H";
   if (s === "MOTHER" || s === "M") return "M";
   return VALID_RELATION_TYPES.includes(s) ? s : null;
+}
+
+function normalizeVoterLeaning(val: any): VoterLeaning {
+  if (!val) return "UNKNOWN";
+  const s = String(val).trim().toUpperCase().replace(/[\s-]+/g, "_");
+  if (["OUR_VOTER", "OURVOTER", "OUR", "HAMARA"].includes(s)) return "OUR_VOTER";
+  if (["SUPPORTER", "FAVOR", "FAVOUR"].includes(s)) return "SUPPORTER";
+  if (["NEUTRAL", "UNDECIDED"].includes(s)) return "NEUTRAL";
+  if (["OPPOSITION", "AGAINST"].includes(s)) return "OPPOSITION";
+  if (["INFLUENCER", "KEY_INFLUENCER", "LEADER"].includes(s)) return "INFLUENCER";
+  return VALID_LEANINGS.includes(s) ? (s as VoterLeaning) : "UNKNOWN";
 }
 
 function getRowValue(row: any, ...aliases: string[]): any {
@@ -126,6 +145,9 @@ interface ValidatedVoter {
   phone: string | null;
   bloodGroup: string | null;
   isDisabled: boolean;
+  isOurVoter: boolean;
+  voterLeaning: VoterLeaning;
+  voterCadreNotes: string | null;
   uploadBatchId: string;
   applicationNumber: string;
   forcePasswordChange: boolean;
@@ -378,6 +400,16 @@ export async function bulkUploadVoters(
         isDisabled: normalizeBoolean(
           getRowValue(row, "isDisabled", "disabled", "is_disabled"),
         ),
+        isOurVoter: normalizeBoolean(
+          getRowValue(row, "isOurVoter", "ourVoter", "is_our_voter", "our_voter", "supporter"),
+        ) || ["OUR_VOTER", "SUPPORTER"].includes(normalizeVoterLeaning(getRowValue(row, "voterLeaning", "leaning", "politicalLeaning", "political_leaning"))),
+        voterLeaning: normalizeVoterLeaning(
+          getRowValue(row, "voterLeaning", "leaning", "politicalLeaning", "political_leaning"),
+        ),
+        voterCadreNotes:
+          safeString(
+            getRowValue(row, "voterCadreNotes", "cadreNotes", "cadre_notes", "notes", "remarks"),
+          ) || null,
         uploadBatchId: job.id,
       };
 

@@ -71,7 +71,65 @@ import {
   Loader2,
   X,
   Camera,
+  Star,
+  StarOff,
+  Flame,
+  Tag,
+  Sparkles,
+  MessageSquare,
 } from "lucide-react";
+
+// ══════════════════════════════════════════════════════════
+// POLITICAL LEANING CONFIGURATION
+// ══════════════════════════════════════════════════════════
+
+export const LEANING_CONFIG: Record<
+  string,
+  { label: string; hindi: string; badgeClass: string; starColor: string; description: string }
+> = {
+  OUR_VOTER: {
+    label: "Our Voter",
+    hindi: "हमारा समर्थक",
+    badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 font-semibold",
+    starColor: "text-amber-500 fill-amber-400",
+    description: "Committed loyal supporter / हमारा पक्का वोटर",
+  },
+  SUPPORTER: {
+    label: "Supporter",
+    hindi: "अनुकूल समर्थक",
+    badgeClass: "bg-teal-100 text-teal-800 dark:bg-teal-950/70 dark:text-teal-300 border-teal-300 dark:border-teal-800 font-semibold",
+    starColor: "text-teal-500 fill-teal-400",
+    description: "Favorable constituent / हमारे पक्ष में झुकाव",
+  },
+  INFLUENCER: {
+    label: "Key Influencer",
+    hindi: "प्रभावशाली व्यक्ति",
+    badgeClass: "bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border-purple-300 dark:border-purple-800 font-bold",
+    starColor: "text-purple-500 fill-purple-400",
+    description: "Community opinion leader / प्रभावशाली व्यक्ति",
+  },
+  NEUTRAL: {
+    label: "Neutral / Swing",
+    hindi: "तटस्थ / अनिश्चित",
+    badgeClass: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700",
+    starColor: "text-slate-400",
+    description: "Undecided or swing voter / तटस्थ मतदाता",
+  },
+  OPPOSITION: {
+    label: "Opposition",
+    hindi: "विपक्ष समर्थक",
+    badgeClass: "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-300 dark:border-rose-800",
+    starColor: "text-rose-400",
+    description: "Leaning towards opposition / विपक्षी समर्थक",
+  },
+  UNKNOWN: {
+    label: "Unsurveyed",
+    hindi: "असर्वेक्षित / अज्ञात",
+    badgeClass: "bg-slate-50 text-slate-500 dark:bg-slate-900/50 dark:text-slate-400 border-slate-200 dark:border-slate-800",
+    starColor: "text-slate-300 dark:text-slate-600",
+    description: "Not yet surveyed by field cadre / अभी तक सर्वेक्षण नहीं हुआ",
+  },
+};
 
 // ══════════════════════════════════════════════════════════
 // MAIN VOTER LIST PAGE
@@ -85,6 +143,7 @@ export default function VoterListPage() {
   const [search, setSearch] = useState("");
   const [selectedWard, setSelectedWard] = useState<string>("ALL");
   const [selectedGender, setSelectedGender] = useState<string>("ALL");
+  const [selectedLeaning, setSelectedLeaning] = useState<string>("ALL");
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -94,6 +153,20 @@ export default function VoterListPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+
+  // Political Leaning & Quick Tagging Modals
+  const [isLeaningModalOpen, setIsLeaningModalOpen] = useState(false);
+  const [selectedLeaningVoter, setSelectedLeaningVoter] = useState<any>(null);
+  const [leaningModalForm, setLeaningModalForm] = useState({
+    voterLeaning: "OUR_VOTER",
+    isOurVoter: true,
+    voterCadreNotes: "",
+  });
+
+  const [isBulkTagOpen, setIsBulkTagOpen] = useState(false);
+  const [bulkTagLeaning, setBulkTagLeaning] = useState("OUR_VOTER");
+  const [bulkTagIsOurVoter, setBulkTagIsOurVoter] = useState(true);
+  const [bulkTagNotes, setBulkTagNotes] = useState("");
 
   // Reset Password Modal State
   const [resetPasswordVoter, setResetPasswordVoter] = useState<any>(null);
@@ -124,6 +197,9 @@ export default function VoterListPage() {
     bloodGroup: "",
     photoUrl: "",
     isDisabled: false,
+    isOurVoter: false,
+    voterLeaning: "UNKNOWN",
+    voterCadreNotes: "",
   });
 
   // Photo Upload States
@@ -309,8 +385,13 @@ export default function VoterListPage() {
     if (search.trim()) p.search = search.trim();
     if (selectedWard !== "ALL") p.wardId = selectedWard;
     if (selectedGender !== "ALL") p.gender = selectedGender;
+    if (selectedLeaning === "OUR_VOTER_ONLY") {
+      p.isOurVoter = true;
+    } else if (selectedLeaning !== "ALL") {
+      p.voterLeaning = selectedLeaning;
+    }
     return p;
-  }, [page, search, selectedWard, selectedGender]);
+  }, [page, search, selectedWard, selectedGender, selectedLeaning]);
 
   const {
     data: votersRes,
@@ -338,12 +419,136 @@ export default function VoterListPage() {
   };
   const stats = statsRes?.data?.data || {
     totalVoters: 0,
+    ourVotersCount: 0,
     disabledCount: 0,
     gender: { MALE: 0, FEMALE: 0, TRANSGENDER: 0 },
     ageBands: {},
+    leaningCounts: {},
   };
 
-  // ─── Mutations ───────────────────────────────────────────
+  // ─── Leaning & Quick Action Mutations ──────────────────────
+  const toggleOurVoterMutation = useMutation({
+    mutationFn: ({ id, isOurVoter }: { id: string; isOurVoter?: boolean }) =>
+      voterListApi.toggleOurVoter(id, isOurVoter),
+    onMutate: async ({ id, isOurVoter }) => {
+      await queryClient.cancelQueries({ queryKey: ["voters"] });
+      const prevData = queryClient.getQueryData(["voters", queryParams]);
+      queryClient.setQueryData(["voters", queryParams], (old: any) => {
+        if (!old?.data?.data?.voters) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            data: {
+              ...old.data.data,
+              voters: old.data.data.voters.map((v: any) => {
+                if (v.id === id) {
+                  const nextVal =
+                    typeof isOurVoter === "boolean" ? isOurVoter : !v.isOurVoter;
+                  return {
+                    ...v,
+                    isOurVoter: nextVal,
+                    voterLeaning: nextVal
+                      ? v.voterLeaning === "UNKNOWN" || v.voterLeaning === "OPPOSITION"
+                        ? "OUR_VOTER"
+                        : v.voterLeaning
+                      : v.voterLeaning === "OUR_VOTER"
+                        ? "UNKNOWN"
+                        : v.voterLeaning,
+                  };
+                }
+                return v;
+              }),
+            },
+          },
+        };
+      });
+      return { prevData };
+    },
+    onError: (_err, _vars, context: any) => {
+      if (context?.prevData) {
+        queryClient.setQueryData(["voters", queryParams], context.prevData);
+      }
+      toast({
+        title: "Update Failed",
+        description: "Could not update voter status",
+        variant: "destructive",
+      });
+    },
+    onSuccess: (res: any) => {
+      toast({
+        title: "Status Updated",
+        description: res?.data?.message || "Voter allegiance updated",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+    },
+  });
+
+  const updateLeaningMutation = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        voterLeaning?: string;
+        voterCadreNotes?: string;
+        isOurVoter?: boolean;
+      };
+    }) => voterListApi.updateLeaning(id, data),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+      setIsLeaningModalOpen(false);
+      setSelectedLeaningVoter(null);
+      toast({
+        title: "Political Leaning Updated",
+        description:
+          res?.data?.message || "Voter political allegiance and notes saved",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description:
+          err?.response?.data?.message || "Failed to update political leaning",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkTagMutation = useMutation({
+    mutationFn: (data: {
+      ids: string[];
+      isOurVoter?: boolean;
+      voterLeaning?: string;
+      voterCadreNotes?: string;
+    }) => voterListApi.bulkTag(data),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ["voters"] });
+      queryClient.invalidateQueries({ queryKey: ["voter-stats"] });
+      setSelectedIds([]);
+      setIsBulkTagOpen(false);
+      toast({
+        title: "Bulk Tagging Successful",
+        description:
+          res?.data?.message || "Selected voters tagged successfully",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Bulk Tagging Failed",
+        description:
+          err?.response?.data?.message || "Failed to tag selected voters",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // ─── CRUD Mutations ───────────────────────────────────────
   const createMutation = useMutation({
     mutationFn: (data: any) => voterListApi.create(data),
     onSuccess: () => {
@@ -458,8 +663,9 @@ export default function VoterListPage() {
     },
     onError: (err: any) => {
       toast({
-        title: "Error",
-        description: err?.response?.data?.message || "Failed to bulk delete voters",
+        title: "Bulk Delete Failed",
+        description:
+          err?.response?.data?.message || "Failed to delete selected voters",
         variant: "destructive",
       });
     },
@@ -512,6 +718,9 @@ export default function VoterListPage() {
       bloodGroup: "",
       photoUrl: "",
       isDisabled: false,
+      isOurVoter: false,
+      voterLeaning: "UNKNOWN",
+      voterCadreNotes: "",
     });
   }
 
@@ -542,6 +751,9 @@ export default function VoterListPage() {
       bloodGroup: voter.bloodGroup || "",
       photoUrl: voter.photoUrl || "",
       isDisabled: voter.isDisabled || false,
+      isOurVoter: voter.isOurVoter ?? false,
+      voterLeaning: voter.voterLeaning || "UNKNOWN",
+      voterCadreNotes: voter.voterCadreNotes || "",
     });
     setIsEditOpen(true);
   }
@@ -759,15 +971,31 @@ export default function VoterListPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             {selectedIds.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setIsBulkDeleteOpen(true)}
-                className="gap-1.5 animate-in fade-in"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Delete Selected ({selectedIds.length})</span>
-              </Button>
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    setBulkTagLeaning("OUR_VOTER");
+                    setBulkTagIsOurVoter(true);
+                    setBulkTagNotes("");
+                    setIsBulkTagOpen(true);
+                  }}
+                  className="gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 animate-in fade-in shadow-xs"
+                >
+                  <Star className="h-4 w-4 fill-white" />
+                  <span>Mark / Tag Selected ({selectedIds.length})</span>
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                  className="gap-1.5 animate-in fade-in"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete Selected ({selectedIds.length})</span>
+                </Button>
+              </>
             )}
 
             <Button
@@ -814,8 +1042,8 @@ export default function VoterListPage() {
         </div>
 
         {/* ─── Metric Cards ─────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-xs">
             <div className="flex justify-between items-center">
               <span className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">
                 Total Voters
@@ -826,15 +1054,37 @@ export default function VoterListPage() {
             </div>
             <div className="mt-3">
               <h3 className="text-2xl font-bold text-foreground">
-                {stats.totalVoters.toLocaleString()}
+                {(stats.totalVoters || 0).toLocaleString()}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Constituency Total
+                Constituency Roll
               </p>
             </div>
           </Card>
 
-          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-sm">
+          <Card className="border border-amber-300/80 dark:border-amber-800/60 bg-gradient-to-br from-amber-50/80 via-amber-50/30 to-transparent dark:from-amber-950/40 dark:via-transparent dark:to-transparent rounded-2xl p-4 shadow-xs">
+            <div className="flex justify-between items-center">
+              <span className="text-xs uppercase font-semibold text-amber-800 dark:text-amber-300 tracking-wider flex items-center gap-1">
+                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                Our Voters (समर्थक)
+              </span>
+              <div className="p-2 bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl">
+                <Sparkles className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <h3 className="text-2xl font-bold text-amber-900 dark:text-amber-200">
+                {(stats.ourVotersCount || 0).toLocaleString()}
+              </h3>
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mt-0.5">
+                {stats.totalVoters > 0
+                  ? `${(((stats.ourVotersCount || 0) / stats.totalVoters) * 100).toFixed(1)}% of total electorate`
+                  : "Tagged loyal voters"}
+              </p>
+            </div>
+          </Card>
+
+          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-xs">
             <div className="flex justify-between items-center">
               <span className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">
                 Male Voters
@@ -845,17 +1095,17 @@ export default function VoterListPage() {
             </div>
             <div className="mt-3">
               <h3 className="text-2xl font-bold text-foreground">
-                {(stats.gender.MALE || 0).toLocaleString()}
+                {(stats.gender?.MALE || 0).toLocaleString()}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {stats.totalVoters > 0
-                  ? `${(((stats.gender.MALE || 0) / stats.totalVoters) * 100).toFixed(1)}% of total`
+                  ? `${(((stats.gender?.MALE || 0) / stats.totalVoters) * 100).toFixed(1)}% of total`
                   : "Male Voters"}
               </p>
             </div>
           </Card>
 
-          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-sm">
+          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-xs">
             <div className="flex justify-between items-center">
               <span className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">
                 Female Voters
@@ -866,22 +1116,22 @@ export default function VoterListPage() {
             </div>
             <div className="mt-3">
               <h3 className="text-2xl font-bold text-foreground">
-                {(stats.gender.FEMALE || 0).toLocaleString()}
+                {(stats.gender?.FEMALE || 0).toLocaleString()}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {stats.totalVoters > 0
-                  ? `${(((stats.gender.FEMALE || 0) / stats.totalVoters) * 100).toFixed(1)}% of total`
+                  ? `${(((stats.gender?.FEMALE || 0) / stats.totalVoters) * 100).toFixed(1)}% of total`
                   : "Female Voters"}
               </p>
             </div>
           </Card>
 
-          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-sm">
+          <Card className="border border-border/50 bg-card rounded-2xl p-4 shadow-xs">
             <div className="flex justify-between items-center">
               <span className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">
-                Disabled Voters
+                Assistance Required
               </span>
-              <div className="p-2 bg-amber-500/10 text-amber-600 rounded-xl">
+              <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
                 <ShieldCheck className="h-5 w-5" />
               </div>
             </div>
@@ -890,7 +1140,7 @@ export default function VoterListPage() {
                 {(stats.disabledCount || 0).toLocaleString()}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Special assistance voters
+                PwD / Elderly assistance
               </p>
             </div>
           </Card>
@@ -919,7 +1169,7 @@ export default function VoterListPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-full md:w-[220px]">
+              <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="All Wards" />
               </SelectTrigger>
               <SelectContent>
@@ -939,7 +1189,7 @@ export default function VoterListPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-full md:w-[160px]">
+              <SelectTrigger className="w-full md:w-[150px]">
                 <SelectValue placeholder="All Genders" />
               </SelectTrigger>
               <SelectContent>
@@ -947,6 +1197,28 @@ export default function VoterListPage() {
                 <SelectItem value="MALE">Male</SelectItem>
                 <SelectItem value="FEMALE">Female</SelectItem>
                 <SelectItem value="TRANSGENDER">Transgender</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={selectedLeaning}
+              onValueChange={(val) => {
+                setSelectedLeaning(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full md:w-[210px] bg-amber-50/40 dark:bg-amber-950/20 border-amber-200/70 dark:border-amber-800/60 font-medium">
+                <SelectValue placeholder="All Political Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Political Status</SelectItem>
+                <SelectItem value="OUR_VOTER_ONLY">⭐ Our Voters (हमारा वोटर)</SelectItem>
+                <SelectItem value="OUR_VOTER">⭐ Loyal Our Voter</SelectItem>
+                <SelectItem value="SUPPORTER">🤝 Favorable Supporter</SelectItem>
+                <SelectItem value="INFLUENCER">👑 Key Influencer</SelectItem>
+                <SelectItem value="NEUTRAL">⚖️ Neutral / Swing</SelectItem>
+                <SelectItem value="OPPOSITION">⚠️ Opposition Leaning</SelectItem>
+                <SelectItem value="UNKNOWN">❓ Unsurveyed / Unknown</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -974,13 +1246,17 @@ export default function VoterListPage() {
                       className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                     />
                   </TableHead>
-                  <TableHead className="w-[140px]">Application No.</TableHead>
-                  <TableHead className="w-[130px]">EPIC ID</TableHead>
+                  <TableHead className="w-[50px] text-center" title="Quick Mark Our Voter">
+                    ⭐
+                  </TableHead>
+                  <TableHead className="w-[140px]">Allegiance / Status</TableHead>
+                  <TableHead className="w-[130px]">Application No.</TableHead>
+                  <TableHead className="w-[120px]">EPIC ID</TableHead>
                   <TableHead>Voter Name</TableHead>
                   <TableHead>Relative Name</TableHead>
-                  <TableHead className="w-[90px]">Gender</TableHead>
-                  <TableHead className="w-[70px]">Age</TableHead>
-                  <TableHead className="w-[140px]">Verification Doc</TableHead>
+                  <TableHead className="w-[85px]">Gender</TableHead>
+                  <TableHead className="w-[65px]">Age</TableHead>
+                  <TableHead className="w-[130px]">Verification</TableHead>
                   <TableHead>Ward & Locality</TableHead>
                   <TableHead className="text-right w-[140px]">
                     Actions
@@ -992,36 +1268,23 @@ export default function VoterListPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-32" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-28" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-16" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-10" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-28" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-16 ml-auto" />
-                      </TableCell>
+                      <TableCell><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-10" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
                     </TableRow>
                   ))
                 ) : voters.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={10}
+                      colSpan={12}
                       className="text-center py-12 text-muted-foreground"
                     >
                       <Users className="h-10 w-10 mx-auto mb-2 opacity-40" />
@@ -1049,6 +1312,70 @@ export default function VoterListPage() {
                           className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                         />
                       </TableCell>
+
+                      {/* 1-Click Star Toggle */}
+                      <TableCell className="text-center p-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleOurVoterMutation.mutate({ id: v.id })}
+                          title={
+                            v.isOurVoter
+                              ? "Click to unmark Our Voter (हमारा समर्थक हटाएँ)"
+                              : "Click to mark as Our Voter (हमारा समर्थक बनाएं)"
+                          }
+                          className="p-1.5 rounded-lg hover:bg-amber-100/60 dark:hover:bg-amber-950/60 transition-transform active:scale-90 inline-flex items-center justify-center cursor-pointer"
+                        >
+                          {v.isOurVoter ? (
+                            <Star className="h-5 w-5 fill-amber-400 text-amber-500 drop-shadow-xs" />
+                          ) : (
+                            <Star className="h-5 w-5 text-slate-300 dark:text-slate-600 hover:text-amber-400" />
+                          )}
+                        </button>
+                      </TableCell>
+
+                      {/* Leaning & Cadre Notes Badge */}
+                      <TableCell>
+                        <div className="flex flex-col gap-1 items-start">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedLeaningVoter(v);
+                              setLeaningModalForm({
+                                voterLeaning:
+                                  v.voterLeaning ||
+                                  (v.isOurVoter ? "OUR_VOTER" : "UNKNOWN"),
+                                isOurVoter: !!v.isOurVoter,
+                                voterCadreNotes: v.voterCadreNotes || "",
+                              });
+                              setIsLeaningModalOpen(true);
+                            }}
+                            title="Click to edit political affiliation and field notes"
+                            className="cursor-pointer text-left"
+                          >
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-semibold px-2 py-0.5 cursor-pointer hover:opacity-80 transition-opacity ${
+                                LEANING_CONFIG[v.voterLeaning]?.badgeClass ||
+                                (v.isOurVoter
+                                  ? LEANING_CONFIG.OUR_VOTER.badgeClass
+                                  : LEANING_CONFIG.UNKNOWN.badgeClass)
+                              }`}
+                            >
+                              {LEANING_CONFIG[v.voterLeaning]?.label ||
+                                (v.isOurVoter ? "Our Voter" : "Unsurveyed")}
+                            </Badge>
+                          </button>
+                          {v.voterCadreNotes && (
+                            <span
+                              className="text-[10px] text-muted-foreground line-clamp-1 italic max-w-[130px]"
+                              title={`Cadre Note: ${v.voterCadreNotes}`}
+                            >
+                              💬 {v.voterCadreNotes}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
                       <TableCell className="font-mono text-xs">
                         {v.applicationNumber ? (
                           <Badge
@@ -1552,7 +1879,7 @@ export default function VoterListPage() {
               />
             </div>
 
-            <div className="flex items-center space-x-2 pt-4">
+            <div className="flex items-center space-x-2 pt-2">
               <input
                 type="checkbox"
                 id="isDisabled"
@@ -1568,6 +1895,88 @@ export default function VoterListPage() {
               >
                 Disabled / Special Assistance Voter
               </Label>
+            </div>
+
+            {/* Political Leaning & Cadre Notes Section */}
+            <div className="md:col-span-2 p-3.5 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-amber-500 fill-amber-400" />
+                  <span className="text-xs font-bold text-amber-950 dark:text-amber-200">
+                    Political Leaning & Field Tracking (राजनीतिक झुकाव)
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="formIsOurVoter"
+                    checked={form.isOurVoter}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        isOurVoter: e.target.checked,
+                        voterLeaning: e.target.checked
+                          ? p.voterLeaning === "UNKNOWN"
+                            ? "OUR_VOTER"
+                            : p.voterLeaning
+                          : p.voterLeaning === "OUR_VOTER"
+                            ? "UNKNOWN"
+                            : p.voterLeaning,
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                  />
+                  <Label
+                    htmlFor="formIsOurVoter"
+                    className="text-xs font-bold text-amber-800 dark:text-amber-300 cursor-pointer"
+                  >
+                    ⭐ Mark as Our Voter (हमारा समर्थक)
+                  </Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Affiliation Leaning</Label>
+                  <Select
+                    value={form.voterLeaning}
+                    onValueChange={(val) =>
+                      setForm((p) => ({
+                        ...p,
+                        voterLeaning: val,
+                        isOurVoter:
+                          val === "OUR_VOTER" || val === "SUPPORTER" || val === "INFLUENCER"
+                            ? true
+                            : p.isOurVoter,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OUR_VOTER">⭐ Our Loyal Voter (हमारा पक्का वोटर)</SelectItem>
+                      <SelectItem value="SUPPORTER">🤝 Favorable Supporter (अनुकूल समर्थक)</SelectItem>
+                      <SelectItem value="INFLUENCER">👑 Key Influencer (प्रभावशाली व्यक्ति)</SelectItem>
+                      <SelectItem value="NEUTRAL">⚖️ Neutral / Swing (तटस्थ / अनिश्चित)</SelectItem>
+                      <SelectItem value="OPPOSITION">⚠️ Opposition Leaning (विपक्षी)</SelectItem>
+                      <SelectItem value="UNKNOWN">❓ Unsurveyed (असर्वेक्षित)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Field Cadre Notes (टिप्पणी / बूथ कार्यकर्ता नोट्स)</Label>
+                  <Input
+                    placeholder="e.g. Committed vote, requested street light fix..."
+                    value={form.voterCadreNotes}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, voterCadreNotes: e.target.value }))
+                    }
+                    className="bg-background"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1590,6 +1999,261 @@ export default function VoterListPage() {
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               )}
               {isEditOpen ? "Save Changes" : "Create Voter"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Quick Update Voter Leaning Dialog ────────────────── */}
+      <Dialog
+        open={isLeaningModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsLeaningModalOpen(false);
+            setSelectedLeaningVoter(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
+              <span>Update Political Leaning</span>
+            </DialogTitle>
+            <DialogDescription>
+              {selectedLeaningVoter && (
+                <span>
+                  Update political tracking for{" "}
+                  <strong>{selectedLeaningVoter.name}</strong> (
+                  {selectedLeaningVoter.voterIdNumber})
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-amber-500 fill-amber-400" />
+                <div>
+                  <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                    Our Voter (हमारा समर्थक)
+                  </div>
+                  <div className="text-[11px] text-amber-700/80 dark:text-amber-400">
+                    Priority loyal voter tracking
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                id="modalIsOurVoter"
+                checked={leaningModalForm.isOurVoter}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setLeaningModalForm((p) => ({
+                    ...p,
+                    isOurVoter: checked,
+                    voterLeaning: checked
+                      ? p.voterLeaning === "UNKNOWN" || p.voterLeaning === "OPPOSITION"
+                        ? "OUR_VOTER"
+                        : p.voterLeaning
+                      : p.voterLeaning === "OUR_VOTER"
+                        ? "UNKNOWN"
+                        : p.voterLeaning,
+                  }));
+                }}
+                className="h-5 w-5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Political Leaning / Status</Label>
+              <Select
+                value={leaningModalForm.voterLeaning}
+                onValueChange={(val) =>
+                  setLeaningModalForm((p) => ({
+                    ...p,
+                    voterLeaning: val,
+                    isOurVoter:
+                      val === "OUR_VOTER" || val === "SUPPORTER" || val === "INFLUENCER"
+                        ? true
+                        : val === "OPPOSITION"
+                          ? false
+                          : p.isOurVoter,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="OUR_VOTER">⭐ Our Loyal Voter (हमारा पक्का वोटर)</SelectItem>
+                  <SelectItem value="SUPPORTER">🤝 Favorable Supporter (अनुकूल समर्थक)</SelectItem>
+                  <SelectItem value="INFLUENCER">👑 Key Influencer (प्रभावशाली व्यक्ति)</SelectItem>
+                  <SelectItem value="NEUTRAL">⚖️ Neutral / Swing (तटस्थ / अनिश्चित)</SelectItem>
+                  <SelectItem value="OPPOSITION">⚠️ Opposition Leaning (विपक्षी)</SelectItem>
+                  <SelectItem value="UNKNOWN">❓ Unsurveyed (असर्वेक्षित)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">
+                Field Cadre Notes (टिप्पणी / बूथ कार्यकर्ता नोट्स)
+              </Label>
+              <textarea
+                rows={3}
+                placeholder="Add meeting notes, demands, party loyalty remarks..."
+                value={leaningModalForm.voterCadreNotes}
+                onChange={(e) =>
+                  setLeaningModalForm((p) => ({
+                    ...p,
+                    voterCadreNotes: e.target.value,
+                  }))
+                }
+                className="w-full text-xs p-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary focus:outline-none resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsLeaningModalOpen(false);
+                setSelectedLeaningVoter(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!selectedLeaningVoter) return;
+                updateLeaningMutation.mutate({
+                  id: selectedLeaningVoter.id,
+                  data: leaningModalForm,
+                });
+              }}
+              disabled={updateLeaningMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5"
+            >
+              {updateLeaningMutation.isPending && (
+                <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+              )}
+              Save Leaning
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Bulk Tag Voters Dialog ────────────────────────────── */}
+      <Dialog
+        open={isBulkTagOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsBulkTagOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
+              <span>Bulk Tag Selected Voters ({selectedIds.length})</span>
+            </DialogTitle>
+            <DialogDescription>
+              Apply political allegiance or notes to all {selectedIds.length} selected voters simultaneously.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-amber-500 fill-amber-400" />
+                <div>
+                  <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                    Mark All as Our Voter (हमारा समर्थक)
+                  </div>
+                  <div className="text-[11px] text-amber-700/80 dark:text-amber-400">
+                    Flags all selected voters as our voters
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                id="bulkIsOurVoter"
+                checked={bulkTagIsOurVoter}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setBulkTagIsOurVoter(checked);
+                  if (checked && bulkTagLeaning === "UNKNOWN") {
+                    setBulkTagLeaning("OUR_VOTER");
+                  }
+                }}
+                className="h-5 w-5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Target Leaning Status</Label>
+              <Select
+                value={bulkTagLeaning}
+                onValueChange={(val) => {
+                  setBulkTagLeaning(val);
+                  if (val === "OUR_VOTER" || val === "SUPPORTER" || val === "INFLUENCER") {
+                    setBulkTagIsOurVoter(true);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="OUR_VOTER">⭐ Our Loyal Voter (हमारा पक्का वोटर)</SelectItem>
+                  <SelectItem value="SUPPORTER">🤝 Favorable Supporter (अनुकूल समर्थक)</SelectItem>
+                  <SelectItem value="INFLUENCER">👑 Key Influencer (प्रभावशाली व्यक्ति)</SelectItem>
+                  <SelectItem value="NEUTRAL">⚖️ Neutral / Swing (तटस्थ / अनिश्चित)</SelectItem>
+                  <SelectItem value="OPPOSITION">⚠️ Opposition Leaning (विपक्षी)</SelectItem>
+                  <SelectItem value="UNKNOWN">❓ Unsurveyed (असर्वेक्षित)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">
+                Optional Bulk Notes (वैकल्पिक टिप्पणी)
+              </Label>
+              <Input
+                placeholder="e.g. Campaign rally attendees, Booth 12 drive..."
+                value={bulkTagNotes}
+                onChange={(e) => setBulkTagNotes(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkTagOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                bulkTagMutation.mutate({
+                  ids: selectedIds,
+                  isOurVoter: bulkTagIsOurVoter,
+                  voterLeaning: bulkTagLeaning,
+                  voterCadreNotes: bulkTagNotes.trim() || undefined,
+                });
+              }}
+              disabled={bulkTagMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5"
+            >
+              {bulkTagMutation.isPending && (
+                <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+              )}
+              Tag {selectedIds.length} Voters
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -2143,6 +2143,13 @@ model Voter {
   // Classification
   isDisabled Boolean @default(false)
 
+  // Political Leaning & Canvassing Tracking
+  isOurVoter          Boolean      @default(false)
+  voterLeaning        VoterLeaning @default(UNKNOWN)
+  voterCadreNotes     String?
+  taggedById          String?
+  taggedAt            DateTime?
+
   // Metadata
   status              String   @default("ACTIVE") // ACTIVE, DELETED, SHIFTED
   isDeleted           Boolean  @default(false)
@@ -2175,9 +2182,24 @@ model Voter {
   @@index([isDeleted])
   @@index([uploadBatchId])
   @@index([boothId])
+  @@index([isOurVoter])
+  @@index([voterLeaning])
   @@index([tenantId, wardId, boothNo])
   @@index([tenantId, wardId, sectionNo])
   @@map("voters")
+}
+
+// ════════════════════════════════════════════════════════
+// VOTER LEANING & ALLEGIANCE
+// ════════════════════════════════════════════════════════
+
+enum VoterLeaning {
+  OUR_VOTER
+  SUPPORTER
+  NEUTRAL
+  OPPOSITION
+  INFLUENCER
+  UNKNOWN
 }
 
 // ════════════════════════════════════════════════════════

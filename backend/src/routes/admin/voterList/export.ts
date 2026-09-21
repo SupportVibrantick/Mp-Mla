@@ -33,6 +33,9 @@ const CSV_HEADERS = [
   "Phone",
   "Is Disabled",
   "Is New Voter",
+  "Is Our Voter",
+  "Political Leaning",
+  "Cadre Notes",
   "Ward Name",
   "Ward Number",
   "Ward Area",
@@ -55,7 +58,7 @@ export async function exportVoters(
 ): Promise<void> {
   try {
     const tenantId = requireTenantId(req);
-    const { wardId, gender, search } = req.query as any;
+    const { wardId, gender, search, isOurVoter, voterLeaning } = req.query as any;
 
     const where: Prisma.VoterWhereInput = {
       tenantId,
@@ -71,6 +74,12 @@ export async function exportVoters(
       ["MALE", "FEMALE", "TRANSGENDER"].includes(gender)
     ) {
       where.gender = gender as VoterGender;
+    }
+    if (isOurVoter !== undefined) {
+      where.isOurVoter = isOurVoter === "true" || isOurVoter === true;
+    }
+    if (voterLeaning && typeof voterLeaning === "string") {
+      where.voterLeaning = voterLeaning as any;
     }
     if (search && typeof search === "string" && search.trim()) {
       const q = search.trim();
@@ -123,6 +132,9 @@ export async function exportVoters(
           locality: true,
           phone: true,
           isDisabled: true,
+          isOurVoter: true,
+          voterLeaning: true,
+          voterCadreNotes: true,
           status: true,
           ward: { select: { name: true, wardNumber: true } },
           wardArea: { select: { name: true } },
@@ -151,6 +163,9 @@ export async function exportVoters(
           escapeCSV(v.phone),
           escapeCSV(v.isDisabled ? "Yes" : "No"),
           escapeCSV(v.isNewVoter ? "Yes" : "No"),
+          escapeCSV(v.isOurVoter ? "Yes" : "No"),
+          escapeCSV(v.voterLeaning || "UNKNOWN"),
+          escapeCSV(v.voterCadreNotes || ""),
           escapeCSV(v.ward?.name),
           escapeCSV(v.ward?.wardNumber),
           escapeCSV(v.wardArea?.name),

@@ -108,6 +108,17 @@ export async function updateVoter(
           photoUrl: data.photoUrl?.trim() || null,
         }),
         ...(data.isDisabled !== undefined && { isDisabled: data.isDisabled }),
+        ...(data.isOurVoter !== undefined && { isOurVoter: data.isOurVoter }),
+        ...(data.voterLeaning !== undefined && {
+          voterLeaning: data.voterLeaning,
+        }),
+        ...(data.voterCadreNotes !== undefined && {
+          voterCadreNotes: data.voterCadreNotes?.trim() || null,
+        }),
+        ...((data.isOurVoter !== undefined || data.voterLeaning !== undefined) && {
+          taggedById: req.user?.id || null,
+          taggedAt: new Date(),
+        }),
       },
       include: {
         ward: { select: { id: true, name: true, wardNumber: true } },
@@ -136,6 +147,211 @@ export async function updateVoter(
       success: true,
       message: "Voter updated successfully",
       data: updated,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// TOGGLE "OUR VOTER" (Fast 1-click star toggle)
+// ══════════════════════════════════════════════════════════
+
+export async function toggleOurVoter(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const id = req.params.id as string;
+    const { isOurVoter } = req.body;
+
+    const existing = await prisma.voter.findFirst({
+      where: { id, tenantId, isDeleted: false },
+    });
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: "Voter not found" });
+      return;
+    }
+
+    const nextIsOurVoter =
+      typeof isOurVoter === "boolean" ? isOurVoter : !existing.isOurVoter;
+
+    // Determine default leaning if toggling on
+    let nextLeaning = existing.voterLeaning;
+    if (nextIsOurVoter && (nextLeaning === "UNKNOWN" || nextLeaning === "OPPOSITION")) {
+      nextLeaning = "OUR_VOTER";
+    } else if (!nextIsOurVoter && nextLeaning === "OUR_VOTER") {
+      nextLeaning = "UNKNOWN";
+    }
+
+    const updated = await prisma.voter.update({
+      where: { id },
+      data: {
+        isOurVoter: nextIsOurVoter,
+        voterLeaning: nextLeaning,
+        taggedById: req.user?.id || null,
+        taggedAt: new Date(),
+      },
+      select: {
+        id: true,
+        name: true,
+        voterIdNumber: true,
+        isOurVoter: true,
+        voterLeaning: true,
+        voterCadreNotes: true,
+        taggedById: true,
+        taggedAt: true,
+      },
+    });
+
+    // Audit log (fire-and-forget)
+    createAuditLog({
+      userId: req.user!.id,
+      action: "UPDATE",
+      module: "voter_list",
+      recordId: id,
+      description: `${nextIsOurVoter ? "Marked as Our Voter" : "Unmarked Our Voter"} for "${existing.name}" (${existing.voterIdNumber})`,
+      oldData: { isOurVoter: existing.isOurVoter, voterLeaning: existing.voterLeaning },
+      newData: { isOurVoter: updated.isOurVoter, voterLeaning: updated.voterLeaning },
+      ...getRequestMeta(req),
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: nextIsOurVoter
+        ? `Marked "${existing.name}" as Our Voter`
+        : `Removed Our Voter mark from "${existing.name}"`,
+      data: updated,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// UPDATE VOTER LEANING & CADRE NOTES
+// ══════════════════════════════════════════════════════════
+
+export async function updateVoterLeaning(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const id = req.params.id as string;
+    const { voterLeaning, voterCadreNotes, isOurVoter } = req.body;
+
+    const existing = await prisma.voter.findFirst({
+      where: { id, tenantId, isDeleted: false },
+    });
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: "Voter not found" });
+      return;
+    }
+
+    const calculatedIsOurVoter =
+      typeof isOurVoter === "boolean"
+        ? isOurVoter
+        : (voterLeaning === "OUR_VOTER" || voterLeaning === "SUPPORTER" || voterLeaning === "INFLUENCER");
+
+    const updated = await prisma.voter.update({
+      where: { id },
+      data: {
+        ...(voterLeaning !== undefined && { voterLeaning }),
+        isOurVoter: calculatedIsOurVoter,
+        ...(voterCadreNotes !== undefined && {
+          voterCadreNotes: voterCadreNotes?.trim() || null,
+        }),
+        taggedById: req.user?.id || null,
+        taggedAt: new Date(),
+      },
+      select: {
+        id: true,
+        name: true,
+        voterIdNumber: true,
+        isOurVoter: true,
+        voterLeaning: true,
+        voterCadreNotes: true,
+        taggedById: true,
+        taggedAt: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: `Updated political leaning for "${existing.name}"`,
+      data: updated,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// BULK TAG VOTERS (e.g. Mark selected voters as Our Voter)
+// ══════════════════════════════════════════════════════════
+
+export async function bulkTagVoters(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    const { ids, isOurVoter, voterLeaning, voterCadreNotes } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ success: false, message: "No voter IDs provided." });
+      return;
+    }
+
+    const calculatedIsOurVoter =
+      typeof isOurVoter === "boolean"
+        ? isOurVoter
+        : (voterLeaning === "OUR_VOTER" || voterLeaning === "SUPPORTER" || voterLeaning === "INFLUENCER");
+
+    const updateData: any = {
+      taggedById: req.user?.id || null,
+      taggedAt: new Date(),
+    };
+
+    if (isOurVoter !== undefined || voterLeaning !== undefined) {
+      updateData.isOurVoter = calculatedIsOurVoter;
+    }
+    if (voterLeaning !== undefined) {
+      updateData.voterLeaning = voterLeaning;
+    }
+    if (voterCadreNotes !== undefined) {
+      updateData.voterCadreNotes = voterCadreNotes?.trim() || null;
+    }
+
+    const result = await prisma.voter.updateMany({
+      where: {
+        id: { in: ids },
+        tenantId,
+        isDeleted: false,
+      },
+      data: updateData,
+    });
+
+    createAuditLog({
+      userId: req.user!.id,
+      action: "UPDATE",
+      module: "voter_list",
+      description: `Bulk updated leaning / our voter status for ${result.count} voters`,
+      newData: { count: result.count, updateData },
+      ...getRequestMeta(req),
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: `Successfully tagged ${result.count} voters.`,
+      data: { count: result.count },
     });
   } catch (err) {
     next(err);

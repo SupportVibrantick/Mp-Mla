@@ -96,6 +96,11 @@ export async function createVoter(
         bloodGroup: data.bloodGroup?.trim() || null,
         photoUrl: data.photoUrl?.trim() || null,
         isDisabled: data.isDisabled ?? false,
+        isOurVoter: data.isOurVoter ?? (data.voterLeaning === "OUR_VOTER" || data.voterLeaning === "SUPPORTER"),
+        voterLeaning: data.voterLeaning ?? (data.isOurVoter ? "OUR_VOTER" : "UNKNOWN"),
+        voterCadreNotes: data.voterCadreNotes?.trim() || null,
+        taggedById: (data.isOurVoter || (data.voterLeaning && data.voterLeaning !== "UNKNOWN")) ? req.user?.id : null,
+        taggedAt: (data.isOurVoter || (data.voterLeaning && data.voterLeaning !== "UNKNOWN")) ? new Date() : null,
       },
       include: {
         ward: { select: { id: true, name: true, wardNumber: true } },

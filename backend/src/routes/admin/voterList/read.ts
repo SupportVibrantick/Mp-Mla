@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../../lib/prisma.js";
 import { requireTenantId } from "../../../utils/tenant.js";
-import { VoterGender, Prisma } from "@prisma/client";
+import { VoterGender, VoterLeaning, Prisma } from "@prisma/client";
 
 // ══════════════════════════════════════════════════════════
 // LIST VOTERS (paginated, filterable)
@@ -26,6 +26,8 @@ export async function listVoters(
       gender,
       ageMin,
       ageMax,
+      isOurVoter,
+      voterLeaning,
       isNewVoter,
       sortBy = "createdAt",
       sortOrder = "desc",
@@ -41,12 +43,20 @@ export async function listVoters(
       isDeleted: false,
     };
 
-    if (wardId) where.wardId = String(wardId);
-    if (wardAreaId) where.wardAreaId = String(wardAreaId);
-    if (boothId) where.boothId = String(boothId);
+    if (wardId && wardId !== "ALL") where.wardId = String(wardId);
+    if (wardAreaId && wardAreaId !== "ALL") where.wardAreaId = String(wardAreaId);
+    if (boothId && boothId !== "ALL") where.boothId = String(boothId);
     if (boothNo) where.boothNo = Number(boothNo);
     if (sectionNo) where.sectionNo = Number(sectionNo);
-    if (gender) where.gender = gender as VoterGender;
+    if (gender && gender !== "ALL") where.gender = gender as VoterGender;
+
+    if (isOurVoter !== undefined && isOurVoter !== "" && isOurVoter !== "ALL") {
+      where.isOurVoter = String(isOurVoter) === "true";
+    }
+
+    if (voterLeaning && voterLeaning !== "ALL") {
+      where.voterLeaning = voterLeaning as VoterLeaning;
+    }
 
     if (ageMin || ageMax) {
       where.age = {};
@@ -63,6 +73,7 @@ export async function listVoters(
         { relativeName: { contains: searchStr, mode: "insensitive" } },
         { phone: { contains: searchStr, mode: "insensitive" } },
         { bloodGroup: { contains: searchStr, mode: "insensitive" } },
+        { voterCadreNotes: { contains: searchStr, mode: "insensitive" } },
       ];
     }
 
@@ -74,6 +85,8 @@ export async function listVoters(
       applicationNumber: "applicationNumber",
       slNo: "slNo",
       createdAt: "createdAt",
+      isOurVoter: "isOurVoter",
+      voterLeaning: "voterLeaning",
     };
     const orderField = validSortFields[sortBy] || "createdAt";
     const orderDir = sortOrder === "asc" ? "asc" : "desc";
@@ -103,6 +116,11 @@ export async function listVoters(
           photoUrl: true,
           bloodGroup: true,
           isDisabled: true,
+          isOurVoter: true,
+          voterLeaning: true,
+          voterCadreNotes: true,
+          taggedById: true,
+          taggedAt: true,
           status: true,
           forcePasswordChange: true,
           wardId: true,
@@ -201,7 +219,7 @@ export async function getVoter(
 }
 
 // ══════════════════════════════════════════════════════════
-// VOTER STATS (aggregate demographics)
+// VOTER STATS (aggregate demographics & leaning)
 // ══════════════════════════════════════════════════════════
 
 export async function getVoterStats(
@@ -217,10 +235,37 @@ export async function getVoterStats(
       tenantId,
       isDeleted: false,
     };
-    if (wardId) baseWhere.wardId = String(wardId);
+    if (wardId && wardId !== "ALL") baseWhere.wardId = String(wardId);
 
     // Total count
     const totalVoters = await prisma.voter.count({ where: baseWhere });
+
+    // Our Voters count
+    const ourVotersCount = await prisma.voter.count({
+      where: {
+        ...baseWhere,
+        OR: [
+          { isOurVoter: true },
+          { voterLeaning: "OUR_VOTER" },
+          { voterLeaning: "SUPPORTER" },
+        ],
+      },
+    });
+
+    // Leaning group counts
+    const leaningStats = await prisma.voter.groupBy({
+      by: ["voterLeaning"],
+      where: baseWhere,
+      _count: { id: true },
+    });
+
+    const leaningMap = leaningStats.reduce(
+      (acc, curr) => {
+        acc[curr.voterLeaning] = curr._count.id;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Gender distribution
     const genderStats = await prisma.voter.groupBy({
@@ -282,7 +327,16 @@ export async function getVoterStats(
       success: true,
       data: {
         totalVoters,
+        ourVotersCount,
         disabledCount,
+        leaningCounts: {
+          OUR_VOTER: leaningMap["OUR_VOTER"] || 0,
+          SUPPORTER: leaningMap["SUPPORTER"] || 0,
+          NEUTRAL: leaningMap["NEUTRAL"] || 0,
+          OPPOSITION: leaningMap["OPPOSITION"] || 0,
+          INFLUENCER: leaningMap["INFLUENCER"] || 0,
+          UNKNOWN: leaningMap["UNKNOWN"] || 0,
+        },
         gender: genderStats.reduce(
           (acc, g) => {
             acc[g.gender] = g._count.id;
@@ -313,3 +367,4 @@ export async function getVoterStats(
     next(err);
   }
 }
+
