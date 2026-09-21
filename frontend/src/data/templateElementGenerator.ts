@@ -7,7 +7,7 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
   }
 
   const width = tpl.width || 1080;
-  const height = tpl.height || (tpl.format === "PORTRAIT_POST" ? 1350 : 1080);
+  const height = tpl.height || (tpl.format === "PORTRAIT_POST" ? 1350 : tpl.format === "BANNER_WIDE" ? 630 : 1080);
   const primaryColor = tpl.primaryColor || "#ea580c";
   const secondaryColor = tpl.secondaryColor || "#c2410c";
   const category = tpl.category;
@@ -23,31 +23,33 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
   const timeStr = tpl.timeText || "प्रातः 10:30 बजे";
   const venueStr = tpl.venueText || "केंद्रीय कार्यालय / ब्लॉक सभागार";
 
-  // Common Header & Branding Elements with non-overlapping geometry
+  const isPortrait = height > 1200;
+  const isBanner = height < 800;
+
+  // ── COMMON HEADER & BRANDING ELEMENTS ──────────────────────────────────
   const partyLogoEl: CanvasElement = {
     id: "party-logo",
     name: "Party Logo",
     type: "logo",
-    x: 40,
-    y: 30,
-    width: 90,
-    height: 90,
+    x: isBanner ? 30 : 40,
+    y: isBanner ? 15 : 20,
+    width: isBanner ? 65 : 80,
+    height: isBanner ? 65 : 80,
     dynamicToken: "{{partyLogo}}",
     zIndex: 15,
     editable: true,
   };
 
-  // Top Slogan Header Ribbon
   const topSloganEl: CanvasElement = {
     id: "top-slogan-badge",
     name: "Top Tagline / Slogan",
     type: "text",
-    x: 150,
-    y: 38,
-    width: width - 190,
-    height: 46,
+    x: isBanner ? 110 : 140,
+    y: isBanner ? 25 : 30,
+    width: isBanner ? width - 140 : width - 180,
+    height: isBanner ? 45 : 55,
     text: slogan,
-    fontSize: 22,
+    fontSize: isBanner ? 20 : 24,
     fontFamily: "Noto Sans Devanagari",
     fontWeight: "bold",
     color: primaryColor,
@@ -56,15 +58,40 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
     editable: true,
   };
 
-  // Leader Photo (Left Column Stack: y from 140 to 630)
+  const footerBannerHeight = isBanner ? 65 : 90;
+  const footerBannerEl: CanvasElement = {
+    id: "footer-banner",
+    name: "Bottom Slogan Bar",
+    type: "footer",
+    x: 0,
+    y: height - footerBannerHeight,
+    width: width,
+    height: footerBannerHeight,
+    backgroundColor: secondaryColor,
+    color: "#ffffff",
+    text: footer,
+    fontSize: isBanner ? 20 : 26,
+    fontFamily: "Noto Sans Devanagari",
+    fontWeight: "bold",
+    align: "center",
+    zIndex: 20,
+    editable: true,
+  };
+
+  // ── LEFT COLUMN: LEADER PHOTO & TITLE BADGE ───────────────────────────
+  const leaderX = isBanner ? 30 : 40;
+  const leaderWidth = isBanner ? 240 : 340;
+  const leaderPhotoHeight = isBanner ? 360 : isPortrait ? 560 : 480;
+  const leaderPhotoY = isBanner ? 95 : 125;
+
   const leaderPhotoEl: CanvasElement = {
     id: "leader-photo",
     name: "Leader Photo",
     type: "leader_photo",
-    x: 40,
-    y: 140,
-    width: 330,
-    height: 490,
+    x: leaderX,
+    y: leaderPhotoY,
+    width: leaderWidth,
+    height: leaderPhotoHeight,
     dynamicToken: "{{leaderPhoto}}",
     borderRadius: 20,
     borderWidth: 4,
@@ -75,62 +102,49 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
     editable: true,
   };
 
-  // Leader Name & Designation Badge (Left Column Stack: y from 645 to 735 - safely BELOW photo)
+  const leaderTitleY = leaderPhotoY + leaderPhotoHeight + (isBanner ? 10 : 15);
+  const leaderTitleHeight = isBanner ? 80 : 95;
+
   const leaderTitleEl: CanvasElement = {
     id: "leader-title",
     name: "Leader Name & Designation",
     type: "text",
-    x: 40,
-    y: 645,
-    width: 330,
-    height: 90,
+    x: leaderX,
+    y: leaderTitleY,
+    width: leaderWidth,
+    height: leaderTitleHeight,
     text: "{{representativeName}}\n{{designation}}",
-    fontSize: 18,
+    fontSize: isBanner ? 16 : 19,
     fontFamily: "Noto Sans Devanagari",
     fontWeight: "bold",
     color: "#0f172a",
     backgroundColor: "#ffffff",
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: "rgba(0,0,0,0.08)",
     align: "center",
-    lineHeight: 1.4,
+    lineHeight: 1.35,
     zIndex: 14,
     editable: true,
   };
 
-  // Footer Banner (Full Width: y from 990 to 1080)
-  const footerBannerEl: CanvasElement = {
-    id: "footer-banner",
-    name: "Bottom Slogan Bar",
-    type: "footer",
-    x: 0,
-    y: height - 90,
-    width: width,
-    height: 90,
-    backgroundColor: secondaryColor,
-    color: "#ffffff",
-    text: footer,
-    fontSize: 26,
-    fontFamily: "Noto Sans Devanagari",
-    align: "center",
-    zIndex: 20,
-    editable: true,
-  };
+  // ── RIGHT COLUMN METRICS ───────────────────────────────────────────────
+  const rightX = isBanner ? 290 : 410;
+  const rightWidth = width - rightX - (isBanner ? 30 : 40);
 
-  // ── 1. BIRTHDAY TEMPLATE (Hero Festive & Golden Aesthetics) ───────────────
+  // ── 1. BIRTHDAY TEMPLATE ───────────────────────────────────────────────
   if (category === "BIRTHDAY" || type === "birthday") {
     return [
       {
-        id: "garland-artwork",
+        id: "header-accent",
         name: "Festive Top Header Accent",
         type: "shape",
         shapeType: "rectangle",
         x: 0,
         y: 0,
         width: width,
-        height: 120,
-        backgroundColor: "rgba(251, 146, 60, 0.18)",
+        height: isBanner ? 85 : 110,
+        backgroundColor: "rgba(251, 146, 60, 0.16)",
         zIndex: 1,
       },
       partyLogoEl,
@@ -138,17 +152,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
       leaderPhotoEl,
       leaderTitleEl,
 
-      // Main Heading (Right Column Stack: y from 135 to 235)
+      // Main Heading
       {
         id: "main-heading",
         name: "Greeting Heading",
         type: "text",
-        x: 395,
-        y: 135,
-        width: width - 435,
-        height: 100,
+        x: rightX,
+        y: isBanner ? 95 : 125,
+        width: rightWidth,
+        height: isBanner ? 70 : 100,
         text: heading,
-        fontSize: 34,
+        fontSize: isBanner ? 28 : 36,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: primaryColor,
@@ -159,17 +173,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Subheading (Right Column Stack: y from 250 to 300)
+      // Subheading
       {
         id: "subheading-text",
         name: "Wish Subheading",
         type: "text",
-        x: 395,
-        y: 250,
-        width: width - 435,
-        height: 50,
+        x: rightX,
+        y: isBanner ? 175 : 240,
+        width: rightWidth,
+        height: isBanner ? 40 : 50,
         text: subheading || "सुख, उत्तम स्वास्थ्य एवं दीर्घायु जीवन की मंगलकामनाएं",
-        fontSize: 20,
+        fontSize: isBanner ? 17 : 21,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#b45309",
@@ -178,21 +192,21 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Message Card (Right Column Stack: y from 315 to 575)
+      // Message Card
       {
         id: "message-text",
         name: "Wish Message Card",
         type: "text",
-        x: 395,
-        y: 315,
-        width: width - 435,
-        height: 260,
+        x: rightX,
+        y: isBanner ? 225 : 305,
+        width: rightWidth,
+        height: isBanner ? 190 : isPortrait ? 380 : 270,
         text: message || "ईश्वर से आपके उत्तम स्वास्थ्य, दीर्घायु एवं यशस्वी जीवन की मंगलकामना करते हैं। आपके नेतृत्व में हमारा क्षेत्र निरंतर प्रगति के नए कीर्तिमान स्थापित करे।",
-        fontSize: 20,
+        fontSize: isBanner ? 17 : 21,
         fontFamily: "Noto Sans Devanagari",
-        color: "#334155",
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-        borderRadius: 16,
+        color: "#1e293b",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        borderRadius: 18,
         borderWidth: 2,
         borderColor: "#fde68a",
         lineHeight: 1.6,
@@ -202,31 +216,32 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Blessing Card Pill (Right Column Stack: y from 590 to 655)
+      // Blessing Card Pill
       {
         id: "blessing-pill",
         name: "Blessing Badge",
         type: "text",
-        x: 395,
-        y: 590,
-        width: width - 435,
-        height: 65,
+        x: rightX,
+        y: isBanner ? 430 : isPortrait ? 710 : 595,
+        width: rightWidth,
+        height: isBanner ? 55 : 65,
         text: "✨ उत्तम स्वास्थ्य एवं मंगलमय जीवन की अनंत शुभकामनाएं",
-        fontSize: 19,
+        fontSize: isBanner ? 16 : 19,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#ffffff",
         backgroundColor: primaryColor,
-        borderRadius: 14,
+        borderRadius: 16,
         align: "center",
         zIndex: 10,
+        editable: true,
       },
 
       footerBannerEl,
     ];
   }
 
-  // ── 2. MEETING TEMPLATE (Professional Green & Emerald Agenda Layout) ──────
+  // ── 2. MEETING TEMPLATE ────────────────────────────────────────────────
   if (category === "MEETING" || type === "meeting") {
     return [
       {
@@ -237,7 +252,7 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         x: 0,
         y: 0,
         width: width,
-        height: 120,
+        height: isBanner ? 85 : 110,
         backgroundColor: "rgba(4, 120, 87, 0.12)",
         zIndex: 1,
       },
@@ -246,17 +261,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
       leaderPhotoEl,
       leaderTitleEl,
 
-      // Meeting Heading (Right Column Stack: y from 135 to 235)
+      // Meeting Heading
       {
         id: "main-heading",
         name: "Meeting Title",
         type: "text",
-        x: 395,
-        y: 135,
-        width: width - 435,
-        height: 100,
+        x: rightX,
+        y: isBanner ? 95 : 125,
+        width: rightWidth,
+        height: isBanner ? 70 : 100,
         text: heading,
-        fontSize: 34,
+        fontSize: isBanner ? 28 : 34,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: primaryColor,
@@ -267,17 +282,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Meeting Subheading (Right Column Stack: y from 250 to 300)
+      // Meeting Subheading
       {
         id: "subheading-text",
         name: "Meeting Subject",
         type: "text",
-        x: 395,
-        y: 250,
-        width: width - 435,
-        height: 50,
+        x: rightX,
+        y: isBanner ? 175 : 235,
+        width: rightWidth,
+        height: isBanner ? 40 : 50,
         text: subheading || "क्षेत्रीय विकास कार्यों एवं जनकल्याणकारी योजनाओं की समीक्षा",
-        fontSize: 20,
+        fontSize: isBanner ? 17 : 20,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#065f46",
@@ -286,17 +301,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Date Badge (y: 315 to 371)
+      // Date Badge
       {
         id: "badge-date",
         name: "Date Badge",
         type: "text",
-        x: 395,
-        y: 315,
-        width: width - 435,
-        height: 56,
+        x: rightX,
+        y: isBanner ? 225 : 300,
+        width: rightWidth,
+        height: isBanner ? 48 : 56,
         text: `🗓️  दिनांक: ${dateStr}`,
-        fontSize: 20,
+        fontSize: isBanner ? 16 : 20,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#0f172a",
@@ -309,17 +324,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Time Badge (y: 385 to 441)
+      // Time Badge
       {
         id: "badge-time",
         name: "Time Badge",
         type: "text",
-        x: 395,
-        y: 385,
-        width: width - 435,
-        height: 56,
+        x: rightX,
+        y: isBanner ? 280 : 368,
+        width: rightWidth,
+        height: isBanner ? 48 : 56,
         text: `⏰  समय: ${timeStr}`,
-        fontSize: 20,
+        fontSize: isBanner ? 16 : 20,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#0f172a",
@@ -332,17 +347,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Venue Badge (y: 455 to 521)
+      // Venue Badge
       {
         id: "badge-venue",
         name: "Venue Badge",
         type: "text",
-        x: 395,
-        y: 455,
-        width: width - 435,
-        height: 66,
+        x: rightX,
+        y: isBanner ? 335 : 436,
+        width: rightWidth,
+        height: isBanner ? 52 : 62,
         text: `📍  स्थान: ${venueStr}`,
-        fontSize: 19,
+        fontSize: isBanner ? 16 : 19,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#0f172a",
@@ -355,24 +370,24 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Invitation Note Card (y: 535 to 665)
+      // Invitation Note Card
       {
         id: "invitation-note",
         name: "Invitation Note",
         type: "text",
-        x: 395,
-        y: 535,
-        width: width - 435,
-        height: 130,
+        x: rightX,
+        y: isBanner ? 395 : 512,
+        width: rightWidth,
+        height: isBanner ? 100 : isPortrait ? 220 : 155,
         text: message || "समस्त सम्मानित पदाधिकारी, कार्यकर्ता एवं क्षेत्रवासी बैठक में सादर आमंत्रित हैं। आपकी उपस्थिति और सुझाव अत्यंत महत्वपूर्ण हैं।",
-        fontSize: 18,
+        fontSize: isBanner ? 15 : 19,
         fontFamily: "Noto Sans Devanagari",
         color: "#064e3b",
-        backgroundColor: "rgba(220, 252, 231, 0.7)",
-        borderRadius: 14,
+        backgroundColor: "rgba(220, 252, 231, 0.8)",
+        borderRadius: 16,
         borderWidth: 2,
         borderColor: "#86efac",
-        lineHeight: 1.4,
+        lineHeight: 1.45,
         align: "left",
         zIndex: 10,
         editable: true,
@@ -382,7 +397,7 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
     ];
   }
 
-  // ── 3. OTHER TEMPLATE (Celebrations, Achievements & Festive Greetings) ───
+  // ── 3. OTHER TEMPLATE (Celebrations & Achievements) ────────────────────
   if (category === "OTHER" || (type as string) === "other" || type === "festival" || type === "national_day" || type === "achievement") {
     const crimsonColor = "#b91c1c";
     return [
@@ -394,7 +409,7 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         x: 0,
         y: 0,
         width: width,
-        height: 120,
+        height: isBanner ? 85 : 110,
         backgroundColor: "rgba(244, 63, 94, 0.12)",
         zIndex: 1,
       },
@@ -403,17 +418,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
       leaderPhotoEl,
       leaderTitleEl,
 
-      // Main Heading (Right Column Stack: y from 135 to 235)
+      // Main Heading
       {
         id: "main-heading",
         name: "Greeting Heading",
         type: "text",
-        x: 395,
-        y: 135,
-        width: width - 435,
-        height: 100,
+        x: rightX,
+        y: isBanner ? 95 : 125,
+        width: rightWidth,
+        height: isBanner ? 70 : 100,
         text: heading || "हार्दिक बधाई एवं अनंत शुभकामनाएं",
-        fontSize: 34,
+        fontSize: isBanner ? 28 : 36,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: crimsonColor,
@@ -424,17 +439,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Subheading (Right Column Stack: y from 250 to 300)
+      // Subheading
       {
         id: "subheading-text",
         name: "Occasion / Subheading",
         type: "text",
-        x: 395,
-        y: 250,
-        width: width - 435,
-        height: 50,
+        x: rightX,
+        y: isBanner ? 175 : 240,
+        width: rightWidth,
+        height: isBanner ? 40 : 50,
         text: subheading || "विशिष्ट उपलब्धि एवं गौरवशाली अवसर पर मंगलकामनाएं",
-        fontSize: 20,
+        fontSize: isBanner ? 17 : 21,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#991b1b",
@@ -443,21 +458,21 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Congratulatory Card (y: 315 to 575)
+      // Congratulatory Card
       {
         id: "message-card",
         name: "Congratulatory Card",
         type: "text",
-        x: 395,
-        y: 315,
-        width: width - 435,
-        height: 260,
+        x: rightX,
+        y: isBanner ? 225 : 305,
+        width: rightWidth,
+        height: isBanner ? 190 : isPortrait ? 380 : 270,
         text: message || "आपकी इस ऐतिहासिक सफलता और उत्कृष्ट योगदान पर हमें गर्व है। ईश्वर से आपके उज्ज्वल भविष्य और निरंतर प्रगति की प्रार्थना करते हैं।",
-        fontSize: 20,
+        fontSize: isBanner ? 17 : 21,
         fontFamily: "Noto Sans Devanagari",
         color: "#1e293b",
         backgroundColor: "rgba(255, 255, 255, 0.95)",
-        borderRadius: 16,
+        borderRadius: 18,
         borderWidth: 2,
         borderColor: "#fecdd3",
         lineHeight: 1.6,
@@ -467,31 +482,32 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
         editable: true,
       },
 
-      // Highlight Badge Pill (y: 590 to 655)
+      // Highlight Badge Pill
       {
         id: "highlight-pill",
         name: "Celebration Badge",
         type: "text",
-        x: 395,
-        y: 590,
-        width: width - 435,
-        height: 65,
+        x: rightX,
+        y: isBanner ? 430 : isPortrait ? 710 : 595,
+        width: rightWidth,
+        height: isBanner ? 55 : 65,
         text: "🏆 आपकी सफलता हमारा गौरव • उज्ज्वल भविष्य की कामना",
-        fontSize: 19,
+        fontSize: isBanner ? 16 : 19,
         fontFamily: "Noto Sans Devanagari",
         fontWeight: "bold",
         color: "#ffffff",
         backgroundColor: crimsonColor,
-        borderRadius: 14,
+        borderRadius: 16,
         align: "center",
         zIndex: 10,
+        editable: true,
       },
 
       footerBannerEl,
     ];
   }
 
-  // ── 4. GENERAL TEMPLATE (Clean Royal Blue Announcement Layout) ───────────
+  // ── 4. GENERAL TEMPLATE (Notice / Vision) ──────────────────────────────
   const royalBlue = "#1d4ed8";
   return [
     {
@@ -502,7 +518,7 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
       x: 0,
       y: 0,
       width: width,
-      height: 120,
+      height: isBanner ? 85 : 110,
       backgroundColor: "rgba(29, 78, 216, 0.12)",
       zIndex: 1,
     },
@@ -511,17 +527,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
     leaderPhotoEl,
     leaderTitleEl,
 
-    // Main Heading (Right Column Stack: y from 135 to 235)
+    // Main Heading
     {
       id: "main-heading",
       name: "Announcement Headline",
       type: "text",
-      x: 395,
-      y: 135,
-      width: width - 435,
-      height: 100,
+      x: rightX,
+      y: isBanner ? 95 : 125,
+      width: rightWidth,
+      height: isBanner ? 70 : 100,
       text: heading,
-      fontSize: 34,
+      fontSize: isBanner ? 28 : 36,
       fontFamily: "Noto Sans Devanagari",
       fontWeight: "bold",
       color: royalBlue,
@@ -532,17 +548,17 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
       editable: true,
     },
 
-    // Subheading (Right Column Stack: y from 250 to 300)
+    // Subheading
     {
       id: "subheading-text",
       name: "Vision Subheading",
       type: "text",
-      x: 395,
-      y: 250,
-      width: width - 435,
-      height: 50,
+      x: rightX,
+      y: isBanner ? 175 : 240,
+      width: rightWidth,
+      height: isBanner ? 40 : 50,
       text: subheading || "क्षेत्र के समग्र विकास एवं पारदर्शी प्रशासन की दिशा में निरंतर प्रयास",
-      fontSize: 20,
+      fontSize: isBanner ? 17 : 21,
       fontFamily: "Noto Sans Devanagari",
       fontWeight: "bold",
       color: "#1e40af",
@@ -551,21 +567,21 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
       editable: true,
     },
 
-    // Main Notice Box (y: 315 to 575)
+    // Main Notice Box
     {
       id: "message-card",
       name: "Notice Message Card",
       type: "text",
-      x: 395,
-      y: 315,
-      width: width - 435,
-      height: 260,
+      x: rightX,
+      y: isBanner ? 225 : 305,
+      width: rightWidth,
+      height: isBanner ? 190 : isPortrait ? 380 : 270,
       text: message || "हमारा संकल्प: क्षेत्र के प्रत्येक नागरिक तक विकास और कल्याणकारी योजनाओं का सीधा लाभ पहुंचाना और जनसमस्याओं का त्वरित समाधान करना।",
-      fontSize: 20,
+      fontSize: isBanner ? 17 : 21,
       fontFamily: "Noto Sans Devanagari",
       color: "#1e293b",
       backgroundColor: "rgba(255, 255, 255, 0.95)",
-      borderRadius: 16,
+      borderRadius: 18,
       borderWidth: 2,
       borderColor: "#bfdbfe",
       lineHeight: 1.6,
@@ -575,26 +591,28 @@ export function getTemplateElements(tpl: CreativeTemplateDef): CanvasElement[] {
       editable: true,
     },
 
-    // Bottom Pillars Pill (y: 590 to 655)
+    // Bottom Pillars Pill
     {
       id: "pillars-pill",
       name: "Pillars Badge",
       type: "text",
-      x: 395,
-      y: 590,
-      width: width - 435,
-      height: 65,
+      x: rightX,
+      y: isBanner ? 430 : isPortrait ? 710 : 595,
+      width: rightWidth,
+      height: isBanner ? 55 : 65,
       text: "🏛️ सुशासन  •  ⚡ त्वरित समाधान  •  🤝 जन भागीदारी",
-      fontSize: 19,
+      fontSize: isBanner ? 16 : 19,
       fontFamily: "Noto Sans Devanagari",
       fontWeight: "bold",
       color: "#ffffff",
       backgroundColor: royalBlue,
-      borderRadius: 14,
+      borderRadius: 16,
       align: "center",
       zIndex: 10,
+      editable: true,
     },
 
     footerBannerEl,
   ];
 }
+

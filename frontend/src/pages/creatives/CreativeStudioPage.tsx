@@ -216,20 +216,28 @@ function CreativeStudioInner() {
         return true;
       };
 
+      const exportOptions = {
+        quality: 0.98,
+        pixelRatio: Math.max(1, pixelRatio),
+        width: designState.canvas.width,
+        height: designState.canvas.height,
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+          left: "0px",
+          top: "0px",
+        },
+        filter,
+      };
+
       let dataUrl = "";
       if (format === "jpeg") {
         dataUrl = await toJpeg(targetNode, {
-          quality: 0.98,
-          pixelRatio,
+          ...exportOptions,
           backgroundColor: "#ffffff",
-          filter,
         });
       } else {
-        dataUrl = await toPng(targetNode, {
-          quality: 0.98,
-          pixelRatio,
-          filter,
-        });
+        dataUrl = await toPng(targetNode, exportOptions);
       }
 
       // 3. Restore selected element for the user

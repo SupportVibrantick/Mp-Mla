@@ -34,7 +34,9 @@ export function CreativeCanvas({
   const designContext = useCreativeDesign();
   const branding = designContext?.designState?.branding;
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState<number>(0.5);
 
   // Dragging, Resizing & Rotating state
   const [isDragging, setIsDragging] = useState(false);
@@ -50,8 +52,25 @@ export function CreativeCanvas({
 
   const selectedElement = elements.find((e) => e.id === selectedElementId);
 
+  // ResizeObserver for responsive scaling
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateScale = () => {
+      if (containerRef.current && canvasWidth > 0) {
+        const clientWidth = containerRef.current.clientWidth;
+        if (clientWidth > 0) {
+          setScale(clientWidth / canvasWidth);
+        }
+      }
+    };
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [canvasWidth]);
+
   // Resolve dynamic tokens from slot values, branding and system settings
-  const resolveTokenText = (text?: string, token?: string): string => {
+  const resolveTokenText = (text?: string, dynamicToken?: string): string => {
     let result = text || "";
     const slotValues = designContext?.designState?.slotValues || {};
     const repName = branding?.representativeName || settings?.representative_name || "Shri Rajesh Kumar";
@@ -59,15 +78,15 @@ export function CreativeCanvas({
     const partyName = settings?.party_name || "BJP";
 
     // Direct token substitution
-    if (token) {
-      const cleanToken = token.replace(/[{}]/g, "");
+    if (dynamicToken) {
+      const cleanToken = dynamicToken.replace(/[{}]/g, "");
       if (slotValues[cleanToken] !== undefined && slotValues[cleanToken] !== "") {
-        return slotValues[cleanToken];
+        result = slotValues[cleanToken];
       }
     }
 
     // Dynamic pattern replacement
-    if (token || result.includes("{{")) {
+    if (result.includes("{{")) {
       Object.entries(slotValues).forEach(([k, v]) => {
         if (v !== undefined) {
           result = result.replace(new RegExp(`{{${k}}}`, "g"), v);
@@ -99,15 +118,12 @@ export function CreativeCanvas({
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging || !selectedElementId || selectedElement?.locked || !canvasRef.current) return;
 
-      const rect = canvasRef.current.getBoundingClientRect();
-      const scaleX = canvasWidth / (rect.width || 1);
-      const scaleY = canvasHeight / (rect.height || 1);
-
+      const currentScale = scale || 1;
       const clientDeltaX = e.clientX - dragStart.x;
       const clientDeltaY = e.clientY - dragStart.y;
 
-      const designDeltaX = clientDeltaX * scaleX;
-      const designDeltaY = clientDeltaY * scaleY;
+      const designDeltaX = clientDeltaX / currentScale;
+      const designDeltaY = clientDeltaY / currentScale;
 
       if (activeHandle === "move") {
         onUpdateElement(selectedElementId, {
@@ -115,35 +131,36 @@ export function CreativeCanvas({
           y: Math.round(elementStartPos.y + designDeltaY),
         });
       } else if (activeHandle === "rotate") {
-        const centerX = rect.left + ((elementStartPos.x + elementStartPos.w / 2) / scaleX);
-        const centerY = rect.top + ((elementStartPos.y + elementStartPos.h / 2) / scaleY);
-        const radians = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+        const rect = canvasRef.current.getBoundingClientRect();
+        const centerScreenX = rect.left + (elementStartPos.x + elementStartPos.w / 2) * currentScale;
+        const centerScreenY = rect.top + (elementStartPos.y + elementStartPos.h / 2) * currentScale;
+        const radians = Math.atan2(e.clientY - centerScreenY, e.clientX - centerScreenX);
         let degrees = Math.round(radians * (180 / Math.PI)) + 90;
         if (degrees < 0) degrees += 360;
         onUpdateElement(selectedElementId, { rotation: degrees });
       } else if (activeHandle === "se") {
         onUpdateElement(selectedElementId, {
-          width: Math.max(20, Math.round(elementStartPos.w + designDeltaX)),
-          height: Math.max(20, Math.round(elementStartPos.h + designDeltaY)),
+          width: Math.max(30, Math.round(elementStartPos.w + designDeltaX)),
+          height: Math.max(30, Math.round(elementStartPos.h + designDeltaY)),
         });
       } else if (activeHandle === "sw") {
         onUpdateElement(selectedElementId, {
           x: Math.round(elementStartPos.x + designDeltaX),
-          width: Math.max(20, Math.round(elementStartPos.w - designDeltaX)),
-          height: Math.max(20, Math.round(elementStartPos.h + designDeltaY)),
+          width: Math.max(30, Math.round(elementStartPos.w - designDeltaX)),
+          height: Math.max(30, Math.round(elementStartPos.h + designDeltaY)),
         });
       } else if (activeHandle === "ne") {
         onUpdateElement(selectedElementId, {
           y: Math.round(elementStartPos.y + designDeltaY),
-          width: Math.max(20, Math.round(elementStartPos.w + designDeltaX)),
-          height: Math.max(20, Math.round(elementStartPos.h - designDeltaY)),
+          width: Math.max(30, Math.round(elementStartPos.w + designDeltaX)),
+          height: Math.max(30, Math.round(elementStartPos.h - designDeltaY)),
         });
       } else if (activeHandle === "nw") {
         onUpdateElement(selectedElementId, {
           x: Math.round(elementStartPos.x + designDeltaX),
           y: Math.round(elementStartPos.y + designDeltaY),
-          width: Math.max(20, Math.round(elementStartPos.w - designDeltaX)),
-          height: Math.max(20, Math.round(elementStartPos.h - designDeltaY)),
+          width: Math.max(30, Math.round(elementStartPos.w - designDeltaX)),
+          height: Math.max(30, Math.round(elementStartPos.h - designDeltaY)),
         });
       }
     };
@@ -161,7 +178,7 @@ export function CreativeCanvas({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, activeHandle, dragStart, elementStartPos, selectedElementId, selectedElement, canvasWidth, canvasHeight, onUpdateElement, readOnly]);
+  }, [isDragging, activeHandle, dragStart, elementStartPos, selectedElementId, selectedElement, scale, onUpdateElement, readOnly]);
 
   const handleMouseDownElement = (e: React.MouseEvent, elem: CanvasElement, handle = "move") => {
     if (readOnly) return;
@@ -179,28 +196,34 @@ export function CreativeCanvas({
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    // Only deselect if clicked directly on background, not on children
-    if (e.target === canvasRef.current || (e.target as HTMLElement).id === "canvas-svg-element") {
+    if (e.target === containerRef.current || e.target === canvasRef.current) {
       onSelectElement(null);
     }
   };
 
   return (
     <div
-      ref={canvasRef}
+      ref={containerRef}
       onClick={handleCanvasClick}
       style={{
-        aspectRatio: `${canvasWidth}/${canvasHeight}`,
+        aspectRatio: `${canvasWidth} / ${canvasHeight}`,
+        width: "100%",
+        maxHeight: "75vh",
       }}
-      className="w-full rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-2xl overflow-hidden relative bg-white select-none"
+      className="relative rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-2xl overflow-hidden bg-slate-100 dark:bg-slate-950 select-none flex items-center justify-center mx-auto"
     >
       <div
         id="canvas-svg-element"
+        ref={canvasRef}
         onClick={handleCanvasClick}
         style={{
-          width: "100%",
-          height: "100%",
-          position: "relative",
+          width: `${canvasWidth}px`,
+          height: `${canvasHeight}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          position: "absolute",
+          top: 0,
+          left: 0,
           background: canvasBackground,
           overflow: "hidden",
         }}
@@ -220,18 +243,13 @@ export function CreativeCanvas({
           </div>
         )}
 
-        {/* Render Canvas Elements in Z-Order */}
+        {/* Render Canvas Elements in Z-Order with exact pixel coordinates */}
         {elements
           .filter((el) => el.visible !== false)
           .map((elem) => {
             const isSelected = elem.id === selectedElementId && !readOnly;
             const textContent = resolveTokenText(elem.text, elem.dynamicToken);
             const imageUrl = resolveTokenImage(elem.type, elem.url, elem.dynamicToken);
-
-            const leftPct = (elem.x / canvasWidth) * 100;
-            const topPct = (elem.y / canvasHeight) * 100;
-            const widthPct = (elem.width / canvasWidth) * 100;
-            const heightPct = (elem.height / canvasHeight) * 100;
 
             return (
               <div
@@ -243,10 +261,10 @@ export function CreativeCanvas({
                 }}
                 style={{
                   position: "absolute",
-                  left: `${leftPct}%`,
-                  top: `${topPct}%`,
-                  width: `${widthPct}%`,
-                  height: `${heightPct}%`,
+                  left: `${elem.x}px`,
+                  top: `${elem.y}px`,
+                  width: `${elem.width}px`,
+                  height: `${elem.height}px`,
                   transform: `rotate(${elem.rotation || 0}deg)`,
                   opacity: elem.opacity ?? 1,
                   cursor: readOnly ? "default" : elem.locked ? "not-allowed" : "move",
@@ -303,16 +321,16 @@ export function CreativeCanvas({
                         className="w-full h-full pointer-events-none"
                       />
                     ) : elem.type === "leader_photo" ? (
-                      <div className="w-full h-full bg-gradient-to-t from-slate-900/80 via-slate-700/40 to-slate-200 flex flex-col items-center justify-end p-4 text-white rounded-2xl border-4 border-white shadow-xl pointer-events-none text-center">
-                        <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mb-2 backdrop-blur-xs">
-                          <UserCheck className="w-10 h-10 text-white" />
+                      <div className="w-full h-full bg-gradient-to-t from-slate-200 via-slate-100 to-slate-50 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-700 flex flex-col items-center justify-center p-4 text-slate-400 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 shadow-xs pointer-events-none text-center">
+                        <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center mb-2 shadow-xs">
+                          <UserCheck className="w-8 h-8 text-slate-400" />
                         </div>
-                        <span className="font-bold text-xs drop-shadow-sm">{branding?.representativeName || settings?.representative_name || "Shri Representative"}</span>
-                        <span className="text-[10px] text-slate-200 font-medium">{branding?.designation || `${settings?.representative_title || "MLA"}, Constituency`}</span>
+                        <span className="font-bold text-xs text-slate-600 dark:text-slate-300">Leader Photo</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">Upload in Brand Kit</span>
                       </div>
                     ) : (
-                      <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center p-2 text-slate-400 border-2 border-dashed border-slate-300 rounded-xl pointer-events-none">
-                        <ImageIcon className="w-8 h-8 text-slate-400" />
+                      <div className="w-full h-full bg-white/90 dark:bg-slate-800/90 flex flex-col items-center justify-center p-2 text-slate-400 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl pointer-events-none shadow-2xs">
+                        <ImageIcon className="w-6 h-6 text-slate-400" />
                         <span className="font-bold text-[10px] mt-1">{elem.name}</span>
                       </div>
                     )}
@@ -369,7 +387,7 @@ export function CreativeCanvas({
                       backgroundColor: elem.backgroundColor || "#064e3b",
                       color: elem.color || "#ffffff",
                       fontFamily: elem.fontFamily || "Noto Sans Devanagari, sans-serif",
-                      fontSize: `${elem.fontSize || 28}px`,
+                      fontSize: `${elem.fontSize || 26}px`,
                       fontWeight: "bold",
                       display: "flex",
                       alignItems: "center",
@@ -452,3 +470,4 @@ export function CreativeCanvas({
     </div>
   );
 }
+
