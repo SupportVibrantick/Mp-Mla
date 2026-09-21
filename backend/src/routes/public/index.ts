@@ -11,6 +11,7 @@ import {
 } from "../../controllers/public/voterVerification.controller.js";
 
 import voterPortalRoutes from "./voterPortal/index.js";
+import websitePublicRoutes from "./website/index.js";
 
 const voterUploader = createUploader("voters");
 
@@ -18,6 +19,9 @@ const router = Router();
 
 // Mount Voter Portal router
 router.use("/voter-portal", voterPortalRoutes);
+
+// Mount Public Website Builder Delivery Router
+router.use("/website", websitePublicRoutes);
 
 // Upload middleware for institution request documents
 const docUpload = createUploader("institution-requests");

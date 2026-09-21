@@ -431,6 +431,7 @@ model Tenant {
   voterApplicationSequence   VoterApplicationSequence?
   voterFamilyMembers         VoterFamilyMember[]
   backups                    Backup[]
+  websites                   Website[]
 
   @@index([status])
   @@map("tenants")
@@ -3770,4 +3771,207 @@ model SavedCreative {
   @@index([status])
   @@index([category])
   @@map("saved_creatives")
+}
+
+// ════════════════════════════════════════════════════════
+// WEBSITE BUILDER & MULTI-TENANT PUBLISHING ENGINE
+// ════════════════════════════════════════════════════════
+
+enum WebsiteStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DomainType {
+  SUBDOMAIN
+  CUSTOM
+}
+
+enum SSLStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  FAILED
+  EXPIRED
+}
+
+enum DeploymentStatus {
+  PENDING
+  SUCCESS
+  ROLLED_BACK
+  FAILED
+}
+
+model Website {
+  id               String              @id @default(cuid())
+  tenantId         String
+  name             String
+  slug             String
+  status           WebsiteStatus       @default(DRAFT)
+  templateId       String?
+  faviconUrl       String?
+  logoUrl          String?
+  globalStyles     Json?
+  publishedAt      DateTime?
+  publishedVersion Int                 @default(0)
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pages            WebsitePage[]
+  domains          WebsiteDomain[]
+  deployments      WebsiteDeployment[]
+  menus            WebsiteMenu[]
+  assets           WebsiteAsset[]
+  forms            WebsiteForm[]
+  settings         WebsiteSetting[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([slug])
+  @@map("websites")
+}
+
+model WebsitePage {
+  id             String     @id @default(cuid())
+  websiteId      String
+  title          String
+  slug           String
+  status         PageStatus @default(DRAFT)
+  content        Json       // { version: 1, sections: [...] }
+  seoTitle       String?
+  seoDescription String?
+  seoImageUrl    String?
+  isHomePage     Boolean    @default(false)
+  isPublished    Boolean    @default(false)
+  order          Int        @default(0)
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  website        Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, slug])
+  @@index([websiteId])
+  @@index([isHomePage])
+  @@map("website_pages")
+}
+
+model WebsiteDomain {
+  id                String     @id @default(cuid())
+  websiteId         String
+  domain            String     @unique
+  type              DomainType @default(SUBDOMAIN)
+  isPrimary         Boolean    @default(false)
+  isVerified        Boolean    @default(false)
+  isActive          Boolean    @default(false)
+  verificationToken String?
+  dnsRecords        Json?
+  sslStatus         SSLStatus  @default(PENDING)
+  verifiedAt        DateTime?
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  website           Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
+  @@index([domain])
+  @@map("website_domains")
+}
+
+model WebsiteDeployment {
+  id          String           @id @default(cuid())
+  websiteId   String
+  version     Int
+  status      DeploymentStatus @default(SUCCESS)
+  snapshot    Json             // Complete JSON bundle: website config, pages, styles, menus, metadata
+  publishedBy String?
+  notes       String?
+
+  createdAt   DateTime         @default(now())
+  publishedAt DateTime?
+
+  website     Website          @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
+  @@index([version])
+  @@map("website_deployments")
+}
+
+model WebsiteMenu {
+  id        String   @id @default(cuid())
+  websiteId String
+  name      String   @default("main")
+  items     Json     // Array of [{ label, url, target, icon, children }]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, name])
+  @@index([websiteId])
+  @@map("website_menus")
+}
+
+model WebsiteAsset {
+  id        String   @id @default(cuid())
+  websiteId String
+  name      String
+  url       String
+  mimeType  String
+  size      Int?
+  width     Int?
+  height    Int?
+  folder    String?
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
+  @@map("website_assets")
+}
+
+model WebsiteForm {
+  id          String   @id @default(cuid())
+  websiteId   String
+  title       String
+  formType    String   // GRIEVANCE, CONTACT, APPOINTMENT, JANATA_DARBAR, FEEDBACK, VOLUNTEER
+  fields      Json     // Array of field definitions
+  submitCount Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  website     Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
+  @@map("website_forms")
+}
+
+model WebsiteSetting {
+  id        String   @id @default(cuid())
+  websiteId String
+  key       String
+  value     Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, key])
+  @@index([websiteId])
+  @@map("website_settings")
 }

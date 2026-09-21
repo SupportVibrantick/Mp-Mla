@@ -38,6 +38,7 @@ import {
   Contact2,
   FolderOpen,
   Palette,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -332,6 +333,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           icon: Palette,
           href: "/creatives",
           module: "creative",
+        },
+        {
+          label: "Website Builder",
+          icon: Globe,
+          href: "/websites",
         },
         {
           label: "Janata Darbar",

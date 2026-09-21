@@ -482,3 +482,79 @@ export const tasksApi = {
   bulkStatus: (data: { taskIds: string[]; status: string }) =>
     api.post("/admin/tasks/bulk-status", data),
 };
+
+export const websiteApi = {
+  list: () => api.get("/admin/websites"),
+  get: (id: string) => api.get(`/admin/websites/${id}`),
+  create: (data: any) => api.post("/admin/websites", data),
+  update: (id: string, data: any) => api.put(`/admin/websites/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/websites/${id}`),
+  getTemplates: () => api.get("/admin/websites/templates"),
+};
+
+export const websitePagesApi = {
+  list: (websiteId: string) => api.get(`/admin/websites/${websiteId}/pages`),
+  get: (websiteId: string, pageId: string) =>
+    api.get(`/admin/websites/${websiteId}/pages/${pageId}`),
+  create: (websiteId: string, data: any) =>
+    api.post(`/admin/websites/${websiteId}/pages`, data),
+  update: (websiteId: string, pageId: string, data: any) =>
+    api.put(`/admin/websites/${websiteId}/pages/${pageId}`, data),
+  duplicate: (websiteId: string, pageId: string) =>
+    api.post(`/admin/websites/${websiteId}/pages/${pageId}/duplicate`),
+  delete: (websiteId: string, pageId: string) =>
+    api.delete(`/admin/websites/${websiteId}/pages/${pageId}`),
+};
+
+export const websiteDomainsApi = {
+  list: (websiteId: string) => api.get(`/admin/websites/${websiteId}/domains`),
+  add: (websiteId: string, data: { domain: string; isPrimary?: boolean }) =>
+    api.post(`/admin/websites/${websiteId}/domains`, data),
+  verify: (websiteId: string, domainId: string) =>
+    api.post(`/admin/websites/${websiteId}/domains/${domainId}/verify`),
+  setPrimary: (websiteId: string, domainId: string) =>
+    api.post(`/admin/websites/${websiteId}/domains/${domainId}/primary`),
+  delete: (websiteId: string, domainId: string) =>
+    api.delete(`/admin/websites/${websiteId}/domains/${domainId}`),
+};
+
+export const websiteDeploymentsApi = {
+  publish: (websiteId: string, data?: { notes?: string }) =>
+    api.post(`/admin/websites/${websiteId}/publish`, data || {}),
+  list: (websiteId: string) =>
+    api.get(`/admin/websites/${websiteId}/deployments`),
+  rollback: (websiteId: string, deploymentId: string) =>
+    api.post(`/admin/websites/${websiteId}/deployments/${deploymentId}/rollback`),
+};
+
+export const websiteMenusApi = {
+  list: (websiteId: string) => api.get(`/admin/websites/${websiteId}/menus`),
+  upsert: (websiteId: string, data: { name: string; items: any[] }) =>
+    api.post(`/admin/websites/${websiteId}/menus`, data),
+  delete: (websiteId: string, menuId: string) =>
+    api.delete(`/admin/websites/${websiteId}/menus/${menuId}`),
+};
+
+export const websiteAssetsApi = {
+  list: (websiteId: string) => api.get(`/admin/websites/${websiteId}/assets`),
+  create: (websiteId: string, data: any) =>
+    api.post(`/admin/websites/${websiteId}/assets`, data),
+  delete: (websiteId: string, assetId: string) =>
+    api.delete(`/admin/websites/${websiteId}/assets/${assetId}`),
+};
+
+export const websiteFormsApi = {
+  list: (websiteId: string) => api.get(`/admin/websites/${websiteId}/forms`),
+  create: (websiteId: string, data: any) =>
+    api.post(`/admin/websites/${websiteId}/forms`, data),
+  delete: (websiteId: string, formId: string) =>
+    api.delete(`/admin/websites/${websiteId}/forms/${formId}`),
+};
+
+export const publicWebsiteApi = {
+  resolve: (params?: { slug?: string; websiteId?: string }) =>
+    axios.get(`${API_BASE_URL}/public/website/resolve`, { params }),
+  submitForm: (websiteId: string, formId: string, data: any) =>
+    axios.post(`${API_BASE_URL}/public/website/${websiteId}/forms/${formId}/submit`, data),
+};
+

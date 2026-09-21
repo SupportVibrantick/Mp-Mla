@@ -26,13 +26,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageUploadField } from "@/components/common/ImageUploadField";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   candidateName: z.string().min(2, "Name must be at least 2 characters"),
   partyName: z.string().min(1, "Party name is required"),
-  candidatePhoto: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  partyLogoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  candidatePhoto: z.string().optional().or(z.literal("")),
+  partyLogoUrl: z.string().optional().or(z.literal("")),
   designation: z.string().optional(),
   constituency: z.string().optional(),
   phone: z.string().optional(),
@@ -225,9 +226,13 @@ export default function CompetitorFormPage() {
                     name="candidatePhoto"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Candidate Photo URL</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://..." {...field} />
+                          <ImageUploadField
+                            label="Candidate Photo"
+                            value={field.value}
+                            onChange={field.onChange}
+                            helperText="Upload candidate portrait photo."
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -238,9 +243,13 @@ export default function CompetitorFormPage() {
                     name="partyLogoUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Party Logo URL</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://..." {...field} />
+                          <ImageUploadField
+                            label="Party Logo / Symbol"
+                            value={field.value}
+                            onChange={field.onChange}
+                            helperText="Upload party emblem or logo."
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

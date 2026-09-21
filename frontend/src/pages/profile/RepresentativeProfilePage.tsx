@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Shield, Calendar, Award, Building, Loader2, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageUploadField } from "@/components/common/ImageUploadField";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -289,11 +290,11 @@ export default function RepresentativeProfilePage() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Representative Photo URL</Label>
-                    <Input
+                    <ImageUploadField
+                      label="Representative Photo"
                       value={profile.photoUrl}
-                      onChange={(e) => setProfile((p: any) => ({ ...p, photoUrl: e.target.value }))}
-                      placeholder="https://example.com/photo.jpg"
+                      onChange={(url) => setProfile((p: any) => ({ ...p, photoUrl: url }))}
+                      helperText="Upload official profile photograph."
                     />
                   </div>
                   <div className="space-y-2">
@@ -307,11 +308,11 @@ export default function RepresentativeProfilePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Party Logo URL</Label>
-                  <Input
+                  <ImageUploadField
+                    label="Party Logo / Symbol"
                     value={profile.partyLogoUrl}
-                    onChange={(e) => setProfile((p: any) => ({ ...p, partyLogoUrl: e.target.value }))}
-                    placeholder="https://example.com/party-logo.png"
+                    onChange={(url) => setProfile((p: any) => ({ ...p, partyLogoUrl: url }))}
+                    helperText="Upload official party emblem or logo."
                   />
                 </div>
 

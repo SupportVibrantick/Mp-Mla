@@ -86,6 +86,12 @@ import CompetitorDashboard from "./pages/competitors/CompetitorDashboard";
 import CompetitorDetailPage from "./pages/competitors/CompetitorDetailPage";
 import VoterListPage from "./pages/voterList/VoterListPage";
 import CreativeStudioPage from "./pages/creatives/CreativeStudioPage";
+import { WebsiteDashboardPage } from "./pages/website/WebsiteDashboardPage";
+import { WebsitePagesPage } from "./pages/website/WebsitePagesPage";
+import { WebsiteDomainsPage } from "./pages/website/WebsiteDomainsPage";
+import { WebsiteDeploymentsPage } from "./pages/website/WebsiteDeploymentsPage";
+import { WebsiteBuilderPage } from "./pages/website/builder/WebsiteBuilderPage";
+import { PublicWebsiteRuntime } from "./pages/public/PublicWebsiteRuntime";
 
 // Geography management pages
 import GeographyPage from "./pages/geography/GeographyPage";
@@ -677,10 +683,36 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/voter-portal" component={VoterPortalPage} />
-      <Route path="/voter-verification" component={VoterPortalPage} />
+      {/* Website Builder & Publishing Platform */}
+      <Route path="/websites">
+        <ProtectedRoute>
+          <WebsiteDashboardPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/websites/:websiteId/builder">
+        <ProtectedRoute>
+          <WebsiteBuilderPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/websites/:websiteId/pages">
+        <ProtectedRoute>
+          <WebsitePagesPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/websites/:websiteId/domains">
+        <ProtectedRoute>
+          <WebsiteDomainsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/websites/:websiteId/deployments">
+        <ProtectedRoute>
+          <WebsiteDeploymentsPage />
+        </ProtectedRoute>
+      </Route>
 
-      <Route path="/change-password" component={ChangePassword} />
+      {/* Public Live Website Runtime */}
+      <Route path="/site/:slug" component={PublicWebsiteRuntime} />
+      <Route path="/site" component={PublicWebsiteRuntime} />
 
       <Route component={NotFound} />
     </Switch>
