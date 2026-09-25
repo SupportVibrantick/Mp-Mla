@@ -12,6 +12,7 @@ import {
 
 import voterPortalRoutes from "./voterPortal/index.js";
 import websitePublicRoutes from "./website/index.js";
+import helplinePublicRoutes from "./helplines.js";
 
 const voterUploader = createUploader("voters");
 
@@ -22,6 +23,9 @@ router.use("/voter-portal", voterPortalRoutes);
 
 // Mount Public Website Builder Delivery Router
 router.use("/website", websitePublicRoutes);
+
+// Mount Public Helplines & Emergency Directory Router
+router.use("/helplines", helplinePublicRoutes);
 
 // Upload middleware for institution request documents
 const docUpload = createUploader("institution-requests");

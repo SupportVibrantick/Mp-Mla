@@ -558,3 +558,58 @@ export const publicWebsiteApi = {
     axios.post(`${API_BASE_URL}/public/website/${websiteId}/forms/${formId}/submit`, data),
 };
 
+export const socialApi = {
+  getAccounts: () => api.get("/admin/social/accounts"),
+  disconnectAccount: (id: string) => api.delete(`/admin/social/accounts/${id}`),
+  testConnection: (id: string) => api.post(`/admin/social/accounts/${id}/test`),
+
+  // 1-Click Server-Side OAuth System
+  startOAuth: (provider: string) => api.get(`/admin/social/oauth/${provider}/start`),
+  getDiscoveredResources: (provider: string, connectionId: string) =>
+    api.get(`/admin/social/oauth/${provider}/resources`, { params: { connectionId } }),
+  selectResources: (provider: string, data: { connectionId: string; resourceIds: string[] }) =>
+    api.post(`/admin/social/oauth/${provider}/select`, data),
+
+  getPosts: () => api.get("/admin/social/posts"),
+  getPost: (id: string) => api.get(`/admin/social/posts/${id}`),
+  syncPostMetrics: (id: string) => api.post(`/admin/social/posts/${id}/sync-metrics`),
+  syncAllMetrics: () => api.post("/admin/social/posts/sync-all-metrics"),
+  createPost: (data: {
+    title?: string;
+    content: string;
+    mediaUrls?: string[];
+    mediaType?: string;
+    accountIds: string[];
+    scheduledAt?: string | null;
+    customCaptions?: Record<string, string>;
+    platformConfigs?: Record<string, any>;
+    isAiGenerated?: boolean;
+    complianceLabels?: string[];
+  }) => api.post("/admin/social/posts", data),
+  retryPost: (id: string) => api.post(`/admin/social/posts/${id}/retry`),
+  deletePost: (id: string) => api.delete(`/admin/social/posts/${id}`),
+};
+
+export const helplinesApi = {
+  getStats: () => api.get("/admin/helplines/stats"),
+  list: (params?: { category?: string; search?: string; isEmergency?: boolean | string; isActive?: boolean | string }) =>
+    api.get("/admin/helplines", { params }),
+  get: (id: string) => api.get(`/admin/helplines/${id}`),
+  create: (data: any) => api.post("/admin/helplines", data),
+  update: (id: string, data: any) => api.put(`/admin/helplines/${id}`, data),
+  toggleStatus: (id: string, isActive?: boolean) =>
+    api.patch(`/admin/helplines/${id}/status`, { isActive }),
+  seedDefaults: (overwrite = false) =>
+    api.post("/admin/helplines/seed-defaults", { overwrite }),
+  delete: (id: string) => api.delete(`/admin/helplines/${id}`),
+  bulkDelete: (ids: string[]) => api.post("/admin/helplines/bulk-delete", { ids }),
+};
+
+export const publicHelplinesApi = {
+  list: (params?: { category?: string; search?: string; emergencyOnly?: boolean; tenantId?: string }) =>
+    axios.get(`${API_BASE_URL}/public/helplines`, { params }),
+  getEmergencySpeedDial: (tenantId?: string) =>
+    axios.get(`${API_BASE_URL}/public/helplines/emergency`, { params: { tenantId } }),
+};
+
+

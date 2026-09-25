@@ -63,6 +63,7 @@ import {
   Plus,
   Trash2,
   Heart,
+  PhoneCall,
   IndianRupee,
   Upload,
   ShieldAlert,
@@ -1379,6 +1380,17 @@ export default function VoterPortalPage() {
         </div>
 
         <div className="flex items-center space-x-3">
+          <a href="/helpline" target="_blank" rel="noreferrer">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 gap-1.5 rounded-xl font-bold text-xs"
+            >
+              <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
+              <span>Helplines</span>
+            </Button>
+          </a>
+
           <Button
             variant="outline"
             size="sm"

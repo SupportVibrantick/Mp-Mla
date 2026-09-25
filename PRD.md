@@ -4,10 +4,10 @@
 | | |
 |---|---|
 | **Product Name** | MP-MLA Constituency Management System (CMS) |
-| **Document Version** | 1.0 |
-| **Status** | Approved for Development Baseline |
+| **Document Version** | 2.0 |
+| **Status** | Approved for Development Baseline (v2.0) |
 | **Owner** | Product Team, Vibrantick Infotech Solutions |
-| **Last Updated** | August 2026 |
+| **Last Updated** | September 2026 |
 | **Related Documents** | README.md, USER_MANUAL.md |
 
 ### Revision History
@@ -15,6 +15,7 @@
 | Version | Date | Author | Changes |
 |---|---|---|---|
 | 1.0 | Aug 2026 | Product Team | Initial baseline PRD derived from implemented system |
+| 2.0 | Sep 2026 | Product Team | v2.0: expanded Voter Management (registry + leaning/canvassing), Voter Portal, Voter Verification, Creative Studio, Website Builder & publishing, Social Media Hub (Facebook/Instagram/X/YouTube/LinkedIn), Helpline Directory, platform Backup & Restore, and plan quotas (users/voters/storage) |
 
 ---
 
@@ -41,15 +42,15 @@
 
 ## 1. Executive Summary
 
-The **MP-MLA Constituency Management System** is a multi-tenant SaaS platform that digitizes the complete administrative operations of an Indian Member of Parliament (MP) or Member of Legislative Assembly (MLA) office. It provides one integrated workspace for constituency intelligence (wards, booths, voters, demographics), citizen services (grievances, Janata Darbar tokens, scheme applications), development monitoring (projects, funds, departments), political engagement (events, meetings, community groups, leaders, birthdays/greetings), competitive intelligence (AI-assisted competitor benchmarking), and back-office operations (documents, tasks, CRM, audit trails).
+The **MP-MLA Constituency Management System** is a multi-tenant SaaS platform that digitizes the complete administrative operations of an Indian Member of Parliament (MP) or Member of Legislative Assembly (MLA) office. It provides one integrated workspace for constituency intelligence (wards, booths, voters, demographics, voter-level canvassing/leaning tagging), citizen services (grievances, Janata Darbar tokens, scheme applications, Voter Portal self-service, Voter Verification), development monitoring (projects, funds, departments), political engagement (events, meetings, community groups, leaders, birthdays/greetings), competitive intelligence (AI-assisted competitor benchmarking), brand & outreach (Creative Studio poster designer, no-code Website Builder with custom domains, multi-platform Social Media Hub, public Helpline directory), and back-office operations (documents, tasks, CRM, audit trails, recycle bin, plan quotas).
 
-The product is sold as a subscription to individual constituency offices ("tenants") and operated centrally by a platform operator through a dedicated Master Dashboard that manages tenants, plans, modules, payments (Razorpay), invoices, and renewals.
+The product is sold as a subscription to individual constituency offices ("tenants") and operated centrally by a platform operator through a dedicated Master Dashboard that manages tenants, plans, modules, payments (Razorpay), invoices, renewals, performance quotas (users / voters / storage), and tenant backups/restores.
 
-**Current state:** The core platform described in this document is implemented and feature-complete for version 1.0 across three deployables:
+**Current state:** The core platform described in this document is implemented and feature-complete for version 2.0 across three deployables and several public pages:
 
-1. **Backend API** — Node.js/Express/TypeScript + PostgreSQL (Prisma ORM)
-2. **Constituency Web App** — React 19 + Vite (office staff, admin, MLA/MP users)
-3. **Master Dashboard** — React 19 + Vite (platform operator users)
+1. **Backend API** — Node.js/Express/TypeScript + PostgreSQL (Prisma ORM); social OAuth adapters (Facebook, Instagram, X, YouTube, LinkedIn); website publishing engine; creative export; backup/restore service; quota enforcement (users/voters/storage).
+2. **Constituency Web App** — React 19 + Vite (office staff, admin, MLA/MP users) plus public pages: Voter Portal, Voter Verification, Helpline Directory, Facility Registration, and the live public website runtime (`/site/{slug}`).
+3. **Master Dashboard** — React 19 + Vite (platform operator users), including tenant backup management and quota visibility.
 
 Each functional requirement below is tagged with implementation status: ✅ Implemented · 🟡 Partial (API done, UI limited) · 🔵 Planned.
 
@@ -77,11 +78,11 @@ There is no purpose-built, subscription-based platform addressing governance wor
 | # | Goal | Measure |
 |---|---|---|
 | G1 | Digitize 100% of citizen grievance handling with a full accountability trail | Every grievance has ticket #, assignee, timeline |
-| G2 | Single source of truth for constituency geography & people data | Wards → booths → voters fully modeled per tenant |
+| G2 | Single source of truth for constituency geography & people data | Wards → booths → voters fully modeled per tenant, including household families and canvassing/leaning tags |
 | G3 | Live financial visibility of funds & projects | Sanctioned vs. utilized visible on the dashboard at all times |
 | G4 | Reduce repetitive office coordination effort | Central events/appointments/tasks/darbar scheduling |
-| G5 | Enable data-driven political strategy | Demographics analytics + AI competitor benchmarking |
-| G6 | Operate as sellable SaaS with isolated tenants and gated modules | Onboard a new office in < 1 day without code changes |
+| G5 | Enable data-driven political strategy | Demographics analytics + voter leaning segmentation + AI competitor benchmarking |
+| G6 | Operate as sellable SaaS with isolated tenants, gated modules and quotas | Onboard a new office in < 1 day; enforce plan quotas (users/voters/storage); recover tenants via platform backups |
 
 ### 3.2 Business Objectives
 
@@ -89,12 +90,12 @@ There is no purpose-built, subscription-based platform addressing governance wor
 - Minimize per-tenant onboarding cost via bulk Excel imports and self-serve setup.
 - Retain tenants through automated renewal reminders, invoices, and plan upgrade flows.
 
-### 3.3 Non-Goals (Explicitly Out of Scope for v1)
+### 3.3 Non-Goals (Explicitly Out of Scope for v2)
 
-- A full public-facing citizen portal / mobile app (only one public facility-registration page ships in v1).
+- A full public citizen portal with complaint tracking across all modules (v2 ships targeted public pages: facility registration, Voter Portal, Voter Verification, helpline directory, website).
 - Election campaign management machinery.
 - Statutory accounting/ERP-grade financials (funds tracking is operational, not accounting).
-- Biometric/Aadhaar authentication of voters.
+- Government-issued biometric/Aadhaar KYC at scale (verification uses uploads/OTP flows without a third-party UIDAI gateway).
 - Native mobile applications.
 
 ---
@@ -103,13 +104,13 @@ There is no purpose-built, subscription-based platform addressing governance wor
 
 ### P1 — The Representative (MLA / MP)
 - **Profile:** Elected member; consumer of information, not a data-entry user.
-- **Needs:** Live dashboard of grievances/projects/funds; monthly performance reports for party leadership; competitive positioning insights.
+- **Needs:** Live dashboard of grievances/projects/funds; voter-base segmentation (Our Voter / Influencer lists per ward); monthly performance reports for party leadership; competitive positioning insights; a live public website and social presence.
 - **Success:** Opens the app weekly and gets answers without asking staff.
 
 ### P2 — Office Administrator (System Admin / PA)
 - **Profile:** Runs the office day-to-day; configures the system.
-- **Needs:** Create users/permissions, set up wards/departments, manage settings & branding, monitor audit logs, generate PDF reports.
-- **Success:** Full control with guardrails; can recover any accidental deletion.
+- **Needs:** Create users/permissions, set up wards/departments, manage settings & branding, monitor audit logs, generate PDF reports, manage helplines and website, review creative approvals, watch plan quotas (users/voters/storage).
+- **Success:** Full control with guardrails; can recover any accidental deletion; can restore a tenant from a platform backup.
 
 ### P3 — Office Staff / Data Entry Operator
 - **Profile:** Handles citizen interaction, records tickets, updates tasks/events.
@@ -117,12 +118,13 @@ There is no purpose-built, subscription-based platform addressing governance wor
 - **Success:** High-volume data entry with validation feedback and no permission confusion.
 
 ### P4 — Citizen (indirect)
-- **Profile:** Submits facility registration via public page; visits Janata Darbar.
-- **Needs:** Simple form, document upload, email acknowledgment, review outcome.
+- **Profile:** Submits facility registration via public page; visits Janata Darbar; checks the helpline directory; verifies/updates own voter record.
+- **Needs:** Simple forms, document upload, email acknowledgment, review outcome; self-service on the Voter Portal (update phone/address); emergency numbers available publicly.
+- **Success:** Resolves queries online without visiting the office.
 
 ### P5 — Platform Operator (SaaS owner)
 - **Profile:** Sells and operates the platform across many constituency offices.
-- **Needs:** Tenant onboarding/suspension, plan & module catalog, Razorpay payment reconciliation, invoice generation, renewal tracking, upgrade approvals.
+- **Needs:** Tenant onboarding/suspension, plan & module catalog with **quotas (users/voters/storage)**, Razorpay payment reconciliation, invoice generation, renewal tracking, upgrade approvals, and **tenant backup/restore**.
 - **Success:** Manages N tenants from one Master Dashboard without touching code.
 
 ---
@@ -135,11 +137,12 @@ There is no purpose-built, subscription-based platform addressing governance wor
 |---|---|
 | Tenant web application | All modules listed in §7 |
 | Platform operations | Master Dashboard: tenants, plans, modules, subscriptions, payments, invoices, upgrade requests, renewals, platform users/settings |
-| Public surface | Single no-login page for citizen institution registration with document upload |
+| Public surface | No-login pages: citizen institution registration, Voter Portal (self-service record updates), Voter Verification (EPIC search + identity submit), helpline directory, and the live constituency website runtime |
 | Communication | Email notifications (SMTP), WhatsApp message dispatch capability, in-system notification records |
+| Brand & outreach | Creative Studio (poster designer with templates, brand kit, PNG/JPG export, share links, approval flow); Website Builder (visual section editor, pages, menus, forms, custom domains, immutable deployment snapshots + rollback); Social Media Hub (connect/publish/schedule/metrics for Facebook, Instagram, X, YouTube, LinkedIn) |
 | AI services | Competitor analysis generation & chat via DeepSeek/Gemini |
 | Payments | Razorpay subscription payments and invoice PDFs |
-| Data tooling | Excel bulk import jobs with per-row validation reports; Excel/PDF exports |
+| Data tooling | Excel bulk import jobs with per-row validation reports; Excel/PDF exports; plan quotas for users, voters, and storage |
 | Safety nets | Immutable audit log; soft-delete Recycle Bin with restore |
 
 ### 5.2 Out of Scope
@@ -176,6 +179,10 @@ Background schedulers: meeting reminders, subscription sweep/renewals
 3. **Permission enforcement is server-side.** UI hiding is cosmetic only; every route re-checks `module:action` permissions against DB (user override → role default → deny).
 4. **Soft deletes everywhere.** Business deletes write a `RecycleBinEntry`; restores return the record to its module.
 5. **Settings cascade.** Tenant settings fall back to platform defaults when unset (typed key-value stores).
+6. **Plan quotas enforced server-side.** Users, voters, and storage are capped by `SubscriptionPlan.maxUsers/maxVoters/storageLimitMB`; a `quota.ts` utility blocks creates/imports/uploads beyond the limit and tracks storage deltas on the tenant row.
+7. **Scheduled job runners.** Background jobs handle social post scheduling/retries (`SocialPublishJob`), website deployment snapshots, meeting reminders, backup creation, and the subscription sweep.
+8. **Secrets guarded.** Social OAuth tokens are **encrypted at rest** (AES-GCM with per-record IV/auth-tag); JWT/API secrets stay env-managed.
+9. **Public pages are read-scoped.** `/api/public` serves only whitelisted data (helplines, websites, voter portal/verification) through isolated controllers that never return internal fields (e.g., voter leaning).
 
 ---
 
@@ -239,6 +246,12 @@ Constituency hierarchy: **Constituency → District → Block → Town/Village �
 | FR-VOT-03 | Excel bulk upload of voters as validated background job (`BulkUploadJob`) | P1 | ✅ |
 | FR-VOT-04 | Recompute/sync ward demographic aggregates from voter data | P2 | ✅ |
 | FR-VOT-05 | Voter list Excel export | P2 | ✅ |
+| FR-VOT-06 | Voter record holds full electoral identity (EPIC/voter ID, auto-generated application number `APP-YYYY-NNNNNN`, serial/section/booth numbers) plus personal data incl. photo, blood group, phone, disability flag | P1 | ✅ |
+| FR-VOT-07 | Family/household members per voter with relation, gender, DOB (`VoterFamilyMember`) | P2 | ✅ |
+| FR-VOT-08 | Political leaning & canvassing layer: OUR_VOTER / SUPPORTER / NEUTRAL / OPPOSITION / INFLUENCER / UNKNOWN tags, `isOurVoter` flag, cadre notes, tagged-by/tagged-at audit; filtered lists and "our voter" segmentation | P1 | ✅ |
+| FR-VOT-09 | Public **Voter Portal**: citizen sign-in with Application Number + password, forced first-login password change, self-service view/update of phone, address, photo; OTP-based password reset and mobile change (`VoterAccount`, `VoterAccountMembership`, `VoterOtp`) | P1 | ✅ |
+| FR-VOT-10 | Public **Voter Verification**: EPIC search against active tenants; identity verification via Aadhaar OTP / Aadhaar-card upload / document upload (`VoterIdentityVerification` with PENDING→SUBMITTED→VERIFIED/FAILED/REJECTED) | P2 | ✅ |
+| FR-VOT-11 | Voter quota enforced from plan `maxVoters` across manual creates and bulk imports (`assertCanCreateVoters`) | P1 | ✅ |
 
 ---
 
@@ -402,6 +415,59 @@ Constituency hierarchy: **Constituency → District → Block → Town/Village �
 | FR-AUD-01 | Middleware writes audit entries for create/update/delete/status actions capturing actor, action (`AuditAction`), entity, before/after values | P0 | ✅ |
 | FR-AUD-02 | Audit browser at `/audit-logs` filtered by user/action/module/entity/date | P0 | ✅ |
 | FR-RBN-01 | All business deletes are soft-deletes surfaced in `/recycle-bin` with restore; permanent purge admin-only | P0 | ✅ |
+
+### 7.23 Creative Studio
+
+| ID | Requirement | Pri | Status |
+|---|---|---|---|
+| FR-CRE-01 | Poster/picture designer with template library (Birthday, Meeting/Samvad, General Notice, Other/Greetings at minimum) and blank canvas (`CreativeTemplate`, master templates seeded) | P1 | ✅ |
+| FR-CRE-02 | Canvas editor: add/move/resize/rotate elements, text slots, shapes/images/icons/stickers, layers panel, background (solid/gradient/image), brand kit (logo, colours, fonts) | P1 | ✅ |
+| FR-CRE-03 | Format switching: SQUARE_POST, PORTRAIT_POST, STORY_STATUS, LANDSCAPE_POST, PRINT_A4, PRINT_A3, BANNER_WIDE, CUSTOM with resolution display | P1 | ✅ |
+| FR-CRE-04 | Export design to **PNG/JPG** at canvas resolution (`html-to-image`) and share a token **preview link** requiring no login | P1 | ✅ |
+| FR-CRE-05 | Save designs with status lifecycle DRAFT → PENDING_REVIEW → APPROVED → READY_TO_PUBLISH → PUBLISHED (or REJECTED with reason), versions, created/approved-by audit (`SavedCreative`) | P2 | ✅ |
+| FR-CRE-06 | Owner assets per tenant + system assets (templates/images) shared platform-wide (`CreativeAsset`) | P2 | ✅ |
+
+### 7.24 Website Builder & Publishing Platform
+
+| ID | Requirement | Pri | Status |
+|---|---|---|---|
+| FR-WEB-01 | Multi-site CRUD per tenant with unique slug resolving to `https://{slug}.mpmla.in` and system template gallery (`Website`, seeded default templates) | P1 | ✅ |
+| FR-WEB-02 | Visual page builder with 25+ section blocks (hero, representative hero, stats, projects, schemes, events, grievance CTA/form, contact, about/bio, gallery, press/news, testimonials, FAQ, newsletter, video embed, rich text, navbar, footer…) and per-section style inspector | P1 | ✅ |
+| FR-WEB-03 | Page management: create/duplicate/delete, home-page flag, ordering, SEO title/description/image; menus; media library; global theme (colours, fonts, header/footer style), favicon, logo, social links, custom CSS/JS | P1 | ✅ |
+| FR-WEB-04 | Embedded website forms typed GRIEVANCE / CONTACT / APPOINTMENT / JANATA_DARBAR / FEEDBACK / VOLUNTEER with submission counting; public submit endpoint | P1 | ✅ |
+| FR-WEB-05 | Domain management: subdomain + custom domain with DNS verification (CNAME / A record), primary-domain selection, SSL status tracking | P1 | ✅ |
+| FR-WEB-06 | Publishing generates **immutable JSON deployment snapshots** (config + pages + menus); version history and one-click rollback (`WebsiteDeployment`) | P1 | ✅ |
+| FR-WEB-07 | Public runtime renders published sites without login at `/site/{slug}` and on the resolved primary domain | P1 | ✅ |
+
+### 7.25 Social Media Hub
+
+| ID | Requirement | Pri | Status |
+|---|---|---|---|
+| FR-SOC-01 | Connect/disconnect social accounts via OAuth 2.0 for **Facebook, Instagram, X (Twitter), YouTube, LinkedIn**; tokens encrypted at rest; connection health checks and error capture (`SocialOAuthConnection`, `SocialAccount`) | P1 | ✅ |
+| FR-SOC-02 | Unified composer: text + media types (IMAGE, CAROUSEL, VIDEO/REEL/STORY/SHORT, DOCUMENT), multi-account targeting, publish-now or scheduled publish (timezone-aware) | P1 | ✅ |
+| FR-SOC-03 | Post lifecycle DRAFT → SUBMITTED_FOR_APPROVAL → APPROVED → PUBLISHED (+ per-target PUBLISHING/PUBLISHED/FAILED) with retry of failed targets and cancellation (`SocialPost`, `SocialPostTarget`) | P1 | ✅ |
+| FR-SOC-04 | Scheduled delivery via background jobs with retries (max 3) and provider job IDs (`SocialPublishJob`) | P1 | ✅ |
+| FR-SOC-05 | Engagement metrics sync (likes/comments/shares/views) per post/target with historical snapshots (`SocialPostMetric`); sync all or single post | P2 | ✅ |
+| FR-SOC-06 | Social audit log for connect/disconnect/create/schedule/publish/retry/cancel actions (`SocialAuditLog`) | P2 | ✅ |
+
+### 7.26 Helpline Numbers
+
+| ID | Requirement | Pri | Status |
+|---|---|---|---|
+| FR-HLP-01 | Admin CRUD of helpline contacts with category taxonomy (EMERGENCY, HEALTHCARE, POLICE, WOMEN_CHILD, SENIOR_CITIZEN, DISASTER, CIVIC_MUNICIPAL, ELECTRICITY, WATER_SANITATION, CONSTITUENCY_OFFICE, GOVERNMENT_SERVICES, OTHER), primary/secondary/toll-free/WhatsApp numbers, email, availability, coverage, icon/colour, ordering, active flag | P1 | ✅ |
+| FR-HLP-02 | Public (no-login) helpline directory with category grouping, search, emergency-first ordering, tenant resolution (`/helpline`, `/helpline-directory`, `/public/helplines`) | P1 | ✅ |
+| FR-HLP-03 | Emergency-only endpoint for quick widgets (`/api/public/helplines/emergency`, max 8) | P2 | ✅ |
+
+### 7.27 Platform Operations: Backups & Quotas
+
+| ID | Requirement | Pri | Status |
+|---|---|---|---|
+| FR-BAK-01 | Platform operator creates tenant-level or full-platform backups capturing database rows + uploaded files (`Backup`, status IN_PROGRESS/COMPLETED/FAILED, record counts, notes, triggeredBy) | P1 | ✅ |
+| FR-BAK-02 | Backup download (JSON bundle) and **restore-with-confirmation** that recreates rows and re-copies files, then recalculates storage used | P1 | ✅ |
+| FR-BAK-03 | Backup list filters (tenant/status/search), pagination, delete; files stored under `uploads/backups/{tenantId}/` | P1 | ✅ |
+| FR-QTA-01 | SubscriptionPlan defines `maxUsers`, `maxVoters`, `storageLimitMB`; stored on tenant as `storageUsedMB` | P1 | ✅ |
+| FR-QTA-02 | Server-side enforcement: user creation (`assertCanCreateUser`), voter creates/imports (`assertCanCreateVoters`), uploads including website/social media (`assertStorageQuota` + upload middleware), and storage release on file deletion | P1 | ✅ |
+| FR-QTA-03 | Usage API `/billing/usage` and tenant Billing page expose used vs. limit for users, voters, and storage; Master Dashboard surfaces storage used/limit per tenant | P1 | ✅ |
 
 ---
 

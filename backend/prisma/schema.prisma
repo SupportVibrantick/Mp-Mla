@@ -432,6 +432,11 @@ model Tenant {
   voterFamilyMembers         VoterFamilyMember[]
   backups                    Backup[]
   websites                   Website[]
+  socialAccounts             SocialAccount[]
+  socialPosts                SocialPost[]
+  socialOAuthConnections     SocialOAuthConnection[]
+  socialOAuthStates          SocialOAuthState[]
+  helplineContacts           HelplineContact[]
 
   @@index([status])
   @@map("tenants")
@@ -3975,3 +3980,326 @@ model WebsiteSetting {
   @@index([websiteId])
   @@map("website_settings")
 }
+
+// ════════════════════════════════════════════════════════
+// SOCIAL MEDIA ENGINE (INSTAGRAM, FACEBOOK, X, YOUTUBE, LINKEDIN)
+// ════════════════════════════════════════════════════════
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  YOUTUBE
+  LINKEDIN
+}
+
+enum SocialMediaType {
+  TEXT_ONLY
+  IMAGE
+  CAROUSEL
+  VIDEO
+  REEL
+  STORY
+  SHORT
+  DOCUMENT
+}
+
+enum SocialPostStatus {
+  DRAFT
+  SUBMITTED_FOR_APPROVAL
+  APPROVED
+  SCHEDULED
+  QUEUED
+  PROCESSING_MEDIA
+  PUBLISHING
+  WAITING_PROVIDER
+  PROCESSING
+  PUBLISHED
+  PARTIAL
+  FAILED
+  CANCELLED
+  RETRYING
+}
+
+enum SocialConnectionStatus {
+  CONNECTING
+  CONNECTED
+  RECONNECT_REQUIRED
+  DISCONNECTED
+  ERROR
+}
+
+model SocialOAuthConnection {
+  id                    String                 @id @default(cuid())
+  tenantId              String
+  platform              SocialPlatform
+  providerUserId        String?
+  providerUserName      String?
+
+  encryptedAccessToken  String?                @db.Text
+  accessTokenIv         String?
+  accessTokenAuthTag    String?
+
+  encryptedRefreshToken String?                @db.Text
+  refreshTokenIv        String?
+  refreshTokenAuthTag   String?
+
+  tokenExpiresAt        DateTime?
+  scopes                Json?
+  metadata              Json?
+  status                SocialConnectionStatus @default(CONNECTING)
+
+  lastHealthCheckAt     DateTime?
+  lastErrorCode         String?
+  lastErrorMessage      String?                @db.Text
+  createdById           String?
+
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accounts              SocialAccount[]
+
+  @@index([tenantId])
+  @@index([tenantId, platform])
+  @@map("social_oauth_connections")
+}
+
+model SocialOAuthState {
+  id            String         @id @default(cuid())
+  tenantId      String
+  userId        String
+  platform      SocialPlatform
+  stateHash     String         @unique
+  codeVerifier  String?
+  redirectUri   String?
+  expiresAt     DateTime
+  usedAt        DateTime?
+
+  createdAt     DateTime       @default(now())
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([stateHash])
+  @@index([expiresAt])
+  @@map("social_oauth_states")
+}
+
+model SocialAccount {
+  id                    String                 @id @default(cuid())
+  tenantId              String
+  oauthConnectionId     String?
+  platform              SocialPlatform
+  providerAccountId     String                 // Platform User/Page ID
+  providerAccountType   String?                // PAGE, USER, CHANNEL, GROUP
+  accountName           String
+  accountUsername       String?
+  avatarUrl             String?
+  status                SocialConnectionStatus @default(CONNECTED)
+
+  // Direct token cache for active publishing
+  accessToken           String?                @db.Text
+  iv                    String?
+  authTag               String?
+  refreshToken          String?                @db.Text
+  tokenExpiresAt        DateTime?
+  pageId                String?                // Linked FB page or IG business ID
+  isActive              Boolean                @default(true)
+
+  lastHealthCheckAt     DateTime?
+  lastSuccessfulPublish DateTime?
+  lastErrorCode         String?
+  lastErrorMessage      String?                @db.Text
+  metadata              Json?                  // Discovered attributes, followers, category, etc.
+
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  oauthConnection       SocialOAuthConnection? @relation(fields: [oauthConnectionId], references: [id], onDelete: SetNull)
+  postTargets           SocialPostTarget[]
+
+  @@unique([tenantId, platform, providerAccountId])
+  @@index([tenantId, platform])
+  @@index([oauthConnectionId])
+  @@map("social_accounts")
+}
+
+model SocialPost {
+  id                    String             @id @default(cuid())
+  tenantId              String
+  title                 String?
+  content               String             @db.Text
+  mediaUrls             String[]           @default([])
+  mediaType             SocialMediaType    @default(TEXT_ONLY)
+  status                SocialPostStatus   @default(DRAFT)
+  scheduledAt           DateTime?
+  publishedAt           DateTime?
+  timezone              String             @default("Asia/Kolkata")
+  
+  requiresApproval      Boolean            @default(false)
+  isApproved            Boolean            @default(true)
+  approvedById          String?
+  isAiGenerated         Boolean            @default(false)
+  complianceLabels      String[]           @default([])
+  createdById           String?
+
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targets               SocialPostTarget[]
+
+  @@index([tenantId, status])
+  @@map("social_posts")
+}
+
+model SocialPostTarget {
+  id                    String             @id @default(cuid())
+  socialPostId          String
+  socialAccountId       String?
+  platform              SocialPlatform
+  customContent         String?            @db.Text
+  platformConfig        Json?              // { caption, hashtags, title, tags, category, privacyStatus, madeForKids }
+  externalMediaId       String?            // Uploaded media_id for platforms like X / Meta
+  platformPostId        String?
+  permalink             String?
+  status                SocialPostStatus   @default(DRAFT)
+  attemptCount          Int                @default(0)
+  lastAttemptAt         DateTime?
+  nextRetryAt           DateTime?
+  publishedAt           DateTime?
+  failureCode           String?
+  failureReason         String?            @db.Text
+  platformResponse      Json?
+  platformMetadata      Json?
+
+  likesCount            Int                @default(0)
+  commentsCount         Int                @default(0)
+  sharesCount           Int                @default(0)
+  viewsCount            Int                @default(0)
+
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  socialPost            SocialPost         @relation(fields: [socialPostId], references: [id], onDelete: Cascade)
+  socialAccount         SocialAccount?     @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
+  publishJobs           SocialPublishJob[]
+  metrics               SocialPostMetric[]
+
+  @@index([socialPostId])
+  @@index([socialAccountId])
+  @@map("social_post_targets")
+}
+
+model SocialPublishJob {
+  id                  String               @id @default(cuid())
+  socialPostTargetId  String
+  status              SocialPostStatus     @default(QUEUED)
+  scheduledAt         DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  attemptCount        Int                  @default(0)
+  maxRetries          Int                  @default(3)
+  lastError           String?              @db.Text
+  providerJobId       String?
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  target              SocialPostTarget     @relation(fields: [socialPostTargetId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledAt])
+  @@map("social_publish_jobs")
+}
+
+model SocialPostMetric {
+  id                  String               @id @default(cuid())
+  socialPostTargetId  String
+  capturedAt          DateTime             @default(now())
+  likes               Int                  @default(0)
+  comments            Int                  @default(0)
+  shares              Int                  @default(0)
+  views               Int                  @default(0)
+  platformMetrics     Json?
+
+  target              SocialPostTarget     @relation(fields: [socialPostTargetId], references: [id], onDelete: Cascade)
+
+  @@index([socialPostTargetId, capturedAt])
+  @@map("social_post_metrics")
+}
+
+model SocialAuditLog {
+  id                  String               @id @default(cuid())
+  tenantId            String
+  userId              String?
+  userName            String?
+  action              String               // ACCOUNT_CONNECTED, POST_CREATED, POST_SCHEDULED, POST_PUBLISHED, RETRY_TRIGGERED, POST_CANCELLED
+  entityType          String               // SocialAccount, SocialPost, SocialPublishJob
+  entityId            String
+  details             Json?
+  ipAddress           String?
+  createdAt           DateTime             @default(now())
+
+  @@index([tenantId, createdAt])
+  @@map("social_audit_logs")
+}
+
+// ════════════════════════════════════════════════════════
+// CONSTITUENCY HELPLINES & CITIZEN EMERGENCY DIRECTORY
+// ════════════════════════════════════════════════════════
+
+enum HelplineCategory {
+  EMERGENCY
+  HEALTHCARE
+  POLICE
+  WOMEN_CHILD
+  SENIOR_CITIZEN
+  DISASTER
+  CIVIC_MUNICIPAL
+  ELECTRICITY
+  WATER_SANITATION
+  CONSTITUENCY_OFFICE
+  GOVERNMENT_SERVICES
+  OTHER
+}
+
+model HelplineContact {
+  id                 String           @id @default(cuid())
+  tenantId           String
+  category           HelplineCategory @default(EMERGENCY)
+  title              String
+  subtitle           String?          // e.g. Department or Office details
+  phonePrimary       String
+  phoneSecondary     String?
+  tollFreeNumber     String?
+  whatsappNumber     String?
+  email              String?
+  availableHours     String           @default("24x7")
+  is24x7             Boolean          @default(true)
+  isEmergency        Boolean          @default(false)
+  isTollFree         Boolean          @default(false)
+  isWhatsAppEnabled  Boolean          @default(false)
+  areaWardCoverage   String?          // e.g. "Constituency-Wide" or "Ward 1 to 14"
+  address            String?
+  iconKey            String?          // phone, ambulance, shield, zap, droplet, heart, building, users
+  colorScheme        String?          // red, blue, emerald, amber, purple, orange
+  displayOrder       Int              @default(0)
+  isActive           Boolean          @default(true)
+  notes              String?          @db.Text
+  metadata           Json?
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+  @@index([tenantId, category])
+  @@index([tenantId, isEmergency])
+  @@index([displayOrder])
+  @@map("helpline_contacts")
+}
+
+

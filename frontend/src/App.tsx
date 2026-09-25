@@ -92,6 +92,9 @@ import { WebsiteDomainsPage } from "./pages/website/WebsiteDomainsPage";
 import { WebsiteDeploymentsPage } from "./pages/website/WebsiteDeploymentsPage";
 import { WebsiteBuilderPage } from "./pages/website/builder/WebsiteBuilderPage";
 import { PublicWebsiteRuntime } from "./pages/public/PublicWebsiteRuntime";
+import { SocialDashboardPage } from "./pages/social/SocialDashboardPage";
+import HelplinesAdminPage from "./pages/helplines/HelplinesAdminPage";
+import PublicHelplineDirectoryPage from "./pages/public/PublicHelplineDirectoryPage";
 
 // Geography management pages
 import GeographyPage from "./pages/geography/GeographyPage";
@@ -709,6 +712,29 @@ function Router() {
           <WebsiteDeploymentsPage />
         </ProtectedRoute>
       </Route>
+
+      {/* Social Media Direct Publishing Hub */}
+      <Route path="/social">
+        <ProtectedRoute>
+          <SocialDashboardPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Emergency & Citizen Helplines Admin Hub */}
+      <Route path="/helplines">
+        <ProtectedRoute>
+          <HelplinesAdminPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Public Citizen Helpline Directory */}
+      <Route path="/helpline" component={PublicHelplineDirectoryPage} />
+      <Route path="/helpline-directory" component={PublicHelplineDirectoryPage} />
+      <Route path="/public/helplines" component={PublicHelplineDirectoryPage} />
+
+      {/* Voter Portal & Verification */}
+      <Route path="/voter-portal" component={VoterPortalPage} />
+      <Route path="/verify-voter" component={VoterVerificationPage} />
 
       {/* Public Live Website Runtime */}
       <Route path="/site/:slug" component={PublicWebsiteRuntime} />

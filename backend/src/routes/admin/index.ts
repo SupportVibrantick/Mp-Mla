@@ -38,16 +38,21 @@ import documentRoutes from "./documents/index.js";
 import correspondenceRoutes from "./correspondence/index.js";
 import creativeRoutes from "./creatives/index.js";
 import websiteRoutes from "./website/index.js";
+import socialRoutes, { publicOAuthCallbackRouter } from "./social/index.js";
+import helplineRoutes from "./helplines/index.js";
 
 const router = Router();
 
-// ─── Semi-Public: auth + public branding (NO tenant context) ──────────────
+// ─── Semi-Public: auth + public branding + OAuth Callback (NO Bearer Header Required) ──────────────
 // These routes must stay BEFORE the auth + injectTenantContext chain below.
 router.use("/auth", authRoutes);
 
 // /settings has one public sub-route (GET /public/branding) that is registered
 // first inside settings/index.ts before any authenticate middleware.
 router.use("/settings", settingsRoutes);
+
+// Public OAuth redirect callbacks from Meta/Facebook/Instagram/Google/X
+router.use("/social/oauth", publicOAuthCallbackRouter);
 
 // ─── Protected: authenticate → active check → inject tenant-scoped Prisma ─
 //
@@ -88,5 +93,7 @@ router.use("/voter-list", requireModule("voter_list"), voterListRoutes);
 router.use("/creatives", creativeRoutes);
 router.use("/constituency", requireModule("constituency"), constituencyRoutes);
 router.use("/websites", websiteRoutes);
+router.use("/social", socialRoutes);
+router.use("/helplines", helplineRoutes);
 
 export default router;
