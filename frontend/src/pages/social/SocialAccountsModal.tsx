@@ -4,7 +4,6 @@ import {
   Instagram,
   Facebook,
   Twitter,
-  Youtube,
   Linkedin,
   ShieldCheck,
   CheckCircle2,
@@ -44,15 +43,6 @@ const PLATFORMS = [
     badge: "Reels & Media",
     description: "Connect your Instagram Professional or Creator account to broadcast Reels, carousels, and high-impact media.",
     features: ["Instagram Reels & Video", "Single & Carousel Posts", "Official Creator Reach"],
-  },
-  {
-    id: "youtube",
-    name: "Google (YouTube)",
-    icon: Youtube,
-    color: "from-red-600 to-rose-700",
-    badge: "Video Hub",
-    description: "Authorize your official YouTube channel to broadcast speeches, project videos, and YouTube Shorts directly.",
-    features: ["YouTube Shorts & Full Videos", "Metadata & Tags Support", "Privacy & Audience Controls"],
   },
   {
     id: "twitter",

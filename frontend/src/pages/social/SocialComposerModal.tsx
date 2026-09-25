@@ -24,6 +24,7 @@ import {
   Sliders,
 } from "lucide-react";
 import { socialApi } from "../../lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { ImageUploadField } from "../../components/common/ImageUploadField";
 
 interface SocialComposerModalProps {
@@ -39,6 +40,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
   onSuccess,
   accounts,
 }) => {
+  const { toast } = useToast();
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(
     accounts.map((a) => a.id)
   );
@@ -154,6 +156,13 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
       });
 
       if (res.data?.success) {
+        toast({
+          title: isScheduledMode ? "Broadcast Scheduled 📅" : "Broadcast Dispatched 🚀",
+          description: isScheduledMode
+            ? "Your broadcast has been scheduled successfully."
+            : "Your post has been submitted and queued for publishing.",
+          className: "bg-emerald-600 text-white font-bold",
+        });
         onSuccess();
         onClose();
       }

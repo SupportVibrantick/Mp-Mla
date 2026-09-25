@@ -34,11 +34,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { socialApi } from "../../lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { SocialAccountsModal } from "./SocialAccountsModal";
 import { SocialComposerModal } from "./SocialComposerModal";
 import { SocialPostDetailModal } from "./SocialPostDetailModal";
 
 export const SocialDashboardPage: React.FC = () => {
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
@@ -101,7 +103,11 @@ export const SocialDashboardPage: React.FC = () => {
       setBannerNotice("OAuth authorization granted! Please select which discovered channels to activate.");
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (oauthError) {
-      alert(`OAuth Authorization Error: ${decodeURIComponent(oauthError)}`);
+      toast({
+        title: "OAuth Authorization Error",
+        description: decodeURIComponent(oauthError),
+        variant: "destructive",
+      });
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -117,11 +123,20 @@ export const SocialDashboardPage: React.FC = () => {
     if (!accountToDisconnect) return;
     try {
       await socialApi.disconnectAccount(accountToDisconnect.id);
+      toast({
+        title: "Channel Disconnected",
+        description: `${accountToDisconnect.platform} channel disconnected successfully.`,
+      });
       setDisconnectModalOpen(false);
       setAccountToDisconnect(null);
       fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Disconnect error:", err);
+      toast({
+        title: "Disconnect Failed",
+        description: err.response?.data?.message || "Failed to disconnect channel.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -129,10 +144,18 @@ export const SocialDashboardPage: React.FC = () => {
     try {
       setTestingId(id);
       const res = await socialApi.testConnection(id);
-      alert(res.data?.message || "Connection verified!");
+      toast({
+        title: "Connection Active & Verified ✅",
+        description: res.data?.message || "Channel connection is active and verified!",
+        className: "bg-emerald-600 text-white font-bold",
+      });
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Connection test failed");
+      toast({
+        title: "Connection Test Failed",
+        description: err.response?.data?.message || "Connection test failed. Token might be expired.",
+        variant: "destructive",
+      });
       fetchData();
     } finally {
       setTestingId(null);
@@ -143,10 +166,18 @@ export const SocialDashboardPage: React.FC = () => {
     try {
       setRetryingId(postId);
       const res = await socialApi.retryPost(postId);
-      alert(res.data?.message || "Retry job dispatched!");
+      toast({
+        title: "Retry Job Dispatched 🚀",
+        description: res.data?.message || "Retry job dispatched successfully!",
+        className: "bg-blue-600 text-white font-bold",
+      });
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Retry failed");
+      toast({
+        title: "Retry Failed",
+        description: err.response?.data?.message || "Failed to retry post.",
+        variant: "destructive",
+      });
     } finally {
       setRetryingId(null);
     }
@@ -246,7 +277,7 @@ export const SocialDashboardPage: React.FC = () => {
             Social Media Management
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Broadcast official announcements simultaneously across Facebook, Instagram, X, and YouTube with real-time engagement analytics.
+            Broadcast official announcements simultaneously across Facebook, Instagram, X (Twitter), and LinkedIn with real-time engagement analytics.
           </p>
         </div>
 
@@ -378,7 +409,7 @@ export const SocialDashboardPage: React.FC = () => {
               No Social Channels Connected Yet
             </p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Authorize Meta (Instagram/Facebook), Google (YouTube), or X (Twitter) with 1-Click OAuth to start broadcasting.
+              Authorize Meta (Facebook/Instagram), X (Twitter), or LinkedIn with 1-Click OAuth to start broadcasting.
             </p>
             <button
               type="button"
