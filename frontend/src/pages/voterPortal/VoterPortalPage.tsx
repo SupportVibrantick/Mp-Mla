@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import api from "@/lib/api";
+import api, { voterPortalSchemesApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -68,6 +69,19 @@ import {
   Upload,
   ShieldAlert,
   X,
+  Award,
+  Landmark,
+  Sparkles,
+  ExternalLink,
+  Clock,
+  Calendar,
+  AlertCircle,
+  Filter,
+  ArrowUpRight,
+  BookOpen,
+  FileCheck,
+  Check,
+  Copy,
 } from "lucide-react";
 import { InteractiveMeshBackground } from "@/components/ui/InteractiveMeshBackground";
 
@@ -206,6 +220,117 @@ export default function VoterPortalPage() {
       fetchPortalFamily();
     }
   }, [voter, token]);
+
+  // ══════════════════════════════════════════════════════════
+  // Government & Welfare Schemes State
+  // ══════════════════════════════════════════════════════════
+  const [schemes, setSchemes] = useState<any[]>([]);
+  const [myApplications, setMyApplications] = useState<any[]>([]);
+  const [loadingSchemes, setLoadingSchemes] = useState<boolean>(false);
+  const [loadingMyApps, setLoadingMyApps] = useState<boolean>(false);
+  const [schemeLevelFilter, setSchemeLevelFilter] = useState<string>("all");
+  const [schemeSearch, setSchemeSearch] = useState<string>("");
+  const [activeSchemeTab, setActiveSchemeTab] = useState<"available" | "my_applications">("available");
+
+  // Scheme Modals State
+  const [selectedSchemeForDetail, setSelectedSchemeForDetail] = useState<any | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
+
+  const [selectedSchemeForApply, setSelectedSchemeForApply] = useState<any | null>(null);
+  const [applyModalOpen, setApplyModalOpen] = useState<boolean>(false);
+  const [applyForMemberType, setApplyForMemberType] = useState<"SELF" | "FAMILY_MEMBER">("SELF");
+  const [applyFamilyMemberId, setApplyFamilyMemberId] = useState<string>("");
+  const [applyNotes, setApplyNotes] = useState<string>("");
+  const [submittingSchemeApp, setSubmittingSchemeApp] = useState<boolean>(false);
+
+  const fetchSchemes = async () => {
+    setLoadingSchemes(true);
+    try {
+      const res = await voterPortalSchemesApi.list(
+        {
+          tenantId: voter?.tenantId,
+          level: schemeLevelFilter !== "all" ? schemeLevelFilter : undefined,
+          search: schemeSearch.trim() || undefined,
+        },
+        token || undefined
+      );
+      if (res.data?.success) {
+        setSchemes(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching schemes in voter portal:", err);
+    } finally {
+      setLoadingSchemes(false);
+    }
+  };
+
+  const fetchMyApplications = async () => {
+    if (!token) return;
+    setLoadingMyApps(true);
+    try {
+      const res = await voterPortalSchemesApi.getMyApplications(token);
+      if (res.data?.success) {
+        setMyApplications(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching my scheme applications:", err);
+    } finally {
+      setLoadingMyApps(false);
+    }
+  };
+
+  useEffect(() => {
+    if (voter && token) {
+      fetchSchemes();
+      fetchMyApplications();
+    }
+  }, [voter, token, schemeLevelFilter]);
+
+  // Handle Search Debounce / Direct Trigger
+  useEffect(() => {
+    if (!voter || !token) return;
+    const timer = setTimeout(() => {
+      fetchSchemes();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [schemeSearch]);
+
+  const handleApplyScheme = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSchemeForApply || !token) return;
+    setSubmittingSchemeApp(true);
+    try {
+      const payload: any = {
+        applyFor: applyForMemberType,
+        familyMemberId: applyForMemberType === "FAMILY_MEMBER" ? applyFamilyMemberId : undefined,
+        notes: applyNotes.trim() || undefined,
+      };
+
+      const res = await voterPortalSchemesApi.apply(selectedSchemeForApply.id, payload, token);
+      if (res.data?.success) {
+        toast({
+          title: "Application Submitted Successfully! 🎉",
+          description: res.data.message || `Application ${res.data.data?.applicationNumber} registered.`,
+          className: "bg-emerald-600 text-white font-bold",
+        });
+        setApplyModalOpen(false);
+        setApplyNotes("");
+        setApplyForMemberType("SELF");
+        setApplyFamilyMemberId("");
+        fetchSchemes();
+        fetchMyApplications();
+        setActiveSchemeTab("my_applications");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Application Failed",
+        description: err.response?.data?.message || "Failed to submit scheme application.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingSchemeApp(false);
+    }
+  };
 
   const handleSavePortalMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1800,6 +1925,377 @@ export default function VoterPortalPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Card 4: Welfare & Government Schemes (सरकारी एवं जन कल्याणकारी योजनाएं) */}
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-gradient-to-r from-blue-50/50 via-slate-50/50 to-indigo-50/50 dark:from-slate-950/60 dark:via-slate-900/60 dark:to-slate-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8]">
+                  <Award className="w-5 h-5" />
+                </div>
+                <span>Welfare & Government Schemes (सरकारी एवं जन कल्याणकारी योजनाएं)</span>
+                <Badge className="bg-[#13538A] text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                  {schemes.length} Active
+                </Badge>
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Explore latest government welfare schemes, check eligibility criteria, and submit direct applications for yourself or family members.
+              </CardDescription>
+            </div>
+
+            {/* Sub-tab Switcher: Available Schemes vs My Applications */}
+            <div className="flex items-center bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 rounded-xl gap-1 shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setActiveSchemeTab("available")}
+                className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeSchemeTab === "available"
+                    ? "bg-[#13538A] text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Available Schemes ({schemes.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSchemeTab("my_applications")}
+                className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeSchemeTab === "my_applications"
+                    ? "bg-[#13538A] text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <FileCheck className="w-3.5 h-3.5" />
+                <span>My Applications ({myApplications.length})</span>
+              </button>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-6 space-y-5">
+            {activeSchemeTab === "available" ? (
+              <>
+                {/* Search & Level Filters */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+                  {/* Search Bar */}
+                  <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Search schemes, benefits, department..."
+                      value={schemeSearch}
+                      onChange={(e) => setSchemeSearch(e.target.value)}
+                      className="h-10 pl-10 pr-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm font-medium"
+                    />
+                    {schemeSearch && (
+                      <button
+                        onClick={() => setSchemeSearch("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Level Pills Filter */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                    <span className="text-xs text-slate-400 font-semibold flex items-center gap-1 mr-1 hidden md:flex">
+                      <Filter className="w-3.5 h-3.5" /> Level:
+                    </span>
+                    {[
+                      { id: "all", label: "All Schemes" },
+                      { id: "CENTRAL", label: "Central (केंद्रीय)" },
+                      { id: "STATE", label: "State (राज्यीय)" },
+                      { id: "LOCAL", label: "Local (क्षेत्रीय)" },
+                    ].map((lvl) => (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        onClick={() => setSchemeLevelFilter(lvl.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                          schemeLevelFilter === lvl.id
+                            ? "bg-[#13538A] text-white shadow-sm"
+                            : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        {lvl.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Schemes Grid */}
+                {loadingSchemes ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#13538A] dark:text-[#38bdf8]" />
+                    <p className="text-xs text-slate-400 font-medium">Loading welfare schemes...</p>
+                  </div>
+                ) : schemes.length === 0 ? (
+                  <div className="text-center py-12 border border-dashed rounded-2xl bg-slate-50/50 dark:bg-slate-950/40">
+                    <Award className="w-12 h-12 mx-auto text-slate-400 mb-2" />
+                    <p className="font-bold text-base text-slate-800 dark:text-slate-200">No Welfare Schemes Found</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                      {schemeSearch
+                        ? `No active schemes matching "${schemeSearch}". Try a different search keyword.`
+                        : "Active government schemes will appear here as soon as they are announced for your constituency."}
+                    </p>
+                    {schemeSearch && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSchemeSearch("")}
+                        className="mt-3 rounded-xl text-xs"
+                      >
+                        Clear Search
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                    {schemes.map((s) => (
+                      <div
+                        key={s.id}
+                        className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/60 dark:from-slate-900 dark:to-slate-950/60 p-5 shadow-sm hover:shadow-md hover:border-[#13538A]/40 transition-all flex flex-col justify-between space-y-4 group relative"
+                      >
+                        <div className="space-y-3">
+                          {/* Top Badges */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Badge
+                                className={
+                                  s.level === "CENTRAL"
+                                    ? "bg-indigo-600 text-white text-[10px] font-bold"
+                                    : s.level === "STATE"
+                                    ? "bg-emerald-600 text-white text-[10px] font-bold"
+                                    : "bg-blue-600 text-white text-[10px] font-bold"
+                                }
+                              >
+                                {s.level === "CENTRAL" ? "Central Govt" : s.level === "STATE" ? "State Govt" : "Local Govt"}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border-slate-200 dark:border-slate-700 font-semibold"
+                              >
+                                <Building2 className="w-3 h-3 mr-1 text-[#13538A]" />
+                                {s.department}
+                              </Badge>
+                            </div>
+
+                            {s.code && (
+                              <span className="text-[10.5px] font-mono font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                {s.code}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Scheme Title & Description */}
+                          <div>
+                            <h3 className="font-extrabold text-base text-slate-900 dark:text-white group-hover:text-[#13538A] dark:group-hover:text-[#38bdf8] transition-colors leading-snug">
+                              {s.name}
+                            </h3>
+                            {s.description && (
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                                {s.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Key Benefits Highlight Box */}
+                          {s.benefits && (
+                            <div className="bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 rounded-xl p-3 flex items-start gap-2.5">
+                              <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
+                                <IndianRupee className="w-4 h-4" />
+                              </div>
+                              <div className="space-y-0.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 block">
+                                  Key Benefits (योजना के मुख्य लाभ)
+                                </span>
+                                <p className="text-xs text-emerald-900 dark:text-emerald-200 font-medium line-clamp-2">
+                                  {s.benefits}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Eligibility Criteria Snippet */}
+                          {s.eligibility && (
+                            <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#13538A] dark:text-[#38bdf8] shrink-0 mt-0.5" />
+                              <span className="line-clamp-2 text-[11px]">
+                                <strong>Eligibility:</strong> {s.eligibility}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Footer & Actions */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSchemeForDetail(s);
+                              setDetailModalOpen(true);
+                            }}
+                            className="rounded-xl text-xs font-bold gap-1 border-slate-200 dark:border-slate-700 h-9"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-[#13538A]" />
+                            View Guidelines
+                          </Button>
+
+                          {s.myApplication ? (
+                            <div className="flex items-center gap-1.5">
+                              <Badge
+                                className={
+                                  s.myApplication.status === "APPROVED"
+                                    ? "bg-emerald-600 text-white text-[11px] font-bold"
+                                    : s.myApplication.status === "REJECTED"
+                                    ? "bg-rose-600 text-white text-[11px] font-bold"
+                                    : "bg-blue-600 text-white text-[11px] font-bold"
+                                }
+                              >
+                                Applied ({s.myApplication.status})
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setActiveSchemeTab("my_applications")}
+                                className="h-8 text-xs font-bold text-[#13538A] dark:text-[#38bdf8] hover:underline p-1"
+                              >
+                                View Receipt
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSchemeForApply(s);
+                                setApplyForMemberType("SELF");
+                                setApplyFamilyMemberId("");
+                                setApplyNotes("");
+                                setApplyModalOpen(true);
+                              }}
+                              className="bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-xl text-xs font-bold gap-1.5 shadow-md h-9 px-4"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              Apply Now
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* ─── My Submitted Scheme Applications Tab ─── */
+              <div className="space-y-4">
+                {loadingMyApps ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#13538A]" />
+                    <p className="text-xs text-slate-400 font-medium">Loading your applications...</p>
+                  </div>
+                ) : myApplications.length === 0 ? (
+                  <div className="text-center py-12 border border-dashed rounded-2xl bg-slate-50/50 dark:bg-slate-950/40">
+                    <FileCheck className="w-12 h-12 mx-auto text-slate-400 mb-2" />
+                    <p className="font-bold text-base text-slate-800 dark:text-slate-200">No Applications Submitted Yet</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                      You haven't submitted any scheme applications yet. Browse available schemes and apply directly online.
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={() => setActiveSchemeTab("available")}
+                      className="mt-4 bg-[#13538A] text-white rounded-xl text-xs font-bold gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Browse Available Schemes
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myApplications.map((app) => (
+                      <div
+                        key={app.id}
+                        className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950 p-5 space-y-3.5 relative"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-extrabold text-xs text-[#13538A] dark:text-[#38bdf8] bg-[#13538A]/10 dark:bg-[#38bdf8]/10 px-2 py-0.5 rounded-md">
+                                {app.applicationNumber}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-slate-400 hover:text-slate-600"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(app.applicationNumber);
+                                  toast({ title: "Copied", description: "Application number copied to clipboard." });
+                                }}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                              {app.scheme?.name || "Government Scheme"}
+                            </h4>
+                          </div>
+
+                          <Badge
+                            className={
+                              app.status === "APPROVED"
+                                ? "bg-emerald-600 text-white text-xs font-bold"
+                                : app.status === "REJECTED"
+                                ? "bg-rose-600 text-white text-xs font-bold"
+                                : app.status === "UNDER_REVIEW"
+                                ? "bg-amber-600 text-white text-xs font-bold"
+                                : "bg-blue-600 text-white text-xs font-bold"
+                            }
+                          >
+                            {app.status}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block uppercase">Beneficiary</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">
+                              {app.beneficiaryName}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block uppercase">Applied On</span>
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {new Date(app.createdAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          {app.scheme?.department && (
+                            <div className="col-span-2 mt-1">
+                              <span className="text-[10px] text-slate-400 font-semibold block uppercase">Department</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                                {app.scheme.department}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {app.notes && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 italic bg-slate-100 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/60 dark:border-slate-800">
+                            {app.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
 
       {/* Mandatory Security Setup Modal */}
@@ -2524,6 +3020,290 @@ export default function VoterPortalPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Scheme Details & Guidelines Modal ─── */}
+      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          {selectedSchemeForDetail && (
+            <>
+              <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <Badge
+                    className={
+                      selectedSchemeForDetail.level === "CENTRAL"
+                        ? "bg-indigo-600 text-white text-xs font-bold"
+                        : selectedSchemeForDetail.level === "STATE"
+                        ? "bg-emerald-600 text-white text-xs font-bold"
+                        : "bg-blue-600 text-white text-xs font-bold"
+                    }
+                  >
+                    {selectedSchemeForDetail.level === "CENTRAL"
+                      ? "Central Government Scheme"
+                      : selectedSchemeForDetail.level === "STATE"
+                      ? "State Government Scheme"
+                      : "Local Constituency Scheme"}
+                  </Badge>
+                  <Badge variant="outline" className="font-semibold text-xs text-[#13538A] border-[#13538A]/30">
+                    <Building2 className="w-3 h-3 mr-1" />
+                    {selectedSchemeForDetail.department}
+                  </Badge>
+                  {selectedSchemeForDetail.code && (
+                    <span className="text-xs font-mono font-bold text-slate-400">
+                      Code: {selectedSchemeForDetail.code}
+                    </span>
+                  )}
+                </div>
+
+                <DialogTitle className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  {selectedSchemeForDetail.name}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="py-3 space-y-4 text-xs sm:text-sm">
+                {/* Description */}
+                {selectedSchemeForDetail.description && (
+                  <div className="space-y-1">
+                    <h5 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider text-slate-500">
+                      Scheme Overview & Objectives
+                    </h5>
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                      {selectedSchemeForDetail.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Benefits Banner */}
+                {selectedSchemeForDetail.benefits && (
+                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 space-y-1.5">
+                    <h5 className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+                      <IndianRupee className="w-4 h-4 text-emerald-600" />
+                      <span>Key Financial & Social Benefits (योजना के लाभ)</span>
+                    </h5>
+                    <p className="text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
+                      {selectedSchemeForDetail.benefits}
+                    </p>
+                  </div>
+                )}
+
+                {/* Eligibility */}
+                {selectedSchemeForDetail.eligibility && (
+                  <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 space-y-1.5">
+                    <h5 className="font-bold text-[#13538A] dark:text-[#38bdf8] flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#13538A]" />
+                      <span>Eligibility Criteria (पात्रता मानदंड)</span>
+                    </h5>
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {selectedSchemeForDetail.eligibility}
+                    </p>
+                  </div>
+                )}
+
+                {/* Required Documents */}
+                {selectedSchemeForDetail.requiredDocuments && (
+                  <div className="space-y-1.5">
+                    <h5 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs uppercase tracking-wider text-slate-500">
+                      <FileText className="w-4 h-4 text-[#13538A]" />
+                      <span>Required Documents (आवश्यक दस्तावेज)</span>
+                    </h5>
+                    <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+                      {Array.isArray(selectedSchemeForDetail.requiredDocuments) ? (
+                        <ul className="list-disc list-inside space-y-1">
+                          {selectedSchemeForDetail.requiredDocuments.map((doc: any, idx: number) => (
+                            <li key={idx}>{typeof doc === "string" ? doc : doc.name || JSON.stringify(doc)}</li>
+                          ))}
+                        </ul>
+                      ) : typeof selectedSchemeForDetail.requiredDocuments === "string" ? (
+                        <p>{selectedSchemeForDetail.requiredDocuments}</p>
+                      ) : (
+                        <p>{JSON.stringify(selectedSchemeForDetail.requiredDocuments)}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* External URL if present */}
+                {selectedSchemeForDetail.applicationUrl && (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-100 dark:bg-slate-800">
+                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Official Government Portal</span>
+                    <a
+                      href={selectedSchemeForDetail.applicationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold text-[#13538A] dark:text-[#38bdf8] hover:underline flex items-center gap-1"
+                    >
+                      <span>Visit Portal</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-3 flex items-center justify-between gap-2">
+                <Button variant="outline" onClick={() => setDetailModalOpen(false)} className="rounded-xl">
+                  Close
+                </Button>
+
+                {selectedSchemeForDetail.myApplication ? (
+                  <Badge className="bg-emerald-600 text-white font-bold py-2 px-3 rounded-xl text-xs">
+                    Already Applied ({selectedSchemeForDetail.myApplication.status})
+                  </Badge>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      setDetailModalOpen(false);
+                      setSelectedSchemeForApply(selectedSchemeForDetail);
+                      setApplyForMemberType("SELF");
+                      setApplyFamilyMemberId("");
+                      setApplyNotes("");
+                      setApplyModalOpen(true);
+                    }}
+                    className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold rounded-xl gap-1.5 shadow-md px-6"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Apply for this Scheme
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Scheme Application Submission Modal ─── */}
+      <Dialog open={applyModalOpen} onOpenChange={setApplyModalOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white max-w-lg rounded-3xl shadow-2xl">
+          {selectedSchemeForApply && (
+            <form onSubmit={handleApplyScheme}>
+              <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge className="bg-[#13538A] text-white text-[10px] font-bold">
+                    Scheme Application
+                  </Badge>
+                  <span className="text-xs text-slate-400 font-medium">
+                    {selectedSchemeForApply.department}
+                  </span>
+                </div>
+                <DialogTitle className="text-lg font-extrabold text-slate-900 dark:text-white">
+                  {selectedSchemeForApply.name}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Your details will be registered directly with the constituency welfare coordinator.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="py-4 space-y-4">
+                {/* Apply For: Self vs Family Member */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Apply On Behalf Of *
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setApplyForMemberType("SELF")}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        applyForMemberType === "SELF"
+                          ? "border-[#13538A] bg-[#13538A]/10 text-slate-900 dark:text-white ring-2 ring-[#13538A]/20"
+                          : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold text-xs">
+                        <User className="w-4 h-4 text-[#13538A]" />
+                        <span>Self (खुद के लिए)</span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 block mt-1 truncate">
+                        {voter?.name}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setApplyForMemberType("FAMILY_MEMBER")}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        applyForMemberType === "FAMILY_MEMBER"
+                          ? "border-[#13538A] bg-[#13538A]/10 text-slate-900 dark:text-white ring-2 ring-[#13538A]/20"
+                          : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold text-xs">
+                        <Users className="w-4 h-4 text-[#13538A]" />
+                        <span>Family Member</span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 block mt-1">
+                        {familyMembers.length} member(s) registered
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* If Family Member selected: Dropdown */}
+                {applyForMemberType === "FAMILY_MEMBER" && (
+                  <div className="space-y-1.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                    <Label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Select Family Member *
+                    </Label>
+                    {familyMembers.length === 0 ? (
+                      <p className="text-xs text-amber-600 font-medium">
+                        No family members added yet. Please add a family member in the Family section first, or apply for Self.
+                      </p>
+                    ) : (
+                      <Select value={applyFamilyMemberId} onValueChange={setApplyFamilyMemberId}>
+                        <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900 h-11 text-xs">
+                          <SelectValue placeholder="Choose a family member..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {familyMembers.map((m) => (
+                            <SelectItem key={m.id} value={m.id} className="text-xs">
+                              {m.name} ({m.relationType} - {m.gender})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+
+                {/* Citizen Remarks / Notes */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="applyNotes" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Additional Remarks / Information (Optional)
+                  </Label>
+                  <Textarea
+                    id="applyNotes"
+                    placeholder="Provide any additional relevant details, specific requirements, or document numbers..."
+                    value={applyNotes}
+                    onChange={(e) => setApplyNotes(e.target.value)}
+                    rows={3}
+                    className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-xs sm:text-sm rounded-xl resize-none"
+                  />
+                </div>
+
+                {/* Guarantee Banner */}
+                <div className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 bg-[#13538A]/5 p-3 rounded-xl border border-[#13538A]/10">
+                  <ShieldCheck className="w-4 h-4 text-[#13538A] shrink-0 mt-0.5" />
+                  <span>
+                    Your application will be verified and tracked by your local MLA/MP constituency office. You will receive an official application number instantly.
+                  </span>
+                </div>
+              </div>
+
+              <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-3 flex items-center justify-between gap-2">
+                <Button type="button" variant="outline" onClick={() => setApplyModalOpen(false)} className="rounded-xl">
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingSchemeApp || (applyForMemberType === "FAMILY_MEMBER" && !applyFamilyMemberId)}
+                  className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold rounded-xl h-11 px-6 shadow-md"
+                >
+                  {submittingSchemeApp ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                  Submit Application
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

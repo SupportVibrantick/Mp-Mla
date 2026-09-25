@@ -61,7 +61,7 @@ async function uploadImageToLinkedIn(
       const res = await axios.get(mediaUrl, { responseType: "arraybuffer" });
       imageBuffer = Buffer.from(res.data);
       if (res.headers["content-type"]) {
-        contentType = res.headers["content-type"];
+        contentType = String(res.headers["content-type"]);
       }
     }
 

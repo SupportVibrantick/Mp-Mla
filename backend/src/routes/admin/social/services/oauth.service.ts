@@ -591,7 +591,7 @@ export async function handleOAuthCallback(
         name: user.name || `@${user.username}`,
         username: user.username ? `@${user.username}` : undefined,
         avatarUrl: user.profile_image_url,
-        type: "PROFILE",
+        type: "USER",
         platform: "TWITTER",
         accessToken,
       });
@@ -657,7 +657,7 @@ export async function handleOAuthCallback(
         name: providerUserName,
         username: profile.email || undefined,
         avatarUrl: profile.picture,
-        type: "PROFILE",
+        type: "USER",
         platform: "LINKEDIN",
         accessToken,
       });

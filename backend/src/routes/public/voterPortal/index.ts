@@ -12,6 +12,11 @@ import {
   changeVoterPassword,
 } from "../../../services/voterPortal/voterAuth.service.js";
 
+import jwt from "jsonwebtoken";
+import { generateApplicationNumber } from "../../admin/schemes/helpers.js";
+import { VoterTokenPayload } from "../../../services/voterPortal/voterAuth.service.js";
+
+const JWT_SECRET = process.env.JWT_SECRET || "mp-mla-secret-key-2026";
 const voterUploader = createUploader("voters");
 const router = Router();
 
@@ -558,6 +563,310 @@ router.delete("/family/:id", requireVoterAuth, async (req: VoterAuthRequest, res
     await prisma.voterFamilyMember.delete({ where: { id } });
 
     res.json({ success: true, message: "Family member deleted successfully." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 15. GET All Active Schemes for Voter Portal ─────────────
+router.get("/schemes", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    let tenantId = req.query.tenantId as string | undefined;
+    let voterId: string | undefined = undefined;
+
+    // Check if voter token is present in Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const payload = jwt.verify(token, JWT_SECRET) as VoterTokenPayload;
+        if (payload && payload.tenantId) {
+          tenantId = payload.tenantId;
+          voterId = payload.voterId;
+        }
+      } catch {
+        // Token expired/invalid, fallback to query tenantId if available
+      }
+    }
+
+    if (!tenantId) {
+      res.status(400).json({ success: false, message: "Tenant ID is required to fetch schemes." });
+      return;
+    }
+
+    const { department, level, search } = req.query as Record<string, string>;
+
+    const where: any = {
+      tenantId,
+      status: "ACTIVE",
+      isDeleted: false,
+    };
+
+    if (department && department !== "all") {
+      where.department = department;
+    }
+
+    if (level && level !== "all") {
+      where.level = level;
+    }
+
+    if (search && search.trim()) {
+      where.OR = [
+        { name: { contains: search.trim(), mode: "insensitive" } },
+        { department: { contains: search.trim(), mode: "insensitive" } },
+        { description: { contains: search.trim(), mode: "insensitive" } },
+        { benefits: { contains: search.trim(), mode: "insensitive" } },
+        { eligibility: { contains: search.trim(), mode: "insensitive" } },
+      ];
+    }
+
+    const schemes = await prisma.scheme.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+
+    // If voter is logged in, attach their latest application for each scheme
+    let userApplications: Record<string, any> = {};
+    if (voterId) {
+      const voter = await prisma.voter.findUnique({
+        where: { id: voterId },
+        select: { phone: true, name: true },
+      });
+
+      const apps = await prisma.schemeApplication.findMany({
+        where: {
+          tenantId,
+          isDeleted: false,
+          OR: [
+            { createdById: voterId },
+            { notes: { contains: `[Voter ID: ${voterId}]` } },
+            ...(voter?.phone ? [{ beneficiaryPhone: voter.phone }] : []),
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          schemeId: true,
+          applicationNumber: true,
+          beneficiaryName: true,
+          beneficiaryPhone: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      for (const app of apps) {
+        if (!userApplications[app.schemeId]) {
+          userApplications[app.schemeId] = app;
+        }
+      }
+    }
+
+    const enrichedSchemes = schemes.map((s) => ({
+      ...s,
+      myApplication: userApplications[s.id] || null,
+    }));
+
+    res.json({
+      success: true,
+      data: enrichedSchemes,
+      meta: {
+        total: enrichedSchemes.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 16. GET Single Scheme Details ───────────────────────────
+router.get("/schemes/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = String(req.params.id);
+    let tenantId = req.query.tenantId as string | undefined;
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const payload = jwt.verify(token, JWT_SECRET) as VoterTokenPayload;
+        if (payload && payload.tenantId) {
+          tenantId = payload.tenantId;
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    const where: any = {
+      id,
+      status: "ACTIVE",
+      isDeleted: false,
+    };
+
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+
+    const scheme = await prisma.scheme.findFirst({
+      where,
+    });
+
+    if (!scheme) {
+      res.status(404).json({ success: false, message: "Scheme not found or is currently inactive." });
+      return;
+    }
+
+    res.json({ success: true, data: scheme });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 17. POST Apply for a Scheme (Voter Auth Required) ──────
+router.post("/schemes/:id/apply", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const schemeId = String(req.params.id);
+    const voterId = req.voterId!;
+    const tenantId = req.tenantId!;
+
+    const scheme = await prisma.scheme.findFirst({
+      where: { id: schemeId, tenantId, status: "ACTIVE", isDeleted: false },
+    });
+
+    if (!scheme) {
+      res.status(404).json({ success: false, message: "Scheme not found or is currently inactive." });
+      return;
+    }
+
+    const voter = await prisma.voter.findUnique({
+      where: { id: voterId },
+      include: {
+        ward: true,
+      },
+    });
+
+    if (!voter) {
+      res.status(404).json({ success: false, message: "Voter profile not found." });
+      return;
+    }
+
+    const {
+      applyFor, // "SELF" or "FAMILY_MEMBER"
+      familyMemberId,
+      beneficiaryName,
+      beneficiaryPhone,
+      beneficiaryEmail,
+      address,
+      wardId,
+      notes,
+    } = req.body;
+
+    let finalName = voter.name;
+    let finalPhone = voter.phone || null;
+    let finalEmail = null;
+    let finalAddress = voter.address || null;
+    let finalWardId = voter.wardId || null;
+    let applicantContext = `Self (${voter.name})`;
+
+    if (applyFor === "FAMILY_MEMBER" && familyMemberId) {
+      const familyMember = await prisma.voterFamilyMember.findFirst({
+        where: { id: familyMemberId, voterId, tenantId },
+      });
+
+      if (familyMember) {
+        finalName = familyMember.name;
+        finalPhone = familyMember.phone || voter.phone || null;
+        finalEmail = familyMember.email || null;
+        finalAddress = familyMember.address || voter.address || null;
+        applicantContext = `Family Member: ${familyMember.name} (${familyMember.relationType})`;
+      }
+    } else {
+      if (beneficiaryName && beneficiaryName.trim()) finalName = beneficiaryName.trim();
+      if (beneficiaryPhone && beneficiaryPhone.trim()) finalPhone = beneficiaryPhone.trim();
+      if (beneficiaryEmail && beneficiaryEmail.trim()) finalEmail = beneficiaryEmail.trim();
+      if (address && address.trim()) finalAddress = address.trim();
+      if (wardId) finalWardId = wardId;
+    }
+
+    const applicationNumber = await generateApplicationNumber(tenantId);
+
+    const voterNote = `Applied via Voter Portal for ${applicantContext} by ${voter.name} (EPIC: ${voter.voterIdNumber || "N/A"}) [Voter ID: ${voter.id}]${notes ? `\nCitizen Note: ${notes.trim()}` : ""}`;
+
+    const application = await prisma.schemeApplication.create({
+      data: {
+        tenantId,
+        schemeId,
+        applicationNumber,
+        beneficiaryName: finalName,
+        beneficiaryPhone: finalPhone,
+        beneficiaryEmail: finalEmail,
+        address: finalAddress,
+        wardId: finalWardId,
+        status: "SUBMITTED",
+        notes: voterNote,
+        createdById: voterId,
+      },
+      include: {
+        scheme: { select: { id: true, name: true, department: true, level: true } },
+        ward: { select: { id: true, name: true, wardNumber: true } },
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Scheme application ${applicationNumber} submitted successfully! You can track its status under 'My Scheme Applications'.`,
+      data: application,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 18. GET Logged-in Voter's Scheme Applications ──────────
+router.get("/my-scheme-applications", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const voterId = req.voterId!;
+    const tenantId = req.tenantId!;
+
+    const voter = await prisma.voter.findUnique({
+      where: { id: voterId },
+      select: { phone: true, name: true },
+    });
+
+    const applications = await prisma.schemeApplication.findMany({
+      where: {
+        tenantId,
+        isDeleted: false,
+        OR: [
+          { createdById: voterId },
+          { notes: { contains: `[Voter ID: ${voterId}]` } },
+          ...(voter?.phone ? [{ beneficiaryPhone: voter.phone }] : []),
+        ],
+      },
+      include: {
+        scheme: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            department: true,
+            level: true,
+            benefits: true,
+            eligibility: true,
+          },
+        },
+        ward: { select: { id: true, name: true, wardNumber: true } },
+        documents: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({
+      success: true,
+      data: applications,
+    });
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { useEffect } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -111,6 +112,15 @@ import TownVillageDetailPage from "./pages/geography/TownVillageDetailPage";
 import PollingLocationDetailPage from "./pages/geography/PollingLocationDetailPage";
 
 function Router() {
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (location.includes("//")) {
+      const clean = location.replace(/\/+/g, "/");
+      setLocation(clean, { replace: true });
+    }
+  }, [location, setLocation]);
+
   return (
     <Switch>
       <Route path="/login">
@@ -734,7 +744,8 @@ function Router() {
 
       {/* Voter Portal & Verification */}
       <Route path="/voter-portal" component={VoterPortalPage} />
-      <Route path="/verify-voter" component={VoterVerificationPage} />
+      <Route path="/voter-verification" component={VoterPortalPage} />
+      <Route path="/verify-voter" component={VoterPortalPage} />
 
       {/* Public Live Website Runtime */}
       <Route path="/site/:slug" component={PublicWebsiteRuntime} />

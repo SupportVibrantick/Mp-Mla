@@ -612,4 +612,26 @@ export const publicHelplinesApi = {
     axios.get(`${API_BASE_URL}/public/helplines/emergency`, { params: { tenantId } }),
 };
 
+export const voterPortalSchemesApi = {
+  list: (params?: { tenantId?: string; department?: string; level?: string; search?: string }, token?: string) =>
+    api.get("/public/voter-portal/schemes", {
+      params,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }),
+  get: (id: string, params?: { tenantId?: string }, token?: string) =>
+    api.get(`/public/voter-portal/schemes/${id}`, {
+      params,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }),
+  apply: (id: string, data: any, token: string) =>
+    api.post(`/public/voter-portal/schemes/${id}/apply`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  getMyApplications: (token: string) =>
+    api.get("/public/voter-portal/my-scheme-applications", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+
 
