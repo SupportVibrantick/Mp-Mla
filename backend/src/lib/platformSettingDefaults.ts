@@ -28,7 +28,7 @@ export const PLATFORM_SETTING_DEFS = [
     order: 3,
   },
 
-  // ── Billing ───────────────────────────────────────
+  // ── Billing & Invoicing ────────────────────────────
   {
     key: "default_trial_days",
     value: "14",
@@ -46,6 +46,69 @@ export const PLATFORM_SETTING_DEFS = [
     label: "Renewal Reminder (Days)",
     description: "Days before renewal to send reminder",
     order: 2,
+  },
+  {
+    key: "brand_company_name",
+    value: "Vibrantick Infotech Solutions",
+    type: "text",
+    group: "billing",
+    label: "Invoice Company Name",
+    description: "Company or organization legal name printed in invoice header",
+    order: 3,
+  },
+  {
+    key: "brand_company_address",
+    value: "Sector 62, Noida, UP 201301",
+    type: "text",
+    group: "billing",
+    label: "Invoice Company Address",
+    description: "Full office or registered address printed in invoice header",
+    order: 4,
+  },
+  {
+    key: "brand_company_phone",
+    value: "+91 98765 43210",
+    type: "text",
+    group: "billing",
+    label: "Invoice Contact Phone / Tel",
+    description: "Contact telephone number printed in invoice header",
+    order: 5,
+  },
+  {
+    key: "brand_bank_name",
+    value: "HDFC Bank (Test Branch)",
+    type: "text",
+    group: "billing",
+    label: "Invoice Bank Name",
+    description: "Bank name & branch for wire/NEFT payment transfers",
+    order: 6,
+  },
+  {
+    key: "brand_bank_account",
+    value: "50100234567890 (IFSC: HDFC0001234)",
+    type: "text",
+    group: "billing",
+    label: "Invoice Bank Account & IFSC",
+    description: "Bank account number and IFSC code printed on invoices",
+    order: 7,
+  },
+  {
+    key: "brand_support_email",
+    value: "support@vibrantick.org",
+    type: "text",
+    group: "billing",
+    label: "Invoice Support Email",
+    description: "Customer support email displayed in invoice footer",
+    order: 8,
+  },
+  {
+    key: "brand_invoice_footer_note",
+    value: "If you have any question please contact : support@vibrantick.org",
+    type: "text",
+    group: "billing",
+    label: "Invoice Footer Note",
+    description: "Custom inquiry/support note printed at bottom of every invoice",
+    order: 9,
   },
 
   // ── Branding ──────────────────────────────────────

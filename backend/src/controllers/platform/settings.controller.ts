@@ -8,6 +8,8 @@ import { ApiError } from "../../utils/ApiError.js";
 import { getUploadPath, deleteFile } from "../../lib/upload.js";
 import { testSmtpConnection } from "../../lib/email.js";
 import { testWhatsAppConnection } from "../../lib/whatsapp.js";
+import { regenerateAllInvoices } from "../../services/invoice.service.js";
+import logger from "../../utils/logger.js";
 
 function parseIncomingSettings(req: Request) {
   if (Array.isArray(req.body?.settings)) {
@@ -130,6 +132,21 @@ export async function updatePlatformSettings(
     }
 
     clearPlatformSettingsCache();
+
+    // Auto-regenerate existing invoices if billing / invoice branding settings changed
+    const hasInvoiceSettingsChanged = changed.some(
+      (c) =>
+        c.key.startsWith("brand_") ||
+        c.key.includes("bank") ||
+        c.key.includes("support_email") ||
+        c.key.includes("company"),
+    );
+    if (hasInvoiceSettingsChanged) {
+      regenerateAllInvoices().catch((err) =>
+        logger.error("Failed to auto-regenerate invoices on settings update:", err),
+      );
+    }
+
     if (changed.length > 0) {
       await createAuditLog({
         userId: (req as any).platformUser?.id ?? null,
@@ -182,6 +199,11 @@ export async function resetPlatformSettings(
     }
 
     clearPlatformSettingsCache();
+    if (group === "billing" || group === "branding") {
+      regenerateAllInvoices().catch((err) =>
+        logger.error("Failed to auto-regenerate invoices on settings reset:", err),
+      );
+    }
     await createAuditLog({
       userId: (req as any).platformUser?.id ?? null,
       action: "UPDATE",

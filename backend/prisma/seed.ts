@@ -1100,6 +1100,55 @@ async function main() {
       group: "billing",
       description: "Days before renewal to send reminder",
     },
+    {
+      key: "brand_company_name",
+      value: "Vibrantick Infotech Solutions",
+      type: "text",
+      group: "billing",
+      description: "Company or organization legal name printed in invoice header",
+    },
+    {
+      key: "brand_company_address",
+      value: "Sector 62, Noida, UP 201301",
+      type: "text",
+      group: "billing",
+      description: "Full office or registered address printed in invoice header",
+    },
+    {
+      key: "brand_company_phone",
+      value: "+91 98765 43210",
+      type: "text",
+      group: "billing",
+      description: "Contact telephone number printed in invoice header",
+    },
+    {
+      key: "brand_bank_name",
+      value: "HDFC Bank (Test Branch)",
+      type: "text",
+      group: "billing",
+      description: "Bank name & branch for wire/NEFT payment transfers",
+    },
+    {
+      key: "brand_bank_account",
+      value: "50100234567890 (IFSC: HDFC0001234)",
+      type: "text",
+      group: "billing",
+      description: "Bank account number and IFSC code printed on invoices",
+    },
+    {
+      key: "brand_support_email",
+      value: "support@vibrantick.org",
+      type: "text",
+      group: "billing",
+      description: "Customer support email displayed in invoice footer",
+    },
+    {
+      key: "brand_invoice_footer_note",
+      value: "If you have any question please contact : support@vibrantick.org",
+      type: "text",
+      group: "billing",
+      description: "Custom inquiry/support note printed at bottom of every invoice",
+    },
   ];
 
   for (const setting of platformSettings) {

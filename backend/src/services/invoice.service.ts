@@ -110,12 +110,20 @@ export async function generateInvoicePdf(
   const platformSettings = await client.platformSetting.findMany({
     where: {
       key: {
-        in: ["brand_company_name", "brand_company_address", "brand_company_phone", "brand_bank_name", "brand_bank_account", "brand_support_email"]
-      }
-    }
+        in: [
+          "brand_company_name",
+          "brand_company_address",
+          "brand_company_phone",
+          "brand_bank_name",
+          "brand_bank_account",
+          "brand_support_email",
+          "brand_invoice_footer_note",
+        ],
+      },
+    },
   }).catch(() => []);
 
-  const settingsMap = new Map(platformSettings.map(s => [s.key, s.value]));
+  const settingsMap = new Map(platformSettings.map((s) => [s.key, s.value]));
 
   const companyName = settingsMap.get("brand_company_name") || "Vibrantick Infotech Solutions";
   const companyAddress = settingsMap.get("brand_company_address") || "Sector 62, Noida, UP 201301";
@@ -123,6 +131,9 @@ export async function generateInvoicePdf(
   const bankName = settingsMap.get("brand_bank_name") || "HDFC Bank (Test Branch)";
   const bankAccount = settingsMap.get("brand_bank_account") || "50100234567890 (IFSC: HDFC0001234)";
   const supportEmail = settingsMap.get("brand_support_email") || "support@vibrantick.org";
+  const footerNote =
+    settingsMap.get("brand_invoice_footer_note") ||
+    `If you have any question please contact : ${supportEmail}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -550,7 +561,7 @@ export async function generateInvoicePdf(
   <!-- Footer Divider & Note -->
   <hr class="footer-divider">
   <div class="footer-text">
-    If you have any question please contact : ${supportEmail}
+    ${footerNote}
   </div>
 </div>
 
@@ -585,5 +596,30 @@ export async function generateInvoicePdf(
 
   logger.info(`Invoice generated: ${invoiceNumber} for payment ${paymentId}`);
   return invoiceUrl;
+}
+
+/**
+ * Regenerate HTML files for all payments that have completed/success status
+ * with the latest dynamic branding, banking, and billing settings.
+ */
+export async function regenerateAllInvoices(): Promise<number> {
+  const payments = await prisma.payment.findMany({
+    where: {
+      status: "SUCCESS",
+    },
+    select: { id: true },
+  });
+
+  let count = 0;
+  for (const p of payments) {
+    try {
+      await generateInvoicePdf(p.id);
+      count++;
+    } catch (e) {
+      logger.error(`Failed to regenerate invoice for payment ${p.id}:`, e);
+    }
+  }
+  logger.info(`✅ Regenerated ${count} invoice(s) with latest dynamic settings.`);
+  return count;
 }
 

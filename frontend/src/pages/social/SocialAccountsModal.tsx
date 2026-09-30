@@ -45,15 +45,6 @@ const PLATFORMS = [
     features: ["Instagram Reels & Video", "Single & Carousel Posts", "Official Creator Reach"],
   },
   {
-    id: "twitter",
-    name: "X (Twitter)",
-    icon: Twitter,
-    color: "from-slate-900 to-black",
-    badge: "Instant Reach",
-    description: "Connect your official public handle to broadcast real-time civic announcements, tweets, and photo updates.",
-    features: ["280-Character Announcements", "Media Attachments", "Direct Citizen Reach"],
-  },
-  {
     id: "linkedin",
     name: "LinkedIn",
     icon: Linkedin,

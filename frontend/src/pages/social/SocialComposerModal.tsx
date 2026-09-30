@@ -549,18 +549,6 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
               >
                 <Facebook className="w-3.5 h-3.5" />
               </button>
-              <button
-                type="button"
-                onClick={() => setPreviewPlatform("TWITTER")}
-                className={`p-1.5 rounded-lg text-xs ${
-                  previewPlatform === "TWITTER"
-                    ? "bg-orange-500 text-white"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                }`}
-                title="Twitter Preview"
-              >
-                <Twitter className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
 

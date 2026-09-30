@@ -12,9 +12,9 @@ export const SETTING_GROUPS = [
   },
   {
     id: "billing",
-    label: "Billing",
+    label: "Billing & Invoices",
     icon: "💳",
-    desc: "Trial & subscription defaults",
+    desc: "Invoice branding, bank info & trial defaults",
   },
   {
     id: "branding",

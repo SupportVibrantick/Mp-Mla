@@ -277,7 +277,7 @@ export const SocialDashboardPage: React.FC = () => {
             Social Media Management
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Broadcast official announcements simultaneously across Facebook, Instagram, X (Twitter), and LinkedIn with real-time engagement analytics.
+            Broadcast official announcements simultaneously across Facebook, Instagram, and LinkedIn with real-time engagement analytics.
           </p>
         </div>
 
@@ -409,7 +409,7 @@ export const SocialDashboardPage: React.FC = () => {
               No Social Channels Connected Yet
             </p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Authorize Meta (Facebook/Instagram), X (Twitter), or LinkedIn with 1-Click OAuth to start broadcasting.
+              Authorize Meta (Facebook/Instagram) or LinkedIn with 1-Click OAuth to start broadcasting.
             </p>
             <button
               type="button"

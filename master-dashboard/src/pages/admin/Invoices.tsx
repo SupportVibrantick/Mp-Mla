@@ -17,9 +17,12 @@ import {
   ChevronRight,
   Download,
   Search,
+  Eye,
+  ArrowUpRight,
 } from "lucide-react";
 import { useInvoices } from "@/hooks/useSubscriptions";
 import { SubscriptionsNav } from "@/components/layout/SubscriptionsNav";
+import { getImageUrl } from "@/lib/utils";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -175,6 +178,7 @@ export default function InvoicesPage() {
                   <th className="p-4 font-semibold">Amount</th>
                   <th className="p-4 font-semibold">Status</th>
                   <th className="p-4 font-semibold">Date</th>
+                  <th className="p-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -199,12 +203,15 @@ export default function InvoicesPage() {
                       <td className="py-4">
                         <Skeleton className="h-4 w-16" />
                       </td>
+                      <td className="py-4 text-right">
+                        <Skeleton className="h-8 w-16 ml-auto" />
+                      </td>
                     </tr>
                   ))
                 ) : invoices.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-muted-foreground"
                     >
                       No invoices found.
@@ -245,6 +252,22 @@ export default function InvoicesPage() {
                       </td>
                       <td className="p-4 text-muted-foreground">
                         {formatShortDate(invoice.paidAt || invoice.createdAt)}
+                      </td>
+                      <td className="p-4 text-right">
+                        {invoice.invoiceUrl ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs font-semibold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                            onClick={() => window.open(getImageUrl(invoice.invoiceUrl), "_blank")}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            View
+                            <ArrowUpRight className="w-3 h-3 text-muted-foreground" />
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   ))
