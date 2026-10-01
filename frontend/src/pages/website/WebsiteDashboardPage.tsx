@@ -298,7 +298,15 @@ export const WebsiteDashboardPage: React.FC = () => {
 
                     <div>
                       <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                        {site.name}
+                        <a
+                          href={`/site/${site.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline inline-flex items-center gap-1.5"
+                          title={`Open ${site.name} live site`}
+                        >
+                          {site.name}
+                        </a>
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 font-mono">
                         Slug:{" "}
