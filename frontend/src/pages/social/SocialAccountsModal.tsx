@@ -4,18 +4,18 @@ import {
   Instagram,
   Facebook,
   Twitter,
+  Youtube,
   Linkedin,
   ShieldCheck,
   CheckCircle2,
   ExternalLink,
   ArrowRight,
-  Sparkles,
-  Lock,
-  Globe,
   Loader2,
-  Users,
 } from "lucide-react";
 import { socialApi } from "../../lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface SocialAccountsModalProps {
   isOpen: boolean;
@@ -27,31 +27,28 @@ interface SocialAccountsModalProps {
 
 const PLATFORMS = [
   {
-    id: "facebook",
-    name: "Facebook",
-    icon: Facebook,
-    color: "from-blue-600 to-indigo-700",
-    badge: "Official Pages",
-    description: "Connect your official Facebook Page to publish updates, citizen news, multi-image carousels, and videos.",
-    features: ["Facebook Page Posts & Albums", "Multi-Image Carousels", "Official Page Reach"],
-  },
-  {
-    id: "instagram",
-    name: "Instagram",
+    id: "INSTAGRAM",
+    name: "Instagram Professional",
     icon: Instagram,
-    color: "from-pink-500 via-purple-600 to-amber-500",
-    badge: "Reels & Media",
-    description: "Connect your Instagram Professional or Creator account to broadcast Reels, carousels, and high-impact media.",
-    features: ["Instagram Reels & Video", "Single & Carousel Posts", "Official Creator Reach"],
+    color: "from-purple-600 to-pink-500",
+    description: "Official representative profile or business account",
+    badge: "Official API",
   },
   {
-    id: "linkedin",
-    name: "LinkedIn",
+    id: "FACEBOOK",
+    name: "Facebook Page",
+    icon: Facebook,
+    color: "from-blue-600 to-blue-700",
+    description: "Official public MP/MLA constituent page",
+    badge: "Graph API v19",
+  },
+  {
+    id: "LINKEDIN",
+    name: "LinkedIn Organization",
     icon: Linkedin,
-    color: "from-blue-700 to-indigo-800",
-    badge: "Professional",
-    description: "Broadcast policy achievements, development whitepapers, and administrative milestones to your network.",
-    features: ["Governance & Policy Reports", "Professional Network Engagement", "Secure OAuth 2.0"],
+    color: "from-blue-700 to-cyan-800",
+    description: "Professional profile or official office page",
+    badge: "Community API",
   },
 ];
 
@@ -62,73 +59,56 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
   initialConnectionId,
   initialProvider,
 }) => {
-  const [step, setStep] = useState<"SELECT_PLATFORM" | "CONFIRM_REDIRECT" | "DISCOVERED_RESOURCES">(
-    initialConnectionId ? "DISCOVERED_RESOURCES" : "SELECT_PLATFORM"
-  );
-  const [selectedPlatform, setSelectedPlatform] = useState<string>("facebook");
-  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const [step, setStep] = useState<"SELECT_PLATFORM" | "CONFIRM_REDIRECT" | "DISCOVERED_RESOURCES">("SELECT_PLATFORM");
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("INSTAGRAM");
   const [redirecting, setRedirecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Discovered Resources State
-  const [connectionId, setConnectionId] = useState<string | null>(initialConnectionId || null);
   const [discoveredResources, setDiscoveredResources] = useState<any[]>([]);
   const [selectedResourceIds, setSelectedResourceIds] = useState<string[]>([]);
   const [activating, setActivating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      if (initialConnectionId) {
-        setConnectionId(initialConnectionId);
-        const providerToUse = initialProvider || "facebook";
-        setSelectedPlatform(providerToUse);
-        loadDiscoveredResources(providerToUse, initialConnectionId);
-      } else {
-        setStep("SELECT_PLATFORM");
-        setConnectionId(null);
-        setDiscoveredResources([]);
-        setSelectedResourceIds([]);
-        setError(null);
-      }
+    if (initialConnectionId && initialProvider) {
+      setStep("DISCOVERED_RESOURCES");
+      fetchDiscoveredResources(initialConnectionId, initialProvider);
+    } else {
+      setStep("SELECT_PLATFORM");
     }
-  }, [isOpen, initialConnectionId, initialProvider]);
-
-  const loadDiscoveredResources = async (provider: string, connId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await socialApi.getDiscoveredResources(provider, connId);
-      if (res.data?.success) {
-        const list = res.data.data?.resources || [];
-        setDiscoveredResources(list);
-        setSelectedResourceIds(list.map((r: any) => r.id));
-        setStep("DISCOVERED_RESOURCES");
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load discovered channels.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [initialConnectionId, initialProvider, isOpen]);
 
   if (!isOpen) return null;
 
   const currentPlatformObj = PLATFORMS.find((p) => p.id === selectedPlatform) || PLATFORMS[0];
+
+  const fetchDiscoveredResources = async (connId: string, provider: string) => {
+    try {
+      const res = await socialApi.getDiscoveredResources(provider, connId);
+      if (res.data?.success) {
+        setDiscoveredResources(res.data.data || []);
+        setSelectedResourceIds((res.data.data || []).map((r: any) => r.id));
+      }
+    } catch (err: any) {
+      console.error("Failed to load discovered channels:", err);
+      setError("Failed to load channel list from OAuth provider.");
+    }
+  };
 
   const handleStartOAuth = async () => {
     try {
       setRedirecting(true);
       setError(null);
       const res = await socialApi.startOAuth(selectedPlatform);
-      if (res.data?.success && res.data.data?.authUrl) {
-        // Redirect to provider OAuth URL
-        window.location.href = res.data.data.authUrl;
+      if (res.data?.success && res.data.authUrl) {
+        window.location.href = res.data.authUrl;
       } else {
-        throw new Error("Unable to retrieve authorization URL.");
+        setError("Failed to generate OAuth redirect link.");
       }
     } catch (err: any) {
+      console.error("OAuth init failed:", err);
+      setError(err.response?.data?.message || "Failed to connect with provider.");
+    } finally {
       setRedirecting(false);
-      setError(err.response?.data?.message || err.message || "Failed to initiate OAuth.");
     }
   };
 
@@ -141,21 +121,21 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
   };
 
   const handleActivateResources = async () => {
-    if (!connectionId || selectedResourceIds.length === 0) {
-      setError("Please select at least one channel to connect.");
-      return;
-    }
-
+    if (!initialConnectionId || !initialProvider || selectedResourceIds.length === 0) return;
     try {
       setActivating(true);
       setError(null);
-      const providerToUse = initialProvider || selectedPlatform;
-      const res = await socialApi.selectResources(providerToUse, {
-        connectionId,
+      const res = await socialApi.selectResources(initialProvider, {
+        connectionId: initialConnectionId,
         resourceIds: selectedResourceIds,
       });
 
       if (res.data?.success) {
+        toast({
+          title: "Channels Connected Successfully! 🎉",
+          description: "Your official social media channels are ready for 1-click broadcasts.",
+          className: "bg-emerald-600 text-white font-bold",
+        });
         onSuccess();
         onClose();
       }
@@ -167,40 +147,41 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-card border border-border rounded-[28px] w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold text-foreground">
                 {step === "DISCOVERED_RESOURCES"
                   ? "Choose Channels to Connect"
                   : "Connect Official Social Channels"}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {step === "DISCOVERED_RESOURCES"
                   ? "Select which discovered pages and profiles to activate on your dashboard."
                   : "Secure 1-Click OAuth authorization without manual API keys or secrets."}
               </p>
             </div>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="rounded-full h-8 w-8 text-muted-foreground hover:text-foreground"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Modal Body */}
         <div className="p-6 space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-600 dark:text-red-400">
+            <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive">
               {error}
             </div>
           )}
@@ -208,7 +189,7 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
           {/* STEP 1: Select Platform */}
           {step === "SELECT_PLATFORM" && (
             <div className="space-y-4">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Select Network
               </label>
 
@@ -222,7 +203,7 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
                         setSelectedPlatform(p.id);
                         setStep("CONFIRM_REDIRECT");
                       }}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-orange-500 dark:hover:border-orange-500 bg-white dark:bg-slate-800/60 hover:bg-orange-50/30 dark:hover:bg-orange-950/20 transition-all cursor-pointer group flex items-center justify-between gap-4 shadow-sm"
+                      className="p-4 rounded-2xl border border-border hover:border-primary/50 bg-card hover:bg-muted/40 transition-all cursor-pointer group flex items-center justify-between gap-4 shadow-sm"
                     >
                       <div className="flex items-start gap-3.5">
                         <div
@@ -232,26 +213,28 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                            <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                               {p.name}
                             </h4>
-                            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] font-bold rounded-full">
                               {p.badge}
-                            </span>
+                            </Badge>
                           </div>
-                          <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                             {p.description}
                           </p>
                         </div>
                       </div>
 
-                      <button
+                      <Button
                         type="button"
-                        className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold group-hover:bg-orange-600 group-hover:text-white transition-all shrink-0 flex items-center gap-1.5"
+                        size="sm"
+                        variant="secondary"
+                        className="rounded-xl text-xs font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-all shrink-0 gap-1.5"
                       >
                         Connect
                         <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   );
                 })}
@@ -263,21 +246,21 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
           {step === "CONFIRM_REDIRECT" && (
             <div className="space-y-6 text-center py-2">
               <div
-                className={`w-16 h-16 mx-auto rounded-3xl flex items-center justify-center text-white bg-gradient-to-tr ${currentPlatformObj.color} shadow-xl shadow-orange-500/10`}
+                className={`w-16 h-16 mx-auto rounded-3xl flex items-center justify-center text-white bg-gradient-to-tr ${currentPlatformObj.color} shadow-xl`}
               >
                 <currentPlatformObj.icon className="w-8 h-8" />
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h3 className="text-lg font-bold text-foreground">
                   Connect {currentPlatformObj.name}
                 </h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1 leading-relaxed">
                   You will be securely redirected to {currentPlatformObj.name.split(" ")[0]} to log in and authorize your official representative account.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-left space-y-2.5 max-w-md mx-auto text-xs">
+              <div className="p-4 rounded-2xl bg-muted/30 border border-border text-left space-y-2.5 max-w-md mx-auto text-xs">
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>Zero password or token sharing required</span>
@@ -293,18 +276,19 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
               </div>
 
               <div className="pt-4 flex items-center justify-center gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setStep("SELECT_PLATFORM")}
-                  className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="rounded-xl text-xs font-semibold"
                 >
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   disabled={redirecting}
                   onClick={handleStartOAuth}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-xs font-bold shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] disabled:opacity-50"
+                  className="rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md gap-2"
                 >
                   {redirecting ? (
                     <>
@@ -317,7 +301,7 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
                       <ExternalLink className="w-3.5 h-3.5" />
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -326,16 +310,16 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
           {step === "DISCOVERED_RESOURCES" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Discovered Channels ({discoveredResources.length} Available)
                 </label>
-                <span className="text-xs text-orange-600 font-bold">
+                <span className="text-xs text-primary font-bold">
                   {selectedResourceIds.length} Selected
                 </span>
               </div>
 
               {discoveredResources.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-center text-xs text-slate-500">
+                <div className="p-8 rounded-2xl bg-muted/30 text-center text-xs text-muted-foreground">
                   No eligible pages or channels found under this authorization.
                 </div>
               ) : (
@@ -348,8 +332,8 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
                         onClick={() => toggleResource(res.id)}
                         className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                           isSelected
-                            ? "bg-orange-50/60 dark:bg-orange-950/30 border-orange-500 shadow-sm"
-                            : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-60"
+                            ? "bg-primary/10 border-primary shadow-sm"
+                            : "bg-card border-border opacity-60 hover:opacity-100"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -357,18 +341,18 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {}}
-                            className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
+                            className="w-4 h-4 accent-primary rounded cursor-pointer"
                           />
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                              <h4 className="text-xs font-bold text-foreground">
                                 {res.name}
                               </h4>
-                              <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                              <Badge variant="outline" className="px-2 py-0.5 text-[10px] font-bold rounded-full">
                                 {res.platform}
-                              </span>
+                              </Badge>
                             </div>
-                            <p className="text-[11px] text-slate-400">
+                            <p className="text-[11px] text-muted-foreground">
                               {res.username || res.type}
                               {res.followersCount ? ` • ${res.followersCount.toLocaleString()} followers` : ""}
                             </p>
@@ -381,23 +365,24 @@ export const SocialAccountsModal: React.FC<SocialAccountsModalProps> = ({
               )}
 
               <div className="pt-3 flex items-center justify-end gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onClose}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="rounded-xl text-xs font-semibold"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   disabled={activating || selectedResourceIds.length === 0}
                   onClick={handleActivateResources}
-                  className="px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-md shadow-orange-500/25 transition-all disabled:opacity-50"
+                  className="rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md"
                 >
                   {activating
                     ? "Activating Channels..."
                     : `Connect ${selectedResourceIds.length} Selected Channel(s)`}
-                </button>
+                </Button>
               </div>
             </div>
           )}

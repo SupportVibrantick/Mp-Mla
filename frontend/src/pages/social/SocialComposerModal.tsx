@@ -26,6 +26,8 @@ import {
 import { socialApi } from "../../lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUploadField } from "../../components/common/ImageUploadField";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface SocialComposerModalProps {
   isOpen: boolean;
@@ -89,21 +91,12 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
   };
 
   const selectedAccounts = accounts.filter((a) => selectedAccountIds.includes(a.id));
-  const hasTwitterSelected = selectedAccounts.some((a) => a.platform === "TWITTER");
   const hasIgSelected = selectedAccounts.some((a) => a.platform === "INSTAGRAM");
-  const hasYtSelected = selectedAccounts.some((a) => a.platform === "YOUTUBE");
-  const twitterCharsRemaining = 280 - content.length;
 
   // Pre-flight compatibility warnings
   const warnings: string[] = [];
   if (hasIgSelected && mediaUrls.length === 0) {
     warnings.push("Instagram requires at least one image or video attachment to publish.");
-  }
-  if (hasTwitterSelected && twitterCharsRemaining < 0) {
-    warnings.push(`Post exceeds X (Twitter) character limit by ${Math.abs(twitterCharsRemaining)} characters.`);
-  }
-  if (hasYtSelected && mediaUrls.length === 0) {
-    warnings.push("YouTube requires a video file attachment.");
   }
 
   const handlePublish = async (e: React.FormEvent) => {
@@ -114,10 +107,6 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
     }
     if (selectedAccountIds.length === 0) {
       setError("Please select at least one social media channel to publish.");
-      return;
-    }
-    if (hasTwitterSelected && twitterCharsRemaining < 0) {
-      setError("Please shorten post to under 280 characters for X (Twitter).");
       return;
     }
 
@@ -132,14 +121,6 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
       selectedAccounts.forEach((acc) => {
         if (acc.platform === "INSTAGRAM" && igHashtags.trim()) {
           customCaptions[acc.id] = `${content}\n\n${igHashtags}`;
-        }
-        if (acc.platform === "YOUTUBE") {
-          platformConfigs[acc.id] = {
-            title: ytTitle || content.slice(0, 60),
-            tags: ytTags ? ytTags.split(",").map((t) => t.trim()) : [],
-            privacyStatus: ytPrivacy,
-            madeForKids: ytMadeForKids,
-          };
         }
       });
 
@@ -175,36 +156,37 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[92vh]">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-card border border-border rounded-[28px] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[92vh]">
         {/* Left: Composer Form */}
         <div className="flex-1 p-6 overflow-y-auto space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-orange-500" />
+              <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
                 Universal Social Media Composer
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 1-Click simultaneous broadcast with independent platform adapters.
               </p>
             </div>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden"
+              className="rounded-full h-8 w-8 text-muted-foreground hover:text-foreground md:hidden"
             >
               <X className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
 
           {/* Target Network Selector */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Target Networks ({selectedAccountIds.length} Selected)
             </label>
             {accounts.length === 0 ? (
-              <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/40 p-3 rounded-xl">
+              <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
                 No social channels connected yet. Please connect an account first.
               </p>
             ) : (
@@ -216,10 +198,10 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                       key={acc.id}
                       type="button"
                       onClick={() => toggleAccount(acc.id)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                         isSelected
-                          ? "bg-orange-50 dark:bg-orange-950/40 border-orange-500 text-orange-600 dark:text-orange-400 shadow-sm"
-                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 opacity-60"
+                          ? "bg-primary/10 border-primary text-primary shadow-sm"
+                          : "bg-muted/40 border-border text-muted-foreground opacity-60 hover:opacity-100"
                       }`}
                     >
                       {acc.platform === "INSTAGRAM" && <Instagram className="w-3.5 h-3.5 text-pink-500" />}
@@ -236,14 +218,14 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
           </div>
 
           {/* Sub-Tabs for Master Content vs Platform Specifics */}
-          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+          <div className="flex items-center gap-2 border-b border-border pb-2">
             <button
               type="button"
               onClick={() => setActiveTab("MASTER")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === "MASTER"
-                  ? "bg-orange-600 text-white"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               Master Content
@@ -252,26 +234,13 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab("INSTAGRAM")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   activeTab === "INSTAGRAM"
-                    ? "bg-orange-600 text-white"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
                 Instagram Config
-              </button>
-            )}
-            {hasYtSelected && (
-              <button
-                type="button"
-                onClick={() => setActiveTab("YOUTUBE")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === "YOUTUBE"
-                    ? "bg-orange-600 text-white"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
-              >
-                YouTube Video Config
               </button>
             )}
           </div>
@@ -281,22 +250,9 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
               {/* Post Content */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Master Caption & Message
                   </label>
-                  {hasTwitterSelected && (
-                    <span
-                      className={`text-xs font-mono font-bold ${
-                        twitterCharsRemaining < 0
-                          ? "text-red-600 dark:text-red-400"
-                          : twitterCharsRemaining < 20
-                          ? "text-amber-500"
-                          : "text-slate-400"
-                      }`}
-                    >
-                      X limit: {twitterCharsRemaining} chars
-                    </span>
-                  )}
                 </div>
                 <textarea
                   rows={4}
@@ -304,13 +260,13 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Write official announcement, development report, or public greeting..."
-                  className="w-full p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:outline-none leading-relaxed"
+                  className="w-full p-3.5 rounded-2xl bg-muted/40 border border-border text-xs text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none leading-relaxed"
                 />
               </div>
 
               {/* Media Attachments */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Attach Images / Videos
                 </label>
                 <div className="space-y-3">
@@ -325,7 +281,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                       {mediaUrls.map((url, idx) => (
                         <div
                           key={idx}
-                          className="relative group w-16 h-16 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+                          className="relative group w-16 h-16 rounded-xl overflow-hidden border border-border bg-muted"
                         >
                           <img src={url} alt="Attachment" className="w-full h-full object-cover" />
                           <button
@@ -345,13 +301,13 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
           )}
 
           {activeTab === "INSTAGRAM" && (
-            <div className="space-y-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <div className="space-y-4 p-4 rounded-2xl bg-muted/30 border border-border">
+              <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Tag className="w-4 h-4 text-pink-500" />
                 Instagram Specific Hashtags & First Comment
               </h4>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
                   Hashtags (Appended to Caption)
                 </label>
                 <input
@@ -359,20 +315,20 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                   value={igHashtags}
                   onChange={(e) => setIgHashtags(e.target.value)}
                   placeholder="#ConstituencyName #MLAName #DevelopmentWorks"
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-card border border-border text-xs focus:ring-2 focus:ring-primary/50 focus:outline-none text-foreground"
                 />
               </div>
             </div>
           )}
 
           {activeTab === "YOUTUBE" && (
-            <div className="space-y-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <div className="space-y-4 p-4 rounded-2xl bg-muted/30 border border-border">
+              <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Youtube className="w-4 h-4 text-red-600" />
                 YouTube Video Metadata
               </h4>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
                   Video Title
                 </label>
                 <input
@@ -380,12 +336,12 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                   value={ytTitle}
                   onChange={(e) => setYtTitle(e.target.value)}
                   placeholder="Official Speech / Project Inauguration Video"
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-card border border-border text-xs focus:ring-2 focus:ring-primary/50 focus:outline-none text-foreground"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
                     Tags (comma separated)
                   </label>
                   <input
@@ -393,17 +349,17 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                     value={ytTags}
                     onChange={(e) => setYtTags(e.target.value)}
                     placeholder="mla, speech, development"
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-card border border-border text-xs focus:ring-2 focus:ring-primary/50 focus:outline-none text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
                     Visibility
                   </label>
                   <select
                     value={ytPrivacy}
                     onChange={(e) => setYtPrivacy(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-card border border-border text-xs focus:ring-2 focus:ring-primary/50 focus:outline-none text-foreground"
                   >
                     <option value="public">Public</option>
                     <option value="unlisted">Unlisted</option>
@@ -416,9 +372,9 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
 
           {/* Pre-flight Warnings */}
           {warnings.length > 0 && (
-            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400 space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Compatibility Notices:</span>
               </div>
               {warnings.map((w, i) => (
@@ -428,11 +384,11 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
           )}
 
           {/* Schedule & Compliance Section */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
+          <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-500" />
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <Clock className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold text-foreground">
                   Schedule Broadcast (Asia/Kolkata)
                 </span>
               </div>
@@ -440,7 +396,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                 type="checkbox"
                 checked={isScheduledMode}
                 onChange={(e) => setIsScheduledMode(e.target.checked)}
-                className="w-4 h-4 accent-orange-600 rounded cursor-pointer"
+                className="w-4 h-4 accent-primary rounded cursor-pointer"
               />
             </div>
 
@@ -450,14 +406,14 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                   type="datetime-local"
                   value={scheduledAt}
                   onChange={(e) => setScheduledAt(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  className="w-full px-3.5 py-2 rounded-xl bg-card border border-border text-xs text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none"
                 />
               </div>
             )}
 
             {/* Political & AI Compliance */}
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-wrap items-center gap-4 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+            <div className="pt-2 border-t border-border flex flex-wrap items-center gap-4 text-xs">
+              <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground">
                 <input
                   type="checkbox"
                   checked={isAiGenerated}
@@ -466,7 +422,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                 />
                 <span className="text-[11px]">Mark as AI-Assisted / Altered</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+              <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground">
                 <input
                   type="checkbox"
                   checked={complianceConfirmed}
@@ -479,25 +435,26 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-600 dark:text-red-400">
+            <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive">
               {error}
             </div>
           )}
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="rounded-xl text-xs font-semibold"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handlePublish}
               disabled={publishing || accounts.length === 0}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-xs font-bold shadow-lg shadow-orange-500/25 transition-all disabled:opacity-50 hover:scale-[1.02]"
+              className="rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-md gap-2"
             >
               {publishing ? (
                 "Processing Queue..."
@@ -512,26 +469,26 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                   Publish via Adapters
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Right: Interactive Live Smartphone Mockup */}
-        <div className="w-full md:w-96 bg-slate-100 dark:bg-slate-950 p-6 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 flex flex-col items-center justify-between shrink-0">
+        <div className="w-full md:w-96 bg-muted/30 p-6 border-t md:border-t-0 md:border-l border-border flex flex-col items-center justify-between shrink-0">
           <div className="w-full flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-              <Smartphone className="w-4 h-4 text-orange-500" />
+            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <Smartphone className="w-4 h-4 text-primary" />
               <span>Live Post Mockup</span>
             </div>
             {/* Toggle Preview Platform */}
-            <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center gap-1 bg-card p-1 rounded-xl border border-border shadow-sm">
               <button
                 type="button"
                 onClick={() => setPreviewPlatform("INSTAGRAM")}
-                className={`p-1.5 rounded-lg text-xs ${
+                className={`p-1.5 rounded-lg text-xs transition-all ${
                   previewPlatform === "INSTAGRAM"
-                    ? "bg-orange-500 text-white"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Instagram Preview"
               >
@@ -540,10 +497,10 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
               <button
                 type="button"
                 onClick={() => setPreviewPlatform("FACEBOOK")}
-                className={`p-1.5 rounded-lg text-xs ${
+                className={`p-1.5 rounded-lg text-xs transition-all ${
                   previewPlatform === "FACEBOOK"
-                    ? "bg-orange-500 text-white"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Facebook Preview"
               >
@@ -553,22 +510,22 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
           </div>
 
           {/* Smartphone Frame */}
-          <div className="w-full max-w-[280px] bg-white dark:bg-slate-900 rounded-[32px] border-[6px] border-slate-800 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col my-auto">
+          <div className="w-full max-w-[280px] bg-card rounded-[32px] border-[6px] border-border/80 shadow-2xl overflow-hidden flex flex-col my-auto">
             {/* Mockup Top Notch */}
-            <div className="h-4 bg-slate-800 dark:bg-slate-700 flex items-center justify-center">
-              <div className="w-12 h-1.5 bg-slate-900 rounded-full" />
+            <div className="h-4 bg-border flex items-center justify-center">
+              <div className="w-12 h-1.5 bg-muted rounded-full" />
             </div>
 
             {/* Mockup Header */}
-            <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-orange-500 to-amber-600 text-white font-black text-[10px] flex items-center justify-center">
+            <div className="p-3 border-b border-border/60 flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground font-black text-[10px] flex items-center justify-center">
                 M
               </div>
               <div className="leading-tight">
-                <p className="text-[11px] font-bold text-slate-900 dark:text-white">
+                <p className="text-[11px] font-bold text-foreground">
                   MLA Official
                 </p>
-                <p className="text-[9px] text-slate-400">
+                <p className="text-[9px] text-muted-foreground">
                   {previewPlatform === "INSTAGRAM"
                     ? "Instagram Feed"
                     : previewPlatform === "FACEBOOK"
@@ -580,7 +537,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
 
             {/* Mockup Media */}
             {mediaUrls.length > 0 ? (
-              <div className="w-full aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden relative">
+              <div className="w-full aspect-square bg-muted overflow-hidden relative">
                 <img
                   src={mediaUrls[0]}
                   alt="Mockup"
@@ -593,17 +550,17 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="w-full aspect-[4/3] bg-slate-50 dark:bg-slate-800/40 border-y border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-slate-400 text-[10px] p-4 text-center">
+              <div className="w-full aspect-[4/3] bg-muted/40 border-y border-border flex flex-col items-center justify-center text-muted-foreground text-[10px] p-4 text-center">
                 <ImageIcon className="w-6 h-6 mb-1 opacity-40" />
                 Text-Only Announcement
               </div>
             )}
 
             {/* Mockup Caption */}
-            <div className="p-3 text-[11px] text-slate-800 dark:text-slate-200 leading-snug break-words max-h-32 overflow-y-auto">
+            <div className="p-3 text-[11px] text-foreground leading-snug break-words max-h-32 overflow-y-auto">
               <span className="font-bold mr-1">mlaofficial</span>
               {content || (
-                <span className="text-slate-400 italic">
+                <span className="text-muted-foreground italic">
                   Post preview text will appear here as you type...
                 </span>
               )}
@@ -615,7 +572,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
             </div>
           </div>
 
-          <p className="text-[10px] text-slate-400 mt-3 text-center">
+          <p className="text-[10px] text-muted-foreground mt-3 text-center">
             Decoupled provider queue ready.
           </p>
         </div>

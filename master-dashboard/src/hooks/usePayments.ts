@@ -88,6 +88,14 @@ export function useDeletePayment() {
   );
 }
 
+export function useRegenerateInvoices() {
+  return usePaymentMutation<void | undefined>(
+    () => paymentsApi.regenerateInvoices(),
+    "Invoices Regenerated",
+    "All invoices have been regenerated with modern market-standard formatting.",
+  );
+}
+
 // ═══════════════════════════════════════════════════════
 // ADMIN RAZORPAY CHECKOUT HOOK
 // ═══════════════════════════════════════════════════════

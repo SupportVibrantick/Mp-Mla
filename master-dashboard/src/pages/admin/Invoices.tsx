@@ -19,8 +19,10 @@ import {
   Search,
   Eye,
   ArrowUpRight,
+  RefreshCw,
 } from "lucide-react";
 import { useInvoices } from "@/hooks/useSubscriptions";
+import { useRegenerateInvoices } from "@/hooks/usePayments";
 import { SubscriptionsNav } from "@/components/layout/SubscriptionsNav";
 import { getImageUrl } from "@/lib/utils";
 
@@ -46,6 +48,8 @@ export default function InvoicesPage() {
   const [status, setStatus] = useState<string>("ALL");
   const [page, setPage] = useState(1);
   const limit = 10;
+
+  const regenerateMutation = useRegenerateInvoices();
 
   const invoicesQuery = useInvoices(
     useMemo(
@@ -111,6 +115,16 @@ export default function InvoicesPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              onClick={() => regenerateMutation.mutate(undefined)}
+              disabled={regenerateMutation.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 ${regenerateMutation.isPending ? "animate-spin" : ""}`} />
+              {regenerateMutation.isPending ? "Regenerating..." : "Regenerate All Invoices"}
+            </Button>
             <Button
               type="button"
               variant="outline"

@@ -417,6 +417,7 @@ export const paymentsApi = {
   stats: () => api.get("/platform/payments/stats"),
   createOrder: (data: any) => api.post("/platform/payments/order", data),
   verifyPayment: (data: any) => api.post("/platform/payments/verify", data),
+  regenerateInvoices: () => api.post("/platform/payments/regenerate-invoices"),
 };
 
 export const backupsApi = {

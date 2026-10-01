@@ -331,22 +331,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           module: "events",
         },
         {
-          label: "Creative Studio",
-          icon: Palette,
-          href: "/creatives",
-          module: "creative",
-        },
-        {
-          label: "Website Builder",
-          icon: Globe,
-          href: "/websites",
-        },
-        {
-          label: "Social Media Hub",
-          icon: Share2,
-          href: "/social",
-        },
-        {
           label: "Helpline Numbers",
           icon: PhoneCall,
           href: "/helplines",
@@ -380,6 +364,27 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           icon: FolderOpen,
           href: "/documents",
           module: "documents",
+        },
+      ],
+    },
+    {
+      title: "Media & Digital Hub",
+      items: [
+        {
+          label: "Creative Studio",
+          icon: Palette,
+          href: "/creatives",
+          module: "creative",
+        },
+        {
+          label: "Website Builder",
+          icon: Globe,
+          href: "/websites",
+        },
+        {
+          label: "Social Media Hub",
+          icon: Share2,
+          href: "/social",
         },
       ],
     },

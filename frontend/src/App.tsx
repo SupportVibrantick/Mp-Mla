@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -708,9 +708,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/websites/:websiteId/pages">
-        <ProtectedRoute>
-          <WebsitePagesPage />
-        </ProtectedRoute>
+        {(params) => <Redirect to={`/websites/${params.websiteId}/builder`} />}
       </Route>
       <Route path="/websites/:websiteId/domains">
         <ProtectedRoute>

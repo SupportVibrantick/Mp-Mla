@@ -4,7 +4,7 @@ import prisma from "../../lib/prisma.js";
 import { ApiError } from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import * as paymentService from "../../services/payment.service.js";
-import { generateInvoicePdf } from "../../services/invoice.service.js";
+import { generateInvoicePdf, regenerateAllInvoices } from "../../services/invoice.service.js";
 
 function getParamId(req: Request, name = "id"): string {
   const value = req.params[name];
@@ -394,3 +394,22 @@ export const getPaymentStats = async (
     next(error);
   }
 };
+
+// ════════════════════════════════════════════════════════
+// REGENERATE ALL INVOICES
+// ════════════════════════════════════════════════════════
+export const regenerateInvoices = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const count = await regenerateAllInvoices();
+    res.status(200).json(
+      ApiResponse.success({ count }, `Successfully regenerated ${count} invoice(s)`),
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+

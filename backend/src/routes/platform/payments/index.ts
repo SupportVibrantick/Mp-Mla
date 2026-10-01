@@ -24,6 +24,7 @@ import {
   updatePaymentStatus,
   deletePayment,
   getPaymentStats,
+  regenerateInvoices,
 } from "../../../controllers/platform/payments.controller.js";
 import {
   createOrder,
@@ -59,6 +60,7 @@ router.post("/order", authorizePlatform(...writeRoles), validate(createOrderSche
 router.post("/verify", authorizePlatform(...writeRoles), validate(verifyPaymentSchema), verifyPayment);
 
 // Existing payment CRUD routes
+router.post("/regenerate-invoices", authorizePlatform(...writeRoles), regenerateInvoices);
 router.get("/stats", authorizePlatform(...readRoles), getPaymentStats);
 router.get("/", authorizePlatform(...readRoles), validateQuery(listPaymentsSchema), listPayments);
 router.get("/:id", authorizePlatform(...readRoles), validateParams(idParamSchema), getPaymentById);
