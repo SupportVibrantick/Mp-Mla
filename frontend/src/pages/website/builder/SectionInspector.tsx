@@ -84,7 +84,7 @@ export const SectionInspector: React.FC<SectionInspectorProps> = ({
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-sky-400">
             Section Inspector
           </span>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white capitalize">
@@ -126,7 +126,7 @@ export const SectionInspector: React.FC<SectionInspectorProps> = ({
         {/* Content Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-            <Type className="w-4 h-4 text-orange-500" />
+            <Type className="w-4 h-4 text-primary" />
             <span>Content & Text</span>
           </div>
 
@@ -329,14 +329,14 @@ export const SectionInspector: React.FC<SectionInspectorProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                    Button Text
+                    Button Text (Optional)
                   </label>
                   <input
                     type="text"
                     value={section.props.primaryButtonText || ""}
                     onChange={(e) => handlePropChange("primaryButtonText", e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Lodge a Grievance"
+                    placeholder="Leave blank to hide button"
                   />
                 </div>
                 <div>

@@ -48,11 +48,11 @@ const AVAILABLE_BLOCKS: Array<{
       logoUrl: "",
       showHelpline: true,
       helplineText: "1800-889-2024",
-      primaryButtonText: "Lodge Grievance",
-      primaryButtonLink: "#grievance",
+      primaryButtonText: "Contact Us",
+      primaryButtonLink: "#contact",
       links: [
         { label: "Home", url: "#hero" },
-        { label: "Projects", url: "#projects" },
+        { label: "Gallery", url: "#gallery" },
         { label: "Schemes", url: "#schemes" },
         { label: "Janata Darbar", url: "#events" },
         { label: "Contact", url: "#contact" },
@@ -74,10 +74,10 @@ const AVAILABLE_BLOCKS: Array<{
       tagline: "Dedicated to Constituency Progress",
       title: "Serving the People with Transparency & Dedication",
       subtitle: "Working round the clock to build world-class infrastructure and empower every family in our constituency.",
-      primaryButtonText: "Lodge a Grievance",
-      primaryButtonLink: "#grievance",
-      secondaryButtonText: "Explore Projects",
-      secondaryButtonLink: "#projects",
+      primaryButtonText: "Explore Initiatives",
+      primaryButtonLink: "#projects",
+      secondaryButtonText: "Contact Secretariat",
+      secondaryButtonLink: "#contact",
       leaderName: "Hon'ble Representative",
       leaderTitle: "MLA / MP",
       leaderBadge: "Constituency 24/7 Helpline Active",
@@ -110,8 +110,8 @@ const AVAILABLE_BLOCKS: Array<{
       ],
       primaryButtonText: "Meet at Janata Darbar",
       primaryButtonLink: "#events",
-      secondaryButtonText: "Lodge a Grievance",
-      secondaryButtonLink: "#grievance",
+      secondaryButtonText: "Contact Secretariat",
+      secondaryButtonLink: "#contact",
     },
     defaultStyles: {
       paddingTop: "5rem",
@@ -209,60 +209,6 @@ const AVAILABLE_BLOCKS: Array<{
     },
   },
   {
-    type: "faq_accordion",
-    label: "Citizen Help & FAQs",
-    description: "Answers to common queries regarding government certificates, roads, water, and pension.",
-    defaultProps: {
-      title: "Constituency Citizen FAQs",
-    },
-    defaultStyles: {
-      paddingTop: "4rem",
-      paddingBottom: "4rem",
-      backgroundColor: "#f8fafc",
-    },
-  },
-  {
-    type: "rich_text",
-    label: "Rich Text & Announcement",
-    description: "Custom formatted text block for press releases, vision statements, or news.",
-    defaultProps: {
-      title: "Constituency Vision Statement",
-      htmlContent: "<p>Our mission is to foster inclusive growth, transparent governance, and modern infrastructure across all wards.</p>",
-    },
-    defaultStyles: {
-      paddingTop: "3rem",
-      paddingBottom: "3rem",
-    },
-  },
-  {
-    type: "custom_box",
-    label: "Custom Box / Callout Container",
-    description: "Fully custom visual box with badge, title, custom content, image, features list, and action buttons.",
-    defaultProps: {
-      badge: "Special Initiative & Public Notice",
-      title: "Direct Public Welfare & Constituency Mission",
-      subtitle: "Empowering every community with transparent governance, world-class amenities, and immediate assistance.",
-      description: "Our dedicated constituency office is actively monitoring all localized development works, ensuring 100% project completion on time and transparent fund allocation.",
-      imageUrl: "",
-      imagePosition: "right",
-      boxStyle: "card",
-      primaryButtonText: "Explore More",
-      primaryButtonLink: "#contact",
-      secondaryButtonText: "Lodge Inquiry",
-      secondaryButtonLink: "#grievance",
-      features: [
-        "Direct monitoring by elected representative",
-        "Zero bureaucratic delays in public services",
-        "24/7 dedicated helpline support",
-      ],
-    },
-    defaultStyles: {
-      paddingTop: "4rem",
-      paddingBottom: "4rem",
-      backgroundColor: "#f8fafc",
-    },
-  },
-  {
     type: "testimonials",
     label: "Citizen Testimonials & Feedback",
     description: "Citizen reviews, quotes, ward locations, star ratings, and community feedback cards.",
@@ -316,7 +262,7 @@ const AVAILABLE_BLOCKS: Array<{
           summary: "New underground drainage, four-lane connectivity, and community healthcare centers sanctioned under flagship masterplan.",
           imageUrl: "",
           tag: "Infrastructure",
-          link: "#",
+          link: "",
         },
         {
           publication: "Daily Citizen Post",
@@ -325,7 +271,7 @@ const AVAILABLE_BLOCKS: Array<{
           summary: "Constituency digital grievance portal recognized as a state-wide benchmark for rapid public service delivery.",
           imageUrl: "",
           tag: "Governance",
-          link: "#",
+          link: "",
         },
         {
           publication: "National Tribune",
@@ -334,7 +280,7 @@ const AVAILABLE_BLOCKS: Array<{
           summary: "Specialist doctors, free medicines, and diagnostic checkups organized across all rural and urban wards.",
           imageUrl: "",
           tag: "Healthcare",
-          link: "#",
+          link: "",
         },
       ],
     },
@@ -480,6 +426,255 @@ const AVAILABLE_BLOCKS: Array<{
   },
 ];
 
+const getDefaultSinglePageSections = (brandName: string = "Hon'ble Representative"): SectionBlock[] => [
+  {
+    id: `sec_navbar_${Date.now()}_1`,
+    type: "navbar",
+    props: {
+      brandName: brandName || "Hon'ble Representative",
+      brandSubtitle: "Official Leader Portal",
+      logoText: (brandName || "R").charAt(0).toUpperCase(),
+      logoUrl: "",
+      showHelpline: false,
+      helplineText: "",
+      primaryButtonText: "",
+      primaryButtonLink: "",
+      links: [
+        { label: "Home", url: "#hero" },
+        { label: "Biography", url: "#bio" },
+        { label: "Vision & Pillars", url: "#vision" },
+        { label: "Milestones", url: "#stats" },
+        { label: "Photo Gallery", url: "#gallery" },
+        { label: "Press & Speeches", url: "#press" },
+        { label: "Contact Office", url: "#contact" },
+      ],
+    },
+    styles: { backgroundColor: "#ffffff", textColor: "#0f172a", paddingTop: "0.75rem", paddingBottom: "0.75rem" },
+  },
+  {
+    id: `sec_hero_${Date.now()}_2`,
+    type: "hero",
+    props: {
+      tagline: "OFFICIAL LEADER PORTAL & PUBLIC SERVICE",
+      title: "Serving with Vision, Unwavering Integrity & Dedication",
+      subtitle: "Dedicated to transformative public service, parliamentary excellence, and the holistic development of our constituency.",
+      primaryButtonText: "Read Biography",
+      primaryButtonLink: "#bio",
+      secondaryButtonText: "Connect with Secretariat",
+      secondaryButtonLink: "#contact",
+      leaderName: brandName || "Hon'ble Representative",
+      leaderTitle: "Member of Parliament / Legislative Assembly",
+      leaderBadge: "Official Representative Portal",
+      leaderImage: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80",
+    },
+    styles: { paddingTop: "4.5rem", paddingBottom: "4.5rem" },
+  },
+  {
+    id: `sec_bio_${Date.now()}_3`,
+    type: "representative_profile",
+    props: {
+      tagline: "BIOGRAPHY & LEADERSHIP JOURNEY",
+      title: "A Lifetime Devoted to Grassroots Service & National Progress",
+      subtitle: "Leading with principles, empowering every citizen, and championing progressive governance at every level.",
+      bio: "Representing our constituency with uncompromising integrity. Spearheading major developmental initiatives, advocating for constituent rights in parliament, and fostering inclusive growth across all communities.",
+      leaderName: brandName || "Hon'ble Representative",
+      leaderTitle: "Member of Parliament / Legislative Assembly",
+      leaderImage: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80",
+      experienceYears: "20+",
+      constituencyName: "Constituency Region",
+      visionPoints: [
+        { title: "Principled Governance", desc: "Transparent, accountable, and citizen-centric public leadership." },
+        { title: "Youth & Educational Empowerment", desc: "Digital smart classrooms, modern sports infrastructure, and skill development." },
+        { title: "Farmer & Rural Prosperity", desc: "Direct agricultural support, micro-irrigation, and paved road connectivity." },
+        { title: "Universal Healthcare & Welfare", desc: "Accessible health camps, subsidized care, and citizen empowerment programs." },
+      ],
+      primaryButtonText: "Media & Speeches",
+      primaryButtonLink: "#press",
+      secondaryButtonText: "Contact Secretariat",
+      secondaryButtonLink: "#contact",
+    },
+    styles: { paddingTop: "5rem", paddingBottom: "5rem", backgroundColor: "#ffffff" },
+  },
+  {
+    id: `sec_stats_${Date.now()}_4`,
+    type: "stats",
+    props: {
+      title: "Key Milestones & Public Service Snapshot",
+      subtitle: "Reflecting decades of active public service, legislative initiatives, and constituent engagement.",
+      items: [
+        { value: "25+ Yrs", label: "Public Service Tenure" },
+        { value: "1,200+", label: "Parliamentary Speeches & Addresses" },
+        { value: "500+", label: "Development Initiatives Facilitated" },
+        { value: "100%", label: "Constituency Commitment" },
+      ],
+    },
+    styles: { paddingTop: "4rem", paddingBottom: "4rem", backgroundColor: "#f8fafc" },
+  },
+  {
+    id: `sec_features_${Date.now()}_5`,
+    type: "features_grid",
+    props: {
+      badge: "CORE PHILOSOPHY & VISION",
+      title: "Guiding Principles of Our Public Service",
+      subtitle: "A progressive blueprint focused on grassroots empowerment, sustainable development, and accessible leadership.",
+      items: [
+        {
+          icon: "shield",
+          title: "Transparent Leadership",
+          description: "Zero tolerance for opacity, promoting open governance and integrity in public office.",
+        },
+        {
+          icon: "heart",
+          title: "Accessible Healthcare",
+          description: "Equipping local centers with modern diagnostics, ambulances, and subsidized treatment.",
+        },
+        {
+          icon: "users",
+          title: "Youth Skills & Employment",
+          description: "Facilitating vocational training centers, digital learning labs, and career opportunities.",
+        },
+        {
+          icon: "building",
+          title: "Modern Infrastructure",
+          description: "All-weather four-lane roads, underground utilities, and clean drinking water networks.",
+        },
+        {
+          icon: "award",
+          title: "Agricultural Prosperity",
+          description: "Facilitating crop insurance desks, farmer subsidies, and modern irrigation infrastructure.",
+        },
+        {
+          icon: "sparkles",
+          title: "Clean & Green Environment",
+          description: "Promoting solar lighting, waste management, and urban green plantation drives.",
+        },
+      ],
+    },
+    styles: { paddingTop: "4.5rem", paddingBottom: "4.5rem", backgroundColor: "#ffffff" },
+  },
+  {
+    id: `sec_gallery_${Date.now()}_6`,
+    type: "gallery",
+    props: {
+      badge: "PHOTO & VIDEO GALLERY",
+      title: "Glimpses of Public Service & Events",
+      subtitle: "Visual documentation from official addresses, parliamentary sessions, grassroots visits, and public inaugurations.",
+      items: [
+        {
+          title: "Flyover & Transit Highway Inauguration",
+          category: "Infrastructure",
+          date: "May 2026",
+          imageUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Mega Healthcare & Free Medicine Distribution",
+          category: "Healthcare",
+          date: "April 2026",
+          imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Smart Digital Classroom Launch",
+          category: "Education",
+          date: "March 2026",
+          imageUrl: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Public Interaction & Citizen Address",
+          category: "Public Service",
+          date: "March 2026",
+          imageUrl: "https://images.unsplash.com/photo-1577495508048-b635879837f1?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Clean Drinking Water RO Station",
+          category: "Water Supply",
+          date: "February 2026",
+          imageUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Youth Community Sports Complex",
+          category: "Youth & Sports",
+          date: "January 2026",
+          imageUrl: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800&auto=format&fit=crop&q=80",
+        },
+      ],
+    },
+    styles: { paddingTop: "4.5rem", paddingBottom: "4.5rem", backgroundColor: "#f8fafc" },
+  },
+  {
+    id: `sec_press_${Date.now()}_7`,
+    type: "press_news",
+    props: {
+      badge: "MEDIA & SPEECHES ROOM",
+      title: "Recent Addresses, Statements & Media Highlights",
+      subtitle: "Official statements, press releases, parliamentary interventions, and media coverage.",
+      items: [
+        {
+          publication: "State Bureau News",
+          date: "May 2026",
+          headline: "₹ 140 Crore Master Infrastructure Package Sanctioned for Constituency",
+          summary: "Four-lane highway connectivity, underground drainage, and new health centers inaugurated under representative vision.",
+          imageUrl: "",
+          tag: "Infrastructure",
+          link: "#",
+        },
+        {
+          publication: "Daily Citizen Post",
+          date: "April 2026",
+          headline: "Keynote Address on Grassroots Empowerment & Inclusive Governance",
+          summary: "Representative outlines comprehensive blueprint for constituent welfare and youth empowerment.",
+          imageUrl: "",
+          tag: "Governance",
+          link: "#",
+        },
+        {
+          publication: "National Tribune",
+          date: "March 2026",
+          headline: "Constituency Healthcare & Education Outreach Initiative Organized",
+          summary: "Specialist consultations, medicine distribution, and digital classroom kits provided across wards.",
+          imageUrl: "",
+          tag: "Healthcare",
+          link: "#",
+        },
+      ],
+    },
+    styles: { paddingTop: "4.5rem", paddingBottom: "4.5rem", backgroundColor: "#ffffff" },
+  },
+  {
+    id: `sec_contact_${Date.now()}_8`,
+    type: "contact_office",
+    props: {
+      title: "Connect With The Secretariat & Office",
+      subtitle: "Have an inquiry or wish to send a message to the representative team? Get in touch with our office.",
+      officeAddress: "Central Constituency Secretariat & Representative Camp Office, Civil Lines",
+      officePhone: "+91 98765 43210",
+      officeEmail: "office@constituency.gov.in",
+    },
+    styles: { paddingTop: "4.5rem", paddingBottom: "4.5rem", backgroundColor: "#f8fafc" },
+  },
+  {
+    id: `sec_footer_${Date.now()}_9`,
+    type: "footer",
+    props: {
+      brandName: brandName || "Hon'ble Representative",
+      brandSubtitle: "Official Leader Portal",
+      description: "Official personal website of the representative. Dedicated to transparent leadership, constituent service, and progressive governance.",
+      officeAddress: "Central Constituency Secretariat & Camp Office, Civil Lines",
+      helpline: "",
+      email: "office@constituency.gov.in",
+      primaryButtonText: "",
+      primaryButtonLink: "",
+      copyrightText: "© 2026 Official Representative Portal. All Rights Reserved.",
+    },
+    styles: {
+      backgroundColor: "#0f172a",
+      textColor: "#f8fafc",
+      paddingTop: "4rem",
+      paddingBottom: "2.5rem",
+      containerWidth: "default",
+    },
+  },
+];
+
 export const WebsiteBuilderPage: React.FC = () => {
   const { websiteId } = useParams<{ websiteId: string }>();
   const [, setLocation] = useLocation();
@@ -526,6 +721,8 @@ export const WebsiteBuilderPage: React.FC = () => {
         websitePagesApi.list(websiteId),
       ]);
 
+      const siteName = siteRes.data?.data?.name || "Constituency Portal";
+
       if (siteRes.data?.success) {
         setWebsite(siteRes.data.data);
       }
@@ -544,7 +741,9 @@ export const WebsiteBuilderPage: React.FC = () => {
           pagesList = deploymentSnapshotPages;
         }
 
-        // If still empty (brand new website with no pages), auto-create Home page
+        const defaultSinglePageSections = getDefaultSinglePageSections(siteName);
+
+        // If still empty (brand new website with no pages), auto-create Home page with default single-page sections
         if (pagesList.length === 0) {
           try {
             const createRes = await websitePagesApi.create(websiteId, {
@@ -553,22 +752,7 @@ export const WebsiteBuilderPage: React.FC = () => {
               isHomePage: true,
               content: {
                 version: 1,
-                sections: [
-                  {
-                    id: `sec_hero_${Date.now()}`,
-                    type: "representative-hero",
-                    props: {
-                      badge: "Official Representative Portal",
-                      headline: "Dedicated to the Progress & Prosperity of Our People",
-                      subheadline: "Transparency, rapid grievance resolution, and modern infrastructure development.",
-                      primaryButtonText: "Submit Grievance",
-                      primaryButtonLink: "/grievance",
-                      secondaryButtonText: "View Projects",
-                      secondaryButtonLink: "/projects",
-                    },
-                    styles: {},
-                  },
-                ],
+                sections: defaultSinglePageSections,
               },
             });
             if (createRes.data?.success && createRes.data.data) {
@@ -583,7 +767,10 @@ export const WebsiteBuilderPage: React.FC = () => {
         const home = pagesList.find((p: any) => p.isHomePage) || pagesList[0];
         if (home) {
           setActivePageId(home.id);
-          const pageSections = parseSections(home.content);
+          let pageSections = parseSections(home.content);
+          if (pageSections.length === 0) {
+            pageSections = defaultSinglePageSections;
+          }
           setSections(pageSections);
           setHistory([pageSections]);
           setHistoryIndex(0);
@@ -811,8 +998,8 @@ export const WebsiteBuilderPage: React.FC = () => {
         officeAddress: "Central Constituency Secretariat & Camp Office, Civil Lines",
         helpline: "1800-889-2024",
         email: "office@constituency.gov.in",
-        primaryButtonText: "Lodge a Grievance",
-        primaryButtonLink: "#grievance",
+        primaryButtonText: "",
+        primaryButtonLink: "",
         copyrightText: `© ${new Date().getFullYear()} ${website?.name || "Constituency Portal"}. All Rights Reserved.`,
       },
       styles: {
@@ -852,8 +1039,8 @@ export const WebsiteBuilderPage: React.FC = () => {
         logoUrl: website?.logoUrl || "",
         showHelpline: true,
         helplineText: "1800-889-2024",
-        primaryButtonText: "Lodge Grievance",
-        primaryButtonLink: "#grievance",
+        primaryButtonText: "Contact Us",
+        primaryButtonLink: "#contact",
         ...(homeNav?.props || {}),
       },
       styles: {
@@ -955,8 +1142,8 @@ export const WebsiteBuilderPage: React.FC = () => {
     logoUrl: website?.logoUrl || "",
     showHelpline: true,
     helplineText: "1800-889-2024",
-    primaryButtonText: "Lodge Grievance",
-    primaryButtonLink: "#grievance",
+    primaryButtonText: "Contact Us",
+    primaryButtonLink: "#contact",
     ...(homeNavbar?.props || {}),
   };
 
@@ -985,7 +1172,7 @@ export const WebsiteBuilderPage: React.FC = () => {
               <h1 className="text-sm font-bold text-slate-900 dark:text-white">
                 {website?.name || "Constituency Website"}
               </h1>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-sky-400">
                 Visual Builder
               </span>
             </div>
@@ -996,7 +1183,7 @@ export const WebsiteBuilderPage: React.FC = () => {
             <select
               value={activePageId}
               onChange={(e) => handleSwitchPage(e.target.value)}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {pages.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -1015,7 +1202,7 @@ export const WebsiteBuilderPage: React.FC = () => {
               onClick={() => setViewport("desktop")}
               className={`p-1.5 rounded-md text-xs font-medium transition-all ${
                 viewport === "desktop"
-                  ? "bg-white dark:bg-slate-900 text-orange-600 shadow-sm"
+                  ? "bg-white dark:bg-slate-900 text-primary shadow-sm"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Desktop View"
@@ -1027,7 +1214,7 @@ export const WebsiteBuilderPage: React.FC = () => {
               onClick={() => setViewport("tablet")}
               className={`p-1.5 rounded-md text-xs font-medium transition-all ${
                 viewport === "tablet"
-                  ? "bg-white dark:bg-slate-900 text-orange-600 shadow-sm"
+                  ? "bg-white dark:bg-slate-900 text-primary shadow-sm"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Tablet View"
@@ -1039,7 +1226,7 @@ export const WebsiteBuilderPage: React.FC = () => {
               onClick={() => setViewport("mobile")}
               className={`p-1.5 rounded-md text-xs font-medium transition-all ${
                 viewport === "mobile"
-                  ? "bg-white dark:bg-slate-900 text-orange-600 shadow-sm"
+                  ? "bg-white dark:bg-slate-900 text-primary shadow-sm"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Mobile View"
@@ -1101,7 +1288,7 @@ export const WebsiteBuilderPage: React.FC = () => {
             type="button"
             disabled={publishing}
             onClick={handlePublish}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md shadow-orange-500/20 hover:from-orange-600 hover:to-amber-700 hover:scale-[1.02] transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-primary text-white shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] transition-all"
           >
             <Rocket className="w-3.5 h-3.5" />
             {publishing ? "Publishing..." : "Publish Live"}
@@ -1120,7 +1307,7 @@ export const WebsiteBuilderPage: React.FC = () => {
               onClick={() => setLeftTab("blocks")}
               className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-all ${
                 leftTab === "blocks"
-                  ? "bg-white dark:bg-slate-800 text-orange-600 shadow-sm"
+                  ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
                   : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
@@ -1132,7 +1319,7 @@ export const WebsiteBuilderPage: React.FC = () => {
               onClick={() => setLeftTab("layers")}
               className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition-all ${
                 leftTab === "layers"
-                  ? "bg-white dark:bg-slate-800 text-orange-600 shadow-sm"
+                  ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
                   : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
@@ -1154,13 +1341,13 @@ export const WebsiteBuilderPage: React.FC = () => {
                       key={block.type}
                       type="button"
                       onClick={() => handleAddBlock(block)}
-                      className="w-full text-left p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-orange-500/50 hover:bg-orange-50/50 dark:hover:bg-orange-950/20 group transition-all"
+                      className="w-full text-left p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:bg-primary/5 group transition-all"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-600 transition-colors">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors">
                           {block.label}
                         </span>
-                        <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+                        <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-primary transition-colors" />
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
                         {block.description}
@@ -1190,9 +1377,9 @@ export const WebsiteBuilderPage: React.FC = () => {
                     }}
                     className={`p-2.5 rounded-xl border text-xs font-medium flex items-center justify-between cursor-pointer transition-all ${
                       selectedSectionId === section.id
-                        ? "border-orange-500 bg-orange-50/70 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 ring-2 ring-orange-500/20 shadow-sm"
+                        ? "border-primary bg-primary/5 text-primary ring-2 ring-primary/20 shadow-sm"
                         : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                    } ${draggedIndex === idx ? "opacity-50 border-dashed border-orange-400" : ""}`}
+                    } ${draggedIndex === idx ? "opacity-50 border-dashed border-primary" : ""}`}
                   >
                     <div className="flex items-center gap-2 truncate">
                       <GripVertical className="w-3.5 h-3.5 text-slate-400 cursor-grab shrink-0" />
@@ -1222,10 +1409,10 @@ export const WebsiteBuilderPage: React.FC = () => {
             {!sections.some((s) => s.type === "navbar") && (
               <div
                 onClick={handlePromoteDefaultNavbar}
-                className="sticky top-0 z-30 cursor-pointer relative group/default-nav border-b-2 border-transparent hover:border-orange-400 dark:hover:border-orange-500/60 transition-all shadow-sm bg-white dark:bg-slate-900"
+                className="sticky top-0 z-30 cursor-pointer relative group/default-nav border-b-2 border-transparent hover:border-primary transition-all shadow-sm bg-white dark:bg-slate-900"
                 title="Click to customize Header & Navigation across pages"
               >
-                <div className="absolute top-2.5 right-6 z-40 opacity-0 group-hover/default-nav:opacity-100 transition-opacity bg-orange-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 pointer-events-none">
+                <div className="absolute top-2.5 right-6 z-40 opacity-0 group-hover/default-nav:opacity-100 transition-opacity bg-primary text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 pointer-events-none">
                   <Edit3 className="w-3.5 h-3.5" />
                   Click to Customize Header
                 </div>
@@ -1289,10 +1476,10 @@ export const WebsiteBuilderPage: React.FC = () => {
             {!sections.some((s) => s.type === "footer") && (
               <div
                 onClick={handlePromoteDefaultFooter}
-                className="cursor-pointer relative group/default-footer border-2 border-dashed border-transparent hover:border-orange-400 dark:hover:border-orange-500/60 transition-all"
+                className="cursor-pointer relative group/default-footer border-2 border-dashed border-transparent hover:border-primary/60 dark:hover:border-primary/40 transition-all"
                 title="Click to edit and customize footer branding & details"
               >
-                <div className="absolute top-3 right-6 z-20 opacity-0 group-hover/default-footer:opacity-100 transition-opacity bg-orange-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 pointer-events-none">
+                <div className="absolute top-3 right-6 z-20 opacity-0 group-hover/default-footer:opacity-100 transition-opacity bg-primary text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 pointer-events-none">
                   <Edit3 className="w-3.5 h-3.5" />
                   Click to Customize Footer
                 </div>
@@ -1307,8 +1494,8 @@ export const WebsiteBuilderPage: React.FC = () => {
                       officeAddress: "Central Constituency Secretariat & Camp Office, Civil Lines",
                       helpline: "1800-889-2024",
                       email: "office@constituency.gov.in",
-                      primaryButtonText: "Lodge a Grievance",
-                      primaryButtonLink: "#grievance",
+                      primaryButtonText: "",
+                      primaryButtonLink: "",
                       copyrightText: `© ${new Date().getFullYear()} ${website?.name || "Constituency Portal"}. All Rights Reserved.`,
                     },
                     styles: {
@@ -1349,7 +1536,7 @@ export const WebsiteBuilderPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col">
           <div className="h-14 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between text-white shrink-0">
             <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-orange-500" />
+              <Eye className="w-4 h-4 text-primary" />
               <span className="font-bold text-sm">Live Preview Mode</span>
             </div>
             <button

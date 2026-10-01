@@ -39,16 +39,296 @@ export interface TemplateDefinition {
   }[];
 }
 
+const SINGLE_PAGE_SECTIONS = [
+  {
+    id: "navbar-section",
+    type: "navbar",
+    props: {
+      brandName: "Hon'ble Representative",
+      brandSubtitle: "Official Leader Portal",
+      logoText: "R",
+      logoUrl: "",
+      showHelpline: false,
+      helplineText: "",
+      primaryButtonText: "",
+      primaryButtonLink: "",
+      links: [
+        { label: "Home", url: "#hero" },
+        { label: "Biography", url: "#bio" },
+        { label: "Vision & Pillars", url: "#vision" },
+        { label: "Milestones", url: "#stats" },
+        { label: "Photo Gallery", url: "#gallery" },
+        { label: "Press & Speeches", url: "#press" },
+        { label: "Contact Office", url: "#contact" },
+      ],
+    },
+    styles: {
+      backgroundColor: "#ffffff",
+      textColor: "#0f172a",
+      paddingTop: "0.75rem",
+      paddingBottom: "0.75rem",
+    },
+  },
+  {
+    id: "hero-section",
+    type: "hero",
+    props: {
+      tagline: "OFFICIAL LEADER PORTAL & PUBLIC SERVICE",
+      title: "Serving with Vision, Unwavering Integrity & Dedication",
+      subtitle: "Dedicated to transformative public service, parliamentary excellence, and the holistic development of our constituency.",
+      primaryButtonText: "Read Biography",
+      primaryButtonLink: "#bio",
+      secondaryButtonText: "Connect with Secretariat",
+      secondaryButtonLink: "#contact",
+      leaderName: "Hon'ble Representative",
+      leaderTitle: "Member of Parliament / Legislative Assembly",
+      leaderBadge: "Official Representative Portal",
+      leaderImage: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80",
+    },
+    styles: {
+      paddingTop: "4.5rem",
+      paddingBottom: "4.5rem",
+    },
+  },
+  {
+    id: "profile-section",
+    type: "representative_profile",
+    props: {
+      tagline: "BIOGRAPHY & LEADERSHIP JOURNEY",
+      title: "A Lifetime Devoted to Grassroots Service & National Progress",
+      subtitle: "Leading with principles, empowering every citizen, and championing progressive governance at every level.",
+      bio: "Representing our constituency with uncompromising integrity. Spearheading major developmental initiatives, advocating for constituent rights in parliament, and fostering inclusive growth across all communities.",
+      leaderName: "Hon'ble Representative",
+      leaderTitle: "Member of Parliament / Legislative Assembly",
+      leaderImage: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80",
+      experienceYears: "20+",
+      constituencyName: "Constituency Region",
+      visionPoints: [
+        { title: "Principled Governance", desc: "Transparent, accountable, and citizen-centric public leadership." },
+        { title: "Youth & Educational Empowerment", desc: "Digital smart classrooms, modern sports infrastructure, and skill development." },
+        { title: "Farmer & Rural Prosperity", desc: "Direct agricultural support, micro-irrigation, and paved road connectivity." },
+        { title: "Universal Healthcare & Welfare", desc: "Accessible health camps, subsidized care, and citizen empowerment programs." },
+      ],
+      primaryButtonText: "Media & Speeches",
+      primaryButtonLink: "#press",
+      secondaryButtonText: "Contact Secretariat",
+      secondaryButtonLink: "#contact",
+    },
+    styles: {
+      paddingTop: "5rem",
+      paddingBottom: "5rem",
+      backgroundColor: "#ffffff",
+    },
+  },
+  {
+    id: "stats-section",
+    type: "stats",
+    props: {
+      title: "Key Milestones & Public Service Snapshot",
+      subtitle: "Reflecting decades of active public service, legislative initiatives, and constituent engagement.",
+      items: [
+        { value: "25+ Yrs", label: "Public Service Tenure" },
+        { value: "1,200+", label: "Parliamentary Speeches & Addresses" },
+        { value: "500+", label: "Development Initiatives Facilitated" },
+        { value: "100%", label: "Constituency Commitment" },
+      ],
+    },
+    styles: {
+      paddingTop: "4rem",
+      paddingBottom: "4rem",
+      backgroundColor: "#f8fafc",
+    },
+  },
+  {
+    id: "features-section",
+    type: "features_grid",
+    props: {
+      badge: "CORE PHILOSOPHY & VISION",
+      title: "Guiding Principles of Our Public Service",
+      subtitle: "A progressive blueprint focused on grassroots empowerment, sustainable development, and accessible leadership.",
+      items: [
+        {
+          icon: "shield",
+          title: "Transparent Leadership",
+          description: "Zero tolerance for opacity, promoting open governance and integrity in public office.",
+        },
+        {
+          icon: "heart",
+          title: "Accessible Healthcare",
+          description: "Equipping local centers with modern diagnostics, ambulances, and subsidized treatment.",
+        },
+        {
+          icon: "users",
+          title: "Youth Skills & Employment",
+          description: "Facilitating vocational training centers, digital learning labs, and career opportunities.",
+        },
+        {
+          icon: "building",
+          title: "Modern Infrastructure",
+          description: "All-weather four-lane roads, underground utilities, and clean drinking water networks.",
+        },
+        {
+          icon: "award",
+          title: "Agricultural Prosperity",
+          description: "Facilitating crop insurance desks, farmer subsidies, and modern irrigation infrastructure.",
+        },
+        {
+          icon: "sparkles",
+          title: "Clean & Green Environment",
+          description: "Promoting solar lighting, waste management, and urban green plantation drives.",
+        },
+      ],
+    },
+    styles: {
+      paddingTop: "4.5rem",
+      paddingBottom: "4.5rem",
+      backgroundColor: "#ffffff",
+    },
+  },
+  {
+    id: "gallery-section",
+    type: "gallery",
+    props: {
+      badge: "PHOTO & VIDEO GALLERY",
+      title: "Glimpses of Public Service & Events",
+      subtitle: "Visual documentation from official addresses, parliamentary sessions, grassroots visits, and public inaugurations.",
+      items: [
+        {
+          title: "Flyover & Transit Highway Inauguration",
+          category: "Infrastructure",
+          date: "May 2026",
+          imageUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Mega Healthcare & Free Medicine Distribution",
+          category: "Healthcare",
+          date: "April 2026",
+          imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Smart Digital Classroom Launch",
+          category: "Education",
+          date: "March 2026",
+          imageUrl: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Public Interaction & Citizen Address",
+          category: "Public Service",
+          date: "March 2026",
+          imageUrl: "https://images.unsplash.com/photo-1577495508048-b635879837f1?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Clean Drinking Water RO Station",
+          category: "Water Supply",
+          date: "February 2026",
+          imageUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80",
+        },
+        {
+          title: "Youth Community Sports Complex",
+          category: "Youth & Sports",
+          date: "January 2026",
+          imageUrl: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800&auto=format&fit=crop&q=80",
+        },
+      ],
+    },
+    styles: {
+      paddingTop: "4.5rem",
+      paddingBottom: "4.5rem",
+      backgroundColor: "#f8fafc",
+    },
+  },
+  {
+    id: "press-section",
+    type: "press_news",
+    props: {
+      badge: "MEDIA & SPEECHES ROOM",
+      title: "Recent Addresses, Statements & Media Highlights",
+      subtitle: "Official statements, press releases, parliamentary interventions, and media coverage.",
+      items: [
+        {
+          publication: "State Bureau News",
+          date: "May 2026",
+          headline: "₹ 140 Crore Master Infrastructure Package Sanctioned for Constituency",
+          summary: "Four-lane highway connectivity, underground drainage, and new health centers inaugurated under representative vision.",
+          imageUrl: "",
+          tag: "Infrastructure",
+          link: "",
+        },
+        {
+          publication: "Daily Citizen Post",
+          date: "April 2026",
+          headline: "Keynote Address on Grassroots Empowerment & Inclusive Governance",
+          summary: "Representative outlines comprehensive blueprint for constituent welfare and youth empowerment.",
+          imageUrl: "",
+          tag: "Governance",
+          link: "",
+        },
+        {
+          publication: "National Tribune",
+          date: "March 2026",
+          headline: "Constituency Healthcare & Education Outreach Initiative Organized",
+          summary: "Specialist consultations, medicine distribution, and digital classroom kits provided across wards.",
+          imageUrl: "",
+          tag: "Healthcare",
+          link: "",
+        },
+      ],
+    },
+    styles: {
+      paddingTop: "4.5rem",
+      paddingBottom: "4.5rem",
+      backgroundColor: "#ffffff",
+    },
+  },
+  {
+    id: "contact-section",
+    type: "contact_office",
+    props: {
+      title: "Connect With The Secretariat & Office",
+      subtitle: "Have an inquiry or wish to send a message to the representative team? Get in touch with our office.",
+      officeAddress: "Central Constituency Secretariat & Representative Camp Office, Civil Lines",
+      officePhone: "+91 98765 43210",
+      officeEmail: "office@constituency.gov.in",
+    },
+    styles: {
+      paddingTop: "4.5rem",
+      paddingBottom: "4.5rem",
+      backgroundColor: "#f8fafc",
+    },
+  },
+  {
+    id: "footer-section",
+    type: "footer",
+    props: {
+      brandName: "Hon'ble Representative",
+      brandSubtitle: "Official Leader Portal",
+      description: "Official personal website of the representative. Dedicated to transparent leadership, constituent service, and progressive governance.",
+      officeAddress: "Central Constituency Secretariat & Camp Office, Civil Lines",
+      helpline: "",
+      email: "office@constituency.gov.in",
+      primaryButtonText: "",
+      primaryButtonLink: "",
+      copyrightText: "© 2026 Official Representative Portal. All Rights Reserved.",
+    },
+    styles: {
+      backgroundColor: "#0f172a",
+      textColor: "#f8fafc",
+      paddingTop: "4rem",
+      paddingBottom: "2.5rem",
+    },
+  },
+];
+
 export const DEFAULT_WEBSITE_TEMPLATES: TemplateDefinition[] = [
   {
-    id: "modern-representative",
-    name: "Modern Representative",
+    id: "official-leader-singlepage",
+    name: "Official Representative Portal",
     category: "Professional & Governance",
-    description: "Sleek, modern portal focused on parliamentary work, public grievance lodging, and constituent engagement.",
+    description: "Complete single-page portal inspired by top parliamentary leader websites (rajnathsingh.in & rekhagupta.in) with bio, vision, media, photo gallery, and Secretariat contact.",
     thumbnail: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&auto=format&fit=crop&q=80",
     globalStyles: {
       colors: {
-        primary: "#1e3a8a", // Navy Blue
+        primary: "#13538A", // Brand Primary Navy Blue
         secondary: "#0284c7",
         accent: "#f59e0b",
         background: "#ffffff",
@@ -64,321 +344,69 @@ export const DEFAULT_WEBSITE_TEMPLATES: TemplateDefinition[] = [
       containerWidth: "1240px",
     },
     menuItems: [
-      { label: "Home", url: "/" },
-      { label: "About Representative", url: "/about" },
-      { label: "Development Works", url: "/projects" },
-      { label: "Public Grievances", url: "/grievance" },
-      { label: "Welfare Schemes", url: "/schemes" },
-      { label: "Events & Janata Darbar", url: "/events" },
-      { label: "Contact Office", url: "/contact" },
+      { label: "Home", url: "#hero" },
+      { label: "Biography", url: "#bio" },
+      { label: "Vision", url: "#vision" },
+      { label: "Milestones", url: "#stats" },
+      { label: "Photo Gallery", url: "#gallery" },
+      { label: "Media & Speeches", url: "#press" },
+      { label: "Contact Office", url: "#contact" },
     ],
     pages: [
       {
         title: "Home",
         slug: "home",
         isHomePage: true,
-        seoTitle: "Official Portal - Member of Legislative Assembly / Parliament",
-        seoDescription: "Welcome to the official constituent development and citizen service portal.",
+        seoTitle: "Official Portal - Member of Parliament / Legislative Assembly",
+        seoDescription: "Welcome to the official personal website of the representative.",
         content: {
           version: 1,
-          sections: [
-            {
-              id: "hero-section",
-              type: "representative-hero",
-              props: {
-                badge: "Official Constituency Portal",
-                headline: "Dedicated to the Progress & Prosperity of Our People",
-                subheadline: "Transparency, rapid grievance resolution, and modern infrastructure development in our constituency.",
-                primaryButtonText: "Submit Citizen Grievance",
-                primaryButtonLink: "/grievance",
-                secondaryButtonText: "View Development Projects",
-                secondaryButtonLink: "/projects",
-                emergencyHelpline: "1800-123-4567",
-              },
-            },
-            {
-              id: "stats-section",
-              type: "constituency-stats",
-              props: {
-                title: "Constituency at a Glance",
-                subtitle: "Key demographic and development metrics across our region",
-                autoFetchMetrics: true,
-              },
-            },
-            {
-              id: "projects-preview",
-              type: "development-projects",
-              props: {
-                title: "Major Development Works & Infrastructure",
-                subtitle: "Transforming healthcare, roads, education, and water supply across wards",
-                limit: 4,
-                layout: "grid",
-                ctaText: "View All Projects",
-                ctaLink: "/projects",
-              },
-            },
-            {
-              id: "grievance-cta",
-              type: "grievance-cta",
-              props: {
-                title: "Have a Civic Problem or Infrastructure Issue?",
-                description: "Our constituency cell reviews, escalates, and monitors every citizen complaint with direct department follow-ups.",
-                buttonText: "Lodge Your Grievance Online",
-                buttonLink: "/grievance",
-                helplineNumber: "+91 98765 43210",
-              },
-            },
-            {
-              id: "schemes-preview",
-              type: "government-schemes",
-              props: {
-                title: "Welfare Schemes & Citizen Benefits",
-                subtitle: "Explore government welfare subsidies, pensions, and educational aid",
-                limit: 3,
-                layout: "cards",
-              },
-            },
-            {
-              id: "events-preview",
-              type: "upcoming-events",
-              props: {
-                title: "Janata Darbar & Public Engagements",
-                subtitle: "Meet your representative, join community inspections and village sammelans",
-                limit: 3,
-              },
-            },
-          ],
-        },
-      },
-      {
-        title: "About",
-        slug: "about",
-        isHomePage: false,
-        seoTitle: "About the Representative - Leadership & Vision",
-        seoDescription: "Learn about our representative's journey, legislative track record, and vision.",
-        content: {
-          version: 1,
-          sections: [
-            {
-              id: "about-bio",
-              type: "representative-profile",
-              props: {
-                title: "Serving with Integrity, Passion & Vision",
-                bio: "Dedicated public servant committed to grassroots empowerment, educational excellence, healthcare access, and farmer prosperity.",
-                showKeyMilestones: true,
-                showVisionPoints: true,
-              },
-            },
-          ],
-        },
-      },
-      {
-        title: "Development Works",
-        slug: "projects",
-        isHomePage: false,
-        seoTitle: "Constituency Development Projects & Public Works",
-        seoDescription: "Track all running, completed, and upcoming developmental works funded through MPLADS/MLALADS.",
-        content: {
-          version: 1,
-          sections: [
-            {
-              id: "all-projects",
-              type: "development-projects",
-              props: {
-                title: "Constituency Development Projects",
-                subtitle: "Live tracking of all civil, healthcare, education, and road projects",
-                limit: 12,
-                layout: "grid",
-              },
-            },
-          ],
-        },
-      },
-      {
-        title: "Public Grievances",
-        slug: "grievance",
-        isHomePage: false,
-        seoTitle: "Submit Public Grievance - Constituency Cell",
-        seoDescription: "Directly lodge your complaints regarding electricity, water, roads, or municipal services.",
-        content: {
-          version: 1,
-          sections: [
-            {
-              id: "grievance-form-section",
-              type: "grievance-form-block",
-              props: {
-                title: "Constituent Grievance Redressal Portal",
-                subtitle: "Submit your problem with location and category. You will receive an SMS tracking ID.",
-                showTrackingBox: true,
-              },
-            },
-          ],
-        },
-      },
-      {
-        title: "Contact Office",
-        slug: "contact",
-        isHomePage: false,
-        seoTitle: "Contact Camp Office & Public Information Center",
-        seoDescription: "Reach our legislative camp office, constituency nodal officers, and social media handles.",
-        content: {
-          version: 1,
-          sections: [
-            {
-              id: "office-locations",
-              type: "office-directory",
-              props: {
-                title: "Constituency Camp Offices & Helpdesks",
-                subtitle: "Visit our nearest office during public consultation hours",
-                showMap: true,
-              },
-            },
-          ],
+          sections: SINGLE_PAGE_SECTIONS,
         },
       },
     ],
   },
   {
-    id: "vikas-development",
-    name: "Vikas & Infrastructure Focus",
-    category: "Development & Civil Works",
-    description: "High-impact layout showcasing major roads, flyovers, water pipelines, smart schools, and sanctioned funds.",
-    thumbnail: "https://images.unsplash.com/photo-1590402494682-cd3fb53b1f70?w=600&auto=format&fit=crop&q=80",
+    id: "constituency-development-singlepage",
+    name: "Constituency Leadership Portal",
+    category: "Personal Leadership & Progress",
+    description: "Personal profile website highlighting leadership biography, governance vision, media highlights, gallery, and contact office.",
+    thumbnail: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80",
     globalStyles: {
       colors: {
-        primary: "#065f46", // Deep Emerald
+        primary: "#13538A",
         secondary: "#0d9488",
-        accent: "#d97706",
+        accent: "#eab308",
         background: "#ffffff",
-        surface: "#f0fdf4",
-        text: "#064e3b",
-        muted: "#475569",
+        surface: "#f8fafc",
+        text: "#0f172a",
+        muted: "#64748b",
       },
       typography: {
-        headingFont: "Inter, sans-serif",
+        headingFont: "Outfit, Inter, sans-serif",
         bodyFont: "Inter, sans-serif",
       },
-      radius: "12px",
-      containerWidth: "1200px",
+      radius: "16px",
+      containerWidth: "1240px",
     },
     menuItems: [
-      { label: "Home", url: "/" },
-      { label: "Development Map", url: "/projects" },
-      { label: "Sanctioned Funds", url: "/funds" },
-      { label: "Citizen Grievances", url: "/grievance" },
-      { label: "Contact", url: "/contact" },
+      { label: "Home", url: "#hero" },
+      { label: "Biography", url: "#bio" },
+      { label: "Milestones", url: "#stats" },
+      { label: "Photo Gallery", url: "#gallery" },
+      { label: "Media & Speeches", url: "#press" },
+      { label: "Contact Office", url: "#contact" },
     ],
     pages: [
       {
         title: "Home",
         slug: "home",
         isHomePage: true,
+        seoTitle: "Official Personal Portal - Leader Profile",
+        seoDescription: "Official personal website and constituent connectivity portal.",
         content: {
           version: 1,
-          sections: [
-            {
-              id: "dev-hero",
-              type: "representative-hero",
-              props: {
-                badge: "Mission Vikas & Modern Infrastructure",
-                headline: "Building Modern Infrastructure for a Smarter Constituency",
-                subheadline: "100+ projects completed with 100% transparency in fund utilization.",
-                primaryButtonText: "Explore Projects",
-                primaryButtonLink: "/projects",
-                secondaryButtonText: "Lodge Complaint",
-                secondaryButtonLink: "/grievance",
-              },
-            },
-            {
-              id: "dev-projects",
-              type: "development-projects",
-              props: {
-                title: "Active Civil & Public Works",
-                limit: 6,
-                layout: "grid",
-              },
-            },
-            {
-              id: "dev-stats",
-              type: "constituency-stats",
-              props: {
-                title: "Constituency Milestones",
-              },
-            },
-          ],
-        },
-      },
-    ],
-  },
-  {
-    id: "janata-darbar",
-    name: "Janata Darbar & Citizen Centric",
-    category: "Public Service & Welfare",
-    description: "Designed for open citizen hearings, token bookings, direct appointments, and swift grievance tracking.",
-    thumbnail: "https://images.unsplash.com/photo-1577495508048-b635879837f1?w=600&auto=format&fit=crop&q=80",
-    globalStyles: {
-      colors: {
-        primary: "#7c2d12", // Warm Rust / Maroon
-        secondary: "#c2410c",
-        accent: "#ea580c",
-        background: "#ffffff",
-        surface: "#fff7ed",
-        text: "#431407",
-        muted: "#78716c",
-      },
-      typography: {
-        headingFont: "Outfit, sans-serif",
-        bodyFont: "Inter, sans-serif",
-      },
-      radius: "14px",
-      containerWidth: "1200px",
-    },
-    menuItems: [
-      { label: "Home", url: "/" },
-      { label: "Janata Darbar Schedule", url: "/events" },
-      { label: "Submit Grievance", url: "/grievance" },
-      { label: "Book Appointment", url: "/appointments" },
-      { label: "Camp Office", url: "/contact" },
-    ],
-    pages: [
-      {
-        title: "Home",
-        slug: "home",
-        isHomePage: true,
-        content: {
-          version: 1,
-          sections: [
-            {
-              id: "janata-hero",
-              type: "representative-hero",
-              props: {
-                badge: "Direct Citizen Interaction",
-                headline: "Your Voice, Our Priority — Janata Darbar & Grievance Cell",
-                subheadline: "Direct citizen hearings every week. Fast resolution with real-time token tracking.",
-                primaryButtonText: "Book Hearing Slot",
-                primaryButtonLink: "/events",
-                secondaryButtonText: "Track Your Grievance",
-                secondaryButtonLink: "/grievance",
-              },
-            },
-            {
-              id: "janata-events",
-              type: "upcoming-events",
-              props: {
-                title: "Upcoming Janata Darbar Sessions & Public Hearings",
-                limit: 4,
-              },
-            },
-            {
-              id: "janata-grievance",
-              type: "grievance-cta",
-              props: {
-                title: "Need Administrative Assistance?",
-                buttonText: "Submit Issue Now",
-                buttonLink: "/grievance",
-              },
-            },
-          ],
+          sections: SINGLE_PAGE_SECTIONS,
         },
       },
     ],
