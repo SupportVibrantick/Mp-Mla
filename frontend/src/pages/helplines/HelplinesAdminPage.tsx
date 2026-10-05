@@ -41,7 +41,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -106,26 +112,88 @@ export interface HelplineContact {
 
 const CATEGORIES = [
   { value: "ALL", label: "All Categories", icon: Layers },
-  { value: "EMERGENCY", label: "Emergency", icon: Flame, color: "text-red-500 bg-red-500/10 border-red-500/20" },
-  { value: "HEALTHCARE", label: "Health & Ambulance", icon: Activity, color: "text-rose-500 bg-rose-500/10 border-rose-500/20" },
-  { value: "POLICE", label: "Police & Security", icon: ShieldAlert, color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20" },
-  { value: "WOMEN_CHILD", label: "Women & Child Care", icon: HeartHandshake, color: "text-pink-500 bg-pink-500/10 border-pink-500/20" },
-  { value: "CONSTITUENCY_OFFICE", label: "MLA Office & Citizen Desk", icon: Building2, color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" },
-  { value: "DISASTER", label: "Disaster Management", icon: AlertTriangle, color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
-  { value: "GOVERNMENT_SERVICES", label: "Cyber & Citizen Services", icon: Laptop, color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20" },
-  { value: "SENIOR_CITIZEN", label: "Senior Citizens (Elder Line)", icon: Users, color: "text-purple-500 bg-purple-500/10 border-purple-500/20" },
-  { value: "ELECTRICITY", label: "Electricity & Power Board", icon: Zap, color: "text-yellow-500 bg-yellow-500/10 border-yellow-500/20" },
-  { value: "CIVIC_MUNICIPAL", label: "Civic & Municipal Services", icon: MapPin, color: "text-blue-500 bg-blue-500/10 border-blue-500/20" },
-  { value: "WATER_SANITATION", label: "Water & Sanitation", icon: LifeBuoy, color: "text-teal-500 bg-teal-500/10 border-teal-500/20" },
-  { value: "OTHER", label: "Other Support", icon: PhoneCall, color: "text-slate-500 bg-slate-500/10 border-slate-500/20" },
+  {
+    value: "EMERGENCY",
+    label: "Emergency",
+    icon: Flame,
+    color: "text-red-500 bg-red-500/10 border-red-500/20",
+  },
+  {
+    value: "HEALTHCARE",
+    label: "Health & Ambulance",
+    icon: Activity,
+    color: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+  },
+  {
+    value: "POLICE",
+    label: "Police & Security",
+    icon: ShieldAlert,
+    color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
+  },
+  {
+    value: "WOMEN_CHILD",
+    label: "Women & Child Care",
+    icon: HeartHandshake,
+    color: "text-pink-500 bg-pink-500/10 border-pink-500/20",
+  },
+  {
+    value: "CONSTITUENCY_OFFICE",
+    label: "MLA Office & Citizen Desk",
+    icon: Building2,
+    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+  },
+  {
+    value: "DISASTER",
+    label: "Disaster Management",
+    icon: AlertTriangle,
+    color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+  },
+  {
+    value: "GOVERNMENT_SERVICES",
+    label: "Cyber & Citizen Services",
+    icon: Laptop,
+    color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20",
+  },
+  {
+    value: "SENIOR_CITIZEN",
+    label: "Senior Citizens (Elder Line)",
+    icon: Users,
+    color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+  },
+  {
+    value: "ELECTRICITY",
+    label: "Electricity & Power Board",
+    icon: Zap,
+    color: "text-yellow-500 bg-yellow-500/10 border-yellow-500/20",
+  },
+  {
+    value: "CIVIC_MUNICIPAL",
+    label: "Civic & Municipal Services",
+    icon: MapPin,
+    color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+  },
+  {
+    value: "WATER_SANITATION",
+    label: "Water & Sanitation",
+    icon: LifeBuoy,
+    color: "text-teal-500 bg-teal-500/10 border-teal-500/20",
+  },
+  {
+    value: "OTHER",
+    label: "Other Support",
+    icon: PhoneCall,
+    color: "text-slate-500 bg-slate-500/10 border-slate-500/20",
+  },
 ];
 
 const getCategoryMeta = (cat: string) => {
-  return CATEGORIES.find((c) => c.value === cat) || {
-    label: cat.replace(/_/g, " "),
-    icon: PhoneCall,
-    color: "text-slate-500 bg-slate-500/10 border-slate-500/20",
-  };
+  return (
+    CATEGORIES.find((c) => c.value === cat) || {
+      label: cat.replace(/_/g, " "),
+      icon: PhoneCall,
+      color: "text-slate-500 bg-slate-500/10 border-slate-500/20",
+    }
+  );
 };
 
 export const HelplinesAdminPage: React.FC = () => {
@@ -156,11 +224,13 @@ export const HelplinesAdminPage: React.FC = () => {
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleting, setBulkDeleting] = useState<boolean>(false);
-  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState<boolean>(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] =
+    useState<boolean>(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [editingHelpline, setEditingHelpline] = useState<HelplineContact | null>(null);
+  const [editingHelpline, setEditingHelpline] =
+    useState<HelplineContact | null>(null);
   const [formData, setFormData] = useState<{
     category: string;
     title: string;
@@ -228,7 +298,9 @@ export const HelplinesAdminPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Failed to load helplines:", err);
-      toast.error(err.response?.data?.message || "Failed to load helpline numbers");
+      toast.error(
+        err.response?.data?.message || "Failed to load helpline numbers",
+      );
     } finally {
       setLoading(false);
     }
@@ -248,7 +320,9 @@ export const HelplinesAdminPage: React.FC = () => {
 
   // Clear selection if current filtered list no longer has those items
   useEffect(() => {
-    setSelectedIds((prev) => prev.filter((id) => helplines.some((h) => h.id === id)));
+    setSelectedIds((prev) =>
+      prev.filter((id) => helplines.some((h) => h.id === id)),
+    );
   }, [helplines]);
 
   const isAllSelected = useMemo(() => {
@@ -265,7 +339,7 @@ export const HelplinesAdminPage: React.FC = () => {
 
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -341,7 +415,9 @@ export const HelplinesAdminPage: React.FC = () => {
       fetchData();
     } catch (err: any) {
       console.error("Save helpline error:", err);
-      toast.error(err.response?.data?.message || "Failed to save helpline contact");
+      toast.error(
+        err.response?.data?.message || "Failed to save helpline contact",
+      );
     } finally {
       setSaving(false);
     }
@@ -352,11 +428,11 @@ export const HelplinesAdminPage: React.FC = () => {
       const newStatus = !item.isActive;
       // Optimistic update
       setHelplines((prev) =>
-        prev.map((h) => (h.id === item.id ? { ...h, isActive: newStatus } : h))
+        prev.map((h) => (h.id === item.id ? { ...h, isActive: newStatus } : h)),
       );
       await helplinesApi.toggleStatus(item.id, newStatus);
       toast.success(
-        `Helpline "${item.title}" ${newStatus ? "activated" : "deactivated"}`
+        `Helpline "${item.title}" ${newStatus ? "activated" : "deactivated"}`,
       );
       helplinesApi.getStats().then((res) => {
         if (res.data?.success) setStats(res.data.data);
@@ -385,13 +461,18 @@ export const HelplinesAdminPage: React.FC = () => {
     try {
       setBulkDeleting(true);
       const res = await helplinesApi.bulkDelete(selectedIds);
-      toast.success(res.data?.message || `Successfully deleted ${selectedIds.length} contact(s)`);
+      toast.success(
+        res.data?.message ||
+          `Successfully deleted ${selectedIds.length} contact(s)`,
+      );
       setIsBulkDeleteModalOpen(false);
       setSelectedIds([]);
       fetchData();
     } catch (err: any) {
       console.error("Bulk delete error:", err);
-      toast.error(err.response?.data?.message || "Failed to delete selected contacts");
+      toast.error(
+        err.response?.data?.message || "Failed to delete selected contacts",
+      );
     } finally {
       setBulkDeleting(false);
     }
@@ -404,14 +485,16 @@ export const HelplinesAdminPage: React.FC = () => {
       toast.success(res.data?.message || "Standard helplines loaded!");
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to seed default numbers");
+      toast.error(
+        err.response?.data?.message || "Failed to seed default numbers",
+      );
     } finally {
       setSeeding(false);
     }
   };
 
   return (
-    <MainLayout>
+    <MainLayout title="Helpline Contacts">
       <div className="space-y-6 pb-20">
         {/* Top Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-card/80 to-muted/40 p-6 rounded-2xl border backdrop-blur-md shadow-sm">
@@ -425,7 +508,8 @@ export const HelplinesAdminPage: React.FC = () => {
               </h1>
             </div>
             <p className="text-sm text-muted-foreground">
-              Manage 24x7 emergency speed-dials, citizen grievance desks, and public safety helpline contacts visible to voters.
+              Manage 24x7 emergency speed-dials, citizen grievance desks, and
+              public safety helpline contacts visible to voters.
             </p>
           </div>
 
@@ -437,7 +521,9 @@ export const HelplinesAdminPage: React.FC = () => {
               disabled={seeding}
               className="gap-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
             >
-              <Sparkles className={`w-4 h-4 ${seeding ? "animate-spin" : ""}`} />
+              <Sparkles
+                className={`w-4 h-4 ${seeding ? "animate-spin" : ""}`}
+              />
               {seeding ? "Seeding Helplines..." : "Seed Standard Numbers"}
             </Button>
 
@@ -447,13 +533,21 @@ export const HelplinesAdminPage: React.FC = () => {
               rel="noreferrer"
               className="inline-flex items-center"
             >
-              <Button variant="outline" size="sm" className="gap-1.5 font-medium">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 font-medium"
+              >
                 <ExternalLink className="w-4 h-4" />
                 Preview Citizen Directory
               </Button>
             </a>
 
-            <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 font-semibold">
+            <Button
+              onClick={handleOpenCreateModal}
+              size="sm"
+              className="gap-2 font-semibold"
+            >
               <Plus className="w-4 h-4" />
               Add Helpline Contact
             </Button>
@@ -465,7 +559,9 @@ export const HelplinesAdminPage: React.FC = () => {
           <Card className="border shadow-xs hover:border-primary/40 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">Total Contacts</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Total Contacts
+                </p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -477,8 +573,12 @@ export const HelplinesAdminPage: React.FC = () => {
           <Card className="border shadow-xs border-red-500/20 bg-red-500/5 hover:border-red-500/40 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-red-600 dark:text-red-400">Emergency</p>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.emergency}</p>
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  Emergency
+                </p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {stats.emergency}
+                </p>
               </div>
               <div className="p-2 rounded-lg bg-red-500/10 text-red-600">
                 <Flame className="w-5 h-5" />
@@ -489,8 +589,12 @@ export const HelplinesAdminPage: React.FC = () => {
           <Card className="border shadow-xs hover:border-emerald-500/40 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">24x7 Active</p>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.twentyFourSeven}</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  24x7 Active
+                </p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {stats.twentyFourSeven}
+                </p>
               </div>
               <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
                 <Clock className="w-5 h-5" />
@@ -501,8 +605,12 @@ export const HelplinesAdminPage: React.FC = () => {
           <Card className="border shadow-xs hover:border-green-500/40 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">WhatsApp Desks</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.whatsappEnabled}</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  WhatsApp Desks
+                </p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {stats.whatsappEnabled}
+                </p>
               </div>
               <div className="p-2 rounded-lg bg-green-500/10 text-green-600">
                 <MessageSquare className="w-5 h-5" />
@@ -513,8 +621,12 @@ export const HelplinesAdminPage: React.FC = () => {
           <Card className="border shadow-xs hover:border-blue-500/40 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">Toll-Free Lines</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.tollFree}</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Toll-Free Lines
+                </p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {stats.tollFree}
+                </p>
               </div>
               <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600">
                 <ShieldAlert className="w-5 h-5" />
@@ -525,8 +637,12 @@ export const HelplinesAdminPage: React.FC = () => {
           <Card className="border shadow-xs hover:border-indigo-500/40 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">Active Online</p>
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{stats.active}</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Active Online
+                </p>
+                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {stats.active}
+                </p>
               </div>
               <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600">
                 <CheckCircle2 className="w-5 h-5" />
@@ -548,7 +664,10 @@ export const HelplinesAdminPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
               <SelectTrigger className="w-[190px] h-10">
                 <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="Category" />
@@ -568,7 +687,10 @@ export const HelplinesAdminPage: React.FC = () => {
                 checked={emergencyOnly}
                 onCheckedChange={setEmergencyOnly}
               />
-              <Label htmlFor="emergency-toggle" className="text-xs font-medium cursor-pointer whitespace-nowrap">
+              <Label
+                htmlFor="emergency-toggle"
+                className="text-xs font-medium cursor-pointer whitespace-nowrap"
+              >
                 Emergency Only
               </Label>
             </div>
@@ -606,7 +728,9 @@ export const HelplinesAdminPage: React.FC = () => {
               title="Refresh"
               className="h-10 w-10 shrink-0"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+              />
             </Button>
           </div>
         </div>
@@ -670,7 +794,10 @@ export const HelplinesAdminPage: React.FC = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-48 rounded-xl border bg-muted/20 animate-pulse" />
+              <div
+                key={i}
+                className="h-48 rounded-xl border bg-muted/20 animate-pulse"
+              />
             ))}
           </div>
         ) : helplines.length === 0 ? (
@@ -680,7 +807,9 @@ export const HelplinesAdminPage: React.FC = () => {
                 <PhoneCall className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-semibold">No helpline numbers found</h3>
+                <h3 className="text-lg font-semibold">
+                  No helpline numbers found
+                </h3>
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                   {searchQuery || selectedCategory !== "ALL"
                     ? "Try adjusting your filters or search terms."
@@ -688,7 +817,11 @@ export const HelplinesAdminPage: React.FC = () => {
                 </p>
               </div>
               <div className="flex justify-center gap-3">
-                <Button onClick={handleSeedDefaults} disabled={seeding} className="gap-2">
+                <Button
+                  onClick={handleSeedDefaults}
+                  disabled={seeding}
+                  className="gap-2"
+                >
                   <Sparkles className="w-4 h-4" />
                   Seed Standard Helplines
                 </Button>
@@ -715,12 +848,20 @@ export const HelplinesAdminPage: React.FC = () => {
                         aria-label="Select all"
                       />
                     </TableHead>
-                    <TableHead className="min-w-[200px]">Helpline & Department</TableHead>
+                    <TableHead className="min-w-[200px]">
+                      Helpline & Department
+                    </TableHead>
                     <TableHead className="min-w-[140px]">Category</TableHead>
-                    <TableHead className="min-w-[160px]">Contact Numbers</TableHead>
+                    <TableHead className="min-w-[160px]">
+                      Contact Numbers
+                    </TableHead>
                     <TableHead className="min-w-[120px]">Features</TableHead>
-                    <TableHead className="min-w-[140px]">Coverage / Area</TableHead>
-                    <TableHead className="min-w-[130px]">Working Hours</TableHead>
+                    <TableHead className="min-w-[140px]">
+                      Coverage / Area
+                    </TableHead>
+                    <TableHead className="min-w-[130px]">
+                      Working Hours
+                    </TableHead>
                     <TableHead className="w-24 text-center">Status</TableHead>
                     <TableHead className="w-24 text-right">Actions</TableHead>
                   </TableRow>
@@ -778,7 +919,9 @@ export const HelplinesAdminPage: React.FC = () => {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-mono font-bold text-sm">{item.phonePrimary}</span>
+                              <span className="font-mono font-bold text-sm">
+                                {item.phonePrimary}
+                              </span>
                               <a
                                 href={`tel:${item.phonePrimary}`}
                                 className="p-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -792,28 +935,38 @@ export const HelplinesAdminPage: React.FC = () => {
                                 Sec: {item.phoneSecondary}
                               </p>
                             )}
-                            {item.tollFreeNumber && item.tollFreeNumber !== item.phonePrimary && (
-                              <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
-                                Toll-Free: {item.tollFreeNumber}
-                              </p>
-                            )}
+                            {item.tollFreeNumber &&
+                              item.tollFreeNumber !== item.phonePrimary && (
+                                <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
+                                  Toll-Free: {item.tollFreeNumber}
+                                </p>
+                              )}
                           </div>
                         </TableCell>
 
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {item.is24x7 && (
-                              <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                              >
                                 24x7
                               </Badge>
                             )}
                             {item.isTollFree && (
-                              <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                              >
                                 Toll-Free
                               </Badge>
                             )}
                             {item.isWhatsAppEnabled && (
-                              <Badge variant="secondary" className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
+                              >
                                 WhatsApp
                               </Badge>
                             )}
@@ -824,7 +977,9 @@ export const HelplinesAdminPage: React.FC = () => {
                           {item.areaWardCoverage ? (
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[130px]">{item.areaWardCoverage}</span>
+                              <span className="truncate max-w-[130px]">
+                                {item.areaWardCoverage}
+                              </span>
                             </span>
                           ) : (
                             "—"
@@ -835,7 +990,9 @@ export const HelplinesAdminPage: React.FC = () => {
                           {item.availableHours ? (
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[120px]">{item.availableHours}</span>
+                              <span className="truncate max-w-[120px]">
+                                {item.availableHours}
+                              </span>
                             </span>
                           ) : (
                             "—"
@@ -897,8 +1054,8 @@ export const HelplinesAdminPage: React.FC = () => {
                     isSelected
                       ? "ring-2 ring-primary border-primary bg-primary/[0.02]"
                       : item.isEmergency
-                      ? "border-red-500/30 bg-gradient-to-br from-red-500/[0.03] to-card"
-                      : "bg-card"
+                        ? "border-red-500/30 bg-gradient-to-br from-red-500/[0.03] to-card"
+                        : "bg-card"
                   } ${!item.isActive ? "opacity-60 grayscale-[0.3]" : ""}`}
                 >
                   {item.isEmergency && (
@@ -930,12 +1087,18 @@ export const HelplinesAdminPage: React.FC = () => {
 
                       <div className="flex items-center gap-1.5">
                         {item.is24x7 && (
-                          <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          >
                             24x7
                           </Badge>
                         )}
                         {item.isTollFree && (
-                          <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                          >
                             Toll-Free
                           </Badge>
                         )}
@@ -962,7 +1125,9 @@ export const HelplinesAdminPage: React.FC = () => {
                           <Phone className="w-4 h-4" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground font-medium">Primary Number</p>
+                          <p className="text-xs text-muted-foreground font-medium">
+                            Primary Number
+                          </p>
                           <p className="text-base font-bold tracking-tight font-mono">
                             {item.phonePrimary}
                           </p>
@@ -1092,7 +1257,9 @@ export const HelplinesAdminPage: React.FC = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                 <PhoneCall className="w-5 h-5 text-primary" />
-                {editingHelpline ? "Edit Helpline Contact" : "Add New Helpline Contact"}
+                {editingHelpline
+                  ? "Edit Helpline Contact"
+                  : "Add New Helpline Contact"}
               </DialogTitle>
             </DialogHeader>
 
@@ -1102,7 +1269,9 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Label htmlFor="category">Category *</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(val) => setFormData({ ...formData, category: val })}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, category: val })
+                    }
                   >
                     <SelectTrigger id="category">
                       <SelectValue placeholder="Select Category" />
@@ -1122,7 +1291,9 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     placeholder="e.g. Police Control Room / Ambulance"
                     required
                   />
@@ -1134,7 +1305,9 @@ export const HelplinesAdminPage: React.FC = () => {
                 <Input
                   id="subtitle"
                   value={formData.subtitle}
-                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, subtitle: e.target.value })
+                  }
                   placeholder="e.g. City Emergency Response Command & Control"
                 />
               </div>
@@ -1145,7 +1318,9 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Input
                     id="phonePrimary"
                     value={formData.phonePrimary}
-                    onChange={(e) => setFormData({ ...formData, phonePrimary: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phonePrimary: e.target.value })
+                    }
                     placeholder="e.g. 112 or +91 9876543210"
                     required
                   />
@@ -1156,7 +1331,12 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Input
                     id="phoneSecondary"
                     value={formData.phoneSecondary}
-                    onChange={(e) => setFormData({ ...formData, phoneSecondary: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        phoneSecondary: e.target.value,
+                      })
+                    }
                     placeholder="e.g. 100 or landline"
                   />
                 </div>
@@ -1166,7 +1346,12 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Input
                     id="tollFreeNumber"
                     value={formData.tollFreeNumber}
-                    onChange={(e) => setFormData({ ...formData, tollFreeNumber: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        tollFreeNumber: e.target.value,
+                      })
+                    }
                     placeholder="e.g. 1800-XXX-XXXX"
                   />
                 </div>
@@ -1178,7 +1363,12 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Input
                     id="whatsappNumber"
                     value={formData.whatsappNumber}
-                    onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        whatsappNumber: e.target.value,
+                      })
+                    }
                     placeholder="e.g. +91 9876543210"
                   />
                 </div>
@@ -1189,7 +1379,9 @@ export const HelplinesAdminPage: React.FC = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="e.g. helpdesk@constituency.gov.in"
                   />
                 </div>
@@ -1201,7 +1393,12 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Input
                     id="availableHours"
                     value={formData.availableHours}
-                    onChange={(e) => setFormData({ ...formData, availableHours: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        availableHours: e.target.value,
+                      })
+                    }
                     placeholder="e.g. 24x7 All Days or 9:00 AM - 6:00 PM"
                   />
                 </div>
@@ -1211,7 +1408,12 @@ export const HelplinesAdminPage: React.FC = () => {
                   <Input
                     id="areaWardCoverage"
                     value={formData.areaWardCoverage}
-                    onChange={(e) => setFormData({ ...formData, areaWardCoverage: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        areaWardCoverage: e.target.value,
+                      })
+                    }
                     placeholder="e.g. All Wards / Ward 1-15 / District Wide"
                   />
                 </div>
@@ -1222,7 +1424,9 @@ export const HelplinesAdminPage: React.FC = () => {
                 <Textarea
                   id="notes"
                   value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
                   placeholder="Instructions for citizen callers, required documents, or emergency guidelines..."
                   rows={2}
                 />
@@ -1231,46 +1435,66 @@ export const HelplinesAdminPage: React.FC = () => {
               {/* Toggles */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 rounded-lg border bg-muted/30">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="isEmergency" className="text-xs cursor-pointer font-medium">
+                  <Label
+                    htmlFor="isEmergency"
+                    className="text-xs cursor-pointer font-medium"
+                  >
                     Emergency Dial
                   </Label>
                   <Switch
                     id="isEmergency"
                     checked={formData.isEmergency}
-                    onCheckedChange={(v) => setFormData({ ...formData, isEmergency: v })}
+                    onCheckedChange={(v) =>
+                      setFormData({ ...formData, isEmergency: v })
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="is24x7" className="text-xs cursor-pointer font-medium">
+                  <Label
+                    htmlFor="is24x7"
+                    className="text-xs cursor-pointer font-medium"
+                  >
                     24x7 Active
                   </Label>
                   <Switch
                     id="is24x7"
                     checked={formData.is24x7}
-                    onCheckedChange={(v) => setFormData({ ...formData, is24x7: v })}
+                    onCheckedChange={(v) =>
+                      setFormData({ ...formData, is24x7: v })
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="isWhatsAppEnabled" className="text-xs cursor-pointer font-medium">
+                  <Label
+                    htmlFor="isWhatsAppEnabled"
+                    className="text-xs cursor-pointer font-medium"
+                  >
                     WhatsApp Desk
                   </Label>
                   <Switch
                     id="isWhatsAppEnabled"
                     checked={formData.isWhatsAppEnabled}
-                    onCheckedChange={(v) => setFormData({ ...formData, isWhatsAppEnabled: v })}
+                    onCheckedChange={(v) =>
+                      setFormData({ ...formData, isWhatsAppEnabled: v })
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="isActive" className="text-xs cursor-pointer font-medium">
+                  <Label
+                    htmlFor="isActive"
+                    className="text-xs cursor-pointer font-medium"
+                  >
                     Active Status
                   </Label>
                   <Switch
                     id="isActive"
                     checked={formData.isActive}
-                    onCheckedChange={(v) => setFormData({ ...formData, isActive: v })}
+                    onCheckedChange={(v) =>
+                      setFormData({ ...formData, isActive: v })
+                    }
                   />
                 </div>
               </div>
@@ -1284,7 +1508,11 @@ export const HelplinesAdminPage: React.FC = () => {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={saving}>
-                  {saving ? "Saving..." : editingHelpline ? "Update Contact" : "Create Contact"}
+                  {saving
+                    ? "Saving..."
+                    : editingHelpline
+                      ? "Update Contact"
+                      : "Create Contact"}
                 </Button>
               </DialogFooter>
             </form>
@@ -1298,9 +1526,12 @@ export const HelplinesAdminPage: React.FC = () => {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to delete this helpline contact?</AlertDialogTitle>
+              <AlertDialogTitle>
+                Are you sure you want to delete this helpline contact?
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                This contact will be permanently removed from the helpline directory and citizen portals.
+                This contact will be permanently removed from the helpline
+                directory and citizen portals.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1327,17 +1558,26 @@ export const HelplinesAdminPage: React.FC = () => {
                 Delete {selectedIds.length} Helpline Contact(s)?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete all <span className="font-bold text-foreground">{selectedIds.length}</span> selected helpline contacts? This action cannot be undone and will immediately remove them from the public citizen directory.
+                Are you sure you want to delete all{" "}
+                <span className="font-bold text-foreground">
+                  {selectedIds.length}
+                </span>{" "}
+                selected helpline contacts? This action cannot be undone and
+                will immediately remove them from the public citizen directory.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={bulkDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={bulkDeleting}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleBulkDelete}
                 disabled={bulkDeleting}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold"
               >
-                {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.length} Contacts`}
+                {bulkDeleting
+                  ? "Deleting..."
+                  : `Delete ${selectedIds.length} Contacts`}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
