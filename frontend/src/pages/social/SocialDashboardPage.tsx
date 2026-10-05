@@ -41,6 +41,7 @@ import {
   Filter,
 } from "lucide-react";
 import { socialApi } from "../../lib/api";
+import { getImageUrl } from "../../lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { SocialAccountsModal } from "./SocialAccountsModal";
 import { SocialComposerModal } from "./SocialComposerModal";
@@ -685,7 +686,7 @@ export const SocialDashboardPage: React.FC = () => {
                       {post.mediaUrls && post.mediaUrls.length > 0 ? (
                         <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/60">
                           <img
-                            src={post.mediaUrls[0]}
+                            src={getImageUrl(post.mediaUrls[0])}
                             alt="Media"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />

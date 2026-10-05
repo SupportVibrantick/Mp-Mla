@@ -21,6 +21,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { socialApi } from "../../lib/api";
+import { getImageUrl } from "../../lib/utils";
 
 interface SocialPostDetailModalProps {
   isOpen: boolean;
@@ -292,12 +293,12 @@ export const SocialPostDetailModal: React.FC<SocialPostDetailModalProps> = ({
                     className="aspect-square rounded-xl bg-slate-200 dark:bg-slate-700 overflow-hidden border border-slate-200 dark:border-slate-700 relative group shadow-sm"
                   >
                     <img
-                      src={url}
+                      src={getImageUrl(url)}
                       alt={`Media ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
                     <a
-                      href={url}
+                      href={getImageUrl(url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity"

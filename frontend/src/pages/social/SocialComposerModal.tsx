@@ -24,6 +24,7 @@ import {
   Sliders,
 } from "lucide-react";
 import { socialApi } from "../../lib/api";
+import { getImageUrl } from "../../lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUploadField } from "../../components/common/ImageUploadField";
 import { Button } from "@/components/ui/button";
@@ -283,7 +284,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
                           key={idx}
                           className="relative group w-16 h-16 rounded-xl overflow-hidden border border-border bg-muted"
                         >
-                          <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                          <img src={getImageUrl(url)} alt="Attachment" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => handleRemoveMedia(idx)}
@@ -539,7 +540,7 @@ export const SocialComposerModal: React.FC<SocialComposerModalProps> = ({
             {mediaUrls.length > 0 ? (
               <div className="w-full aspect-square bg-muted overflow-hidden relative">
                 <img
-                  src={mediaUrls[0]}
+                  src={getImageUrl(mediaUrls[0])}
                   alt="Mockup"
                   className="w-full h-full object-cover"
                 />
