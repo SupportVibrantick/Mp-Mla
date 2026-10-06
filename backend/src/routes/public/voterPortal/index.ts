@@ -872,4 +872,112 @@ router.get("/my-scheme-applications", requireVoterAuth, async (req: VoterAuthReq
   }
 });
 
+// ─── 19. GET Voter Helpline Directory (Tenant-Scoped) ───────
+router.get("/helplines", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.tenantId!;
+    const { category, search, emergencyOnly } = req.query;
+
+    const where: any = {
+      tenantId,
+      isActive: true,
+    };
+
+    if (category && typeof category === "string" && category !== "ALL") {
+      where.category = category;
+    }
+
+    if (emergencyOnly === "true") {
+      where.isEmergency = true;
+    }
+
+    if (search && typeof search === "string" && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { title: { contains: q, mode: "insensitive" } },
+        { subtitle: { contains: q, mode: "insensitive" } },
+        { phonePrimary: { contains: q, mode: "insensitive" } },
+        { phoneSecondary: { contains: q, mode: "insensitive" } },
+        { tollFreeNumber: { contains: q, mode: "insensitive" } },
+        { whatsappNumber: { contains: q, mode: "insensitive" } },
+        { areaWardCoverage: { contains: q, mode: "insensitive" } },
+        { notes: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const [helplines, emergencyCount, totalCount, tollFreeCount, roundTheClockCount, whatsappCount] = await Promise.all([
+      prisma.helplineContact.findMany({
+        where,
+        orderBy: [
+          { isEmergency: "desc" },
+          { displayOrder: "asc" },
+          { title: "asc" },
+        ],
+      }),
+      prisma.helplineContact.count({ where: { tenantId, isActive: true, isEmergency: true } }),
+      prisma.helplineContact.count({ where: { tenantId, isActive: true } }),
+      prisma.helplineContact.count({ where: { tenantId, isActive: true, isTollFree: true } }),
+      prisma.helplineContact.count({ where: { tenantId, isActive: true, is24x7: true } }),
+      prisma.helplineContact.count({ where: { tenantId, isActive: true, isWhatsAppEnabled: true } }),
+    ]);
+
+    const tenantInfo = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        id: true,
+        name: true,
+        constituencyName: true,
+        state: true,
+        district: true,
+        representativeName: true,
+        representativeTitle: true,
+        representativePhoto: true,
+        logoUrl: true,
+        partyLogoUrl: true,
+        email: true,
+        phone: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: helplines,
+      tenant: tenantInfo,
+      stats: {
+        total: totalCount,
+        emergency: emergencyCount,
+        tollFree: tollFreeCount,
+        twentyFourSeven: roundTheClockCount,
+        whatsappEnabled: whatsappCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 20. GET Voter Emergency Speed-Dial (Tenant-Scoped) ──────
+router.get("/helplines/emergency", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.tenantId!;
+
+    const emergencyContacts = await prisma.helplineContact.findMany({
+      where: {
+        tenantId,
+        isActive: true,
+        isEmergency: true,
+      },
+      orderBy: [{ displayOrder: "asc" }, { title: "asc" }],
+      take: 8,
+    });
+
+    res.json({
+      success: true,
+      data: emergencyContacts,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

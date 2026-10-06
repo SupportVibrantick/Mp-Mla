@@ -606,10 +606,66 @@ export const helplinesApi = {
 };
 
 export const publicHelplinesApi = {
-  list: (params?: { category?: string; search?: string; emergencyOnly?: boolean; tenantId?: string }) =>
-    axios.get(`${API_BASE_URL}/public/helplines`, { params }),
-  getEmergencySpeedDial: (tenantId?: string) =>
-    axios.get(`${API_BASE_URL}/public/helplines/emergency`, { params: { tenantId } }),
+  list: (
+    params?: { category?: string; search?: string; emergencyOnly?: boolean; tenantId?: string },
+    token?: string
+  ) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") ||
+          localStorage.getItem("voterToken") ||
+          localStorage.getItem("token")
+        : null);
+
+    return axios.get(`${API_BASE_URL}/public/helplines`, {
+      params,
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
+  getEmergencySpeedDial: (tenantId?: string, token?: string) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") ||
+          localStorage.getItem("voterToken") ||
+          localStorage.getItem("token")
+        : null);
+
+    return axios.get(`${API_BASE_URL}/public/helplines/emergency`, {
+      params: { tenantId },
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
+};
+
+export const voterPortalHelplinesApi = {
+  list: (
+    params?: { category?: string; search?: string; emergencyOnly?: boolean },
+    token?: string
+  ) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") || localStorage.getItem("voterToken")
+        : null);
+
+    return api.get("/public/voter-portal/helplines", {
+      params,
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
+  getEmergency: (token?: string) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") || localStorage.getItem("voterToken")
+        : null);
+
+    return api.get("/public/voter-portal/helplines/emergency", {
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
 };
 
 export const voterPortalSchemesApi = {

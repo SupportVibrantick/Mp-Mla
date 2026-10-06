@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import api, { voterPortalSchemesApi } from "@/lib/api";
+import { Link } from "wouter";
+import api, { voterPortalSchemesApi, voterPortalHelplinesApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useSystemSettings } from "@/contexts/SettingsContext";
@@ -82,6 +83,7 @@ import {
   FileCheck,
   Check,
   Copy,
+  MessageSquare,
 } from "lucide-react";
 import { InteractiveMeshBackground } from "@/components/ui/InteractiveMeshBackground";
 
@@ -220,6 +222,57 @@ export default function VoterPortalPage() {
       fetchPortalFamily();
     }
   }, [voter, token]);
+
+  // ══════════════════════════════════════════════════════════
+  // Emergency Helplines & Constituency Services State
+  // ══════════════════════════════════════════════════════════
+  const [portalHelplines, setPortalHelplines] = useState<any[]>([]);
+  const [loadingPortalHelplines, setLoadingPortalHelplines] = useState<boolean>(false);
+  const [portalHelplineCategory, setPortalHelplineCategory] = useState<string>("ALL");
+  const [portalHelplineSearch, setPortalHelplineSearch] = useState<string>("");
+  const [portalCopiedNumber, setPortalCopiedNumber] = useState<string | null>(null);
+
+  const fetchPortalHelplines = async () => {
+    if (!token) return;
+    setLoadingPortalHelplines(true);
+    try {
+      const res = await voterPortalHelplinesApi.list(
+        {
+          category: portalHelplineCategory !== "ALL" ? portalHelplineCategory : undefined,
+          search: portalHelplineSearch.trim() || undefined,
+        },
+        token
+      );
+      if (res.data?.success) {
+        setPortalHelplines(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching helplines in voter portal:", err);
+    } finally {
+      setLoadingPortalHelplines(false);
+    }
+  };
+
+  useEffect(() => {
+    if (voter && token) {
+      fetchPortalHelplines();
+    }
+  }, [voter, token, portalHelplineCategory]);
+
+  useEffect(() => {
+    if (!voter || !token) return;
+    const timer = setTimeout(() => {
+      fetchPortalHelplines();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [portalHelplineSearch]);
+
+  const handlePortalCopyNumber = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+    setPortalCopiedNumber(phone);
+    toast({ title: "Copied", description: `${phone} copied to clipboard.` });
+    setTimeout(() => setPortalCopiedNumber(null), 2000);
+  };
 
   // ══════════════════════════════════════════════════════════
   // Government & Welfare Schemes State
@@ -468,7 +521,7 @@ export default function VoterPortalPage() {
       if (res.data?.success) {
         const { accessToken, forcePasswordChange: forceChange, voter: voterData } = res.data.data;
         sessionStorage.setItem("voterToken", accessToken);
-        localStorage.removeItem("voterToken");
+        localStorage.setItem("voterToken", accessToken);
         setToken(accessToken);
         setVoter(voterData);
         if (forceChange) {
@@ -511,7 +564,7 @@ export default function VoterPortalPage() {
           setProfileSelectionModalOpen(true);
         } else {
           sessionStorage.setItem("voterToken", data.accessToken);
-          localStorage.removeItem("voterToken");
+          localStorage.setItem("voterToken", data.accessToken);
           setToken(data.accessToken);
           setVoter(data.voter);
           if (data.forcePasswordChange) {
@@ -543,7 +596,7 @@ export default function VoterPortalPage() {
       if (res.data?.success) {
         const { accessToken, forcePasswordChange: forceChange, voter: voterData } = res.data.data;
         sessionStorage.setItem("voterToken", accessToken);
-        localStorage.removeItem("voterToken");
+        localStorage.setItem("voterToken", accessToken);
         setToken(accessToken);
         setVoter(voterData);
         if (forceChange) {
@@ -1505,7 +1558,7 @@ export default function VoterPortalPage() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <a href="/helpline" target="_blank" rel="noreferrer">
+          <Link href="/helpline">
             <Button
               variant="outline"
               size="sm"
@@ -1514,7 +1567,7 @@ export default function VoterPortalPage() {
               <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
               <span>Helplines</span>
             </Button>
-          </a>
+          </Link>
 
           <Button
             variant="outline"
@@ -2292,6 +2345,195 @@ export default function VoterPortalPage() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ─── Card 4: Constituency Helplines & Emergency Services (आपातकालीन एवं नागरिक हेल्पलाइन) ─── */}
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                  <PhoneCall className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    Constituency Helplines & Emergency Desks
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                    Official 24x7 emergency contacts, ambulance, police, disaster relief, and MLA citizen desk for {voter?.tenant?.constituencyName || "your constituency"}
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Link href="/helpline" className="w-full sm:w-auto">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full sm:w-auto border-red-500/30 text-red-600 dark:text-red-400 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-xs font-bold gap-1.5 shadow-xs"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Full Directory</span>
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-6 space-y-5">
+            {/* Search & Category Filter */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Search emergency services, police, hospital, water..."
+                  value={portalHelplineSearch}
+                  onChange={(e) => setPortalHelplineSearch(e.target.value)}
+                  className="pl-9 h-9 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                />
+              </div>
+
+              {/* Category selector pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                {[
+                  { id: "ALL", label: "All Contacts" },
+                  { id: "EMERGENCY", label: "Emergency" },
+                  { id: "HEALTHCARE", label: "Ambulance" },
+                  { id: "POLICE", label: "Police" },
+                  { id: "CONSTITUENCY_OFFICE", label: "MLA Desk" },
+                  { id: "WOMEN_CHILD", label: "Women & Child" },
+                  { id: "ELECTRICITY", label: "Power" },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setPortalHelplineCategory(cat.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                      portalHelplineCategory === cat.id
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Helplines Grid */}
+            {loadingPortalHelplines ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-[#13538A]" />
+              </div>
+            ) : portalHelplines.length === 0 ? (
+              <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50 dark:bg-slate-950/40">
+                <PhoneCall className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+                <p className="font-bold text-sm text-slate-800 dark:text-slate-200">No Helpline Contacts Found</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                  {portalHelplineSearch ? `No helplines matching "${portalHelplineSearch}".` : "Helpline contacts will appear once configured by the constituency administration."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {portalHelplines.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+                      item.isEmergency
+                        ? "border-red-500/30 bg-red-500/[0.03] hover:border-red-500/60"
+                        : "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <Badge
+                          variant="outline"
+                          className={
+                            item.isEmergency
+                              ? "text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20 text-[10px] font-bold"
+                              : "text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold"
+                          }
+                        >
+                          {item.category?.replace(/_/g, " ")}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          {item.is24x7 && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              24x7
+                            </span>
+                          )}
+                          {item.isTollFree && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                              Toll-Free
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white leading-snug">
+                          {item.title}
+                        </h4>
+                        {item.subtitle && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                            {item.subtitle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="space-y-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                      <div className="flex items-center justify-between gap-2">
+                        <a
+                          href={`tel:${item.phonePrimary}`}
+                          className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-xl font-bold font-mono text-xs transition-transform active:scale-98 ${
+                            item.isEmergency
+                              ? "bg-red-600 hover:bg-red-700 text-white shadow-xs"
+                              : "bg-[#13538A] hover:bg-[#13538A]/90 text-white shadow-xs"
+                          }`}
+                        >
+                          <PhoneCall className="w-3.5 h-3.5" />
+                          <span>{item.phonePrimary}</span>
+                        </a>
+
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handlePortalCopyNumber(item.phonePrimary)}
+                          className="h-8 w-8 rounded-xl shrink-0"
+                          title="Copy number"
+                        >
+                          {portalCopiedNumber === item.phonePrimary ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-slate-400" />
+                          )}
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          {item.areaWardCoverage || "Constituency-wide"}
+                        </span>
+                        {item.whatsappNumber && (
+                          <a
+                            href={`https://wa.me/${item.whatsappNumber.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-green-600 font-bold hover:underline"
+                          >
+                            <MessageSquare className="w-3 h-3" /> WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>

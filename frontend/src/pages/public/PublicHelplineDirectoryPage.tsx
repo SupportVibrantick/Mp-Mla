@@ -20,15 +20,20 @@ import {
   LifeBuoy,
   Layers,
   ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
+  UserCheck,
   Share2,
+  Loader2,
+  Copy,
+  Check,
+  ArrowLeft,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useLocation, Link } from "wouter";
 
 interface HelplineContact {
   id: string;
@@ -75,46 +80,79 @@ const getCategoryMeta = (cat: string) => {
 };
 
 export const PublicHelplineDirectoryPage: React.FC = () => {
+  const [, setLocation] = useLocation();
+
+  // Retrieve token from logged-in voter session or admin session
+  const token = typeof window !== "undefined"
+    ? sessionStorage.getItem("voterToken") ||
+      localStorage.getItem("voterToken") ||
+      localStorage.getItem("token") ||
+      null
+    : null;
+
   const [helplines, setHelplines] = useState<HelplineContact[]>([]);
   const [tenantInfo, setTenantInfo] = useState<any>(null);
+  const [voterInfo, setVoterInfo] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
 
   useEffect(() => {
+    // If not logged in as a voter or admin, automatically redirect to Voter Portal
+    if (!token) {
+      toast.info("Please log in to your Voter Portal to access your constituency helplines.");
+      setLocation("/voter-portal");
+      return;
+    }
     fetchHelplines();
-  }, [selectedCategory]);
+  }, [selectedCategory, token]);
 
   const fetchHelplines = async () => {
+    if (!token) return;
     try {
       setLoading(true);
-      const res = await publicHelplinesApi.list({
-        category: selectedCategory !== "ALL" ? selectedCategory : undefined,
-        search: searchQuery || undefined,
-      });
+      const res = await publicHelplinesApi.list(
+        {
+          category: selectedCategory !== "ALL" ? selectedCategory : undefined,
+          search: searchQuery.trim() || undefined,
+        },
+        token
+      );
 
       if (res.data?.success) {
         setHelplines(res.data.data || []);
-        if (res.data.tenant) {
-          setTenantInfo(res.data.tenant);
-        }
+        if (res.data.tenant) setTenantInfo(res.data.tenant);
+        if (res.data.voter) setVoterInfo(res.data.voter);
       }
     } catch (err: any) {
-      console.error("Failed to load helplines:", err);
-      toast.error("Failed to load helpline directory");
+      if (err.response?.status === 401 || err.response?.data?.requiresAuth) {
+        sessionStorage.removeItem("voterToken");
+        localStorage.removeItem("voterToken");
+        toast.error("Session expired. Please log in to Voter Portal again.");
+        setLocation("/voter-portal");
+      } else {
+        console.error("Failed to load helplines:", err);
+        toast.error("Failed to load helpline directory");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const emergencyContacts = helplines.filter((h) => h.isEmergency);
-  const generalContacts = helplines.filter((h) => !h.isEmergency);
+  const handleCopyNumber = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+    setCopiedNumber(phone);
+    toast.success(`Copied ${phone} to clipboard!`);
+    setTimeout(() => setCopiedNumber(null), 2000);
+  };
 
   const handleShare = () => {
+    const constituency = tenantInfo?.constituencyName || "Constituency";
     if (navigator.share) {
       navigator.share({
-        title: "Emergency & Citizen Helpline Directory",
-        text: `Official Emergency & Citizen Helpline Numbers for ${tenantInfo?.constituencyName || "Constituency"}: 112, 108, 100, 1091, 1098, 1930 and MLA Office Desk.`,
+        title: `${constituency} Emergency & Citizen Helpline Directory`,
+        text: `Official emergency numbers for ${constituency}: 112, 108, 100, 1091, 1098, 1930 and MLA Office Desk.`,
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -123,12 +161,36 @@ export const PublicHelplineDirectoryPage: React.FC = () => {
     }
   };
 
+  const emergencyContacts = helplines.filter((h) => h.isEmergency);
+
+  // If redirecting unauthenticated user
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-4 font-sans">
+        <Loader2 className="w-8 h-8 animate-spin text-[#13538A]" />
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Redirecting to Voter Portal...</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+          Please log in to your constituency Voter Portal to view your area's official helpline contacts.
+        </p>
+        <Button
+          onClick={() => setLocation("/voter-portal")}
+          className="bg-[#13538A] text-white rounded-xl font-bold text-xs"
+        >
+          Go to Voter Portal Login
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-red-500 selection:text-white">
       {/* ─── Top Navbar ─── */}
-      <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shadow-xs">
+      <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <Link href="/voter-portal" className="text-slate-500 hover:text-slate-800 dark:hover:text-white p-1 rounded-lg">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 text-white flex items-center justify-center shadow-md shadow-red-500/20">
               <PhoneCall className="w-5 h-5 animate-pulse" />
             </div>
@@ -148,6 +210,16 @@ export const PublicHelplineDirectoryPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2.5">
+            {voterInfo && (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium border border-slate-200 dark:border-slate-700">
+                <UserCheck className="w-3.5 h-3.5 text-[#13538A] dark:text-[#38bdf8]" />
+                <span className="font-bold text-slate-800 dark:text-slate-200">{voterInfo.name}</span>
+                {voterInfo.voterIdNumber && (
+                  <span className="font-mono text-slate-400">({voterInfo.voterIdNumber})</span>
+                )}
+              </div>
+            )}
+
             <Button
               variant="outline"
               size="sm"
@@ -157,7 +229,8 @@ export const PublicHelplineDirectoryPage: React.FC = () => {
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Share Directory</span>
             </Button>
-            <a href="/voter-portal">
+
+            <Link href="/voter-portal">
               <Button
                 size="sm"
                 className="rounded-xl text-xs font-bold gap-1.5 bg-[#13538A] hover:bg-[#13538A]/90 text-white shadow-sm"
@@ -165,7 +238,7 @@ export const PublicHelplineDirectoryPage: React.FC = () => {
                 <span>Voter Portal</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -175,7 +248,7 @@ export const PublicHelplineDirectoryPage: React.FC = () => {
         <div className="max-w-6xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold">
             <Flame className="w-4 h-4 animate-bounce" />
-            <span>INSTANT CITIZEN EMERGENCY ASSISTANCE</span>
+            <span>OFFICIAL EMERGENCY ASSISTANCE • {tenantInfo?.constituencyName || "CONSTITUENCY"}</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white max-w-2xl mx-auto">
@@ -288,20 +361,36 @@ export const PublicHelplineDirectoryPage: React.FC = () => {
                       )}
 
                       {/* Primary Call Action Button */}
-                      <a
-                        href={`tel:${contact.phonePrimary}`}
-                        className="flex items-center justify-between p-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold shadow-md shadow-red-600/25 transition-all group-hover:scale-[1.01]"
-                      >
-                        <div className="flex items-center gap-2">
-                          <PhoneCall className="w-5 h-5 animate-pulse" />
-                          <span className="text-lg tracking-wider font-mono">
-                            {contact.phonePrimary}
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`tel:${contact.phonePrimary}`}
+                          className="flex-1 flex items-center justify-between p-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold shadow-md shadow-red-600/25 transition-all group-hover:scale-[1.01]"
+                        >
+                          <div className="flex items-center gap-2">
+                            <PhoneCall className="w-5 h-5 animate-pulse" />
+                            <span className="text-lg tracking-wider font-mono">
+                              {contact.phonePrimary}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-2.5 py-1 rounded-lg">
+                            Tap to Call
                           </span>
-                        </div>
-                        <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-2.5 py-1 rounded-lg">
-                          Tap to Call
-                        </span>
-                      </a>
+                        </a>
+
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleCopyNumber(contact.phonePrimary)}
+                          className="h-12 w-12 rounded-xl border-slate-200 dark:border-slate-800 shrink-0"
+                          title="Copy Number"
+                        >
+                          {copiedNumber === contact.phonePrimary ? (
+                            <Check className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-4 h-4 text-slate-500" />
+                          )}
+                        </Button>
+                      </div>
 
                       {/* Coverage & Secondary Links */}
                       <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 gap-2 border-t border-slate-100 dark:border-slate-800">
@@ -430,13 +519,28 @@ export const PublicHelplineDirectoryPage: React.FC = () => {
                             {contact.phonePrimary}
                           </p>
                         </div>
-                        <a
-                          href={`tel:${contact.phonePrimary}`}
-                          className="p-2 rounded-xl bg-[#13538A] hover:bg-[#13538A]/90 text-white shadow-xs transition-transform active:scale-95"
-                          title="Call Now"
-                        >
-                          <PhoneCall className="w-4 h-4" />
-                        </a>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleCopyNumber(contact.phonePrimary)}
+                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-slate-700"
+                            title="Copy Number"
+                          >
+                            {copiedNumber === contact.phonePrimary ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+                          <a
+                            href={`tel:${contact.phonePrimary}`}
+                            className="p-2 rounded-xl bg-[#13538A] hover:bg-[#13538A]/90 text-white shadow-xs transition-transform active:scale-95 flex items-center justify-center"
+                            title="Call Now"
+                          >
+                            <PhoneCall className="w-4 h-4" />
+                          </a>
+                        </div>
                       </div>
 
                       {/* WhatsApp / Secondary Number / Details */}

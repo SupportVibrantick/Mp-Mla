@@ -554,6 +554,19 @@ export const HelplinesAdminPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Tenant Isolation Info Alert */}
+        <div className="flex items-center justify-between p-3.5 px-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-800 dark:text-blue-300">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>
+              <strong>Multi-Tenant Isolation Active:</strong> Helpline numbers configured here are isolated to your constituency and only accessible to registered voters logging into your constituency portal.
+            </span>
+          </div>
+          <Badge variant="outline" className="text-[10px] uppercase font-bold border-blue-500/30 text-blue-700 dark:text-blue-300 bg-blue-500/5 hidden sm:inline-flex">
+            Constituency-Scoped
+          </Badge>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
           <Card className="border shadow-xs hover:border-primary/40 transition-colors">
