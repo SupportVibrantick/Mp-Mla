@@ -1,34 +1,34 @@
 /* ==========================================================================
    MP-MLA SaaS Platform Documentation - Core Design System & Styling
-   Inspired by modern documentation platforms (Docusaurus, VuePress, GitBook)
+   Clean, Modern Light Theme Default with FontAwesome Professional Icons
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap');
 
 :root {
-  /* Color Palette - Dark Theme (Default) */
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-card: rgba(30, 41, 59, 0.7);
-  --bg-hover: #334155;
+  /* Color Palette - Light Theme (Default) */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-hover: #e2e8f0;
   --bg-active: #2563eb;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
   --text-muted: #64748b;
-  --text-accent: #38bdf8;
+  --text-accent: #1d4ed8;
   
-  --border-color: #334155;
-  --border-light: rgba(255, 255, 255, 0.1);
+  --border-color: #e2e8f0;
+  --border-light: rgba(0, 0, 0, 0.08);
   
-  --accent-primary: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
-  --info-color: #06b6d4;
+  --accent-primary: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --danger-color: #dc2626;
+  --info-color: #0284c7;
 
   --sidebar-width: 290px;
   --toc-width: 250px;
@@ -37,9 +37,9 @@
   --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-code: 'Fira Code', monospace;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -48,26 +48,26 @@
   --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Light Theme Variables */
-[data-theme="light"] {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
-  --bg-card: #ffffff;
-  --bg-hover: #e2e8f0;
+/* Dark Theme Override Variables */
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --bg-hover: #334155;
   --bg-active: #2563eb;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --text-accent: #0284c7;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-accent: #38bdf8;
 
-  --border-color: #e2e8f0;
-  --border-light: rgba(0, 0, 0, 0.06);
+  --border-color: #334155;
+  --border-light: rgba(255, 255, 255, 0.1);
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
 /* Global Reset & Base Styles */
@@ -102,16 +102,14 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ==========================================================================
-   Header Navigation Bar
-   ========================================================================== */
+/* Header Navigation Bar */
 .header-nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: var(--header-height);
-  background-color: rgba(15, 23, 42, 0.85);
+  background-color: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
@@ -122,8 +120,8 @@ a:hover {
   padding: 0 24px;
 }
 
-[data-theme="light"] .header-nav {
-  background-color: rgba(255, 255, 255, 0.85);
+[data-theme="dark"] .header-nav {
+  background-color: rgba(15, 23, 42, 0.92);
 }
 
 .nav-brand {
@@ -135,28 +133,11 @@ a:hover {
   color: var(--text-primary);
 }
 
-.nav-brand img, .nav-brand .brand-logo {
-  width: 34px;
-  height: 34px;
+.brand-logo-img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
   border-radius: var(--radius-sm);
-  background: var(--accent-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 800;
-  font-size: 16px;
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
-}
-
-.brand-badge {
-  background: rgba(59, 130, 246, 0.15);
-  color: var(--text-accent);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 20px;
-  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .nav-search {
@@ -169,7 +150,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 8px 14px;
@@ -185,7 +166,7 @@ a:hover {
 }
 
 .search-shortcut {
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   color: var(--text-muted);
   font-family: var(--font-code);
   font-size: 11px;
@@ -212,6 +193,7 @@ a:hover {
   justify-content: center;
   cursor: pointer;
   transition: var(--transition-fast);
+  font-size: 15px;
 }
 
 .theme-toggle:hover, .mobile-toggle:hover {
@@ -223,18 +205,14 @@ a:hover {
   display: none;
 }
 
-/* ==========================================================================
-   Layout Container (Sidebar + Main + TOC)
-   ========================================================================== */
+/* Layout Container */
 .layout-container {
   display: flex;
   margin-top: var(--header-height);
   min-height: calc(100vh - var(--header-height));
 }
 
-/* ==========================================================================
-   Left Sidebar Navigation
-   ========================================================================== */
+/* Left Sidebar Navigation */
 .sidebar {
   width: var(--sidebar-width);
   position: fixed;
@@ -263,16 +241,21 @@ a:hover {
 }
 
 .category-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.9px;
   color: var(--text-muted);
   margin-bottom: 8px;
   padding-left: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.category-title i {
+  color: var(--accent-primary);
+  font-size: 13px;
 }
 
 .nav-list {
@@ -289,7 +272,7 @@ a:hover {
   gap: 10px;
   padding: 8px 12px;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   border-radius: var(--radius-sm);
   transition: var(--transition-fast);
@@ -303,21 +286,25 @@ a:hover {
 }
 
 .nav-link.active {
-  background-color: rgba(59, 130, 246, 0.15);
-  color: var(--text-accent);
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--accent-primary);
   font-weight: 600;
   border-left: 3px solid var(--accent-primary);
 }
 
 .nav-icon {
-  font-size: 16px;
-  width: 20px;
+  font-size: 14px;
+  width: 18px;
   text-align: center;
+  color: var(--text-muted);
+  transition: var(--transition-fast);
 }
 
-/* ==========================================================================
-   Main Content Documentation Body
-   ========================================================================== */
+.nav-link:hover .nav-icon, .nav-link.active .nav-icon {
+  color: var(--accent-primary);
+}
+
+/* Main Content Documentation Body */
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
@@ -337,10 +324,6 @@ a:hover {
 
 .breadcrumbs a {
   color: var(--text-secondary);
-}
-
-.breadcrumbs span {
-  color: var(--text-muted);
 }
 
 .doc-header {
@@ -371,6 +354,10 @@ a:hover {
   gap: 6px;
 }
 
+.doc-meta-item i {
+  color: var(--accent-primary);
+}
+
 /* Section Styling */
 .doc-section {
   margin-bottom: 48px;
@@ -387,6 +374,11 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.doc-section h2 i {
+  color: var(--accent-primary);
+  font-size: 20px;
 }
 
 .doc-section h3 {
@@ -414,9 +406,7 @@ a:hover {
   line-height: 1.6;
 }
 
-/* ==========================================================================
-   Callout Boxes (Notes, Tips, Warnings, Important)
-   ========================================================================== */
+/* Callout Boxes */
 .callout {
   padding: 16px 20px;
   border-radius: var(--radius-md);
@@ -428,7 +418,7 @@ a:hover {
 
 .callout-title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13.5px;
   margin-bottom: 6px;
   display: flex;
   align-items: center;
@@ -439,43 +429,42 @@ a:hover {
 
 .callout-info {
   border-left-color: var(--info-color);
-  background-color: rgba(6, 182, 212, 0.08);
+  background-color: rgba(2, 132, 199, 0.06);
 }
 .callout-info .callout-title { color: var(--info-color); }
 
 .callout-tip {
   border-left-color: var(--success-color);
-  background-color: rgba(16, 185, 129, 0.08);
+  background-color: rgba(5, 150, 105, 0.06);
 }
 .callout-tip .callout-title { color: var(--success-color); }
 
 .callout-warning {
   border-left-color: var(--warning-color);
-  background-color: rgba(245, 158, 11, 0.08);
+  background-color: rgba(217, 119, 6, 0.06);
 }
 .callout-warning .callout-title { color: var(--warning-color); }
 
 .callout-important {
   border-left-color: var(--danger-color);
-  background-color: rgba(239, 68, 68, 0.08);
+  background-color: rgba(220, 38, 38, 0.06);
 }
 .callout-important .callout-title { color: var(--danger-color); }
 
-/* ==========================================================================
-   Screenshot & Media Cards
-   ========================================================================== */
+/* Screenshot & Media Cards */
 .screenshot-card {
   margin: 24px 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   transition: var(--transition-normal);
 }
 
 .screenshot-card:hover {
   border-color: var(--accent-primary);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }
 
@@ -526,9 +515,7 @@ a:hover {
   font-style: italic;
 }
 
-/* ==========================================================================
-   Feature Cards & Step-by-Step UI
-   ========================================================================== */
+/* Feature Cards & Steps */
 .steps-container {
   margin: 24px 0;
 }
@@ -551,7 +538,7 @@ a:hover {
   justify-content: center;
   flex-shrink: 0;
   font-size: 14px;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
 }
 
 .step-content h4 {
@@ -572,6 +559,7 @@ a:hover {
   margin: 24px 0;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .data-table {
@@ -584,7 +572,7 @@ a:hover {
 .data-table th {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 700;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
 }
@@ -607,14 +595,12 @@ a:hover {
   font-weight: 600;
 }
 
-.badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success-color); }
-.badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning-color); }
-.badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger-color); }
-.badge-info { background: rgba(6, 182, 212, 0.15); color: var(--info-color); }
+.badge-success { background: rgba(5, 150, 105, 0.1); color: var(--success-color); }
+.badge-warning { background: rgba(217, 119, 6, 0.1); color: var(--warning-color); }
+.badge-danger { background: rgba(220, 38, 38, 0.1); color: var(--danger-color); }
+.badge-info { background: rgba(2, 132, 199, 0.1); color: var(--info-color); }
 
-/* ==========================================================================
-   Right Table of Contents (TOC)
-   ========================================================================== */
+/* Right Table of Contents */
 .toc-sidebar {
   width: var(--toc-width);
   position: fixed;
@@ -626,10 +612,10 @@ a:hover {
 }
 
 .toc-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.9px;
   color: var(--text-muted);
   margin-bottom: 12px;
 }
@@ -663,16 +649,14 @@ a:hover {
   margin-left: -2px;
 }
 
-/* ==========================================================================
-   Interactive Search Modal (Ctrl + K)
-   ========================================================================== */
+/* Interactive Search Modal */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.8);
+  background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
   z-index: 2000;
   display: flex;
@@ -761,7 +745,7 @@ a:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.85);
   z-index: 3000;
   display: flex;
   align-items: center;
@@ -810,9 +794,9 @@ a:hover {
 }
 
 .nav-card-sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
@@ -823,9 +807,7 @@ a:hover {
   margin-top: 4px;
 }
 
-/* ==========================================================================
-   Responsive Breakpoints
-   ========================================================================== */
+/* Responsive Breakpoints */
 @media (max-width: 1200px) {
   .toc-sidebar {
     display: none;
