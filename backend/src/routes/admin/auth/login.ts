@@ -55,6 +55,23 @@ export async function login(
           where: { email: normalizedEmail, isDeleted: false } as any,
           take: 2,
           orderBy: { createdAt: "asc" },
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                subscription: {
+                  select: {
+                    status: true,
+                    billingCycle: true,
+                    trialEndsAt: true,
+                    currentPeriodEnd: true,
+                  },
+                },
+              },
+            },
+          },
         });
 
     if (!tenantId && matches.length > 1) {
@@ -66,6 +83,23 @@ export async function login(
     const user = tenantId
       ? await prisma.user.findFirst({
           where: { tenantId, email: normalizedEmail, isDeleted: false } as any,
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                subscription: {
+                  select: {
+                    status: true,
+                    billingCycle: true,
+                    trialEndsAt: true,
+                    currentPeriodEnd: true,
+                  },
+                },
+              },
+            },
+          },
         })
       : (matches[0] ?? null);
 
@@ -219,6 +253,7 @@ export async function login(
           avatarUrl: user.avatarUrl,
           forcePasswordChange: user.forcePasswordChange || hasExpired,
           lastLoginAt: user.lastLoginAt,
+          tenant: user.tenant,
         },
         accessToken,
         refreshToken,

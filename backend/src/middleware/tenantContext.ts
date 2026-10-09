@@ -94,21 +94,34 @@ export async function injectTenantContext(
       );
     }
 
-    // Block if subscription is not usable
+    // Block if subscription is not usable (unless accessing account/billing/auth endpoints)
     if (tenant.subscription) {
       const sub = tenant.subscription;
+      const isAccountOrAuthPath =
+        req.originalUrl.includes("/account") ||
+        req.originalUrl.includes("/auth/") ||
+        req.originalUrl.includes("/public/branding") ||
+        req.baseUrl.includes("/account") ||
+        req.baseUrl.includes("/auth");
+
       if (
         sub.status === "TRIALING" &&
         sub.trialEndsAt &&
         new Date() > new Date(sub.trialEndsAt)
       ) {
+        if (!isAccountOrAuthPath) {
+          throw ApiError.forbidden(
+            "Your free trial has expired. Please upgrade your subscription.",
+            { code: "SUBSCRIPTION_EXPIRED", subscriptionStatus: "EXPIRED" },
+          );
+        }
+      } else if (["EXPIRED", "CANCELLED", "SUSPENDED"].includes(sub.status) && !isAccountOrAuthPath) {
         throw ApiError.forbidden(
-          "Your free trial has expired. Please upgrade.",
-        );
-      }
-      if (["EXPIRED", "CANCELLED", "SUSPENDED"].includes(sub.status)) {
-        throw ApiError.forbidden(
-          `Subscription is ${sub.status.toLowerCase()}. Contact support.`,
+          `Your subscription is ${sub.status.toLowerCase()}. Please upgrade or contact support.`,
+          {
+            code: sub.status === "EXPIRED" ? "SUBSCRIPTION_EXPIRED" : `SUBSCRIPTION_${sub.status}`,
+            subscriptionStatus: sub.status,
+          },
         );
       }
     }

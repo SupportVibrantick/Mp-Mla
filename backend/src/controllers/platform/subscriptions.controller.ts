@@ -862,21 +862,11 @@ export const upgradeTenantSubscription = async (
       throw ApiError.notFound("Target subscription plan not found");
     }
 
-    if (existingSubscription.status === "CANCELLED") {
-      throw ApiError.conflict("Cancelled subscriptions cannot be upgraded");
-    }
-
-    if (existingSubscription.planId === planId) {
-      throw ApiError.conflict("Tenant is already on this subscription plan");
-    }
-
-    const currentRank = getPlanRank(existingSubscription.plan);
-    const nextRank = getPlanRank(nextPlan);
-
-    if (nextRank < currentRank) {
-      throw ApiError.badRequest(
-        "The selected plan looks lower than the current one. Use the general subscription update flow for downgrades.",
-      );
+    if (
+      existingSubscription.status === "ACTIVE" &&
+      existingSubscription.planId === planId
+    ) {
+      throw ApiError.conflict("Tenant is already on an active subscription for this plan");
     }
 
     await assertTenantCanUsePlan(tenantId);
@@ -1072,21 +1062,26 @@ export const activateTenantSubscription = async (
       throw ApiError.notFound("Tenant subscription not found");
     }
 
-    // Prevent reactivating an expired trial
-    if (
+    const now = new Date();
+    const isPeriodEnded =
       existing.status === "EXPIRED" ||
-      (existing.trialEndsAt && new Date() > existing.trialEndsAt)
-    ) {
-      throw ApiError.conflict(
-        "This subscription has expired. Please assign a new plan instead of reactivating.",
-      );
-    }
+      existing.status === "CANCELLED" ||
+      !existing.currentPeriodEnd ||
+      new Date(existing.currentPeriodEnd) <= now ||
+      (existing.trialEndsAt && new Date(existing.trialEndsAt) <= now);
+
+    const effectivePeriodEnd = isPeriodEnded
+      ? calculatePeriodEnd(existing.billingCycle || "MONTHLY", now)
+      : existing.currentPeriodEnd;
 
     const subscription = await prisma.$transaction(async (tx) => {
       const updated = await tx.tenantSubscription.update({
         where: { tenantId },
         data: {
           status: "ACTIVE",
+          currentPeriodStart: isPeriodEnded ? now : existing.currentPeriodStart,
+          currentPeriodEnd: effectivePeriodEnd,
+          nextPaymentDue: effectivePeriodEnd,
           suspendedAt: null,
           cancelledAt: null,
         },

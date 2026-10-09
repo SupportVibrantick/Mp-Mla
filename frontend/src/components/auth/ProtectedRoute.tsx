@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -15,7 +15,16 @@ export function ProtectedRoute({
   action,
   roles,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user, can, hasModule } = useAuth();
+  const [location] = useLocation();
+  const {
+    isAuthenticated,
+    isLoading,
+    user,
+    can,
+    hasModule,
+    isSubscriptionExpired,
+    isSubscriptionSuspended,
+  } = useAuth();
 
   // Show loading spinner during init
   if (isLoading) {
@@ -37,6 +46,16 @@ export function ProtectedRoute({
   // Force password change
   if (user.forcePasswordChange) {
     return <Redirect to="/change-password" />;
+  }
+
+  // Subscription expired / suspended restriction check
+  const isAllowedBillingPath =
+    location === "/billing" ||
+    location.startsWith("/account/billing") ||
+    location === "/profile";
+
+  if ((isSubscriptionExpired || isSubscriptionSuspended) && !isAllowedBillingPath) {
+    return <Redirect to="/billing" />;
   }
 
   // Module check (restrict accesses to deactivated modules)

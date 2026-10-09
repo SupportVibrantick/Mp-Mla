@@ -505,9 +505,10 @@ export default function TenantSubscriptionsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {plans
-                      .filter(
-                        (plan: any) =>
-                          plan.id !== selectedSubscription?.plan?.id,
+                      .filter((plan: any) =>
+                        selectedSubscription?.status === "ACTIVE"
+                          ? plan.id !== selectedSubscription?.plan?.id
+                          : true,
                       )
                       .map((plan: any) => (
                         <SelectItem key={plan.id} value={plan.id}>

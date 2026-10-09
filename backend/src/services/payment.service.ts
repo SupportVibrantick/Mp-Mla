@@ -748,9 +748,10 @@ export async function updatePaymentStatus(params: UpdateStatusParams) {
             existing.subscription.status === "EXPIRED"
               ? "ACTIVE"
               : existing.subscription.status,
-          // Clear trialEndsAt when transitioning from TRIALING
+          // Clear trialEndsAt when transitioning from TRIALING or EXPIRED
           trialEndsAt:
-            existing.subscription.status === "TRIALING"
+            existing.subscription.status === "TRIALING" ||
+            existing.subscription.status === "EXPIRED"
               ? null
               : existing.subscription.trialEndsAt,
         },

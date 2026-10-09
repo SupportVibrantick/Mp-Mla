@@ -215,17 +215,31 @@ export const createTenant = async (
         },
       });
 
-      // 3. Create a subscription if planId is provided
-      if (planId) {
-        const subscriptionStatus = trialDays ? "TRIALING" : "ACTIVE";
-        const trialEndsAt = trialDays
-          ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
+      // 3. Create a subscription for the tenant
+      let effectivePlanId = planId;
+      if (!effectivePlanId) {
+        const defaultPlan = await tx.subscriptionPlan.findFirst({
+          where: { isActive: true },
+          orderBy: { sortOrder: "asc" },
+        });
+        if (defaultPlan) {
+          effectivePlanId = defaultPlan.id;
+        }
+      }
+
+      let modulesEnabled = 0;
+      if (effectivePlanId) {
+        const numTrialDays = Number(trialDays);
+        const hasTrial = !isNaN(numTrialDays) && numTrialDays > 0;
+        const subscriptionStatus = hasTrial ? "TRIALING" : "ACTIVE";
+        const trialEndsAt = hasTrial
+          ? new Date(Date.now() + numTrialDays * 24 * 60 * 60 * 1000)
           : null;
 
         await tx.tenantSubscription.create({
           data: {
             tenantId: newTenant.id,
-            planId,
+            planId: effectivePlanId,
             status: subscriptionStatus,
             billingCycle: billingCycle || "MONTHLY",
             currentPeriodStart: new Date(),
@@ -234,11 +248,8 @@ export const createTenant = async (
             trialEndsAt,
           },
         });
-      }
 
-      let modulesEnabled = 0;
-      if (planId) {
-        await syncTenantModulesToPlan(newTenant.id, planId, tx);
+        await syncTenantModulesToPlan(newTenant.id, effectivePlanId, tx);
         modulesEnabled = await tx.tenantModuleAccess.count({
           where: { tenantId: newTenant.id, isEnabled: true },
         });

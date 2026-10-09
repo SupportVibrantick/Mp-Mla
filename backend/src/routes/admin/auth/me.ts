@@ -63,13 +63,21 @@ export async function getMe(
               select: {
                 status: true,
                 billingCycle: true,
+                trialEndsAt: true,
+                currentPeriodStart: true,
                 currentPeriodEnd: true,
+                nextPaymentDue: true,
+                amountDue: true,
                 plan: {
                   select: {
+                    id: true,
                     name: true,
                     code: true,
+                    priceMonthly: true,
+                    priceYearly: true,
                     maxUsers: true,
                     maxVoters: true,
+                    storageLimitMB: true,
                   },
                 },
               },

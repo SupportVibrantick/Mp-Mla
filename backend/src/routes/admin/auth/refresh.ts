@@ -77,14 +77,6 @@ export async function refresh(
           where: { tenantId: stored.user.tenantId },
           data: { status: "EXPIRED" },
         });
-        throw ApiError.forbidden(
-          "Your free trial has expired. Please upgrade to continue.",
-        );
-      }
-      if (["EXPIRED", "CANCELLED", "SUSPENDED"].includes(subscription.status)) {
-        throw ApiError.forbidden(
-          `Your subscription is ${subscription.status.toLowerCase()}. Contact support.`,
-        );
       }
     }
 

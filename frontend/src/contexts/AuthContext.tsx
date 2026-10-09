@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useState,
+  useMemo,
   useContext,
   type ReactNode,
 } from "react";
@@ -55,13 +56,21 @@ export interface User {
     subscription?: {
       status: string;
       billingCycle: string;
-      currentPeriodEnd: string;
-      plan: {
+      trialEndsAt?: string | null;
+      currentPeriodStart?: string | null;
+      currentPeriodEnd?: string | null;
+      nextPaymentDue?: string | null;
+      amountDue?: number | null;
+      plan?: {
+        id?: string;
         name: string;
         code: string;
+        priceMonthly?: number;
+        priceYearly?: number;
         maxUsers: number;
         maxVoters: number;
-      };
+        storageLimitMB?: number;
+      } | null;
     } | null;
   } | null;
 }
@@ -89,6 +98,11 @@ interface AuthContextType extends AuthState {
   canAny: (module: string) => boolean;
   hasModule: (module: string) => boolean;
   hasRole: (...roles: string[]) => boolean;
+  isTrialActive: boolean;
+  isTrialExpired: boolean;
+  isSubscriptionExpired: boolean;
+  isSubscriptionSuspended: boolean;
+  trialDaysRemaining: number;
 }
 
 // ─── Context ────────────────────────────────────────────
@@ -107,6 +121,11 @@ export const AuthContext = createContext<AuthContextType>({
   canAny: () => false,
   hasModule: () => true,
   hasRole: () => false,
+  isTrialActive: false,
+  isTrialExpired: false,
+  isSubscriptionExpired: false,
+  isSubscriptionSuspended: false,
+  trialDaysRemaining: 0,
 });
 
 // ─── Provider ───────────────────────────────────────────
@@ -205,10 +224,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       const res = await authApi.login({ email, password });
-      const { user, accessToken, refreshToken } = res.data.data;
+      const { accessToken, refreshToken } = res.data.data;
 
       TokenStorage.setAccessToken(accessToken);
       TokenStorage.setRefreshToken(refreshToken);
+
+      // Fetch full user data including tenant & subscription
+      const meRes = await authApi.getMe();
+      const user = meRes.data.data;
       TokenStorage.setStoredUser(user);
 
       setState((prev) => ({
@@ -220,9 +243,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Load permissions
       await loadPermissions();
 
-      // Redirect based on forcePasswordChange
+      // Check subscription status
+      const sub = user?.tenant?.subscription;
+      const isExpired =
+        sub?.status === "EXPIRED" ||
+        (sub?.status === "TRIALING" &&
+          sub?.trialEndsAt &&
+          new Date(sub.trialEndsAt).getTime() <= Date.now());
+      const isSuspended =
+        sub?.status === "SUSPENDED" || sub?.status === "CANCELLED";
+
+      // Redirect based on forcePasswordChange or subscription status
       if (user.forcePasswordChange) {
         setLocation("/change-password");
+      } else if (isExpired || isSuspended) {
+        setLocation("/billing");
       } else {
         setLocation("/dashboard");
       }
@@ -304,6 +339,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [state.enabledModules, state.isAuthenticated],
   );
 
+  const subscription = state.user?.tenant?.subscription;
+
+  const isTrialActive = Boolean(
+    subscription?.status === "TRIALING" &&
+      subscription?.trialEndsAt &&
+      new Date(subscription.trialEndsAt).getTime() > Date.now(),
+  );
+
+  const isTrialExpired = Boolean(
+    subscription?.status === "TRIALING" &&
+      subscription?.trialEndsAt &&
+      new Date(subscription.trialEndsAt).getTime() <= Date.now(),
+  );
+
+  const isSubscriptionExpired = Boolean(
+    subscription?.status === "EXPIRED" || isTrialExpired,
+  );
+
+  const isSubscriptionSuspended = Boolean(
+    subscription?.status === "SUSPENDED" || subscription?.status === "CANCELLED",
+  );
+
+  const trialDaysRemaining = useMemo(() => {
+    if (!subscription?.trialEndsAt) return 0;
+    const diff = new Date(subscription.trialEndsAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }, [subscription?.trialEndsAt]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -315,6 +378,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canAny,
         hasModule,
         hasRole,
+        isTrialActive,
+        isTrialExpired,
+        isSubscriptionExpired,
+        isSubscriptionSuspended,
+        trialDaysRemaining,
       }}
     >
       {children}

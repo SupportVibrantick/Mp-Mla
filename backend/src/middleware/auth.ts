@@ -129,24 +129,33 @@ export async function requireActiveUser(
           where: { tenantId: user.tenantId },
           data: { status: "EXPIRED" },
         });
-        throw ApiError.forbidden(
-          "Your free trial has expired. Please upgrade to continue.",
-        );
+        subscription.status = "EXPIRED";
       }
 
-      // Block access for expired, cancelled, or suspended subscriptions
+      // Allow billing, subscription management, profile, and auth refresh even when expired/suspended
+      const isAccountOrAuthPath =
+        req.originalUrl.includes("/account") ||
+        req.originalUrl.includes("/auth/") ||
+        req.originalUrl.includes("/public/branding") ||
+        req.baseUrl.includes("/account") ||
+        req.baseUrl.includes("/auth");
+
       const blockedStatuses = ["EXPIRED", "CANCELLED", "SUSPENDED"];
-      if (blockedStatuses.includes(subscription.status)) {
+      if (blockedStatuses.includes(subscription.status) && !isAccountOrAuthPath) {
         const messages: Record<string, string> = {
           EXPIRED:
-            "Your subscription has expired. Please renew to continue.",
+            "Your subscription or free trial has expired. Please upgrade your subscription to continue.",
           CANCELLED:
-            "Your subscription has been cancelled. Contact support.",
+            "Your subscription has been cancelled. Please contact support or select a plan.",
           SUSPENDED:
-            "Your subscription is suspended. Please contact support.",
+            "Your subscription is suspended. Please contact support or clear pending dues.",
         };
         throw ApiError.forbidden(
           messages[subscription.status] || "Subscription inactive.",
+          {
+            code: subscription.status === "EXPIRED" ? "SUBSCRIPTION_EXPIRED" : `SUBSCRIPTION_${subscription.status}`,
+            subscriptionStatus: subscription.status,
+          },
         );
       }
     }

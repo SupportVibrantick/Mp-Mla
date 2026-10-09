@@ -75,6 +75,22 @@ api.interceptors.response.use(
       reqUrl.includes("/auth/login") ||
       reqUrl.includes("/auth/refresh");
 
+    // If 403 forbidden due to expired/suspended subscription, redirect to billing page
+    const errData = (error.response?.data as any) || {};
+    if (
+      error.response?.status === 403 &&
+      (errData.code === "SUBSCRIPTION_EXPIRED" ||
+        errData.code?.startsWith("SUBSCRIPTION_"))
+    ) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/billing")
+      ) {
+        window.location.href = "/billing";
+      }
+      return Promise.reject(error);
+    }
+
     // If 401 and not a retry and not a public/voter-portal/auth endpoint
     if (
       error.response?.status === 401 &&

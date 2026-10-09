@@ -264,15 +264,31 @@ export default function BillingPage() {
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Subscription</span>
-                  {subscription && (
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider border ${
-                      subscription.status?.toLowerCase() === 'active' 
-                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400' 
-                        : 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
-                    }`}>
-                      {subscription.status}
-                    </span>
-                  )}
+                  {subscription && (() => {
+                    const isTrialing = subscription.status === "TRIALING";
+                    const isExpired = subscription.status === "EXPIRED" || (isTrialing && subscription.trialEndsAt && new Date(subscription.trialEndsAt).getTime() <= Date.now());
+                    const isActive = subscription.status === "ACTIVE";
+
+                    let badgeClass = "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400";
+                    let label = subscription.status;
+
+                    if (isActive) {
+                      badgeClass = "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400";
+                      label = "ACTIVE";
+                    } else if (isExpired) {
+                      badgeClass = "bg-red-500/10 text-red-600 border-red-500/20 dark:bg-red-500/20 dark:text-red-400";
+                      label = isTrialing ? "TRIAL EXPIRED" : "EXPIRED";
+                    } else if (isTrialing) {
+                      badgeClass = "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400";
+                      label = "FREE TRIAL";
+                    }
+
+                    return (
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider border ${badgeClass}`}>
+                        {label}
+                      </span>
+                    );
+                  })()}
                 </div>
                 
                 {subLoading ? (
@@ -286,7 +302,9 @@ export default function BillingPage() {
                       {subscription.plan?.name || "No Active Plan"}
                     </h2>
                     <p className="text-muted-foreground text-sm max-w-xl mb-6 leading-relaxed">
-                      Your organization is subscribed to the {subscription.plan?.name} package. It provides active limits and support tailored for your constituency management operations.
+                      {subscription.status === "EXPIRED" || (subscription.status === "TRIALING" && subscription.trialEndsAt && new Date(subscription.trialEndsAt).getTime() <= Date.now())
+                        ? "Your trial period has concluded. To restore full access to grievances, citizen CRM, tasks, and team collaboration, select a subscription plan below."
+                        : `Your organization is subscribed to the ${subscription.plan?.name || "current"} package. It provides active limits and support tailored for your constituency management operations.`}
                     </p>
                   </div>
                 ) : (
@@ -303,10 +321,17 @@ export default function BillingPage() {
                   {subscription.trialEndsAt && (
                     <div>
                       <span className="block text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Trial Status</span>
-                      <span className="font-semibold text-foreground flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        Ends {new Date(subscription.trialEndsAt).toLocaleDateString("en-IN")}
-                      </span>
+                      {new Date(subscription.trialEndsAt).getTime() > Date.now() ? (
+                        <span className="font-semibold text-foreground flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          {Math.ceil((new Date(subscription.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days left (Ends {new Date(subscription.trialEndsAt).toLocaleDateString("en-IN")})
+                        </span>
+                      ) : (
+                        <span className="font-semibold text-destructive flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-destructive"></span>
+                          Expired on {new Date(subscription.trialEndsAt).toLocaleDateString("en-IN")}
+                        </span>
+                      )}
                     </div>
                   )}
                   {subscription.supportEmail && (
