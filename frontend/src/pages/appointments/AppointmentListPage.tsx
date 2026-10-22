@@ -48,6 +48,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -100,6 +110,7 @@ export default function AppointmentListPage() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<any>(null);
 
   // Dialog Form States
   const [approveComment, setApproveComment] = useState("");
@@ -286,9 +297,13 @@ export default function AppointmentListPage() {
     setActiveAppointment(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this appointment? This action is permanent.")) {
-      await deleteMutation.mutateAsync(id);
+  const confirmDelete = async () => {
+    if (!appointmentToDelete) return;
+    try {
+      await deleteMutation.mutateAsync(appointmentToDelete.id);
+      setAppointmentToDelete(null);
+    } catch {
+      // Handled by deleteMutation onError toast
     }
   };
 
@@ -568,7 +583,7 @@ export default function AppointmentListPage() {
                             <PermissionGate module="appointments" action="delete">
                               <DropdownMenuItem
                                 className="text-red-600 cursor-pointer font-semibold text-xs"
-                                onClick={() => handleDelete(appt.id)}
+                                onClick={() => setAppointmentToDelete(appt)}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" /> Delete Request
                               </DropdownMenuItem>
@@ -754,7 +769,7 @@ export default function AppointmentListPage() {
                                 <PermissionGate module="appointments" action="delete">
                                   <DropdownMenuItem
                                     className="text-red-600 cursor-pointer font-semibold text-xs"
-                                    onClick={() => handleDelete(appt.id)}
+                                    onClick={() => setAppointmentToDelete(appt)}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" /> Delete Request
                                   </DropdownMenuItem>
@@ -909,6 +924,69 @@ export default function AppointmentListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog
+        open={!!appointmentToDelete}
+        onOpenChange={(open) => {
+          if (!open) setAppointmentToDelete(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-950/50 flex items-center justify-center text-red-600 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <AlertDialogTitle className="font-extrabold text-foreground text-base">
+                  Delete Appointment
+                </AlertDialogTitle>
+                {appointmentToDelete?.appointmentNumber && (
+                  <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                    {appointmentToDelete.appointmentNumber}
+                  </p>
+                )}
+              </div>
+            </div>
+            <AlertDialogDescription className="text-sm text-muted-foreground space-y-2">
+              <span>
+                Are you sure you want to delete appointment{" "}
+                <strong className="text-foreground font-semibold">
+                  &ldquo;{appointmentToDelete?.title}&rdquo;
+                </strong>
+                {appointmentToDelete?.requesterName ? (
+                  <> requested by <strong className="text-foreground font-semibold">{appointmentToDelete.requesterName}</strong></>
+                ) : null}?
+              </span>
+              <span className="block text-xs text-destructive font-medium mt-1">
+                This action is permanent and cannot be undone. All linked notes and history will be deleted.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0 mt-4">
+            <AlertDialogCancel
+              disabled={deleteMutation.isPending}
+              className="border-border/60 hover:bg-muted font-semibold"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90 text-white font-semibold"
+              onClick={async (e) => {
+                e.preventDefault();
+                await confirmDelete();
+              }}
+            >
+              {deleteMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
+              Delete Appointment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

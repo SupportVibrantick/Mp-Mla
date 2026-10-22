@@ -119,7 +119,7 @@ export default function PdfReportsPage() {
 
   const handleDownload = async (moduleType = selectedModule) => {
     setIsGenerating(true);
-    setActiveDownloadId(moduleType);
+    setActiveDownloadId(moduleType); 
     try {
       await downloadPdf(moduleType, {
         wardId: wardFilter !== "all" ? wardFilter : undefined,
