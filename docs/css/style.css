@@ -310,7 +310,10 @@ a:hover {
   margin-left: var(--sidebar-width);
   margin-right: var(--toc-width);
   padding: 40px 48px 80px 48px;
-  max-width: 960px;
+  max-width: calc(100vw - var(--sidebar-width) - var(--toc-width));
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .breadcrumbs {
@@ -609,6 +612,9 @@ a:hover {
   right: 0;
   padding: 30px 20px;
   overflow-y: auto;
+  background-color: var(--bg-primary);
+  border-left: 1px solid var(--border-color);
+  z-index: 800;
 }
 
 .toc-title {
@@ -831,6 +837,7 @@ a:hover {
   .main-content {
     margin-left: 0;
     padding: 24px 16px;
+    max-width: 100%;
   }
   .nav-search {
     width: 160px;

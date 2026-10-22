@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MP-MLA Platform | Official User Operating Manual & Documentation</title>
-  <meta name="description" content="Official User Operating Manual and Complete Documentation Guide for the MP-MLA Constituency Management SaaS Platform. Built directly from the platform codebase and database schema.">
+  <title>MP-MLA Platform | Official Step-by-Step User Operating Manual</title>
+  <meta name="description" content="Official Step-by-Step Operating Manual & Complete Documentation Guide for the MP-MLA Constituency Management SaaS Platform. Includes full workflow guides for every module.">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="icon" href="assets/images/logo.png">
@@ -44,7 +44,7 @@
       </div>
       <div class="search-results" id="searchResults">
         <div style="padding: 20px; text-align: center; color: var(--text-muted);">
-          Type any keyword (e.g. <i>Grievance, Voter Portal, Janata Darbar, Funds, Schemes, Website Builder</i>) to search...
+          Type any keyword (e.g. <i>Grievance, Voter Portal, Janata Darbar, Funds, Schemes, Projects, Website Builder</i>) to search...
         </div>
       </div>
     </div>
@@ -127,78 +127,78 @@
           <span>/</span>
           <a href="#">Operating Guide</a>
           <span>/</span>
-          <span>Official Manual v2.4.0</span>
+          <span>Official Step-by-Step Manual v2.5.0</span>
         </div>
         <h1>MP-MLA Platform Operating Manual</h1>
-        <p style="font-size: 17px; color: var(--text-secondary);">Verified Operating Manual Built Directly from Codebase & Database Schema</p>
+        <p style="font-size: 17px; color: var(--text-secondary);">Comprehensive Module-by-Module Step-by-Step Operating Guide & Workflow Manual</p>
       </div>
 
       <!-- Chapter 1: Introduction & Overview -->
       <section id="intro" class="doc-section">
         <h2><i class="fa-solid fa-rocket"></i> 1. Introduction & Platform Overview</h2>
         <p>
-          The <strong>MP-MLA Constituency Management SaaS Platform</strong> is a web-based management suite built for Members of Parliament (MP), Members of Legislative Assembly (MLA), secretariat teams, and public administration.
+          The <strong>MP-MLA Constituency Management SaaS Platform</strong> is an enterprise public administration suite engineered for Members of Parliament (MP), Members of Legislative Assembly (MLA), secretariat teams, nodal officers, and constituency coordinators.
         </p>
 
         <div class="callout callout-info">
-          <div class="callout-title"><i class="fa-solid fa-circle-info"></i> Verified System Scope</div>
-          The platform operates on a multi-tenant PostgreSQL Prisma architecture. Superadmins manage SaaS tenants and subscription paywall controls via the Master Dashboard, while MP/MLA offices manage grievances, projects, funds, Janata Darbar sessions, welfare schemes, voter verification, website creation, and public relations.
+          <div class="callout-title"><i class="fa-solid fa-circle-info"></i> Verified System Architecture</div>
+          The platform operates on a multi-tenant PostgreSQL Prisma architecture. Superadmins provision SaaS tenants and enforce subscription paywalls via the Master Control Panel, while MP/MLA offices manage grievances, infrastructure projects, funds ledgers, Janata Darbar sessions, welfare schemes, voter verification, website creation, and public relations.
         </div>
 
-        <h3>System Feature Modules:</h3>
+        <h3>Platform Feature Modules:</h3>
         <ol>
-          <li><strong>Executive Dashboard:</strong> Real-time KPI cards, monthly grievance trend charts, priority breakdown, and recent constituent request feeds.</li>
-          <li><strong>Grievance Management System:</strong> Public request intake, SLA countdown timers, department mapping, Kanban board, and proof document resolution.</li>
-          <li><strong>Janata Darbar Sessions & Tokens:</strong> Walk-in digital token engine, VIP priority tagging, session slot reservation, and live hearing minutes.</li>
-          <li><strong>Events & Protocol Scheduler:</strong> Constituency public events, team assignment, protocol guest list RSVP, and speech notes.</li>
-          <li><strong>Meetings & Appointments:</strong> Secretariat meetings scheduler, Minutes of Meeting (MoM) archive, visitor appointment passes.</li>
-          <li><strong>Voter Portal & Verification:</strong> Electoral search by EPIC ID, voter identity verification requests, and demographic analytics (age distribution, gender ratio, ward density).</li>
-          <li><strong>Geography & Booth Hierarchy:</strong> Constituency, District, Block, Town/Village, Polling Location, Booth, and Ward territory mapping.</li>
-          <li><strong>Infrastructure Projects & Milestones:</strong> Work order creation, administrative sanctions, contractor bidding, and 25%/50%/75%/100% stage photo uploads.</li>
-          <li><strong>Fund Ledger & Financial Audit:</strong> MPLAD, MLALAD, State, and Central fund allocations, installment releases, and Utilization Certificates (UC).</li>
-          <li><strong>Welfare Schemes & Applications:</strong> Scheme catalog management, constituent eligibility checks, and Direct Benefit Transfer (DBT) disbursal tracking.</li>
-          <li><strong>CRM Contacts & Party Leaders:</strong> Stakeholder directory, leader profiling, community groups, and automated birthday/anniversary greeting reminders.</li>
-          <li><strong>Public Facilities & Institutions:</strong> Directory for temples, mosques, hospitals, schools, police stations, CSC centers, and parks.</li>
-          <li><strong>Website Builder Studio:</strong> Visual page builder, landing page creator, custom domain routing, SSL management, and live deployment.</li>
-          <li><strong>Creative Studio & Social Media:</strong> Banner generator, festival wish posters, social post analytics, and press releases.</li>
-          <li><strong>Competitor Analysis:</strong> Opposition leader metrics, local issue sentiment tracking, and competitor activity logs.</li>
-          <li><strong>Helplines, Documents & Reports:</strong> Admin emergency helpline numbers, central file vault, and PDF/Excel report export engine.</li>
-          <li><strong>Master Dashboard & Subscriptions:</strong> Tenant onboarding, subscription plans (Free 14-day Trial, Pro, Enterprise), paywall enforcement, audit logs, and soft-delete Recycle Bin.</li>
+          <li><strong>Master Dashboard & Tenant Provisioning:</strong> SaaS tenant onboarding, subscription plan assignment, paywall enforcement, global audit logs, and soft-delete Recycle Bin.</li>
+          <li><strong>Executive Command Dashboard:</strong> Real-time KPI summary cards, SLA breach countdowns, priority analytics, and quick-action execution shortcuts.</li>
+          <li><strong>Grievance & Public Request System:</strong> Complaint intake, SLA timers, nodal department routing, automated escalations, proof photo resolution, and constituent feedback.</li>
+          <li><strong>Janata Darbar Public Hearings:</strong> Session slot creation, walk-in digital token engine, VIP priority queueing, and live verbal order converting into tickets.</li>
+          <li><strong>Events & Protocol Scheduler:</strong> Constituency public events, team task assignments, VIP guest RSVP tracking, and speech note briefings.</li>
+          <li><strong>Meetings & Secretariat Appointments:</strong> Departmental review scheduler, Minutes of Meeting (MoM) decision tracking, and visitor QR gate pass check-in/out.</li>
+          <li><strong>Voter Portal & Identity Verification:</strong> Electoral roll search by EPIC ID, constituent identity verification, household family grouping, and demographic heatmaps.</li>
+          <li><strong>Geography, Demographics & Booths:</strong> Hierarchy structure (District ➔ Block ➔ Town/Village ➔ Polling Location ➔ Booth / Ward), booth president assignment, and bulk CSV voter imports.</li>
+          <li><strong>Public Facilities & Emergency Helplines:</strong> Citizen speed-dial directory, facility locator (hospitals, schools, police stations, CSC centers), and public registration requests.</li>
+          <li><strong>Infrastructure Projects & Milestones:</strong> Sanction orders, contractor assignment, stage-wise 25%/50%/75%/100% milestone photo inspection, and payment releases.</li>
+          <li><strong>Funds Ledger & Financial Audit:</strong> MPLAD, MLALAD, State & Central fund allocations, installment tracking, Utilization Certificate (UC) vault, and remaining balance ledgers.</li>
+          <li><strong>Welfare Schemes & Applications:</strong> Scheme catalog setup, criteria eligibility engine, application document intake, and Direct Benefit Transfer (DBT) disbursal tracking.</li>
+          <li><strong>CRM Contacts, Cadre & Community Networks:</strong> Constituent directory, religious & professional group networks, party worker profiling, and automated birthday/anniversary greetings.</li>
+          <li><strong>Website Builder Studio & Domains:</strong> Drag-and-drop page builder, public request web forms, custom domain mapping with SSL, and live edge deployment.</li>
+          <li><strong>Creative Studio & Social Media:</strong> Banner generator for festival/achievement posters, image export, social channel dispatch, and press release archiving.</li>
+          <li><strong>Competitor Intelligence & Political Metrics:</strong> Opposition profiling, local issue monitoring, campaign promise tracking, and ward counter-strategies.</li>
+          <li><strong>Document Vault, Tasks & PDF Reports:</strong> Central file storage, internal staff task delegation, and customizable PDF/Excel summary report exports.</li>
         </ol>
       </section>
 
       <!-- Architecture Section -->
       <section id="architecture" class="doc-section">
         <h2><i class="fa-solid fa-layer-group"></i> 2. Platform Architecture & Portals</h2>
-        <p>The platform provides targeted interfaces for different user roles:</p>
+        <p>The platform provides specialized portals tailored to specific administrative roles:</p>
 
         <div class="data-table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
                 <th>Portal Name</th>
-                <th>Target Audience</th>
-                <th>Core Functionalities</th>
-                <th>Route Path</th>
+                <th>Target User Roles</th>
+                <th>Core Workflow Capabilities</th>
+                <th>Primary Route Path</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><strong>Master Control Panel</strong></td>
-                <td>Superadmin / SaaS Owner</td>
-                <td>Multi-Tenant Provisioning, Subscription Plans, Paywall Locks, Global Audits</td>
+                <td>SUPER_ADMIN (SaaS Owner)</td>
+                <td>Multi-Tenant Provisioning, Subscription Tiers, Paywall Locks, System Backups & Global Audits</td>
                 <td><code>/master-dashboard</code></td>
               </tr>
               <tr>
-                <td><strong>Constituency Portal</strong></td>
-                <td>MP/MLA, Secretariat Staff</td>
-                <td>Dashboard KPIs, Grievances, Funds, Projects, Events, Competitors</td>
+                <td><strong>Constituency Secretariat Portal</strong></td>
+                <td>MLA_MP, OFFICE_STAFF, NODAL_OFFICER</td>
+                <td>Executive Dashboard, Grievances, Funds, Infrastructure Projects, Events, Schemes, CRM, PR Studio</td>
                 <td><code>/dashboard</code></td>
               </tr>
               <tr>
-                <td><strong>Voter Portal</strong></td>
-                <td>Voter Verification Staff</td>
-                <td>Electoral Search, EPIC Verification, Identity Requests, Demographics</td>
+                <td><strong>Voter Search & Verification Portal</strong></td>
+                <td>VOTER_VERIFIER, Field Staff</td>
+                <td>EPIC Electoral Search, Voter Identity Requests, Household Linking, Ward Demographics</td>
                 <td><code>/voter-portal</code></td>
               </tr>
             </tbody>
@@ -216,14 +216,14 @@
             <div class="screenshot-title">Figure 2.1: MP/MLA Executive Dashboard Interface (Real Screen)</div>
           </div>
           <img src="assets/images/dashboard.png" alt="MP/MLA Executive Dashboard Interface" class="screenshot-img">
-          <div class="screenshot-caption">Real Captured Screenshot: MP/MLA Executive Dashboard displaying live KPI metric cards, Ward breakdown, and Recent Requests. (Click to zoom)</div>
+          <div class="screenshot-caption">Real Captured Screenshot: Executive Dashboard displaying real-time KPI metric cards, Ward breakdown, and Recent Requests. (Click to zoom)</div>
         </div>
       </section>
 
       <!-- Roles & Permissions Matrix -->
       <section id="roles-permissions" class="doc-section">
         <h2><i class="fa-solid fa-user-shield"></i> 3. User Roles & Security Matrix</h2>
-        <p>Role-Based Access Control (RBAC) enforces security rules across constituency operations:</p>
+        <p>Role-Based Access Control (RBAC) enforces granular permissions across all constituency modules:</p>
 
         <div class="data-table-wrapper">
           <table class="data-table">
@@ -231,17 +231,17 @@
               <tr>
                 <th>User Role</th>
                 <th>Scope</th>
-                <th>Grievances</th>
-                <th>Voter Portal</th>
-                <th>Funds & Projects</th>
+                <th>Grievance Workflow</th>
+                <th>Voter Roll Access</th>
+                <th>Funds & Infrastructure</th>
                 <th>System & Billing</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><span class="badge badge-danger">SUPER_ADMIN</span></td>
-                <td>Global SaaS</td>
-                <td>Full Access</td>
+                <td>Global SaaS Engine</td>
+                <td>Full Access across Tenants</td>
                 <td>Full Access</td>
                 <td>Full Access</td>
                 <td><span class="badge badge-success">Full Master Control</span></td>
@@ -249,18 +249,26 @@
               <tr>
                 <td><span class="badge badge-info">MLA_MP</span></td>
                 <td>Single Constituency</td>
-                <td>Approve & Review</td>
+                <td>Approve, Review & Escalate</td>
                 <td>View & Analytics</td>
-                <td>Sanction Projects</td>
+                <td>Sanction Projects & Allocations</td>
                 <td>Constituency Settings</td>
               </tr>
               <tr>
                 <td><span class="badge badge-success">OFFICE_STAFF</span></td>
                 <td>Single Constituency</td>
-                <td>Create, Assign, Escalate</td>
+                <td>Create, Assign & Resolve</td>
                 <td>Verify Voters & Records</td>
-                <td>Track Expenses</td>
+                <td>Track Disbursements</td>
                 <td>No Billing Access</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-warning">NODAL_OFFICER</span></td>
+                <td>Assigned Department</td>
+                <td>Update Status & Upload Proof</td>
+                <td>View-Only</td>
+                <td>View Department Projects</td>
+                <td>No Admin Access</td>
               </tr>
             </tbody>
           </table>
@@ -271,32 +279,49 @@
       <section id="superadmin-overview" class="doc-section">
         <h2><i class="fa-solid fa-building-user"></i> 4. Master Superadmin & Multi-Tenant Setup</h2>
         <p>
-          Superadmins manage all SaaS constituency accounts from the Master Dashboard (`/master-dashboard`).
+          Superadmins manage all SaaS constituency accounts from the Master Control Panel at <code>/master-dashboard</code>.
         </p>
+
+        <h3>Step-by-Step Tenant Provisioning & Management Workflow:</h3>
 
         <div class="steps-container">
           <div class="step-item">
             <div class="step-badge">1</div>
             <div class="step-content">
-              <h4>Access Master Dashboard</h4>
-              <p>Log in as Superadmin at <code>/master-dashboard/login</code>. Open the <strong>Tenants Directory</strong> page.</p>
+              <h4>Access Master Dashboard & Log In</h4>
+              <p>Navigate to <code>/master-dashboard/login</code>. Enter Superadmin credentials. Upon authentication, open the <strong>Tenants Directory</strong> tab.</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">2</div>
             <div class="step-content">
               <h4>Provision New Constituency Account</h4>
-              <p>Click <strong>Add Tenant</strong>. Enter Representative Name (e.g., <i>Hon. Ashok Kumar MP</i>), Constituency Type (<i>Lok Sabha / Vidhan Sabha</i>), State, District, and Subdomain.</p>
+              <p>Click the <strong>Add Tenant</strong> button. Enter Representative Name (e.g. <i>Hon. Ashok Kumar MP</i>), Designation (<i>Member of Parliament / Member of Legislative Assembly</i>), House (<i>Lok Sabha / Rajya Sabha / Vidhan Sabha</i>), State, District, Subdomain (e.g. <code>indore-south</code>), and Official Email.</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">3</div>
             <div class="step-content">
-              <h4>Assign Subscription Plan & Initial Credentials</h4>
-              <p>Select plan tier (<i>14-Day Free Trial, Pro Plan, Enterprise Plan</i>) and set initial Admin login credentials.</p>
+              <h4>Assign Subscription Plan & Initial Admin Credentials</h4>
+              <p>Select Plan Tier (<i>14-Day Free Trial, Pro Plan, Enterprise Plan</i>). System automatically generates the initial MP/MLA Secretariat Admin account and sends a secure invitation link to the representative's email.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Manage Tenant Lifecycle & Feature Flags</h4>
+              <p>Superadmins can enable or disable specific modules per tenant, suspend non-paying accounts, override record limits, and monitor database storage usage.</p>
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Subscriptions & Paywall -->
+      <section id="subscriptions-paywall" class="doc-section">
+        <h2><i class="fa-solid fa-credit-card"></i> 5. Subscriptions & Paywall Enforcement Rules</h2>
+        <p>
+          The automated billing system handles free trial countdowns, plan renewals, invoicing, and paywall locks at <code>/account/billing</code>.
+        </p>
 
         <!-- Real Screenshot: Billing & Subscriptions -->
         <div class="screenshot-card">
@@ -306,24 +331,41 @@
               <span class="dot dot-yellow"></span>
               <span class="dot dot-green"></span>
             </div>
-            <div class="screenshot-title">Figure 4.1: SaaS Subscriptions & Account Billing Directory</div>
+            <div class="screenshot-title">Figure 5.1: SaaS Subscriptions & Account Billing Directory</div>
           </div>
           <img src="assets/images/billing.png" alt="SaaS Billing & Subscriptions" class="screenshot-img">
           <div class="screenshot-caption">Real Captured Screenshot: Subscriptions Management, Free Trial Countdown, and Plan Upgrade Interface. (Click to zoom)</div>
         </div>
-      </section>
 
-      <!-- Subscriptions & Paywall -->
-      <section id="subscriptions-paywall" class="doc-section">
-        <h2><i class="fa-solid fa-credit-card"></i> 5. Subscriptions & Paywall Enforcement Rules</h2>
-        <p>
-          The automated billing system handles free trial countdowns, plan renewals, and paywall locks.
-        </p>
+        <h3>Step-by-Step Billing & Paywall Management Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>View Active Subscription Status & Limits</h4>
+              <p>Navigate to <code>/account/billing</code>. Check trial days remaining, current active quota limits (Voter storage limit, Monthly SMS count, Custom Domains), and billing history.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Select Target Plan & Billing Interval</h4>
+              <p>Click <strong>Upgrade Plan</strong> or <strong>Renew Subscription</strong>. Select plan tier (<i>Pro Plan</i> or <i>Enterprise Plan</i>) and billing frequency (<i>Monthly / Annual</i>).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Process Payment & Activation</h4>
+              <p>Complete transaction via integrated payment gateway or offline bank transfer invoice. System updates tenant subscription state instantly upon confirmation.</p>
+            </div>
+          </div>
+        </div>
 
         <div class="callout callout-warning">
-          <div class="callout-title"><i class="fa-solid fa-triangle-exclamation"></i> Subscription Paywall Lock System</div>
-          If a 14-day free trial expires without plan renewal, the platform activates a <strong>Paywall Lock Banner</strong>. 
-          Staff can still view records, but write operations (creating new grievances, voter roll edits, project sanctioning) are locked until plan renewal at <code>/account/billing</code>.
+          <div class="callout-title"><i class="fa-solid fa-triangle-exclamation"></i> Subscription Paywall Enforcement Rule</div>
+          If a 14-day free trial expires without plan renewal, the platform activates a <strong>Paywall Lock Banner</strong>. Staff can still read and search existing records, but all write operations (creating new grievances, voter roll modifications, project sanctions) are strictly locked until plan renewal at <code>/account/billing</code>.
         </div>
       </section>
 
@@ -331,12 +373,38 @@
       <section id="audit-recyclebin" class="doc-section">
         <h2><i class="fa-solid fa-shield-halved"></i> 6. System Audit Logs & Data Recovery (Recycle Bin)</h2>
         <p>
-          All system actions, logins, updates, and deletions are recorded in immutable audit logs.
+          All system actions, user logins, data modifications, exports, and soft deletions are captured in immutable audit logs at <code>/audit-logs</code> and <code>/recycle-bin</code>.
         </p>
 
+        <h3>Step-by-Step Audit & Data Restoration Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Inspect System Audit Trail</h4>
+              <p>Open <code>/audit-logs</code>. Search activity by User Name, Date Range, IP Address, or Action Type (<i>CREATE, UPDATE, DELETE, EXPORT, LOGIN</i>).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Access Soft-Deleted Recycle Bin</h4>
+              <p>Navigate to <code>/recycle-bin</code>. View soft-deleted records across Grievances, Voter Entries, Infrastructure Projects, and Scheme Applications.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Restore Data or Perform Permanent Purge</h4>
+              <p>Click <strong>Restore Record</strong> to reinstate deleted item with all child relations intact. Items remain in Recycle Bin for 30 days before permanent system purging.</p>
+            </div>
+          </div>
+        </div>
+
         <div class="callout callout-tip">
-          <div class="callout-title"><i class="fa-solid fa-lightbulb"></i> Two-Stage Soft Delete & Recovery</div>
-          Deleted items (grievances, contacts, voter entries, projects) are retained in the <strong>Recycle Bin</strong> for 30 days before permanent deletion, allowing instant restoration.
+          <div class="callout-title"><i class="fa-solid fa-lightbulb"></i> Two-Stage Soft Delete Safety Guarantee</div>
+          No data is permanently lost immediately upon deletion. The 30-day soft-delete buffer guarantees accidental deletions can be restored with a single click by Authorized Administrators.
         </div>
       </section>
 
@@ -344,19 +412,40 @@
       <section id="executive-dashboard" class="doc-section">
         <h2><i class="fa-solid fa-chart-pie"></i> 7. Executive Dashboard Operating Guide</h2>
         <p>
-          The Executive Dashboard serves as the central command post for the MP or MLA.
+          The Executive Dashboard serves as the central command post for the MP or MLA at <code>/dashboard</code>.
         </p>
-        <ul>
-          <li><strong>KPI Summary Metrics:</strong> Total Grievances, Sanctioned Funds, Active Projects, Voter Satisfaction Score.</li>
-          <li><strong>Monthly Trends & Priority Breakdown:</strong> Visual charts categorizing complaints by priority (Critical, High, Medium, Low) and status.</li>
-          <li><strong>Quick Action Command Bar:</strong> Instant shortcuts for <i>Log Grievance</i>, <i>Sanction Project</i>, <i>Voter Search</i>, and <i>Janata Darbar</i>.</li>
-        </ul>
+
+        <h3>Step-by-Step Dashboard Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Review Live Metric KPI Cards</h4>
+              <p>Analyze key counters: <i>Total Grievances Received</i>, <i>SLA Resolution %</i>, <i>Sanctioned Project Funds</i>, <i>Active Infrastructure Projects</i>, and <i>Verified Voter Count</i>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Execute Quick Actions from Command Bar</h4>
+              <p>Click shortcut buttons on top: <strong>Log Grievance</strong>, <strong>Sanction Project</strong>, <strong>Search Voter EPIC</strong>, or <strong>Issue Janata Darbar Token</strong>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Filter Data by Ward & Date Range</h4>
+              <p>Use top filter dropdowns to dynamically filter dashboard widgets by specific Ward, Polling Booth, or Date Range.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="grievance-management" class="doc-section">
         <h2><i class="fa-solid fa-clipboard-list"></i> 8. Grievances & Public Requests Operating Guide</h2>
         <p>
-          Constituent complaints follow an SLA-monitored lifecycle to guarantee timely resolution:
+          Constituent complaints follow an SLA-monitored lifecycle to guarantee timely resolution at <code>/grievances</code> and <code>/public-requests/new</code>.
         </p>
 
         <!-- Real Screenshot: Grievances List -->
@@ -373,26 +462,42 @@
           <div class="screenshot-caption">Real Captured Screenshot: Grievances Management Table displaying SLA Countdown Timers, Status Filters, and Action Options. (Click to zoom)</div>
         </div>
 
+        <h3>Complete Step-by-Step Grievance Lifecycle Workflow:</h3>
+
         <div class="steps-container">
           <div class="step-item">
             <div class="step-badge">1</div>
             <div class="step-content">
-              <h4>Complaint Intake & Department Assignment</h4>
-              <p>Navigate to <code>/grievances</code> or <code>/public-requests/new</code>. Enter Constituent Name, Phone, Ward/Booth, Department (PWD, Electricity, Water Board, Health), and Priority.</p>
+              <h4>Register New Grievance Entry</h4>
+              <p>Go to <code>/grievances</code> ➔ Click <strong>New Grievance</strong>. Fill Constituent Name, Mobile Number, EPIC Card ID, Ward/Booth, Department (<i>PWD, Electricity Board, Water Supply, Healthcare, Sanitation, Public Transport</i>), and complaint description. Attach supporting document/photo.</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">2</div>
             <div class="step-content">
-              <h4>Department Escalation & SLA Countdown</h4>
-              <p>The ticket is assigned to the Nodal Department Officer with an automated SLA timer (e.g. 48 hours for emergency repairs).</p>
+              <h4>Assign Category, Priority & SLA Target</h4>
+              <p>Select Priority Tier: <strong>Critical (24h SLA)</strong>, <strong>High (48h SLA)</strong>, <strong>Medium (7 Days SLA)</strong>, or <strong>Low (15 Days SLA)</strong>. The system automatically sets countdown target date.</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">3</div>
             <div class="step-content">
-              <h4>Action Taken & Resolution Sign-Off</h4>
-              <p>Department officers upload proof photos and action notes. Upon confirmation, ticket status changes to <strong>Resolved</strong>.</p>
+              <h4>Assign Nodal Officer & Dispatch Notification</h4>
+              <p>Assign Nodal Department Officer. The system auto-dispatches an SMS notification to the constituent with reference ticket code (e.g. <code>GRV-2026-089</code>) and notifies nodal officer.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Nodal Officer Action & Proof Document Upload</h4>
+              <p>Nodal officer logs into portal, updates status to <i>In Progress</i>, records field remarks, and uploads completion proof photo/document.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">5</div>
+            <div class="step-content">
+              <h4>Resolution Sign-Off & Constituent Rating</h4>
+              <p>Secretariat staff verifies completion proof, marks ticket <strong>Resolved</strong>, and captures constituent satisfaction score (1 to 5 Stars).</p>
             </div>
           </div>
         </div>
@@ -402,43 +507,135 @@
       <section id="janata-darbar" class="doc-section">
         <h2><i class="fa-solid fa-users"></i> 9. Janata Darbar Sessions Operating Guide</h2>
         <p>
-          Streamline walk-in hearings at <code>/janata-darbar</code>:
+          Streamline public hearing walk-in events at <code>/janata-darbar</code>.
         </p>
-        <ul>
-          <li><strong>Digital Token Engine:</strong> Issue sequential tokens (e.g. <code>JD-042</code>) for walk-in constituents with time slots.</li>
-          <li><strong>Priority Tagging:</strong> Flag senior citizens, medical urgent cases, or official delegations for priority queue.</li>
-          <li><strong>Live Hearing Minutes:</strong> Record MP/MLA verbal instructions directly against the constituent's profile during the hearing.</li>
-        </ul>
+
+        <h3>Step-by-Step Janata Darbar Hearing & Token Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Schedule Janata Darbar Hearing Session</h4>
+              <p>Go to <code>/janata-darbar</code> ➔ Click <strong>Schedule Session</strong>. Input Session Date, Venue Location, Start Time, Max Token Capacity, and Presiding Officer Name.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Issue Walk-in Digital Token</h4>
+              <p>As citizens arrive, receptionist inputs constituent phone or EPIC ID. System generates sequential token (e.g. <code>JD-042</code>) and dispatches token pass via SMS.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Apply VIP & Medical Priority Tagging</h4>
+              <p>Tag senior citizens, urgent medical requests, or official delegation tokens with <strong>Priority Tag</strong> to move them ahead in queue.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Record Live Hearing Minutes & Instant Conversion</h4>
+              <p>When token is called into hearing room, secretariat records MP/MLA verbal instructions. Directly convert hearing into an official <strong>Grievance Ticket</strong>, <strong>Project Sanction</strong>, or <strong>Official Letter</strong> on the spot.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">5</div>
+            <div class="step-content">
+              <h4>Conclude Session & Generate Analytics Summary</h4>
+              <p>Mark token <i>Completed</i>. Upon event end, click <strong>Conclude Session</strong> to archive full hearing minutes and summary report.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="events-protocol" class="doc-section">
         <h2><i class="fa-solid fa-calendar-days"></i> 10. Events & Protocol Scheduler Guide</h2>
         <p>
-          Manage constituency public functions, rallies, and official protocol events at <code>/events</code>:
+          Manage public functions, inauguration ceremonies, rallies, and official protocol events at <code>/events</code>.
         </p>
-        <ul>
-          <li><strong>Event Scheduling:</strong> Set Date, Time, Venue, Event Category (Public Rally, Inauguration, Inspection), and Budget.</li>
-          <li><strong>Protocol Guest List & RSVP:</strong> Manage VIP guest lists, send official invitations, and track RSVP responses.</li>
-          <li><strong>Speech & Briefing Notes:</strong> Attach official speech notes, talking points, and constituency stats for the MP/MLA.</li>
-        </ul>
+
+        <h3>Step-by-Step Event Scheduling & Protocol Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Create Public Event Entry</h4>
+              <p>Go to <code>/events</code> ➔ Click <strong>Create Event</strong>. Set Title, Category (<i>Inauguration, Public Rally, Inspection, Cultural Event</i>), Date/Time, Venue, Target Attendance, and Budget.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Assign Event Coordinator & Team Tasks</h4>
+              <p>Assign Event Lead, Venue Logistics Manager, VIP Transport Coordinator, and Media Team. Tasks appear on staff task boards.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Manage VIP Guest List & Track RSVP</h4>
+              <p>Add VIP dignitaries and local leaders to guest list. Dispatch invitations and track live RSVP status (<i>Accepted, Declined, Pending</i>).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Upload Speech Notes & Briefing Packets</h4>
+              <p>Attach MP/MLA speech talking points, local ward statistics, key inaugurations list, and media release text.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="meetings-appointments" class="doc-section">
         <h2><i class="fa-solid fa-handshake"></i> 11. Meetings & Appointments Operating Guide</h2>
         <p>
-          Organize secretariat meetings and constituent appointments at <code>/meetings</code> and <code>/appointments</code>:
+          Organize official secretariat review meetings and visitor entry passes at <code>/meetings</code> and <code>/appointments</code>.
         </p>
-        <ul>
-          <li><strong>Official Meetings & Minutes (MoM):</strong> Schedule departmental review meetings, record attendees, and archive Minutes of Meeting (MoM).</li>
-          <li><strong>VIP & Visitor Appointments:</strong> Schedule visitor slots, issue digital entry passes, and maintain visitor logs.</li>
-        </ul>
+
+        <h3>Step-by-Step Meetings & Visitor Pass Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Schedule Official Secretariat Meeting</h4>
+              <p>Go to <code>/meetings</code> ➔ Click <strong>New Meeting</strong>. Set Title, Department, Date/Time, Venue/Link, Agenda, and Required Attendees.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Record Minutes of Meeting (MoM) & Action Items</h4>
+              <p>Input MoM notes during meeting. Assign actionable items to staff with target completion dates and track completion.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Request Visitor Appointment Pass</h4>
+              <p>Go to <code>/appointments</code>. Constituent or visitor submits request (Visitor Name, Organization, Purpose of Visit, Preferred Slot).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Pass Approval & QR Gate Check-in</h4>
+              <p>Secretariat approves slot. System sends digital QR Entry Pass to visitor mobile. Security scans QR pass at gate upon arrival and exit.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Voter Portal & Verification -->
       <section id="voter-portal" class="doc-section">
         <h2><i class="fa-solid fa-address-card"></i> 12. Voter Portal & Identity Verification Operating Guide</h2>
         <p>
-          The **Voter Portal** (`/voter-portal`, `/voter-verification`, `/voter-list`) provides complete electoral roll search and verification.
+          The Voter Portal at <code>/voter-portal</code>, <code>/voter-verification</code>, and <code>/voter-list</code> provides complete electoral roll search, verification, and family grouping.
         </p>
 
         <!-- Real Screenshot 2: Voter Portal (Light Theme) -->
@@ -455,27 +652,35 @@
           <div class="screenshot-caption">Real Captured Screenshot: Voter Portal displaying EPIC ID Electoral Search, Verification Status badges, and Demographic Analytics. (Click to zoom)</div>
         </div>
 
-        <h3>Voter Portal Operating Workflow:</h3>
+        <h3>Complete Step-by-Step Voter Search & Verification Workflow:</h3>
+
         <div class="steps-container">
           <div class="step-item">
             <div class="step-badge">1</div>
             <div class="step-content">
               <h4>Electoral Search by EPIC Card or Name</h4>
-              <p>Go to <code>/voter-portal</code>. Enter EPIC Card Number (e.g. <code>ABC1234567</code>) or constituent name to fetch booth number, serial number, and polling station location.</p>
+              <p>Go to <code>/voter-portal</code>. Input EPIC Card Number (e.g. <code>ABC1234567</code>) or constituent name. System fetches booth number, serial number, polling station, and voter details.</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">2</div>
             <div class="step-content">
-              <h4>Voter Identity Verification</h4>
-              <p>Review new voter registration or address correction requests. Mark status as <strong>Verified</strong>, <strong>Pending Verification</strong>, or <strong>Needs Revision</strong>.</p>
+              <h4>Household Family Grouping</h4>
+              <p>Link family members residing in the same household under a single Family Group ID to view complete family voting records together.</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">3</div>
             <div class="step-content">
-              <h4>Demographic Analytics</h4>
-              <p>Analyze Age Distribution charts (18-25, 26-35, 36-50, 50+), Gender Ratio, and Ward-wise Voter Density heatmaps.</p>
+              <h4>Process Voter Verification Requests</h4>
+              <p>Go to <code>/voter-verification</code>. Review new voter registration or address correction requests. Verify ID documents and mark status <strong>Verified</strong>, <strong>Pending Info</strong>, or <strong>Rejected</strong>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Demographic Analytics & Ward Heatmaps</h4>
+              <p>Open <code>/demographics</code>. Analyze Age Distribution charts (<i>18-25, 26-35, 36-50, 50+</i>), Gender Ratio, and Ward-wise Voter Density heatmaps.</p>
             </div>
           </div>
         </div>
@@ -485,20 +690,50 @@
       <section id="geography-booths" class="doc-section">
         <h2><i class="fa-solid fa-map-location-dot"></i> 13. Demographics, Wards & Booths Hierarchy Guide</h2>
         <p>
-          Manage constituency territorial structure at <code>/geography</code>:
+          Manage constituency territorial structure and voting day booth arrangements at <code>/geography</code> and <code>/geography/bulk-import</code>.
         </p>
+
+        <p><strong>Constituency Territory Hierarchy:</strong></p>
         <p><code>Constituency ➔ District ➔ Block ➔ Town/Village ➔ Polling Location ➔ Booth / Ward</code></p>
-        <ul>
-          <li><strong>Booth Management:</strong> Manage all arrangements for a specific polling booth on voting day, including assigned manpower, chairs, tables, and other required resources.</li>
-          <li><strong>Bulk Import:</strong> Upload CSV/Excel files containing electoral roll booth lists via <code>/geography/bulk-import</code>.</li>
-          <li><strong>Polling Location Audit:</strong> Record electricity, water, accessibility ramps, and security facilities available at each booth location.</li>
-        </ul>
+
+        <h3>Step-by-Step Geography & Booth Setup Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Setup Territory Hierarchy</h4>
+              <p>Go to <code>/geography</code>. Define Districts, Blocks, Villages/Towns, Polling Stations, and Wards.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Assign Polling Booth Committee & In-Charges</h4>
+              <p>Select specific Polling Booth. Assign Booth President, Committee Members, Page Pramukhs, and save contact numbers.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Booth Facility Audit & Voting Day Logistics</h4>
+              <p>Log facility status (<i>Ramps, Electricity, Water, Security</i>) and allocate voting day arrangements budget (<i>Tents, Chairs, Refreshments, Banners</i>).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Bulk Electoral Roll Data Import (CSV/Excel)</h4>
+              <p>Go to <code>/geography/bulk-import</code>. Upload official voter list CSV file, map fields (<i>EPIC ID, Name, Relative, Age, Gender, House No, Booth No</i>), validate schema, and import data into system database.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="institutions-facilities" class="doc-section">
         <h2><i class="fa-solid fa-hospital-user"></i> 14. Public Facilities, Helplines & Information Hub</h2>
         <p>
-          Manage emergency contact numbers, transport info, and government web directories at <code>/helplines</code> and <code>/public-facilities</code>:
+          Manage emergency contacts, speed-dial numbers, and government facility locator at <code>/helplines</code> and <code>/public-facilities</code>.
         </p>
 
         <!-- Real Screenshot: Public Helplines Directory -->
@@ -515,20 +750,38 @@
           <div class="screenshot-caption">Real Captured Screenshot: Public Helplines Speed-Dial Directory and Admin Contact Management. (Click to zoom)</div>
         </div>
 
-        <ul>
-          <li><strong>Government Department Directory:</strong> Add contact numbers of important government departments.</li>
-          <li><strong>Public Transport & Transit Information:</strong> Provide local bus routes, timings, and live tracking.</li>
-          <li><strong>Important Government Portal Links:</strong> Provide a list of important government websites with their links.</li>
-          <li><strong>Institution Categories:</strong> Map Temples, Mosques, Hospitals, Schools, Colleges, Police Stations, CSC Centers, Parks, and Community Halls.</li>
-          <li><strong>Facility Directory Requests:</strong> Review registration requests for local public facilities via <code>/register-public-facility</code>.</li>
-        </ul>
+        <h3>Step-by-Step Facilities & Helplines Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Add Public Facility Entry</h4>
+              <p>Go to <code>/public-facilities</code> ➔ Click <strong>Add Facility</strong>. Select Category (<i>Hospital, School, Police Station, CSC Center, Temple, Mosque, Park, Community Hall</i>), enter Name, Ward, Phone, Address, and GPS location.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Configure Emergency Speed-Dial Helplines</h4>
+              <p>Go to <code>/helplines</code>. Add emergency contacts (<i>Police Control, Ambulance, Fire Brigade, Electricity Helpline, Water Board, Women Security</i>).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Review Citizen Facility Registration Requests</h4>
+              <p>Review public submissions from <code>/register-public-facility</code>, verify facility details, and approve into public directory.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Infrastructure Projects & Funds -->
       <section id="projects-infrastructure" class="doc-section">
         <h2><i class="fa-solid fa-trowel-bricks"></i> 15. Infrastructure Projects Operating Guide</h2>
         <p>
-          Monitor constituency development works at <code>/projects</code>:
+          Monitor constituency development works and stage-wise completion progress at <code>/projects</code>.
         </p>
 
         <!-- Real Screenshot: Infrastructure Projects -->
@@ -545,19 +798,35 @@
           <div class="screenshot-caption">Real Captured Screenshot: Development Works Projects Directory displaying Stage-wise Milestones and Budgets. (Click to zoom)</div>
         </div>
 
+        <h3>Complete Step-by-Step Infrastructure Project Management Workflow:</h3>
+
         <div class="steps-container">
           <div class="step-item">
             <div class="step-badge">1</div>
             <div class="step-content">
-              <h4>Create Project Entry</h4>
-              <p>Enter Project Title, Category (Road, Community Hall, School, Solar Light), Estimated Budget, Ward, and Contractor Name.</p>
+              <h4>Create Project Entry & Sanction Order</h4>
+              <p>Go to <code>/projects</code> ➔ Click <strong>Add Project</strong>. Enter Project Title, Category (<i>Road Construction, Solar Streetlight, Community Center, School Building, Water Supply Pipeline</i>), Estimated Budget, Ward, Sanction Date, and Executive Agency (<i>PWD, RES, Municipal Corp</i>).</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">2</div>
             <div class="step-content">
-              <h4>Stage-wise Construction Milestone Verification</h4>
-              <p>Upload site progress photos at 25%, 50%, 75%, and 100% completion milestones before approving payment releases.</p>
+              <h4>Assign Contractor & Issue Work Order</h4>
+              <p>Upload Administrative Sanction (AS) & Technical Sanction (TS) copies. Assign awarded Contractor Name, License Number, Work Order Date, and Target Completion Date.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Stage-wise Milestone Photo Verification</h4>
+              <p>Inspect and verify site progress across 4 inspection milestones: <strong>25% Stage (Foundation)</strong>, <strong>50% Stage (Structural)</strong>, <strong>75% Stage (Finishing)</strong>, and <strong>100% Stage (Completion)</strong>. Upload geo-tagged site photos and inspection notes for each stage.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Fund Disbursement & Final Sign-Off</h4>
+              <p>Release installment funds against verified milestone photos. Upon 100% stage sign-off, issue Final Completion Certificate and mark project <strong>Completed</strong>.</p>
             </div>
           </div>
         </div>
@@ -566,7 +835,7 @@
       <section id="funds-management" class="doc-section">
         <h2><i class="fa-solid fa-vault"></i> 16. Funds & Financial Ledger Audit Guide</h2>
         <p>
-          Track annual fund allocations and expenditure audit ledgers at <code>/funds</code> and <code>/funds/overview</code>:
+          Track annual fund allocations, released installments, and financial balance ledgers at <code>/funds</code> and <code>/funds/overview</code>.
         </p>
 
         <!-- Real Screenshot: Funds Overview -->
@@ -583,18 +852,45 @@
           <div class="screenshot-caption">Real Captured Screenshot: Financial Allocations, Released Installments, and Head-wise Expenditure Breakdown. (Click to zoom)</div>
         </div>
 
-        <ul>
-          <li><strong>Fund Categories:</strong> Manage MPLAD, MLALAD, State Fund, Central Fund, and CSR allocations.</li>
-          <li><strong>Installment Releases & UC Vault:</strong> Track installment releases from District Collectorate and archive Utilization Certificates (UC).</li>
-          <li><strong>Head-wise Balance Ledger:</strong> View real-time balance remaining across education, healthcare, roads, and drinking water heads.</li>
-        </ul>
+        <h3>Step-by-Step Fund Management & Financial Audit Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Define Fund Allocation Source</h4>
+              <p>Go to <code>/funds</code> ➔ Click <strong>Add Fund Head</strong>. Create Fund Category (<i>MPLAD FY 2026-27, MLALAD Annual Fund, State Special Grant, CSR Fund</i>) and enter Total Allocation Amount.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Record Released Installments</h4>
+              <p>Enter installment release orders received from Treasury/Collectorate (Installment Number, Sanction Date, Amount Released, UTR Reference Code).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Upload Utilization Certificates (UC Vault)</h4>
+              <p>Upload signed Utilization Certificates (UC) issued by Executive Engineers. System tracks pending UCs required before next installment release.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Audit Head-wise Sector Balance Ledger</h4>
+              <p>View live sector balance ledger (<i>Education, Health, Roads, Water, Social Welfare</i>) showing Total Allocated vs Sanctioned Works vs Disbursed vs Remaining Balance.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Welfare Schemes -->
       <section id="welfare-schemes" class="doc-section">
         <h2><i class="fa-solid fa-file-invoice-dollar"></i> 17. Welfare Schemes & Applications Guide</h2>
         <p>
-          Manage state and central welfare schemes at <code>/schemes</code> and <code>/schemes/applications</code>:
+          Manage welfare scheme catalog, constituent eligibility matching, and benefit disbursal at <code>/schemes</code> and <code>/schemes/applications</code>.
         </p>
 
         <!-- Real Screenshot: Welfare Schemes -->
@@ -611,18 +907,45 @@
           <div class="screenshot-caption">Real Captured Screenshot: Government Welfare Schemes Catalog, Eligibility Filter, and Application Processing. (Click to zoom)</div>
         </div>
 
-        <ul>
-          <li><strong>Scheme Repository:</strong> Define scheme guidelines, eligibility criteria (Age, Income, Gender, Social Category), and required documents.</li>
-          <li><strong>Automated Eligibility Engine:</strong> Match constituent profiles with active schemes automatically.</li>
-          <li><strong>Application Disbursal Tracking:</strong> Process applications, review uploaded documents, and track Direct Benefit Transfer (DBT) status.</li>
-        </ul>
+        <h3>Complete Step-by-Step Welfare Schemes Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Add Scheme Entry & Eligibility Rules</h4>
+              <p>Go to <code>/schemes</code> ➔ Click <strong>Add Scheme</strong>. Enter Scheme Name, Sponsoring Body (<i>Central / State</i>), Financial Benefit Amount, Description, and required documents. Set Eligibility Criteria (<i>Min/Max Age, Income Cap, Gender, Social Category</i>).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Run Automated Constituent Eligibility Match</h4>
+              <p>Select constituent profile or search criteria. System automatically matches criteria against active schemes and highlights eligible benefits.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Log Scheme Application & Document Intake</h4>
+              <p>Go to <code>/schemes/applications</code>. Log new application, upload applicant documents (<i>Aadhaar, Ration Card, Bank Passbook, Income Certificate</i>), and assign verification officer.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Approve Application & Track DBT Disbursal</h4>
+              <p>Track status (<i>Submitted ➔ Under Verification ➔ Approved ➔ Disbursed</i>). Record Direct Benefit Transfer (DBT) payment transaction reference ID.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- CRM & Party Leaders -->
       <section id="crm-leaders" class="doc-section">
         <h2><i class="fa-solid fa-address-book"></i> 18. CRM Contacts, Community Groups & Party Leaders Guide</h2>
         <p>
-          Manage constituency stakeholders and community organizations at <code>/crm/contacts</code>, <code>/community</code>, and <code>/leaders</code>:
+          Manage constituency stakeholders, religious/professional networks, and party cadre at <code>/crm/contacts</code>, <code>/community</code>, and <code>/leaders</code>.
         </p>
 
         <!-- Real Screenshot: Community Groups -->
@@ -639,20 +962,45 @@
           <div class="screenshot-caption">Real Captured Screenshot: Community Groups Directory showing Religious & Professional Network management. (Click to zoom)</div>
         </div>
 
-        <ul>
-          <li><strong>Religious Communities:</strong> Create groups for members of Churches, Temples, Gurudwaras, Mosques, etc.</li>
-          <li><strong>Professional Communities:</strong> Create groups for professionals such as engineers, doctors, teachers, etc.</li>
-          <li><strong>Constituent CRM Contacts:</strong> Maintain detailed profile history, address, voting ward, and past request logs.</li>
-          <li><strong>Party Leaders Directory:</strong> Categorize party workers, booth presidents, youth wing leaders, and local influencers.</li>
-          <li><strong>Birthday & Anniversary Reminders:</strong> View upcoming birthdays at <code>/leaders/birthdays</code> and dispatch automated greeting messages.</li>
-        </ul>
+        <h3>Step-by-Step CRM & Community Network Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Add Constituent CRM Contact</h4>
+              <p>Go to <code>/crm/contacts</code> ➔ Click <strong>Add Contact</strong>. Enter Name, Mobile, Email, Ward/Booth, Address, Occupation, Political Inclination rating, and past interaction history.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Create & Manage Community Groups</h4>
+              <p>Go to <code>/community</code>. Create Religious Groups (<i>Temples, Mosques, Gurudwaras, Churches</i>), Professional Associations (<i>Teachers, Doctors, Engineers, Lawyers</i>), and Trade Unions. Add group members.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Profile Party Cadre & Leaders Directory</h4>
+              <p>Go to <code>/leaders</code>. Profile Party Workers, Mandal Presidents, Booth In-Charges, Youth Wing Leaders, and map territorial responsibilities.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Automated Birthday & Festival Greetings Dispatch</h4>
+              <p>Go to <code>/leaders/birthdays</code>. View daily/weekly upcoming constituent & leader birthdays/anniversaries. Dispatch 1-click automated SMS/WhatsApp greetings.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Website Builder -->
       <section id="website-builder" class="doc-section">
         <h2><i class="fa-solid fa-globe"></i> 19. Website Builder Studio & Domains Guide</h2>
         <p>
-          Create and host official constituency web portals at <code>/website/builder</code>:
+          Create and host official constituency web portals at <code>/website/builder</code> and <code>/website/domains</code>.
         </p>
 
         <!-- Real Screenshot: Website Builder -->
@@ -669,26 +1017,35 @@
           <div class="screenshot-caption">Real Captured Screenshot: Website Builder Studio Dashboard displaying Custom Domains and Page Builder. (Click to zoom)</div>
         </div>
 
+        <h3>Complete Step-by-Step Website Builder Workflow:</h3>
+
         <div class="steps-container">
           <div class="step-item">
             <div class="step-badge">1</div>
             <div class="step-content">
-              <h4>Build Web Pages</h4>
-              <p>Use the drag-and-drop page builder to assemble homepages, news portals, photo galleries, and request forms.</p>
+              <h4>Customize Homepage & Layout Template</h4>
+              <p>Go to <code>/website/builder</code>. Select layout template, configure header banner, MP/MLA bio, achievement statistics counter, and news marquee.</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">2</div>
             <div class="step-content">
-              <h4>Map Custom Subdomains</h4>
-              <p>Configure web domains (e.g. <code>mp-ashokkumar.in</code>) with SSL security certificates at <code>/website/domains</code>.</p>
+              <h4>Add Pages & Public Web Forms</h4>
+              <p>Create pages (<i>About Representative, Vision, Project Highlights, Public Grievance Form, Scheme Application Form</i>).</p>
             </div>
           </div>
           <div class="step-item">
             <div class="step-badge">3</div>
             <div class="step-content">
-              <h4>Live Deployment</h4>
-              <p>Publish website updates instantly with live deployment status logs at <code>/website/deployments</code>.</p>
+              <h4>Map Custom Subdomain & SSL Routing</h4>
+              <p>Go to <code>/website/domains</code>. Configure custom domain (e.g. <code>ashokkumar-mp.in</code>), auto-provision SSL security certificate.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Publish & Track Live Deployment Logs</h4>
+              <p>Click <strong>Publish Website</strong>. System builds edge assets and deploys site. Monitor live deployment status logs at <code>/website/deployments</code>.</p>
             </div>
           </div>
         </div>
@@ -698,7 +1055,7 @@
       <section id="creatives-social" class="doc-section">
         <h2><i class="fa-solid fa-palette"></i> 20. Creative Studio & Social Media Guide</h2>
         <p>
-          Manage public relations graphics and social outreach at <code>/creatives</code> and <code>/social</code>:
+          Manage public relations graphic poster generator, social media accounts, and press releases at <code>/creatives</code> and <code>/social</code>.
         </p>
 
         <!-- Real Screenshot: Creative Studio -->
@@ -715,18 +1072,45 @@
           <div class="screenshot-caption">Real Captured Screenshot: Creative Studio Banner Generator for Festival Banners and Social Media Graphics. (Click to zoom)</div>
         </div>
 
-        <ul>
-          <li><strong>Creative Studio Poster Generator:</strong> Overlay MP/MLA photographs, party emblems, and festival wish text onto high-res graphic templates.</li>
-          <li><strong>Social Media Analytics:</strong> Track post engagement, constituent reach, and follower metrics.</li>
-          <li><strong>Press Release Storage:</strong> Archive official media statements, event photos, and press briefings.</li>
-        </ul>
+        <h3>Step-by-Step Graphic Design & PR Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Select Graphic Template & Customize Banner</h4>
+              <p>Go to <code>/creatives</code>. Select graphic category (<i>Festival Wishes, Inauguration Banner, Birthday Card, Achievement Announcement</i>). Customize text, overlay MP/MLA photo & party emblem.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Export High-Resolution Image File</h4>
+              <p>Click <strong>Generate Banner</strong>. Download high-res PNG/JPG poster for digital display or printing.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Social Media Broadcast & Analytics</h4>
+              <p>Go to <code>/social</code>. Share poster directly across Twitter/X, Facebook, Instagram, or WhatsApp broadcast groups. Track reach and constituent engagement.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <h4>Archive Press Releases & Media Briefings</h4>
+              <p>Draft official press statements, attach event photos, and export press releases for distribution to local news media.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Competitor Analysis -->
       <section id="competitors-intelligence" class="doc-section">
         <h2><i class="fa-solid fa-chart-line"></i> 21. Competitors Analysis Operating Guide</h2>
         <p>
-          Track opposition political activities and sentiment at <code>/competitors</code>:
+          Track opposition political activities, statements, and ward sentiment at <code>/competitors</code>.
         </p>
 
         <!-- Real Screenshot: Competitor Analysis -->
@@ -743,23 +1127,65 @@
           <div class="screenshot-caption">Real Captured Screenshot: Opposition Leader Metrics and Local Political Sentiment Monitor. (Click to zoom)</div>
         </div>
 
-        <ul>
-          <li><strong>Opposition Profiling:</strong> Maintain records of rival candidates, their strongholds, and political statements.</li>
-          <li><strong>Sentiment & Activity Monitor:</strong> Track local political trends, campaign promises, and public sentiment.</li>
-        </ul>
+        <h3>Step-by-Step Political Intelligence Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Profile Opposition Leaders & Rivals</h4>
+              <p>Go to <code>/competitors</code> ➔ Click <strong>Add Competitor</strong>. Profile rival candidate/leader details, party affiliation, stronghold wards, voter influence estimate, and social media handles.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Monitor Campaign Rallies & Public Statements</h4>
+              <p>Record opposition rallies, public promises, press statements, and media coverage.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Map Ward Grievances & Log Counter-Strategy</h4>
+              <p>Track local issues exploited by opposition in specific wards. Log counter-strategy development tasks and targeted constituent outreach plans.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Documents & Reports -->
       <section id="documents-reports" class="doc-section">
         <h2><i class="fa-solid fa-file-pdf"></i> 22. Document Vault & PDF Reports Guide</h2>
         <p>
-          Manage central documents and analytics reports at <code>/documents</code> and <code>/reports/pdf</code>:
+          Manage central documents, internal staff tasks, and PDF/Excel reports at <code>/documents</code>, <code>/tasks</code>, and <code>/reports/pdf</code>.
         </p>
-        <ul>
-          <li><strong>Central Document Vault:</strong> Securely upload official sanction letters, government circulars, and parliamentary questions.</li>
-          <li><strong>Executive PDF Summary Reports:</strong> Generate formal monthly activity reports for the MP/MLA office.</li>
-          <li><strong>Excel Data Export Engine:</strong> Export filtered grievance, voter, project, and scheme datasets to Excel format.</li>
-        </ul>
+
+        <h3>Step-by-Step Document Vault & PDF Export Workflow:</h3>
+
+        <div class="steps-container">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4>Upload to Central Document Vault</h4>
+              <p>Go to <code>/documents</code> ➔ Click <strong>Upload Document</strong>. Upload sanction letters, government circulars, gazette notifications, and parliamentary questions. Tag by category.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4>Create & Delegate Internal Staff Tasks</h4>
+              <p>Go to <code>/tasks</code> ➔ Click <strong>Create Task</strong>. Assign task owner, set priority (<i>Urgent, High, Normal</i>), link related Grievance/Project/Event, set due date, and track status.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4>Generate Formal PDF & Excel Reports</h4>
+              <p>Go to <code>/reports/pdf</code> or <code>/reports/excel</code>. Select target dataset (<i>Grievances, Infrastructure Projects, Funds Ledger, Welfare Schemes, Voter List</i>), apply date/ward filters, and click <strong>Generate Report</strong> to download formal summary files.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- FAQs & Support -->
@@ -767,21 +1193,27 @@
         <h2><i class="fa-solid fa-circle-question"></i> 23. Frequently Asked Questions & Support</h2>
 
         <div class="doc-section">
-          <h3>Q1: How do I search for a voter in the Voter Portal?</h3>
-          <p>Navigate to <code>/voter-portal</code> from the sidebar. Enter the EPIC Card number or constituent name in the search bar.</p>
+          <h3>Q1: How do I search for a voter by EPIC card in the Voter Portal?</h3>
+          <p>Navigate to <code>/voter-portal</code> from the sidebar. Enter the constituent EPIC Card number (e.g. <code>ABC1234567</code>) or constituent name in the search bar and press Enter.</p>
 
-          <h3>Q2: Can I export project sanction details to PDF?</h3>
-          <p>Yes. Go to <code>/reports/pdf</code> or open <code>/projects</code> and click <strong>Export PDF Report</strong> to download formal summaries.</p>
+          <h3>Q2: Can I export project sanction details and fund expenditure to PDF?</h3>
+          <p>Yes. Go to <code>/reports/pdf</code> or open <code>/projects</code> / <code>/funds</code> and click <strong>Export PDF Report</strong> to generate formal summary documents for official meetings.</p>
 
-          <h3>Q3: What happens if a free trial expires?</h3>
-          <p>The system activates a subscription paywall banner. Read access remains active, while write access is locked until plan renewal at <code>/account/billing</code>.</p>
+          <h3>Q3: What happens if a free trial expires without upgrading?</h3>
+          <p>The system activates a subscription paywall banner. Read access remains fully available for existing records, while write operations (creating new grievances, voter roll edits, project sanctioning) are locked until plan renewal at <code>/account/billing</code>.</p>
+
+          <h3>Q4: How do I restore an accidentally deleted grievance or project record?</h3>
+          <p>Navigate to <code>/recycle-bin</code> from the sidebar. Locate the soft-deleted item and click <strong>Restore Record</strong>. The item will be instantly reinstated with all original properties and relationships intact.</p>
+
+          <h3>Q5: How do I verify milestone progress photos for an infrastructure project?</h3>
+          <p>Open <code>/projects</code>, select the project entry, navigate to the <strong>Milestones</strong> tab, select the milestone stage (25%, 50%, 75%, 100%), upload site inspection photos, and click <strong>Approve Milestone</strong>.</p>
         </div>
 
         <!-- Article Footer Navigation -->
         <div class="doc-footer-nav">
           <a href="#intro" class="nav-card">
             <div class="nav-card-sub">◄ Previous</div>
-            <div class="nav-card-title">Introduction & System Architecture</div>
+            <div class="nav-card-title">Introduction & Platform Overview</div>
           </a>
           <a href="#faqs-support" class="nav-card" style="text-align: right;">
             <div class="nav-card-sub">Next ►</div>

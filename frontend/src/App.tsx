@@ -13,6 +13,7 @@ import { GuestRoute } from "./components/auth/GuestRoute";
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
+import UserManualPage from "@/pages/UserManualPage";
 
 import Login from "@/pages/Login";
 import ChangePassword from "@/pages/ChangePassword";
@@ -123,6 +124,9 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public route — User Manual (no login required) */}
+      <Route path="/user-manual" component={UserManualPage} />
+
       <Route path="/login">
         <GuestRoute>
           <Login />

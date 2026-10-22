@@ -27,6 +27,7 @@ import {
   Zap,
   Share2,
   Phone,
+  BookOpen,
 } from "lucide-react";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { getImageUrl } from "@/lib/utils";
@@ -167,6 +168,18 @@ export default function Login() {
                 One role-aware workspace for grievances, projects, and events.
               </p>
             </div>
+          </div>
+
+          {/* User Manual Link */}
+          <div className="pt-2">
+            <Link
+              to="/user-manual"
+              className="group inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-[#13538A] dark:hover:text-[#38bdf8] transition-colors"
+            >
+              <BookOpen className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-semibold">Read the User Manual</span>
+              <ArrowRight className="h-3 w-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+            </Link>
           </div>
         </div>
 
@@ -324,6 +337,7 @@ export default function Login() {
                   </Link>
                 </p>
               </div>
+
 
               {/* Trouble signing in section */}
               <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 text-center space-y-2">
