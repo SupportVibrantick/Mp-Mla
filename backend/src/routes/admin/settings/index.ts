@@ -1,6 +1,7 @@
 import { Router, Request } from "express";
 import prisma from "../../../lib/prisma.js";
 import { authenticate, requireActiveUser } from "../../../middleware/auth.js";
+import { verifyAccessToken } from "../../../lib/jwt.js";
 import { requirePermission } from "../../../middleware/permission.js";
 import {
   createAuditLog,
@@ -63,7 +64,25 @@ async function resolvePublicTenantId(req: Request): Promise<string | null> {
       where: { id: tenantId, status: "ACTIVE" },
       select: { id: true },
     });
-    return tenant?.id ?? null;
+    if (tenant) return tenant.id;
+  }
+
+  // Check Bearer Token if present (from authenticated frontend requests)
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.split(" ")[1];
+      const decoded = verifyAccessToken(token);
+      if (decoded?.tenantId) {
+        const tenant = await prisma.tenant.findFirst({
+          where: { id: decoded.tenantId, status: "ACTIVE" },
+          select: { id: true },
+        });
+        if (tenant) return tenant.id;
+      }
+    } catch {
+      // Ignore token verification errors on public endpoint
+    }
   }
 
   const tenants = await prisma.tenant.findMany({
@@ -302,11 +321,21 @@ router.put(
         },
       });
 
-      if (key === "party_logo_url") {
+      const tenantUpdateData: Record<string, any> = {};
+      if (key === "party_logo_url") tenantUpdateData.partyLogoUrl = value;
+      if (key === "representative_name") tenantUpdateData.representativeName = value;
+      if (key === "representative_title") tenantUpdateData.representativeTitle = value;
+      if (key === "constituency_name") tenantUpdateData.constituencyName = value;
+      if (key === "org_name") tenantUpdateData.name = value;
+      if (key === "state") tenantUpdateData.state = value;
+      if (key === "district") tenantUpdateData.district = value;
+      if (key === "org_address") tenantUpdateData.address = value;
+
+      if (Object.keys(tenantUpdateData).length > 0) {
         await prisma.tenant
           .update({
             where: { id: tenantId },
-            data: { partyLogoUrl: value },
+            data: tenantUpdateData,
           })
           .catch(() => {});
       }

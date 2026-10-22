@@ -111,8 +111,22 @@ export default function PdfReportsPage() {
   const [emailAddress, setEmailAddress] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
-  const repName = settings?.representative_name || user?.name || "Shri Representative";
-  const constituencyName = settings?.constituency_name || settings?.org_name || "Constituency Administration Portal";
+  const repName =
+    settings?.representative_name ||
+    user?.tenant?.representativeName ||
+    (user?.role === "MLA_MP" ? user?.name : "Shri Representative");
+
+  const repTitle =
+    settings?.representative_title ||
+    user?.tenant?.representativeTitle ||
+    "Member of Parliament";
+
+  const constituencyName =
+    settings?.constituency_name ||
+    user?.tenant?.constituencyName ||
+    user?.tenant?.name ||
+    settings?.org_name ||
+    "Constituency Administration Portal";
 
   const rawWards = wardsRes?.data?.wards || wardsRes?.data || wardsRes;
   const wards = Array.isArray(rawWards) ? rawWards : [];
@@ -125,7 +139,7 @@ export default function PdfReportsPage() {
         wardId: wardFilter !== "all" ? wardFilter : undefined,
         dateRange,
         representativeName: repName,
-        representativeTitle: settings?.representative_title || undefined,
+        representativeTitle: repTitle,
         constituencyName: constituencyName,
       });
     } finally {
@@ -142,7 +156,7 @@ export default function PdfReportsPage() {
         wardId: wardFilter !== "all" ? wardFilter : undefined,
         dateRange,
         representativeName: repName,
-        representativeTitle: settings?.representative_title || undefined,
+        representativeTitle: repTitle,
         constituencyName: constituencyName,
       });
     } finally {

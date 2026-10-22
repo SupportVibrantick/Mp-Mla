@@ -53,6 +53,10 @@ api.interceptors.request.use(
     if (token && config.headers && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    const storedUser = TokenStorage.getStoredUser();
+    if (storedUser?.tenant?.id && config.headers && !config.headers["x-tenant-id"]) {
+      config.headers["x-tenant-id"] = storedUser.tenant.id;
+    }
     if (config.headers && !(config.data instanceof FormData)) {
       config.headers["Content-Type"] = "application/json";
     }
@@ -427,9 +431,10 @@ export const permissionsApi = {
 export const settingsApi = {
   list: () => api.get("/admin/settings"),
   update: (data: any) => api.put("/admin/settings", data),
-  getPublicBranding: () =>
+  getPublicBranding: (tenantId?: string) =>
     api.get<{ success: boolean; data: Record<string, string> }>(
       "/admin/settings/public/branding",
+      { params: tenantId ? { tenantId } : undefined },
     ),
 };
 

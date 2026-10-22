@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { TokenStorage } from "@/lib/auth";
 
 interface SettingsContextType {
   settings: Record<string, string>;
@@ -18,7 +19,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const fetchBranding = async () => {
     try {
-      const res = await settingsApi.getPublicBranding();
+      const storedUser = TokenStorage.getStoredUser();
+      const tenantId = storedUser?.tenant?.id;
+      const res = await settingsApi.getPublicBranding(tenantId);
       if (res.data.success) {
         setSettings(res.data.data);
         applyBranding(res.data.data);
