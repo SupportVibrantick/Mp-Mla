@@ -548,6 +548,7 @@ export const websiteDeploymentsApi = {
     api.post(`/admin/websites/${websiteId}/deployments/${deploymentId}/rollback`),
 };
 
+
 export const websiteMenusApi = {
   list: (websiteId: string) => api.get(`/admin/websites/${websiteId}/menus`),
   upsert: (websiteId: string, data: { name: string; items: any[] }) =>
@@ -711,4 +712,26 @@ export const voterPortalSchemesApi = {
 };
 
 
+export const volunteerApi = {
+  // Admin endpoints
+  getStats: () => api.get("/admin/volunteers/stats"),
+  list: (params?: { page?: number; limit?: number; search?: string; wardId?: string; status?: string }) =>
+    api.get("/admin/volunteers", { params }),
+  create: (data: any) => api.post("/admin/volunteers", data),
+  get: (id: string) => api.get(`/admin/volunteers/${id}`),
+  getVolunteerVoters: (id: string, params?: { page?: number; limit?: number; search?: string; wardId?: string }) =>
+    api.get(`/admin/volunteers/${id}/voters`, { params }),
+  update: (id: string, data: any) => api.patch(`/admin/volunteers/${id}`, data),
+  assignWards: (id: string, data: { wardIds: string[]; notes?: string }) =>
+    api.post(`/admin/volunteers/${id}/wards`, data),
+  revokeWard: (id: string, wardId: string) =>
+    api.delete(`/admin/volunteers/${id}/wards/${wardId}`),
 
+  // Volunteer self-service endpoints
+  getMyDashboard: () => api.get("/admin/volunteers/me/dashboard"),
+  getMyWards: () => api.get("/admin/volunteers/me/wards"),
+  getMyVoters: (params?: { page?: number; limit?: number; search?: string; wardId?: string }) =>
+    api.get("/admin/volunteers/me/voters", { params }),
+  getMyActivity: () => api.get("/admin/volunteers/me/activity"),
+  registerVoter: (data: any) => api.post("/admin/volunteers/me/voters", data),
+};

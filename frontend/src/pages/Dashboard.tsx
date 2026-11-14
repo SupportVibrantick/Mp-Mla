@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useDashboard } from "@/hooks/useDashboard";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -204,8 +205,15 @@ function TrendBadge({
 
 export default function Dashboard() {
   const [, navigate] = useLocation();
-  const { hasModule } = useAuth();
-  const { data: res, isLoading } = useDashboard();
+  const { user, hasModule } = useAuth();
+  const isVolunteer = user?.role === "WARD_VOLUNTEER";
+  const { data: res, isLoading } = useDashboard({ enabled: !isVolunteer });
+
+  useEffect(() => {
+    if (isVolunteer) {
+      navigate("/volunteer/dashboard", { replace: true });
+    }
+  }, [isVolunteer, navigate]);
 
   if (isLoading) return <DashboardSkeleton />;
 

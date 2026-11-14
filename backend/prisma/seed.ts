@@ -431,6 +431,16 @@ const ROLE_MAP: Record<UserRole, { module: string; action: string }[]> = {
     { module: "voter_list", action: "update" },
     { module: "voter_list", action: "export" },
   ],
+
+  WARD_VOLUNTEER: [
+    { module: "dashboard", action: "read" },
+    { module: "wards", action: "read" },
+    { module: "voter_list", action: "create" },
+    { module: "voter_list", action: "read" },
+    { module: "voter_list", action: "update" },
+    { module: "volunteers", action: "read" },
+    { module: "volunteers", action: "create" },
+  ],
 };
 
 // ═══════════════════════════════════════════════════════════

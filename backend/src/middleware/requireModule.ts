@@ -15,6 +15,7 @@ export const ALWAYS_ENABLED_MODULES = new Set([
   "data_import",
   "creative",
   "creatives",
+  "volunteers",
 ]);
 
 const accessCache = new Map<

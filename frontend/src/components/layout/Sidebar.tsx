@@ -22,6 +22,7 @@ import {
   BarChart3,
   Settings,
   Shield,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -284,6 +285,12 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           module: "voter_list",
         },
         {
+          label: "Ward Volunteers",
+          icon: Users,
+          href: "/volunteers",
+          module: "volunteers",
+        },
+        {
           label: "Demographics",
           icon: BarChart,
           href: "/demographics",
@@ -430,32 +437,48 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     },
   ];
 
-  const filteredSections = navSections
-    .map((section) => ({
-      ...section,
-      items: section.items
-        .filter(
-          (item) =>
-            !item.module ||
-            (hasModule(item.module) &&
-              (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
-        )
-        .map((item) => {
-          if (item.children) {
-            return {
-              ...item,
-              children: item.children.filter(
-                (child) =>
-                  !child.module ||
-                  (hasModule(child.module) &&
-                    (canAny(child.module) || user?.role === "SYSTEM_ADMIN")),
-              ),
-            };
-          }
-          return item;
-        }),
-    }))
-    .filter((section) => section.items.length > 0);
+  const volunteerSections: NavSection[] = [
+    {
+      title: "Field Portal",
+      items: [
+        {
+          label: "Volunteer Portal",
+          icon: ShieldCheck,
+          href: "/volunteer/dashboard",
+        },
+      ],
+    },
+  ];
+
+  const filteredSections =
+    user?.role === "WARD_VOLUNTEER"
+      ? volunteerSections
+      : navSections
+          .map((section) => ({
+            ...section,
+            items: section.items
+              .filter(
+                (item) =>
+                  !item.module ||
+                  (hasModule(item.module) &&
+                    (canAny(item.module) || user?.role === "SYSTEM_ADMIN")),
+              )
+              .map((item) => {
+                if (item.children) {
+                  return {
+                    ...item,
+                    children: item.children.filter(
+                      (child) =>
+                        !child.module ||
+                        (hasModule(child.module) &&
+                          (canAny(child.module) || user?.role === "SYSTEM_ADMIN")),
+                    ),
+                  };
+                }
+                return item;
+              }),
+          }))
+          .filter((section) => section.items.length > 0);
 
   return (
     <TooltipProvider delayDuration={0}>

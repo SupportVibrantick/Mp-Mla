@@ -10,6 +10,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { GuestRoute } from "./components/auth/GuestRoute";
+import { useAuth } from "@/hooks/useAuth";
 
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -97,6 +98,8 @@ import { PublicWebsiteRuntime } from "./pages/public/PublicWebsiteRuntime";
 import { SocialDashboardPage } from "./pages/social/SocialDashboardPage";
 import HelplinesAdminPage from "./pages/helplines/HelplinesAdminPage";
 import PublicHelplineDirectoryPage from "./pages/public/PublicHelplineDirectoryPage";
+import AdminVolunteersPage from "./pages/volunteers/AdminVolunteersPage";
+import VolunteerDashboardPage from "./pages/volunteer/VolunteerDashboardPage";
 
 // Geography management pages
 import GeographyPage from "./pages/geography/GeographyPage";
@@ -114,6 +117,7 @@ import PollingLocationDetailPage from "./pages/geography/PollingLocationDetailPa
 
 function Router() {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (location.includes("//")) {
@@ -122,6 +126,7 @@ function Router() {
     }
   }, [location, setLocation]);
 
+  const isVolunteer = user?.role === "WARD_VOLUNTEER";
   return (
     <Switch>
       {/* Public route — User Manual (no login required) */}
@@ -140,13 +145,13 @@ function Router() {
 
       <Route path="/">
         <ProtectedRoute>
-          <Dashboard />
+          {isVolunteer ? <VolunteerDashboardPage /> : <Dashboard />}
         </ProtectedRoute>
       </Route>
 
       <Route path="/dashboard">
         <ProtectedRoute>
-          <Dashboard />
+          {isVolunteer ? <VolunteerDashboardPage /> : <Dashboard />}
         </ProtectedRoute>
       </Route>
 
@@ -389,6 +394,20 @@ function Router() {
       <Route path="/voter-list">
         <ProtectedRoute module="voter_list" action="read">
           <VoterListPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Ward Volunteers Admin Management */}
+      <Route path="/volunteers">
+        <ProtectedRoute module="volunteers" action="read">
+          <AdminVolunteersPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Volunteer Field Portal */}
+      <Route path="/volunteer/dashboard">
+        <ProtectedRoute>
+          <VolunteerDashboardPage />
         </ProtectedRoute>
       </Route>
 

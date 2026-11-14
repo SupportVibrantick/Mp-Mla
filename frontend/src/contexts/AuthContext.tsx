@@ -18,7 +18,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "SYSTEM_ADMIN" | "MLA_MP" | "OFFICE_STAFF";
+  role: "SYSTEM_ADMIN" | "MLA_MP" | "OFFICE_STAFF" | "WARD_VOLUNTEER";
   phone: string | null;
   avatarUrl: string | null;
   designation: string | null;

@@ -85,6 +85,8 @@ const TENANT_SCOPED_MODELS = [
   "pollingLocation",
   "booth",
   "geographyImportJob",
+  "wardVolunteerAssignment",
+  "volunteerVoterSubmission",
 ] as const;
 
 type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];

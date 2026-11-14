@@ -34,6 +34,29 @@ export async function updateVoter(
       return;
     }
 
+    // If user is a WARD_VOLUNTEER, enforce ward authorization
+    if (req.user?.role === "WARD_VOLUNTEER") {
+      const allowedWardIds = [existing.wardId];
+      if (data.wardId && data.wardId !== existing.wardId) {
+        allowedWardIds.push(data.wardId);
+      }
+      const assignments = await prisma.wardVolunteerAssignment.findMany({
+        where: {
+          tenantId,
+          userId: req.user.id,
+          wardId: { in: allowedWardIds },
+          status: "ACTIVE",
+        },
+      });
+      if (assignments.length < allowedWardIds.length) {
+        res.status(403).json({
+          success: false,
+          message: "You are not authorized to update voters in this ward",
+        });
+        return;
+      }
+    }
+
     // If changing wardId, verify new ward exists
     if (data.wardId && data.wardId !== existing.wardId) {
       const ward = await prisma.ward.findFirst({
@@ -119,6 +142,7 @@ export async function updateVoter(
           taggedById: req.user?.id || null,
           taggedAt: new Date(),
         }),
+        updatedByUserId: req.user?.id || null,
       },
       include: {
         ward: { select: { id: true, name: true, wardNumber: true } },

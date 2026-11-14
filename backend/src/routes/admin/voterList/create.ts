@@ -26,6 +26,26 @@ export async function createVoter(
     // Check voter quota
     await assertCanCreateVoters(tenantId, 1);
 
+    // If user is a WARD_VOLUNTEER, enforce ward authorization
+    if (req.user?.role === "WARD_VOLUNTEER") {
+      const activeAssignment = await prisma.wardVolunteerAssignment.findFirst({
+        where: {
+          tenantId,
+          userId: req.user.id,
+          wardId: data.wardId,
+          status: "ACTIVE",
+        },
+      });
+
+      if (!activeAssignment) {
+        res.status(403).json({
+          success: false,
+          message: "You are not authorized to register voters for this ward",
+        });
+        return;
+      }
+    }
+
     // Verify ward exists for this tenant
     const ward = await prisma.ward.findFirst({
       where: { id: data.wardId, tenantId },
@@ -101,11 +121,65 @@ export async function createVoter(
         voterCadreNotes: data.voterCadreNotes?.trim() || null,
         taggedById: (data.isOurVoter || (data.voterLeaning && data.voterLeaning !== "UNKNOWN")) ? req.user?.id : null,
         taggedAt: (data.isOurVoter || (data.voterLeaning && data.voterLeaning !== "UNKNOWN")) ? new Date() : null,
+        createdByUserId: req.user?.id || null,
       },
       include: {
         ward: { select: { id: true, name: true, wardNumber: true } },
       },
     });
+
+    // Create Family Members if provided
+    if (data.familyMembers && Array.isArray(data.familyMembers) && data.familyMembers.length > 0) {
+      const validMembers = data.familyMembers.filter(
+        (m: any) => m && typeof m.name === "string" && m.name.trim().length > 0
+      );
+
+      if (validMembers.length > 0) {
+        await prisma.voterFamilyMember.createMany({
+          data: validMembers.map((m: any) => ({
+            tenantId,
+            voterId: voter.id,
+            name: m.name.trim(),
+            relationType: m.relationType || "OTHER",
+            relationCustom: m.relationType === "OTHER" ? (m.relationCustom?.trim() || null) : null,
+            gender: m.gender || "MALE",
+            age: m.age ? parseInt(String(m.age), 10) : null,
+            phone: m.phone?.trim() || null,
+            voterIdNumber: m.voterIdNumber?.trim() || null,
+            bloodGroup: m.bloodGroup?.trim() || null,
+            occupationTitle: m.occupationTitle?.trim() || null,
+            isDependent: Boolean(m.isDependent),
+            isEmergencyContact: Boolean(m.isEmergencyContact),
+            sameAddress: m.sameAddress !== undefined ? Boolean(m.sameAddress) : true,
+            address: m.address?.trim() || voter.address || null,
+            remarks: m.remarks?.trim() || null,
+            status: "ACTIVE",
+          })),
+        });
+      }
+    }
+
+    // If registered by a volunteer, track in volunteer_voter_submissions
+    if (req.user?.role === "WARD_VOLUNTEER") {
+      await prisma.volunteerVoterSubmission.create({
+        data: {
+          tenantId,
+          wardId: data.wardId,
+          volunteerUserId: req.user.id,
+          voterId: voter.id,
+          status: "APPROVED",
+          submissionNotes: data.submissionNotes || "Direct entry by volunteer",
+          data: {
+            name: data.name,
+            voterIdNumber: data.voterIdNumber,
+            applicationNumber,
+            gender: data.gender,
+            age: data.age,
+            phone: data.phone,
+          },
+        },
+      }).catch((e) => console.error("Error creating volunteer submission record:", e));
+    }
 
     // Create Voter Account & Membership with default password = applicationNumber
     await createVoterAccountForVoter(

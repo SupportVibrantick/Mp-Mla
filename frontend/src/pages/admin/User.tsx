@@ -97,7 +97,7 @@ const createUserSchema = z.object({
   phone: phoneValidation,
   designation: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
-  role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"], {
+  role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF", "WARD_VOLUNTEER"], {
     required_error: "Please select a role",
   }),
 });
@@ -107,7 +107,7 @@ const editUserSchema = z.object({
   phone: phoneValidation,
   designation: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
-  role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF"]),
+  role: z.enum(["SYSTEM_ADMIN", "MLA_MP", "OFFICE_STAFF", "WARD_VOLUNTEER"]),
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]),
 });
 
@@ -120,6 +120,7 @@ const ROLE_LABELS: Record<string, string> = {
   SYSTEM_ADMIN: "System Admin",
   MLA_MP: "MLA / MP",
   OFFICE_STAFF: "Office Staff",
+  WARD_VOLUNTEER: "Ward Volunteer",
 };
 
 const STATUS_CONFIG: Record<
@@ -414,6 +415,7 @@ export default function UserManagement() {
                     if (u.role === "SYSTEM_ADMIN") roleBadgeColor = "bg-slate-500/10 text-slate-700 dark:text-slate-300";
                     else if (u.role === "MLA_MP") roleBadgeColor = "bg-blue-500/10 text-blue-500";
                     else if (u.role === "OFFICE_STAFF") roleBadgeColor = "bg-emerald-500/10 text-emerald-500";
+                    else if (u.role === "WARD_VOLUNTEER") roleBadgeColor = "bg-amber-500/10 text-amber-600 dark:text-amber-400";
 
                     return (
                       <tr key={u.id} className="hover:bg-muted/10 transition-colors border-b border-border/40">

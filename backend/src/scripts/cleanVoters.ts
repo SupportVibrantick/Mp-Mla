@@ -52,36 +52,68 @@ async function cleanVoters() {
       const affectedWardIds = Array.from(new Set(voters.map((v) => v.wardId).filter(Boolean)));
       const affectedTenantIds = Array.from(new Set(voters.map((v) => v.tenantId).filter(Boolean)));
 
+      // Helper function to chunk array to prevent Postgres limit (max 32767 bind parameters)
+      const CHUNK_SIZE = 5000;
+      const chunkArray = <T>(array: T[], size: number): T[][] => {
+        const chunks: T[][] = [];
+        for (let i = 0; i < array.length; i += size) {
+          chunks.push(array.slice(i, i + size));
+        }
+        return chunks;
+      };
+      const voterIdChunks = chunkArray(voterIds, CHUNK_SIZE);
+
       // 2. Delete dependent VoterIdentityVerification records
       console.log("\n🧹 Step 1: Deleting dependent voter identity verifications...");
-      const verificationsDeleted = await prisma.voterIdentityVerification.deleteMany({
-        where: { voterId: { in: voterIds } },
-      });
-      console.log(`   ✓ Deleted ${verificationsDeleted.count} identity verification record(s).`);
+      let verificationsDeletedCount = 0;
+      for (const chunk of voterIdChunks) {
+        const res = await prisma.voterIdentityVerification.deleteMany({
+          where: { voterId: { in: chunk } },
+        });
+        verificationsDeletedCount += res.count;
+      }
+      console.log(`   ✓ Deleted ${verificationsDeletedCount} identity verification record(s).`);
 
       // 3. Delete Voters
       console.log("\n🧹 Step 2: Permanently deleting voter records...");
-      const votersDeleted = await prisma.voter.deleteMany({
-        where: { id: { in: voterIds } },
-      });
-      console.log(`   ✓ Deleted ${votersDeleted.count} voter record(s).`);
+      let votersDeletedCount = 0;
+      for (const chunk of voterIdChunks) {
+        const res = await prisma.voter.deleteMany({
+          where: { id: { in: chunk } },
+        });
+        votersDeletedCount += res.count;
+      }
+      console.log(`   ✓ Deleted ${votersDeletedCount} voter record(s).`);
 
       // 4. Delete Voter Recycle Bin entries
       console.log("\n🧹 Step 3: Cleaning voter entries from Recycle Bin...");
-      const recycleWhere: any = {
+      let recycleDeletedCount = 0;
+      const generalRecycleWhere: any = {
         OR: [
-          { recordId: { in: voterIds } },
           { entityType: "voter" },
           { entityType: "voter_list" },
           { module: "voter_list" },
         ],
       };
-      if (tenantIdArg) recycleWhere.tenantId = tenantIdArg;
+      if (tenantIdArg) generalRecycleWhere.tenantId = tenantIdArg;
 
-      const recycleDeleted = await (prisma as any).recycleBinEntry.deleteMany({
-        where: recycleWhere,
+      const generalRecycle = await (prisma as any).recycleBinEntry.deleteMany({
+        where: generalRecycleWhere,
       });
-      console.log(`   ✓ Deleted ${recycleDeleted.count} voter entry/entries from Recycle Bin.`);
+      recycleDeletedCount += generalRecycle.count;
+
+      for (const chunk of voterIdChunks) {
+        const recordWhere: any = {
+          recordId: { in: chunk },
+        };
+        if (tenantIdArg) recordWhere.tenantId = tenantIdArg;
+
+        const res = await (prisma as any).recycleBinEntry.deleteMany({
+          where: recordWhere,
+        });
+        recycleDeletedCount += res.count;
+      }
+      console.log(`   ✓ Deleted ${recycleDeletedCount} voter entry/entries from Recycle Bin.`);
 
       // 5. Reset Demographics
       console.log("\n🧹 Step 4: Resetting ward demographics voter counts...");

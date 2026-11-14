@@ -15,6 +15,7 @@ enum UserRole {
   SYSTEM_ADMIN
   MLA_MP
   OFFICE_STAFF
+  WARD_VOLUNTEER
 }
 
 enum PlatformRole {
@@ -437,6 +438,8 @@ model Tenant {
   socialOAuthConnections     SocialOAuthConnection[]
   socialOAuthStates          SocialOAuthState[]
   helplineContacts           HelplineContact[]
+  wardVolunteerAssignments   WardVolunteerAssignment[]
+  volunteerVoterSubmissions  VolunteerVoterSubmission[]
 
   @@index([status])
   @@map("tenants")
@@ -705,6 +708,12 @@ model User {
   contactsCreated            Contact[]             @relation("ContactCreatedBy")
   documentsUploaded          Document[]            @relation("DocumentUploadedBy")
   correspondencesAssigned    Correspondence[]      @relation("CorrespondenceAssignedTo")
+  wardAssignments            WardVolunteerAssignment[]  @relation("UserWardAssignments")
+  wardAssignmentsGiven       WardVolunteerAssignment[]  @relation("WardVolunteerAssignedBy")
+  volunteerSubmissions       VolunteerVoterSubmission[] @relation("VolunteerSubmissions")
+  volunteerSubmissionsReviewed VolunteerVoterSubmission[] @relation("VolunteerSubmissionsReviewed")
+  votersCreated              Voter[]                    @relation("VoterCreatedByUser")
+  votersUpdated              Voter[]                    @relation("VoterUpdatedByUser")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -840,6 +849,8 @@ model Ward {
   institutionRequests InstitutionRequest[]
   voters              Voter[]
   constituencyWards   ConstituencyWard[]
+  volunteerAssignments WardVolunteerAssignment[]
+  volunteerSubmissions VolunteerVoterSubmission[]
 
   @@unique([tenantId, wardNumber])
   @@unique([tenantId, name])
@@ -2156,6 +2167,10 @@ model Voter {
   taggedById          String?
   taggedAt            DateTime?
 
+  // Attribution
+  createdByUserId     String?
+  updatedByUserId     String?
+
   // Metadata
   status              String   @default("ACTIVE") // ACTIVE, DELETED, SHIFTED
   isDeleted           Boolean  @default(false)
@@ -2171,6 +2186,9 @@ model Voter {
   wardArea              WardArea?                   @relation(fields: [wardAreaId], references: [id], onDelete: SetNull)
   uploadBatch           BulkUploadJob?              @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
   booth                 Booth?                      @relation(fields: [boothId], references: [id], onDelete: SetNull)
+  createdByUser         User?                       @relation("VoterCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUser         User?                       @relation("VoterUpdatedByUser", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  volunteerSubmission   VolunteerVoterSubmission?
   identityVerifications VoterIdentityVerification[]
   accountMemberships    VoterAccountMembership[]
   familyMembers         VoterFamilyMember[]
@@ -2190,6 +2208,8 @@ model Voter {
   @@index([boothId])
   @@index([isOurVoter])
   @@index([voterLeaning])
+  @@index([createdByUserId])
+  @@index([updatedByUserId])
   @@index([tenantId, wardId, boothNo])
   @@index([tenantId, wardId, sectionNo])
   @@map("voters")
@@ -2424,6 +2444,75 @@ enum VoterVerificationStatus {
   VERIFIED
   FAILED
   REJECTED
+}
+
+// ════════════════════════════════════════════════════════
+// WARD VOLUNTEER & SUBMISSION MANAGEMENT
+// ════════════════════════════════════════════════════════
+
+enum VolunteerAssignmentStatus {
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+enum VolunteerSubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_CORRECTION
+}
+
+model WardVolunteerAssignment {
+  id           String                    @id @default(cuid())
+  tenantId     String
+  wardId       String
+  userId       String
+  assignedById String?
+  status       VolunteerAssignmentStatus @default(ACTIVE)
+  notes        String?
+  assignedAt   DateTime                  @default(now())
+  endedAt      DateTime?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  // Relations
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward       Ward   @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  user       User   @relation("UserWardAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User?  @relation("WardVolunteerAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([wardId, userId])
+  @@index([tenantId, wardId, status])
+  @@index([tenantId, userId, status])
+  @@map("ward_volunteer_assignments")
+}
+
+model VolunteerVoterSubmission {
+  id               String                    @id @default(cuid())
+  tenantId         String
+  wardId           String
+  volunteerUserId  String
+  voterId          String?                   @unique
+  status           VolunteerSubmissionStatus @default(APPROVED)
+  submissionNotes  String?
+  data             Json?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  // Relations
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ward       Ward   @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  volunteer  User   @relation("VolunteerSubmissions", fields: [volunteerUserId], references: [id], onDelete: Cascade)
+  reviewedBy User?  @relation("VolunteerSubmissionsReviewed", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  voter      Voter? @relation(fields: [voterId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, wardId, status, createdAt])
+  @@index([tenantId, volunteerUserId, status, createdAt])
+  @@map("volunteer_voter_submissions")
 }
 
 model BulkUploadJob {

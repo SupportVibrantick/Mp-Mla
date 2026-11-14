@@ -68,6 +68,7 @@ router.get(
       SYSTEM_ADMIN: [],
       MLA_MP: [],
       OFFICE_STAFF: [],
+      WARD_VOLUNTEER: [],
     };
 
     for (const d of defaults) {

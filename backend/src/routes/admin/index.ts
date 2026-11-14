@@ -40,6 +40,7 @@ import creativeRoutes from "./creatives/index.js";
 import websiteRoutes from "./website/index.js";
 import socialRoutes, { publicOAuthCallbackRouter } from "./social/index.js";
 import helplineRoutes from "./helplines/index.js";
+import volunteerRoutes from "./volunteer/index.js";
 
 const router = Router();
 
@@ -95,5 +96,6 @@ router.use("/constituency", requireModule("constituency"), constituencyRoutes);
 router.use("/websites", websiteRoutes);
 router.use("/social", socialRoutes);
 router.use("/helplines", helplineRoutes);
+router.use("/volunteers", requireModule("volunteers"), volunteerRoutes);
 
 export default router;
