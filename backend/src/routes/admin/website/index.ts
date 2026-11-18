@@ -19,6 +19,8 @@ import {
   listDomains,
   addDomain,
   verifyDomain,
+  provisionSsl,
+  getDomainStatus,
   setPrimaryDomain,
   deleteDomain,
 } from "./domains.js";
@@ -72,6 +74,8 @@ router.delete("/:websiteId/pages/:pageId", deletePage);
 router.get("/:websiteId/domains", listDomains);
 router.post("/:websiteId/domains", addDomain);
 router.post("/:websiteId/domains/:domainId/verify", verifyDomain);
+router.post("/:websiteId/domains/:domainId/provision-ssl", provisionSsl);
+router.get("/:websiteId/domains/:domainId/status", getDomainStatus);
 router.post("/:websiteId/domains/:domainId/primary", setPrimaryDomain);
 router.delete("/:websiteId/domains/:domainId", deleteDomain);
 

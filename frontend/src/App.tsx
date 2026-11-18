@@ -115,6 +115,25 @@ import BoothDetailPage from "./pages/geography/BoothDetailPage";
 import TownVillageDetailPage from "./pages/geography/TownVillageDetailPage";
 import PollingLocationDetailPage from "./pages/geography/PollingLocationDetailPage";
 
+const isCustomDomainAccess = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname.toLowerCase();
+  const searchParams = new URLSearchParams(window.location.search);
+  if (searchParams.has("domain")) return true;
+  // If localhost or local network IP, it's the admin portal
+  if (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.startsWith("192.168.") ||
+    host.startsWith("10.")
+  ) {
+    return false;
+  }
+  // Admin / SaaS management subdomains
+  if (host.startsWith("app.") || host.startsWith("admin.")) return false;
+  return true;
+};
+
 function Router() {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
@@ -127,6 +146,8 @@ function Router() {
   }, [location, setLocation]);
 
   const isVolunteer = user?.role === "WARD_VOLUNTEER";
+  const isCustomDomain = isCustomDomainAccess();
+
   return (
     <Switch>
       {/* Public route — User Manual (no login required) */}
@@ -144,9 +165,13 @@ function Router() {
       </Route>
 
       <Route path="/">
-        <ProtectedRoute>
-          {isVolunteer ? <VolunteerDashboardPage /> : <Dashboard />}
-        </ProtectedRoute>
+        {isCustomDomain ? (
+          <PublicWebsiteRuntime />
+        ) : (
+          <ProtectedRoute>
+            {isVolunteer ? <VolunteerDashboardPage /> : <Dashboard />}
+          </ProtectedRoute>
+        )}
       </Route>
 
       <Route path="/dashboard">

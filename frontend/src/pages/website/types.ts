@@ -112,6 +112,9 @@ export interface WebsiteDomainData {
   type: DomainType;
   isPrimary: boolean;
   isVerified: boolean;
+  isActive?: boolean;
+  verificationToken?: string | null;
+  dnsRecords?: any;
   sslStatus: SSLStatus;
   verifiedAt?: string;
   createdAt: string;

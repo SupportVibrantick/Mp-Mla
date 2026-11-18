@@ -22,6 +22,19 @@ export const PublicWebsiteRuntime: React.FC = () => {
   const { slug } = useParams<{ slug?: string }>();
   const searchParams = new URLSearchParams(window.location.search);
   const websiteIdParam = searchParams.get("websiteId") || undefined;
+  const domainParam = searchParams.get("domain") || undefined;
+
+  const currentHost = window.location.hostname.toLowerCase();
+  const isLocalhost =
+    currentHost === "localhost" ||
+    currentHost === "127.0.0.1" ||
+    currentHost.startsWith("192.168.") ||
+    currentHost.startsWith("10.");
+
+  // If domain is passed as query param or host is a custom domain:
+  const resolvedDomain =
+    domainParam ||
+    (!slug && !websiteIdParam && !isLocalhost ? currentHost : undefined);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,10 +47,27 @@ export const PublicWebsiteRuntime: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await publicWebsiteApi.resolve({
-          slug: slug || undefined,
-          websiteId: websiteIdParam,
-        });
+
+        let res: any = null;
+
+        // If accessing via custom hostname or domain param, use the dedicated domain resolver
+        if (resolvedDomain) {
+          try {
+            res = await publicWebsiteApi.resolveByDomain(resolvedDomain);
+          } catch (domainErr: any) {
+            // Fallback to general resolve with domain param
+            res = await publicWebsiteApi.resolve({
+              slug: slug || undefined,
+              websiteId: websiteIdParam,
+              domain: resolvedDomain,
+            });
+          }
+        } else {
+          res = await publicWebsiteApi.resolve({
+            slug: slug || undefined,
+            websiteId: websiteIdParam,
+          });
+        }
 
         if (res.data?.success) {
           setSiteData(res.data.data);
@@ -58,7 +88,7 @@ export const PublicWebsiteRuntime: React.FC = () => {
     };
 
     fetchSite();
-  }, [slug, websiteIdParam]);
+  }, [slug, websiteIdParam, resolvedDomain]);
 
   // Handle URL hash smooth scrolling after site data loads
   useEffect(() => {

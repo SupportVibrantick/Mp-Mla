@@ -531,8 +531,19 @@ export const websiteDomainsApi = {
   list: (websiteId: string) => api.get(`/admin/websites/${websiteId}/domains`),
   add: (websiteId: string, data: { domain: string; isPrimary?: boolean }) =>
     api.post(`/admin/websites/${websiteId}/domains`, data),
-  verify: (websiteId: string, domainId: string) =>
-    api.post(`/admin/websites/${websiteId}/domains/${domainId}/verify`),
+  verify: (
+    websiteId: string,
+    domainId: string,
+    options?: { simulate?: boolean },
+  ) =>
+    api.post(
+      `/admin/websites/${websiteId}/domains/${domainId}/verify`,
+      options || {},
+    ),
+  provisionSsl: (websiteId: string, domainId: string) =>
+    api.post(`/admin/websites/${websiteId}/domains/${domainId}/provision-ssl`),
+  getStatus: (websiteId: string, domainId: string) =>
+    api.get(`/admin/websites/${websiteId}/domains/${domainId}/status`),
   setPrimary: (websiteId: string, domainId: string) =>
     api.post(`/admin/websites/${websiteId}/domains/${domainId}/primary`),
   delete: (websiteId: string, domainId: string) =>
@@ -574,10 +585,19 @@ export const websiteFormsApi = {
 };
 
 export const publicWebsiteApi = {
-  resolve: (params?: { slug?: string; websiteId?: string }) =>
+  resolveByDomain: (hostname: string) =>
+    axios.get(`${API_BASE_URL}/public/website/resolve-domain`, {
+      headers: {
+        "X-Site-Domain": hostname,
+      },
+    }),
+  resolve: (params?: { slug?: string; websiteId?: string; domain?: string }) =>
     axios.get(`${API_BASE_URL}/public/website/resolve`, { params }),
   submitForm: (websiteId: string, formId: string, data: any) =>
-    axios.post(`${API_BASE_URL}/public/website/${websiteId}/forms/${formId}/submit`, data),
+    axios.post(
+      `${API_BASE_URL}/public/website/${websiteId}/forms/${formId}/submit`,
+      data,
+    ),
 };
 
 export const socialApi = {

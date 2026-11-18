@@ -1,7 +1,168 @@
 import { Router, Request, Response } from "express";
 import prisma from "../../../lib/prisma.js";
+import { normalizeDomain } from "../../../utils/domain.js";
 
 const router = Router();
+
+// ════════════════════════════════════════════════════════════════════════
+// MULTI-TENANT DEDICATED HOSTNAME RESOLVER
+// ════════════════════════════════════════════════════════════════════════
+router.get("/resolve-domain", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rawDomain =
+      (req.get("x-site-domain") as string) ||
+      (req.headers["x-site-domain"] as string) ||
+      (req.query.domain as string) ||
+      (req.headers["x-forwarded-host"] as string) ||
+      req.hostname ||
+      "";
+
+    if (!rawDomain) {
+      res.status(400).json({
+        success: false,
+        message: "No domain provided in X-Site-Domain header or query parameter",
+      });
+      return;
+    }
+
+    let cleanDomain = "";
+    try {
+      cleanDomain = normalizeDomain(rawDomain);
+    } catch {
+      cleanDomain = rawDomain
+        .toLowerCase()
+        .trim()
+        .replace(/^https?:\/\//, "")
+        .replace(/\/.*$/, "")
+        .replace(/\.$/, "");
+    }
+
+    const domainSelect = {
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            constituencyName: true,
+            state: true,
+            district: true,
+            representativeName: true,
+            representativeTitle: true,
+            representativePhoto: true,
+            partyName: true,
+            partyLogoUrl: true,
+            primaryColor: true,
+            secondaryColor: true,
+            logoUrl: true,
+            phone: true,
+            email: true,
+            address: true,
+          },
+        },
+        domains: true,
+        pages: {
+          where: { isPublished: true },
+          orderBy: [{ isHomePage: "desc" as const }, { order: "asc" as const }],
+        },
+        menus: true,
+        settings: true,
+        deployments: {
+          where: { status: "SUCCESS" as const },
+          orderBy: { publishedAt: "desc" as const },
+          take: 1,
+        },
+      },
+    };
+
+    // Lookup matching active domain record
+    let domainRecord = await prisma.websiteDomain.findFirst({
+      where: {
+        domain: cleanDomain,
+        isActive: true,
+        isVerified: true,
+      },
+      include: {
+        website: domainSelect,
+      },
+    });
+
+    // Fallback: try without 'www.' if supplied with www
+    if (!domainRecord && cleanDomain.startsWith("www.")) {
+      const nonWww = cleanDomain.replace(/^www\./, "");
+      domainRecord = await prisma.websiteDomain.findFirst({
+        where: {
+          domain: nonWww,
+          isActive: true,
+          isVerified: true,
+        },
+        include: {
+          website: domainSelect,
+        },
+      });
+    }
+
+    // Fallback: try with 'www.' if supplied without www
+    if (!domainRecord && !cleanDomain.startsWith("www.")) {
+      const withWww = `www.${cleanDomain}`;
+      domainRecord = await prisma.websiteDomain.findFirst({
+        where: {
+          domain: withWww,
+          isActive: true,
+          isVerified: true,
+        },
+        include: {
+          website: domainSelect,
+        },
+      });
+    }
+
+    if (!domainRecord) {
+      res.status(404).json({
+        success: false,
+        message: `Domain "${cleanDomain}" is not connected, verified, or active.`,
+      });
+      return;
+    }
+
+    const website = domainRecord.website;
+    const isWebsiteLive =
+      website &&
+      (website.status === "PUBLISHED" ||
+        website.publishedAt ||
+        (website.deployments && website.deployments.length > 0));
+
+    if (!isWebsiteLive) {
+      res.status(404).json({
+        success: false,
+        message: "Website is not published yet.",
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        website,
+        tenant: website.tenant,
+        pages: website.pages,
+        menus: website.menus,
+        settings: website.settings,
+        deployment: website.deployments?.[0] || null,
+        domain: {
+          domain: domainRecord.domain,
+          type: domainRecord.type,
+          isPrimary: domainRecord.isPrimary,
+          sslStatus: domainRecord.sslStatus,
+        },
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to resolve domain",
+    });
+  }
+});
 
 // Resolve host or slug to a published website snapshot
 router.get("/resolve", async (req: Request, res: Response) => {
@@ -10,6 +171,7 @@ router.get("/resolve", async (req: Request, res: Response) => {
     const cleanHost = hostHeader.split(":")[0].toLowerCase();
     const querySlug = (req.query.slug as string) || "";
     const queryWebsiteId = (req.query.websiteId as string) || "";
+    const queryDomain = (req.query.domain as string) || "";
 
     let website: any = null;
 
@@ -97,11 +259,33 @@ router.get("/resolve", async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Lookup by domain if not found
-    if (!website && cleanHost) {
-      const matchedDomain = await prisma.websiteDomain.findFirst({
-        where: { domain: cleanHost },
+    // 3. Lookup by domain if not found (supports query param or host header)
+    const rawTargetDomain =
+      queryDomain ||
+      (cleanHost !== "localhost" && cleanHost !== "127.0.0.1" ? cleanHost : "");
+    const targetDomain = rawTargetDomain
+      ? rawTargetDomain
+          .toLowerCase()
+          .trim()
+          .replace(/^https?:\/\//, "")
+          .replace(/\/.*$/, "")
+      : "";
+
+    if (!website && targetDomain) {
+      let matchedDomain = await prisma.websiteDomain.findFirst({
+        where: { domain: targetDomain },
       });
+
+      // Try www fallback or non-www fallback
+      if (!matchedDomain && targetDomain.startsWith("www.")) {
+        matchedDomain = await prisma.websiteDomain.findFirst({
+          where: { domain: targetDomain.replace(/^www\./, "") },
+        });
+      } else if (!matchedDomain && !targetDomain.startsWith("www.")) {
+        matchedDomain = await prisma.websiteDomain.findFirst({
+          where: { domain: `www.${targetDomain}` },
+        });
+      }
 
       if (matchedDomain) {
         website = await prisma.website.findUnique({

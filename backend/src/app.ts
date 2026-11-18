@@ -23,19 +23,22 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Trust reverse proxy (e.g. Nginx, Cloudflare) for secure cookies and accurate client IP / host
+app.set("trust proxy", 1);
+
 // ─── Middleware ──────────────────────────────────────────
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-// app.use(
-//   cors({
-//     origin: process.env.FRONTEND_URL || "http://localhost:5173",
-//     credentials: true,
-//   }),
-// );
 app.use(
   cors({
-    // origin: process.env.FRONTEND_URL || "http://localhost:5173",
     origin: "*",
     credentials: true,
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Tenant-Id",
+      "X-Site-Domain",
+      "x-site-domain",
+    ],
   }),
 );
 // Apply global rate limiting to all requests

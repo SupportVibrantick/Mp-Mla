@@ -23,6 +23,7 @@ router.use("/voter-portal", voterPortalRoutes);
 
 // Mount Public Website Builder Delivery Router
 router.use("/website", websitePublicRoutes);
+router.use("/websites", websitePublicRoutes);
 
 // Mount Public Helplines & Emergency Directory Router
 router.use("/helplines", helplinePublicRoutes);
