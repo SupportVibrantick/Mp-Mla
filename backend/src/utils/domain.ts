@@ -28,6 +28,12 @@ export function normalizeDomain(input: string): string {
     url.hostname.toLowerCase().replace(/\.$/, ""),
   );
 
+  // Reject raw IPv4 or IPv6 addresses
+  const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(":");
+  if (isIp) {
+    throw new Error("IP addresses are not permitted. Please enter a valid domain name.");
+  }
+
   if (
     !hostname ||
     hostname.length > 253 ||
@@ -58,13 +64,27 @@ export function validateDomainForRegistration(domain: string): {
   try {
     const cleanDomain = normalizeDomain(domain);
 
-    const platformDomain = (process.env.PLATFORM_DOMAIN || "mpmla.in").toLowerCase();
-    const cnameTarget = (process.env.DOMAIN_CNAME_TARGET || "domains.mpmla.in").toLowerCase();
+    const platformDomain = (
+      process.env.PLATFORM_DOMAIN || "mp.mla.vibrantick.org"
+    )
+      .toLowerCase()
+      .trim();
 
-    // Check reserved infrastructure hosts
+    const cnameTarget = (
+      process.env.DOMAIN_CNAME_TARGET || "domains.mp.mla.vibrantick.org"
+    )
+      .toLowerCase()
+      .replace(/\.$/, "")
+      .trim();
+
+    // Check reserved infrastructure hosts (must never be claimable as tenant domains)
     const reservedHosts = [
       "localhost",
       "127.0.0.1",
+      "mp.mla.vibrantick.org",
+      "admin.mp.mla.vibrantick.org",
+      "api-mp-mla.vibrantick.org",
+      "domains.mp.mla.vibrantick.org",
       platformDomain,
       `api.${platformDomain}`,
       `admin.${platformDomain}`,
@@ -80,13 +100,12 @@ export function validateDomainForRegistration(domain: string): {
         isValid: false,
         cleanDomain,
         isPlatformSubdomain: false,
-        error: `"${cleanDomain}" is a reserved system domain and cannot be connected.`,
+        error: `"${cleanDomain}" is a reserved infrastructure domain and cannot be registered.`,
       };
     }
 
-    const isPlatformSubdomain =
-      cleanDomain.endsWith(`.${platformDomain}`) ||
-      cleanDomain.endsWith(".mpmla.com");
+    // Platform subdomains (e.g. rajesh.mp.mla.vibrantick.org)
+    const isPlatformSubdomain = cleanDomain.endsWith(`.${platformDomain}`);
 
     return {
       isValid: true,

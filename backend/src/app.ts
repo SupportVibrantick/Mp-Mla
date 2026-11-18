@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
+import prisma from "./lib/prisma.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import routes from "./routes/index.js";
 import logger from "./utils/logger.js";
@@ -28,9 +29,62 @@ app.set("trust proxy", 1);
 
 // ─── Middleware ──────────────────────────────────────────
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+
+const allowedStaticOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:3011",
+  "http://127.0.0.1:5173",
+  "https://mp.mla.vibrantick.org",
+  "https://admin.mp.mla.vibrantick.org",
+  "https://domains.mp.mla.vibrantick.org",
+];
+
 app.use(
   cors({
-    origin: "*",
+    origin: async (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Check static list or localhost
+      if (
+        allowedStaticOrigins.includes(origin) ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+
+      try {
+        const url = new URL(origin);
+        if (url.hostname.endsWith(".vibrantick.org") || url.hostname === "vibrantick.org") {
+          return callback(null, true);
+        }
+
+        // Check if origin matches a verified custom domain
+        const matched = await prisma.websiteDomain.findFirst({
+          where: {
+            domain: url.hostname.toLowerCase(),
+            isActive: true,
+            isVerified: true,
+          },
+          select: { id: true },
+        });
+
+        if (matched) {
+          return callback(null, true);
+        }
+      } catch {
+        // Ignored
+      }
+
+      // If development, allow all origins
+      if (process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+
+      // Allow public site visitors while avoiding invalid origin: "*" with credentials
+      return callback(null, origin);
+    },
     credentials: true,
     allowedHeaders: [
       "Content-Type",

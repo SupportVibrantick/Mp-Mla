@@ -160,3 +160,23 @@ export async function provisionDomainSsl(
     };
   }
 }
+
+/**
+ * Clean up Nginx configuration file and reload Nginx when a custom domain is deleted.
+ */
+export async function removeDomainSslAndNginx(domain: string): Promise<void> {
+  if (process.platform === "win32" || process.env.NODE_ENV !== "production") {
+    return;
+  }
+  const cleanDomain = normalizeDomain(domain);
+  const confPath = path.join("/etc/nginx/mp-mla-custom-domains", `${cleanDomain}.conf`);
+  try {
+    await fs.unlink(confPath);
+    await execFileAsync("nginx", ["-t"]);
+    await execFileAsync("systemctl", ["reload", "nginx"]);
+  } catch (err: any) {
+    if (err.code !== "ENOENT") {
+      console.warn(`[SSL Service] Cleanup warning for ${cleanDomain}:`, err.message);
+    }
+  }
+}

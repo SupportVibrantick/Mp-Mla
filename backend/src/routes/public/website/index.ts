@@ -273,17 +273,29 @@ router.get("/resolve", async (req: Request, res: Response) => {
 
     if (!website && targetDomain) {
       let matchedDomain = await prisma.websiteDomain.findFirst({
-        where: { domain: targetDomain },
+        where: {
+          domain: targetDomain,
+          isActive: true,
+          isVerified: true,
+        },
       });
 
       // Try www fallback or non-www fallback
       if (!matchedDomain && targetDomain.startsWith("www.")) {
         matchedDomain = await prisma.websiteDomain.findFirst({
-          where: { domain: targetDomain.replace(/^www\./, "") },
+          where: {
+            domain: targetDomain.replace(/^www\./, ""),
+            isActive: true,
+            isVerified: true,
+          },
         });
       } else if (!matchedDomain && !targetDomain.startsWith("www.")) {
         matchedDomain = await prisma.websiteDomain.findFirst({
-          where: { domain: `www.${targetDomain}` },
+          where: {
+            domain: `www.${targetDomain}`,
+            isActive: true,
+            isVerified: true,
+          },
         });
       }
 
@@ -328,8 +340,15 @@ router.get("/resolve", async (req: Request, res: Response) => {
       }
     }
 
-    // 4. Fallback for development if only 1 website exists
-    if (!website) {
+    // 4. Safe fallback: only for local dev without slug/domain on localhost
+    const isLocalDev =
+      process.env.NODE_ENV !== "production" &&
+      !queryDomain &&
+      !querySlug &&
+      !targetDomain &&
+      (cleanHost === "localhost" || cleanHost === "127.0.0.1");
+
+    if (!website && isLocalDev) {
       website = await prisma.website.findFirst({
         orderBy: { updatedAt: "desc" },
         include: {

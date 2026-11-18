@@ -6,8 +6,14 @@ import {
   normalizeDomain,
   validateDomainForRegistration,
 } from "../../../utils/domain.js";
-import { verifyDomainDns } from "../../../utils/domainDns.js";
-import { provisionDomainSsl } from "../../../services/ssl.service.js";
+import {
+  verifyDomainDns,
+  getDnsInstructionsForDomain,
+} from "../../../utils/domainDns.js";
+import {
+  provisionDomainSsl,
+  removeDomainSslAndNginx,
+} from "../../../services/ssl.service.js";
 
 async function assertWebsiteOwnership(websiteId: string, tenantId: string) {
   const website = await prisma.website.findFirst({
@@ -92,50 +98,12 @@ export async function addDomain(
       return;
     }
 
-    // 3. Generate verification token and standardized DNS targets
+    // 3. Generate verification token and tailored DNS instructions
     const verificationToken = `mpmla-verify-${crypto.randomBytes(12).toString("hex")}`;
-    const cnameTarget = (
-      process.env.DOMAIN_CNAME_TARGET ||
-      process.env.CUSTOM_DOMAIN_CNAME_TARGET ||
-      "domains.mpmla.in"
-    )
-      .toLowerCase()
-      .replace(/\.$/, "")
-      .trim();
-
-    const targetIp = (
-      process.env.DOMAIN_TARGET_IP ||
-      process.env.CUSTOM_DOMAIN_A_RECORD ||
-      "76.76.21.21"
-    ).trim();
-
-    const parts = cleanDomain.split(".");
-    const isSubdomain = parts.length > 2;
-    const subdomainPrefix = isSubdomain ? parts[0] : "www";
-
-    const dnsConfig = {
-      a: {
-        type: "A",
-        host: "@",
-        value: targetIp,
-        ttl: 300,
-        description: `Point apex "${cleanDomain}" to platform server IP`,
-      },
-      cname: {
-        type: "CNAME",
-        host: isSubdomain ? subdomainPrefix : "www",
-        target: cnameTarget,
-        ttl: 300,
-        description: `Point "${cleanDomain}" to platform domain target`,
-      },
-      txt: {
-        type: "TXT",
-        host: "_mpmla-verification",
-        value: verificationToken,
-        ttl: 300,
-        description: `Add TXT record at _mpmla-verification.${cleanDomain} for ownership proof`,
-      },
-    };
+    const dnsInstructions = getDnsInstructionsForDomain(
+      cleanDomain,
+      verificationToken,
+    );
 
     // 4. Create database record
     // Custom domains start as PENDING / inactive. Platform subdomains auto-activate.
@@ -150,7 +118,7 @@ export async function addDomain(
         verificationToken: isPlatformSubdomain ? null : verificationToken,
         sslStatus: isPlatformSubdomain ? "ACTIVE" : "PENDING",
         verifiedAt: isPlatformSubdomain ? new Date() : null,
-        dnsRecords: dnsConfig,
+        dnsRecords: dnsInstructions.records,
       },
     });
 
@@ -179,8 +147,24 @@ export async function verifyDomain(
     const tenantId = requireTenantId(req);
     const websiteId = req.params.websiteId as string;
     const domainId = req.params.domainId as string;
+
+    const isDevelopment = process.env.NODE_ENV !== "production";
     const forceSimulate =
-      req.body?.simulate === true || req.query?.simulate === "true";
+      isDevelopment &&
+      (req.body?.simulate === true || req.query?.simulate === "true");
+
+    // 1. Strict Production Check: Simulation is forbidden in production!
+    if (req.body?.simulate === true || req.query?.simulate === "true") {
+      if (!isDevelopment) {
+        res.status(403).json({
+          success: false,
+          verified: false,
+          message:
+            "Simulation / dev bypass mode is strictly disabled in production. Real DNS ownership verification is required.",
+        });
+        return;
+      }
+    }
 
     await assertWebsiteOwnership(websiteId, tenantId);
 
@@ -195,11 +179,11 @@ export async function verifyDomain(
     }
 
     const cleanDomain = normalizeDomain(domainRecord.domain);
-    const isPlatformSubdomain =
-      cleanDomain.endsWith(".mpmla.in") || cleanDomain.endsWith(".mpmla.com");
+    const validation = validateDomainForRegistration(cleanDomain);
+    const isPlatformSubdomain = validation.isPlatformSubdomain;
 
-    // 1. Platform subdomains or explicit dev simulation bypass
-    if (isPlatformSubdomain || forceSimulate) {
+    // Dev Simulation Bypass (only permitted when NOT in production)
+    if (forceSimulate) {
       const updated = await prisma.websiteDomain.update({
         where: { id: domainId },
         data: {
@@ -213,9 +197,28 @@ export async function verifyDomain(
       res.json({
         success: true,
         verified: true,
-        message: isPlatformSubdomain
-          ? "Platform subdomain is active and verified"
-          : "Domain ownership verified (Dev Simulation Mode)",
+        message: "Domain ownership verified (Dev Simulation Mode)",
+        data: updated,
+      });
+      return;
+    }
+
+    // Platform subdomains auto-activate (under platform wildcard DNS)
+    if (isPlatformSubdomain) {
+      const updated = await prisma.websiteDomain.update({
+        where: { id: domainId },
+        data: {
+          isVerified: true,
+          verifiedAt: new Date(),
+          sslStatus: "ACTIVE",
+          isActive: true,
+        },
+      });
+
+      res.json({
+        success: true,
+        verified: true,
+        message: "Platform subdomain is active and verified",
         data: updated,
       });
       return;
@@ -249,13 +252,14 @@ export async function verifyDomain(
       return;
     }
 
-    // 3. Mark DNS as verified
+    // 3. Mark DNS as verified, but keep isActive=false until SSL is provisioned
     const updated = await prisma.websiteDomain.update({
       where: { id: domainId },
       data: {
         isVerified: true,
         verifiedAt: new Date(),
         sslStatus: "PROVISIONING",
+        isActive: false, // Activated only after HTTPS handshake confirms live cert
       },
     });
 
@@ -453,11 +457,16 @@ export async function deleteDomain(
       return;
     }
 
+    // Clean up Nginx virtual host files and Certbot registration in production
+    await removeDomainSslAndNginx(existing.domain).catch((cleanupErr: any) => {
+      console.warn(`[Domain Deletion] Nginx cleanup warning:`, cleanupErr);
+    });
+
     await prisma.websiteDomain.delete({ where: { id: domainId } });
 
     res.json({
       success: true,
-      message: `Domain "${existing.domain}" removed`,
+      message: `Domain "${existing.domain}" removed and Nginx routing cleared`,
     });
   } catch (err) {
     next(err);

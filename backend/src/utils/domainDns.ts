@@ -21,6 +21,34 @@ export interface DnsVerificationResult {
   errors: string[];
 }
 
+export interface DomainDnsInstructions {
+  type: "APEX" | "SUBDOMAIN";
+  domain: string;
+  records: {
+    a?: {
+      type: "A";
+      host: string;
+      value: string;
+      ttl: number;
+      description: string;
+    };
+    cname?: {
+      type: "CNAME";
+      host: string;
+      target: string;
+      ttl: number;
+      description: string;
+    };
+    txt: {
+      type: "TXT";
+      host: string;
+      value: string;
+      ttl: number;
+      description: string;
+    };
+  };
+}
+
 /**
  * Safely resolves DNS TXT records.
  */
@@ -60,15 +88,96 @@ async function resolveCnameSafe(hostname: string): Promise<string[]> {
 }
 
 /**
+ * Generates tailored DNS configuration instructions based on whether the hostname
+ * is an apex root domain (e.g. `example.com`) or a subdomain (e.g. `portal.example.com`).
+ */
+export function getDnsInstructionsForDomain(
+  cleanDomain: string,
+  verificationToken: string,
+): DomainDnsInstructions {
+  const cnameTarget = (
+    process.env.DOMAIN_CNAME_TARGET || "domains.mp.mla.vibrantick.org"
+  )
+    .toLowerCase()
+    .replace(/\.$/, "")
+    .trim();
+
+  const targetIp = (process.env.DOMAIN_TARGET_IP || "89.116.32.160").trim();
+
+  const parts = cleanDomain.split(".");
+  const isApex = parts.length === 2;
+
+  if (isApex) {
+    // Apex Domain (e.g., example.com)
+    return {
+      type: "APEX",
+      domain: cleanDomain,
+      records: {
+        a: {
+          type: "A",
+          host: "@",
+          value: targetIp,
+          ttl: 300,
+          description: `Direct apex traffic (${cleanDomain}) to MP-MLA production VPS IP`,
+        },
+        cname: {
+          type: "CNAME",
+          host: "www",
+          target: cnameTarget,
+          ttl: 300,
+          description: `Direct www subdomain (www.${cleanDomain}) to platform routing router`,
+        },
+        txt: {
+          type: "TXT",
+          host: "_mpmla-verification",
+          value: verificationToken,
+          ttl: 300,
+          description: `Ownership verification challenge record in ${cleanDomain} zone`,
+        },
+      },
+    };
+  }
+
+  // Subdomain (e.g. portal.example.com or volunteer.sharma.in)
+  const subdomainPrefix = parts[0];
+  return {
+    type: "SUBDOMAIN",
+    domain: cleanDomain,
+    records: {
+      cname: {
+        type: "CNAME",
+        host: subdomainPrefix,
+        target: cnameTarget,
+        ttl: 300,
+        description: `Direct subdomain (${cleanDomain}) to platform routing target`,
+      },
+      a: {
+        type: "A",
+        host: subdomainPrefix,
+        value: targetIp,
+        ttl: 300,
+        description: `Alternative: Direct subdomain directly to server IP`,
+      },
+      txt: {
+        type: "TXT",
+        host: `_mpmla-verification.${subdomainPrefix}`,
+        value: verificationToken,
+        ttl: 300,
+        description: `Ownership verification challenge record for ${cleanDomain}`,
+      },
+    },
+  };
+}
+
+/**
  * Performs actual DNS record verification for a custom domain.
  *
- * Requirements for verification:
- * 1. Ownership proof: TXT record at `_mpmla-verification.<domain>` must match `token`.
- *    (Or root TXT record matching `token`).
- * 2. Routing proof: Either an A record resolving to server IP OR CNAME pointing to platform router.
+ * Production Rule:
+ * Domain passes verification IF AND ONLY IF:
+ * 1. Ownership Challenge Passed: TXT record matches verificationToken EXACTLY.
+ * 2. Routing Challenge Passed: Either A record matches server IP OR CNAME matches router.
  *
- * If Cloudflare or a CDN proxy is active, the A record might return Cloudflare's anycast IPs.
- * In that case, matching the TXT ownership token proves domain ownership.
+ * `verified = txtMatched && routingConfigured`
  */
 export async function verifyDomainDns(
   domain: string,
@@ -77,18 +186,14 @@ export async function verifyDomainDns(
   const errors: string[] = [];
 
   const expectedCnameTarget = (
-    process.env.DOMAIN_CNAME_TARGET ||
-    process.env.CUSTOM_DOMAIN_CNAME_TARGET ||
-    "domains.mpmla.in"
+    process.env.DOMAIN_CNAME_TARGET || "domains.mp.mla.vibrantick.org"
   )
     .toLowerCase()
     .replace(/\.$/, "")
     .trim();
 
   const expectedTargetIp = (
-    process.env.DOMAIN_TARGET_IP ||
-    process.env.CUSTOM_DOMAIN_A_RECORD ||
-    "76.76.21.21"
+    process.env.DOMAIN_TARGET_IP || "89.116.32.160"
   ).trim();
 
   const txtHost = `_mpmla-verification.${domain}`;
@@ -103,49 +208,45 @@ export async function verifyDomainDns(
 
   const allTxt = Array.from(new Set([...subTxt, ...rootTxt]));
 
-  const txtMatched = allTxt.some((rec) => rec.includes(token));
+  // Exact TXT match check
+  const txtMatched = allTxt.some(
+    (record) => record.trim() === token.trim(),
+  );
+
   if (!txtMatched) {
     errors.push(
-      `TXT verification token not found. Please add a TXT record for "${txtHost}" with value "${token}".`,
+      `TXT verification token not found or does not match. Please add a TXT record for "${txtHost}" with exact value "${token}".`,
     );
   }
 
   // 2. Check A records for routing proof
-  const aMatched =
-    aRecords.length > 0 &&
-    (aRecords.includes(expectedTargetIp) ||
-      expectedTargetIp === "YOUR_VPS_PUBLIC_IP");
+  const aMatched = aRecords.includes(expectedTargetIp);
 
-  // 3. Check CNAME records for routing proof
+  // 3. Check CNAME records for routing proof (exact target match)
   const cnameMatched = cnameRecords.some(
-    (c) =>
-      c === expectedCnameTarget ||
-      c.endsWith(`.${expectedCnameTarget}`) ||
-      c === "cname.mpmla.in",
+    (record) => record === expectedCnameTarget,
   );
 
-  if (!aMatched && !cnameMatched) {
+  const routingConfigured = aMatched || cnameMatched;
+
+  if (!routingConfigured) {
     if (aRecords.length > 0) {
-      // Domain resolves to an IP, but not our configured IP (could be Cloudflare proxy or wrong IP)
       errors.push(
-        `A record resolves to [${aRecords.join(", ")}], expected "${expectedTargetIp}". If using Cloudflare proxy, ensure TXT record is present.`,
+        `A record points to [${aRecords.join(", ")}], but expected "${expectedTargetIp}". If using Cloudflare, disable proxy (set DNS-Only / Grey Cloud) during initial verification.`,
       );
     } else if (cnameRecords.length > 0) {
       errors.push(
-        `CNAME record points to [${cnameRecords.join(", ")}], expected "${expectedCnameTarget}".`,
+        `CNAME record points to [${cnameRecords.join(", ")}], but expected "${expectedCnameTarget}".`,
       );
     } else {
       errors.push(
-        `No A or CNAME records detected for "${domain}". Please configure routing at your registrar.`,
+        `No routing A record (${expectedTargetIp}) or CNAME record (${expectedCnameTarget}) found for "${domain}".`,
       );
     }
   }
 
-  // Domain ownership is verified if:
-  // - TXT ownership token matches AND (A record or CNAME record is configured)
-  // - OR if routing records match exactly
-  const routingConfigured = aMatched || cnameMatched || aRecords.length > 0;
-  const verified = (txtMatched && routingConfigured) || (aMatched || cnameMatched);
+  // Strict verification rule: Both ownership (TXT) and routing (A/CNAME) are required!
+  const verified = txtMatched && routingConfigured;
 
   return {
     verified,
