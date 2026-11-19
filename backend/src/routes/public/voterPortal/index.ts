@@ -13,11 +13,15 @@ import {
 } from "../../../services/voterPortal/voterAuth.service.js";
 
 import jwt from "jsonwebtoken";
+import { GrievancePriority } from "@prisma/client";
 import { generateApplicationNumber } from "../../admin/schemes/helpers.js";
+import { generateTicketNumber } from "../../admin/grievance/helpers.js";
+import { calculateGrievanceSla } from "../../../services/grievance/sla.service.js";
 import { VoterTokenPayload } from "../../../services/voterPortal/voterAuth.service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "mp-mla-secret-key-2026";
 const voterUploader = createUploader("voters");
+const grievanceUploader = createUploader("grievances");
 const router = Router();
 
 // ─── 1. Search Application Number by EPIC Number ──────────────
@@ -979,5 +983,444 @@ router.get("/helplines/emergency", requireVoterAuth, async (req: VoterAuthReques
     next(error);
   }
 });
+
+// ─── 21. GET Grievances Meta & Form Config ────────────────────
+router.get("/grievances/meta", requireVoterAuth, async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.tenantId!;
+    const voterId = req.voterId!;
+
+    const [voter, departments, tenant] = await Promise.all([
+      prisma.voter.findUnique({
+        where: { id: voterId },
+        include: { ward: { select: { id: true, name: true, wardNumber: true } } },
+      }),
+      prisma.department.findMany({
+        where: { tenantId, isActive: true, isDeleted: false },
+        select: { id: true, name: true, code: true, description: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: {
+          id: true,
+          name: true,
+          constituencyName: true,
+          representativeName: true,
+          representativeTitle: true,
+        },
+      }),
+    ]);
+
+    const categories = [
+      {
+        id: "ROADS_INFRASTRUCTURE",
+        label: "Roads, Potholes & Footpaths",
+        labelHi: "सड़क, गड्ढे एवं फुटपाथ",
+        subcategories: ["Pothole Repair", "Road Widening", "Damaged Footpath", "Speed Breaker Request", "Street Construction"],
+        icon: "Road",
+      },
+      {
+        id: "WATER_SUPPLY",
+        label: "Water Supply & Pipelines",
+        labelHi: "पेयजल आपूर्ति एवं पाइपलाइन",
+        subcategories: ["Contaminated Water", "Low Water Pressure", "Pipeline Leakage", "Water Tanker Request", "Borewell / Handpump Issue"],
+        icon: "Droplets",
+      },
+      {
+        id: "ELECTRICITY",
+        label: "Electricity & Power Outage",
+        labelHi: "बिजली आपूर्ति एवं ट्रांसफार्मर",
+        subcategories: ["Power Outage / Fluctuation", "Damaged Transformer", "Hanging Electric Wires", "Faulty Meter", "New Connection Delay"],
+        icon: "Zap",
+      },
+      {
+        id: "SANITATION_CLEANLINESS",
+        label: "Sanitation & Waste Management",
+        labelHi: "सफाई एवं कचरा प्रबंधन",
+        subcategories: ["Garbage Not Lifted", "Open Dumping Ground", "Public Dustbin Request", "Dead Animal Removal", "Littering in Public Area"],
+        icon: "Trash2",
+      },
+      {
+        id: "DRAINAGE_SEWERAGE",
+        label: "Drainage, Sewage & Waterlogging",
+        labelHi: "नाली, सीवर एवं जलभराव",
+        subcategories: ["Choked Drain", "Sewage Overflow", "Rainwater Waterlogging", "Open / Missing Manhole Cover", "Nala Cleaning"],
+        icon: "Waves",
+      },
+      {
+        id: "STREET_LIGHTS",
+        label: "Street Lights & Illumination",
+        labelHi: "स्ट्रीट लाइट व्यवस्था",
+        subcategories: ["Dark Street / Light Off", "Blinking / Faulty Light", "New Pole / Light Request", "Solar Light Issue"],
+        icon: "Lightbulb",
+      },
+      {
+        id: "HEALTHCARE_HYGIENE",
+        label: "Healthcare & Public Hospitals",
+        labelHi: "स्वास्थ्य एवं चिकित्सा सेवा",
+        subcategories: ["Dispensary Doctor Availability", "Medicine Shortage", "Mosquito Fogging Request", "Ambulance Issue"],
+        icon: "HeartPulse",
+      },
+      {
+        id: "EDUCATION_SCHOOLS",
+        label: "Schools & Anganwadi Centers",
+        labelHi: "सरकारी विद्यालय एवं आंगनवाड़ी",
+        subcategories: ["School Infrastructure", "Anganwadi Ration / Facilities", "Teacher Shortage", "Mid-day Meal Complaint"],
+        icon: "GraduationCap",
+      },
+      {
+        id: "PARKS_PUBLIC_SPACES",
+        label: "Parks, Playgrounds & Public Amenities",
+        labelHi: "पार्क एवं खेल मैदान",
+        subcategories: ["Park Maintenance", "Broken Play Equipment", "Public Toilet Cleanliness", "Community Center Maintenance"],
+        icon: "Trees",
+      },
+      {
+        id: "SAFETY_ENCROACHMENT",
+        label: "Civic Safety & Encroachment",
+        labelHi: "सुरक्षा एवं अवैध अतिक्रमण",
+        subcategories: ["Footpath / Road Encroachment", "Illegal Parking", "Public Nuisance", "CCTV Camera Request"],
+        icon: "ShieldAlert",
+      },
+      {
+        id: "OTHER_CIVIC_ISSUES",
+        label: "Other Constituency Issues",
+        labelHi: "अन्य नागरिक समस्या",
+        subcategories: ["General Public Request", "Administrative Delay", "Other Citizen Concern"],
+        icon: "HelpCircle",
+      },
+    ];
+
+    res.json({
+      success: true,
+      data: {
+        categories,
+        priorities: ["LOW", "MEDIUM", "HIGH", "URGENT"],
+        departments,
+        voterWard: voter?.ward || null,
+        tenant,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── 22. POST Upload Evidence / Attachment for Grievance ─────
+router.post(
+  "/grievances/upload",
+  requireVoterAuth,
+  grievanceUploader.single("file"),
+  async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ success: false, message: "No file uploaded." });
+        return;
+      }
+      const fileUrl = getUploadPath(req.file.filename, "grievances");
+      res.json({
+        success: true,
+        data: {
+          fileUrl,
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          fileType: req.file.mimetype,
+        },
+        message: "Evidence file uploaded successfully.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ─── 23. POST Submit Grievance to Constituent Tenant ─────────
+router.post(
+  "/grievances",
+  requireVoterAuth,
+  async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = req.tenantId!;
+      const voterId = req.voterId!;
+      const {
+        subject,
+        category,
+        subcategory,
+        description,
+        priority = "MEDIUM",
+        locationAddress,
+        departmentId,
+        attachments = [],
+      } = req.body;
+
+      if (!subject || !subject.trim()) {
+        res.status(400).json({ success: false, message: "Subject / Issue title is required." });
+        return;
+      }
+      if (!category || !category.trim()) {
+        res.status(400).json({ success: false, message: "Category is required." });
+        return;
+      }
+      if (!description || !description.trim()) {
+        res.status(400).json({ success: false, message: "Grievance description is required." });
+        return;
+      }
+
+      // Fetch voter to get ward and constituent profile
+      const voter = await prisma.voter.findUnique({
+        where: { id: voterId },
+        include: {
+          ward: true,
+        },
+      });
+
+      if (!voter || voter.tenantId !== tenantId) {
+        res.status(404).json({ success: false, message: "Constituent voter record not found in this constituency." });
+        return;
+      }
+
+      const voterAccount = req.voterAccountId
+        ? await prisma.voterAccount.findUnique({ where: { id: req.voterAccountId } })
+        : null;
+
+      // Determine wardId
+      let wardId = voter.wardId;
+      if (!wardId) {
+        const fallbackWard = await prisma.ward.findFirst({
+          where: { tenantId },
+          select: { id: true },
+        });
+        if (!fallbackWard) {
+          res.status(400).json({ success: false, message: "No wards configured in this constituency to route the grievance." });
+          return;
+        }
+        wardId = fallbackWard.id;
+      }
+
+      // Validate department if provided
+      let validDepartmentId: string | null = null;
+      if (departmentId) {
+        const dept = await prisma.department.findFirst({
+          where: { id: departmentId, tenantId, isActive: true, isDeleted: false },
+        });
+        if (dept) {
+          validDepartmentId = dept.id;
+        }
+      }
+
+      // Generate Ticket Number
+      const ticketNumber = await generateTicketNumber(tenantId);
+
+      // SLA calculation
+      const safePriority = (["LOW", "MEDIUM", "HIGH", "URGENT"].includes(priority)
+        ? priority
+        : "MEDIUM") as GrievancePriority;
+
+      const slaDetails = await calculateGrievanceSla(
+        tenantId,
+        validDepartmentId,
+        safePriority,
+        new Date()
+      );
+
+      const complainantPhone = voterAccount?.mobile || voter.phone || "";
+      const complainantName = voter.name;
+      const complainantAddress = voter.address || "";
+
+      const grievance = await prisma.grievance.create({
+        data: {
+          tenantId,
+          ticketNumber,
+          subject: subject.trim(),
+          category: category.trim(),
+          subcategory: subcategory?.trim() || null,
+          description: description.trim(),
+          wardId,
+          priority: safePriority,
+          status: "OPEN",
+          source: "VOTER_PORTAL",
+          departmentId: validDepartmentId,
+          complainantName,
+          complainantPhone,
+          complainantEmail: null,
+          complainantAddress,
+          locationAddress: locationAddress?.trim() || voter.address || null,
+          slaStartedAt: slaDetails.slaStartedAt,
+          slaHoursApplied: slaDetails.slaHoursApplied,
+          expectedResolutionDate: slaDetails.expectedResolutionDate,
+          timeline: {
+            create: {
+              tenantId,
+              action: "CREATED",
+              toStatus: "OPEN",
+              comment: "Grievance filed by constituent via Voter Portal (नागरिक पोर्टल द्वारा शिकायत दर्ज की गई)",
+              changedBy: complainantName,
+              metadata: {
+                voterId: voter.id,
+                voterAccountId: req.voterAccountId,
+                membershipId: req.membershipId,
+                source: "VOTER_PORTAL",
+              },
+            },
+          },
+          attachments:
+            Array.isArray(attachments) && attachments.length > 0
+              ? {
+                  create: attachments.map((att: any) => ({
+                    tenantId,
+                    fileUrl: att.fileUrl,
+                    fileName: att.fileName || "evidence_document",
+                    fileType: att.fileType || "image",
+                    fileSize: att.fileSize || 0,
+                    classification: "DOCUMENT",
+                  })),
+                }
+              : undefined,
+        },
+        include: {
+          ward: { select: { id: true, name: true, wardNumber: true } },
+          department: { select: { id: true, name: true, code: true } },
+          timeline: { orderBy: { createdAt: "asc" } },
+          attachments: true,
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        data: grievance,
+        message: `Grievance submitted successfully. Ticket Number: ${ticketNumber}`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ─── 24. GET Voter's Submitted Grievances ────────────────────
+router.get(
+  "/grievances/my",
+  requireVoterAuth,
+  async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = req.tenantId!;
+      const voterId = req.voterId!;
+
+      const [voter, voterAccount] = await Promise.all([
+        prisma.voter.findUnique({ where: { id: voterId } }),
+        req.voterAccountId
+          ? prisma.voterAccount.findUnique({ where: { id: req.voterAccountId } })
+          : null,
+      ]);
+
+      const phoneCandidates = [
+        voterAccount?.mobile,
+        voter?.phone,
+      ].filter(Boolean) as string[];
+
+      const phoneFilters = phoneCandidates.map((p) => {
+        const clean = p.replace(/\D/g, "");
+        const last10 = clean.slice(-10);
+        return { complainantPhone: { contains: last10 } };
+      });
+
+      const orConditions: any[] = [];
+      if (phoneFilters.length > 0) {
+        orConditions.push(...phoneFilters);
+      }
+      if (req.voterAccountId) {
+        orConditions.push({
+          timeline: {
+            some: {
+              metadata: {
+                path: ["voterAccountId"],
+                equals: req.voterAccountId,
+              },
+            },
+          },
+        });
+      }
+
+      if (orConditions.length === 0) {
+        res.json({
+          success: true,
+          data: [],
+          stats: { total: 0, open: 0, inProgress: 0, resolved: 0, rejected: 0 },
+        });
+        return;
+      }
+
+      const grievances = await prisma.grievance.findMany({
+        where: {
+          tenantId,
+          isDeleted: false,
+          OR: orConditions,
+        },
+        include: {
+          ward: { select: { id: true, name: true, wardNumber: true } },
+          department: { select: { id: true, name: true, code: true } },
+          timeline: { orderBy: { createdAt: "asc" } },
+          attachments: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const stats = {
+        total: grievances.length,
+        open: grievances.filter((g) => g.status === "OPEN").length,
+        inProgress: grievances.filter((g) => g.status === "IN_PROGRESS" || g.status === "ESCALATED").length,
+        resolved: grievances.filter((g) => g.status === "RESOLVED" || g.status === "CLOSED").length,
+        rejected: grievances.filter((g) => g.status === "REJECTED").length,
+      };
+
+      res.json({
+        success: true,
+        data: grievances,
+        stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ─── 25. GET Single Grievance Details ─────────────────────────
+router.get(
+  "/grievances/:id",
+  requireVoterAuth,
+  async (req: VoterAuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = req.tenantId!;
+      const grievanceId = String(req.params.id);
+
+      const grievance = await prisma.grievance.findFirst({
+        where: {
+          id: grievanceId,
+          tenantId,
+          isDeleted: false,
+        },
+        include: {
+          ward: { select: { id: true, name: true, wardNumber: true } },
+          department: { select: { id: true, name: true, code: true } },
+          assignedTo: { select: { name: true, role: true } },
+          timeline: { orderBy: { createdAt: "asc" } },
+          attachments: true,
+        },
+      });
+
+      if (!grievance) {
+        res.status(404).json({ success: false, message: "Grievance record not found in this constituency." });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: grievance,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

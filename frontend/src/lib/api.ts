@@ -731,6 +731,64 @@ export const voterPortalSchemesApi = {
     }),
 };
 
+export const voterPortalGrievancesApi = {
+  getMeta: (token?: string) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") || localStorage.getItem("voterToken")
+        : null);
+    return api.get("/public/voter-portal/grievances/meta", {
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
+  submit: (data: any, token?: string) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") || localStorage.getItem("voterToken")
+        : null);
+    return api.post("/public/voter-portal/grievances", data, {
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
+  getMyGrievances: (token?: string) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") || localStorage.getItem("voterToken")
+        : null);
+    return api.get("/public/voter-portal/grievances/my", {
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
+  getDetail: (id: string, token?: string) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") || localStorage.getItem("voterToken")
+        : null);
+    return api.get(`/public/voter-portal/grievances/${id}`, {
+      headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
+    });
+  },
+  uploadAttachment: (file: File, token?: string) => {
+    const effectiveToken =
+      token ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("voterToken") || localStorage.getItem("voterToken")
+        : null);
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/public/voter-portal/grievances/upload", formData, {
+      headers: {
+        ...(effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {}),
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+};
+
 
 export const volunteerApi = {
   // Admin endpoints

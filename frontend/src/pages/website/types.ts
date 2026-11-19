@@ -1,7 +1,7 @@
 export type WebsiteStatus = "DRAFT" | "PUBLISHED" | "MAINTENANCE" | "ARCHIVED";
 export type PageStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type DomainType = "SUBDOMAIN" | "CUSTOM";
-export type SSLStatus = "PENDING" | "ACTIVE" | "FAILED";
+export type SSLStatus = "PENDING" | "PROVISIONING" | "ACTIVE" | "FAILED";
 
 export type SectionType =
   | "navbar"

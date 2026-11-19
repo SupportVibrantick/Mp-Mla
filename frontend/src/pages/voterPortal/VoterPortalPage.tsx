@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import api, { voterPortalSchemesApi, voterPortalHelplinesApi } from "@/lib/api";
+import api, { voterPortalSchemesApi, voterPortalHelplinesApi, voterPortalGrievancesApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useSystemSettings } from "@/contexts/SettingsContext";
@@ -84,6 +84,19 @@ import {
   Check,
   Copy,
   MessageSquare,
+  AlertTriangle,
+  Send,
+  Paperclip,
+  Droplets,
+  Waves,
+  Lightbulb,
+  HeartPulse,
+  GraduationCap,
+  Trees,
+  Activity,
+  RefreshCw,
+  LayoutDashboard,
+  Menu,
 } from "lucide-react";
 import { InteractiveMeshBackground } from "@/components/ui/InteractiveMeshBackground";
 
@@ -98,6 +111,12 @@ export default function VoterPortalPage() {
   const [voter, setVoter] = useState<any | null>(null);
   const [loadingProfile, setLoadingProfile] = useState<boolean>(!!token);
   const [forcePasswordChange, setForcePasswordChange] = useState<boolean>(false);
+
+  // Active Sidebar Navigation Section State
+  const [activeSection, setActiveSection] = useState<
+    "overview" | "profile" | "verification" | "family" | "grievances" | "schemes" | "helplines"
+  >("overview");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
 
   // Application Login Tab State
   const [appNumberInput, setAppNumberInput] = useState("");
@@ -383,6 +402,218 @@ export default function VoterPortalPage() {
     } finally {
       setSubmittingSchemeApp(false);
     }
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // Constituency Grievance & Citizen Requests State (Card 6)
+  // ══════════════════════════════════════════════════════════
+  const [activeGrievanceTab, setActiveGrievanceTab] = useState<"submit" | "my_list">("submit");
+  const [portalGrievances, setPortalGrievances] = useState<any[]>([]);
+  const [loadingGrievances, setLoadingGrievances] = useState<boolean>(false);
+  const [grievanceStats, setGrievanceStats] = useState<{
+    total: number;
+    open: number;
+    inProgress: number;
+    resolved: number;
+    rejected: number;
+  }>({ total: 0, open: 0, inProgress: 0, resolved: 0, rejected: 0 });
+  const [grievanceMeta, setGrievanceMeta] = useState<any>({
+    categories: [],
+    priorities: ["LOW", "MEDIUM", "HIGH", "URGENT"],
+    departments: [],
+    voterWard: null,
+    tenant: null,
+  });
+  const [loadingGrievanceMeta, setLoadingGrievanceMeta] = useState<boolean>(false);
+  const [grievanceStatusFilter, setGrievanceStatusFilter] = useState<string>("ALL");
+  const [grievanceSearch, setGrievanceSearch] = useState<string>("");
+  const [copiedTicketNumber, setCopiedTicketNumber] = useState<string | null>(null);
+
+  // Form State
+  const [grvSubject, setGrvSubject] = useState<string>("");
+  const [grvCategory, setGrvCategory] = useState<string>("");
+  const [grvSubcategory, setGrvSubcategory] = useState<string>("");
+  const [grvDepartmentId, setGrvDepartmentId] = useState<string>("");
+  const [grvPriority, setGrvPriority] = useState<string>("MEDIUM");
+  const [grvLocation, setGrvLocation] = useState<string>("");
+  const [grvDescription, setGrvDescription] = useState<string>("");
+  const [grvAttachments, setGrvAttachments] = useState<any[]>([]);
+  const [uploadingGrvFile, setUploadingGrvFile] = useState<boolean>(false);
+  const [submittingGrievance, setSubmittingGrievance] = useState<boolean>(false);
+
+  // Detail Modal State
+  const [selectedGrievanceForDetail, setSelectedGrievanceForDetail] = useState<any | null>(null);
+  const [grievanceDetailOpen, setGrievanceDetailOpen] = useState<boolean>(false);
+  const [loadingGrievanceDetail, setLoadingGrievanceDetail] = useState<boolean>(false);
+
+  // Fetch Grievance Meta
+  const fetchGrievanceMeta = async () => {
+    if (!token) return;
+    setLoadingGrievanceMeta(true);
+    try {
+      const res = await voterPortalGrievancesApi.getMeta(token);
+      if (res.data?.success) {
+        setGrievanceMeta(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching grievance meta:", err);
+    } finally {
+      setLoadingGrievanceMeta(false);
+    }
+  };
+
+  // Fetch Voter's Grievances
+  const fetchMyGrievances = async () => {
+    if (!token) return;
+    setLoadingGrievances(true);
+    try {
+      const res = await voterPortalGrievancesApi.getMyGrievances(token);
+      if (res.data?.success) {
+        setPortalGrievances(res.data.data || []);
+        if (res.data.stats) {
+          setGrievanceStats(res.data.stats);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching voter grievances:", err);
+    } finally {
+      setLoadingGrievances(false);
+    }
+  };
+
+  useEffect(() => {
+    if (voter && token) {
+      fetchGrievanceMeta();
+      fetchMyGrievances();
+    }
+  }, [voter, token]);
+
+  // Handle Attachment Upload
+  const handleUploadGrvAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Maximum attachment file size is 10 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingGrvFile(true);
+    try {
+      const res = await voterPortalGrievancesApi.uploadAttachment(file, token);
+      if (res.data?.success) {
+        setGrvAttachments((prev) => [...prev, res.data.data]);
+        toast({
+          title: "File Attached",
+          description: `${file.name} uploaded successfully as evidence.`,
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Upload Failed",
+        description: err.response?.data?.message || "Failed to upload file.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingGrvFile(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveGrvAttachment = (idxToRemove: number) => {
+    setGrvAttachments((prev) => prev.filter((_, idx) => idx !== idxToRemove));
+  };
+
+  // Submit Grievance
+  const handleSubmitGrievance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    if (!grvSubject.trim()) {
+      toast({ title: "Validation Error", description: "Please enter the subject/title of your issue.", variant: "destructive" });
+      return;
+    }
+    if (!grvCategory) {
+      toast({ title: "Validation Error", description: "Please select a grievance category.", variant: "destructive" });
+      return;
+    }
+    if (!grvDescription.trim()) {
+      toast({ title: "Validation Error", description: "Please provide a detailed description of your issue.", variant: "destructive" });
+      return;
+    }
+
+    setSubmittingGrievance(true);
+    try {
+      const payload = {
+        subject: grvSubject.trim(),
+        category: grvCategory,
+        subcategory: grvSubcategory || undefined,
+        departmentId: grvDepartmentId || undefined,
+        priority: grvPriority,
+        locationAddress: grvLocation.trim() || undefined,
+        description: grvDescription.trim(),
+        attachments: grvAttachments,
+      };
+
+      const res = await voterPortalGrievancesApi.submit(payload, token);
+      if (res.data?.success) {
+        toast({
+          title: "Grievance Registered Successfully!",
+          description: `Ticket No: ${res.data.data.ticketNumber}. It has been forwarded to the representative's office.`,
+          className: "bg-emerald-600 text-white font-bold",
+        });
+
+        // Reset form
+        setGrvSubject("");
+        setGrvCategory("");
+        setGrvSubcategory("");
+        setGrvDepartmentId("");
+        setGrvPriority("MEDIUM");
+        setGrvLocation("");
+        setGrvDescription("");
+        setGrvAttachments([]);
+
+        // Refresh and switch to "My Grievances" tab
+        fetchMyGrievances();
+        setActiveGrievanceTab("my_list");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Submission Failed",
+        description: err.response?.data?.message || "Could not register grievance. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingGrievance(false);
+    }
+  };
+
+  const handleViewGrievanceDetail = async (item: any) => {
+    setSelectedGrievanceForDetail(item);
+    setGrievanceDetailOpen(true);
+    if (!token) return;
+    try {
+      setLoadingGrievanceDetail(true);
+      const res = await voterPortalGrievancesApi.getDetail(item.id, token);
+      if (res.data?.success) {
+        setSelectedGrievanceForDetail(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error loading grievance details:", err);
+    } finally {
+      setLoadingGrievanceDetail(false);
+    }
+  };
+
+  const handleCopyTicket = (ticket: string) => {
+    navigator.clipboard.writeText(ticket);
+    setCopiedTicketNumber(ticket);
+    toast({ title: "Ticket Copied", description: `${ticket} copied to clipboard.` });
+    setTimeout(() => setCopiedTicketNumber(null), 2000);
   };
 
   const handleSavePortalMember = async (e: React.FormEvent) => {
@@ -746,6 +977,65 @@ export default function VoterPortalPage() {
     verificationInfo?.status === "VERIFIED" ||
     verificationInfo?.status === "SUBMITTED"
   );
+
+  const navItems = [
+    {
+      id: "overview",
+      label: "Dashboard Overview",
+      sublabel: "Command Center",
+      icon: LayoutDashboard,
+      badge: null,
+    },
+    {
+      id: "profile",
+      label: "My Profile & Voter ID",
+      sublabel: "Personal & Booth Info",
+      icon: User,
+      badge: null,
+    },
+    {
+      id: "verification",
+      label: "Aadhaar Verification",
+      sublabel: "Identity & Documents",
+      icon: ShieldCheck,
+      badge: isAadhaarVerified ? "Verified" : "Action Req",
+      badgeColor: isAadhaarVerified
+        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+        : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 animate-pulse",
+    },
+    {
+      id: "grievances",
+      label: "Grievances & Redressal",
+      sublabel: "Submit & Track Issues",
+      icon: AlertTriangle,
+      badge: grievanceStats.total > 0 ? `${grievanceStats.open} Open` : null,
+      badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    },
+    {
+      id: "schemes",
+      label: "Welfare Schemes",
+      sublabel: "Government Benefits",
+      icon: Landmark,
+      badge: schemes.length > 0 ? `${schemes.length}` : null,
+      badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+    },
+    {
+      id: "family",
+      label: "Family Members",
+      sublabel: "Household Records",
+      icon: Users,
+      badge: familyMembers.length > 0 ? `${familyMembers.length}` : null,
+      badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+    },
+    {
+      id: "helplines",
+      label: "Emergency Helplines",
+      sublabel: "Official 24x7 Desks",
+      icon: PhoneCall,
+      badge: "24x7",
+      badgeColor: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+    },
+  ];
 
   // 8. Open Edit Profile Modal
   const openEditProfileModal = () => {
@@ -1590,235 +1880,776 @@ export default function VoterPortalPage() {
         </div>
       </header>
 
-      {/* ─── Main Voter Dashboard Container ─── */}
-      <main className="relative z-10 flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6 my-4">
-        {/* Verification Status Card */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center space-x-5">
-            {/* Avatar Frame with Upload Trigger */}
-            <div className="relative group">
-              <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-950 border-2 border-[#13538A]/40 overflow-hidden flex items-center justify-center relative shadow-md">
-                {voter.photoUrl ? (
-                  <img src={getImageUrl(voter.photoUrl)} alt={voter.name} className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-10 h-10 text-slate-400" />
-                )}
-                {uploadingPhoto && (
-                  <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-white" />
-                  </div>
-                )}
+      {/* ─── Main Voter Dashboard: Sidebar + Focused Section Layout ─── */}
+      <div className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 flex flex-col lg:flex-row gap-6 my-2">
+        {/* Left Sticky Sidebar (Desktop) */}
+        <aside className="lg:w-72 xl:w-80 shrink-0 space-y-4">
+          {/* Constituent Mini Profile Card */}
+          <div className="p-5 rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xl backdrop-blur-xl space-y-4">
+            <div className="flex items-center gap-3.5">
+              <div className="relative group shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-950 border-2 border-[#13538A]/40 overflow-hidden flex items-center justify-center shadow-md">
+                  {voter.photoUrl ? (
+                    <img src={getImageUrl(voter.photoUrl)} alt={voter.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-7 h-7 text-slate-400" />
+                  )}
+                  {uploadingPhoto && (
+                    <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                <label
+                  htmlFor="sidebarPhotoUploadInput"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-lg flex items-center justify-center cursor-pointer shadow-md transition-transform hover:scale-110"
+                  title="Upload Photo"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <input
+                    id="sidebarPhotoUploadInput"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </label>
               </div>
-              <label
-                htmlFor="photoUploadInput"
-                className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-lg flex items-center justify-center cursor-pointer shadow-lg transition-transform hover:scale-110"
-                title="Upload Profile Photo"
-              >
-                <Camera className="w-4 h-4" />
-                <input
-                  id="photoUploadInput"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
-              </label>
+
+              <div className="min-w-0 flex-1">
+                <h3 className="font-extrabold text-sm text-slate-900 dark:text-white truncate" title={voter.name}>
+                  {voter.name}
+                </h3>
+                <p className="text-[11px] font-mono font-bold text-[#13538A] dark:text-[#38bdf8] truncate">
+                  {voter.voterIdNumber}
+                </p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  Ward #{voter.ward?.wardNumber || "N/A"} - {voter.ward?.name || "Constituency"}
+                </p>
+              </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{voter.name}</h2>
-                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1 px-3 py-1 rounded-full text-xs font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Official Verified Record
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <span className="text-[10.5px] uppercase font-bold text-slate-400">Citizen Status</span>
+              {isAadhaarVerified ? (
+                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Verified Citizen
                 </Badge>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                EPIC ID: <span className="font-mono text-[#13538A] dark:text-[#38bdf8] font-bold tracking-wider">{voter.voterIdNumber}</span>
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Ward #{voter.ward?.wardNumber || "N/A"} - {voter.ward?.name || "N/A"}
-              </p>
+              ) : (
+                <Badge
+                  onClick={() => setActiveSection("verification")}
+                  className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px] font-bold cursor-pointer hover:bg-amber-500/20 transition-colors"
+                >
+                  <Lock className="w-3 h-3 mr-1" /> Pending Aadhaar
+                </Badge>
+              )}
             </div>
           </div>
 
-          {isAadhaarVerified ? (
-            <Button
-              onClick={openEditProfileModal}
-              className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold gap-2 shadow-lg shadow-[#13538A]/25 rounded-2xl px-5 h-11"
-            >
-              <Edit2 className="w-4 h-4" /> Edit Profile Details
-            </Button>
-          ) : (
-            <Button
-              onClick={() => setAadhaarModalOpen(true)}
-              className="bg-amber-600 hover:bg-amber-500 text-white font-bold gap-2 shadow-lg shadow-amber-600/25 rounded-2xl px-5 h-11"
-            >
-              <Lock className="w-4 h-4" /> Verify Aadhaar to Edit
-            </Button>
-          )}
-        </div>
-
-        {/* ─── Aadhaar Identity Verification Banner Card ─── */}
-        {isAadhaarVerified ? (
-          <Card className="bg-gradient-to-r from-emerald-900/10 via-emerald-500/5 to-teal-900/10 border-emerald-500/30 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden mb-6">
-            <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                  <ShieldCheck className="w-8 h-8" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Aadhaar Identity Verified (आधार पहचान पत्र सत्यापित)</h3>
-                    <Badge className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">VERIFIED</Badge>
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 flex items-center gap-2">
-                    {verificationInfo?.aadhaarNumber ? (
-                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                        Aadhaar: {verificationInfo.aadhaarNumber}
-                      </span>
-                    ) : (
-                      <span>Aadhaar Verification Document Uploaded</span>
-                    )}
-                    {verificationInfo?.documentUrl && (
-                      <a
-                        href={getImageUrl(verificationInfo.documentUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-bold text-[#13538A] dark:text-[#38bdf8] underline hover:opacity-80 flex items-center gap-1"
+          {/* Navigation Links */}
+          <nav className="p-2 rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xl backdrop-blur-xl space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveSection(item.id as any)}
+                  className={`w-full flex items-center justify-between p-3 rounded-2xl text-left font-bold transition-all text-xs group cursor-pointer ${
+                    isActive
+                      ? "bg-[#13538A] text-white shadow-md shadow-blue-900/20"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={`p-2 rounded-xl transition-colors shrink-0 ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:text-[#13538A] dark:group-hover:text-[#38bdf8]"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate leading-tight font-extrabold">{item.label}</p>
+                      <p
+                        className={`text-[10px] font-medium truncate mt-0.5 ${
+                          isActive ? "text-white/80" : "text-slate-400"
+                        }`}
                       >
-                        <FileText className="w-3.5 h-3.5" /> View Uploaded Document
-                      </a>
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-500/40 text-xs font-semibold px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50">
-                  🔓 Profile Editing Unlocked
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-amber-500/10 border-amber-500/40 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden mb-6">
-            <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                  <Lock className="w-8 h-8" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Aadhaar Verification Required (आधार कार्ड सत्यापन आवश्यक)</h3>
-                    <Badge className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">LOCKED</Badge>
+                        {item.sublabel}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1 max-w-xl font-medium">
-                    Profile updates are locked. Please upload your Aadhaar Card verification document image or PDF below to complete verification and unlock editing your profile details.
-                  </p>
+                  {item.badge && (
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] px-2 py-0.5 font-bold shrink-0 ml-2 border ${
+                        isActive
+                          ? "bg-white/20 text-white border-white/30"
+                          : item.badgeColor
+                      }`}
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Representative Office Widget (Bottom Sidebar) */}
+          <div className="p-4 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-[#13538A] text-white space-y-3 shadow-xl hidden lg:block">
+            <div className="flex items-center gap-3">
+              {voter.tenant?.representativePhoto ? (
+                <img
+                  src={getImageUrl(voter.tenant.representativePhoto)}
+                  alt="Representative"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white/30 shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <Landmark className="w-5 h-5 text-white" />
                 </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Representative Office</p>
+                <p className="font-extrabold text-xs truncate">
+                  {voter.tenant?.representativeName || "MLA / MP Office"}
+                </p>
+                <p className="text-[10px] text-white/75 truncate">{voter.tenant?.constituencyName}</p>
               </div>
+            </div>
 
-              <Button
-                onClick={() => setAadhaarModalOpen(true)}
-                className="bg-amber-600 hover:bg-amber-500 text-white font-bold gap-2 shadow-lg shadow-amber-600/20 rounded-2xl px-5 h-11 shrink-0"
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
+              <span className="text-white/70">Need assistance?</span>
+              <button
+                type="button"
+                onClick={() => setActiveSection("helplines")}
+                className="font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
               >
-                <ShieldCheck className="w-4 h-4" /> Upload Aadhaar Card
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+                <span>Helplines</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </aside>
 
-        {/* Profile Information Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Personal & Family Information */}
-          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <User className="w-4 h-4 text-[#13538A] dark:text-[#38bdf8]" /> Personal & Family Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-3.5">
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Full Name</span>
-                <span className="font-bold text-slate-900 dark:text-white">{voter.name}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Relative / Guardian</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {voter.relativeName || "Not specified"}{" "}
-                  {voter.relationType ? `(${voter.relationType === "F" ? "Father" : voter.relationType === "H" ? "Husband" : "Mother"})` : ""}
-                </span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Gender</span>
-                <span className="font-bold text-slate-900 dark:text-white">{voter.gender}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Age</span>
-                <span className="font-bold text-slate-900 dark:text-white">{voter.age ? `${voter.age} Years` : "N/A"}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Blood Group</span>
-                <span className="font-bold text-[#13538A] dark:text-[#38bdf8]">{voter.bloodGroup || "Not specified"}</span>
-              </div>
-              <div className="flex justify-between py-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Mobile Number</span>
-                <span className="font-bold text-[#13538A] dark:text-[#38bdf8] font-mono">{voter.phone || "Not linked"}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Card 2: Electoral & Location Details */}
-          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40">
-              <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#13538A] dark:text-[#38bdf8]" /> Electoral & Location Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-3.5">
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">House Number</span>
-                <span className="font-bold text-slate-900 dark:text-white">{voter.houseNo || "N/A"}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Address</span>
-                <span className="font-bold text-slate-900 dark:text-white text-right max-w-xs">{voter.address || "N/A"}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Locality / Area</span>
-                <span className="font-bold text-slate-900 dark:text-white">{voter.locality || voter.wardArea?.name || "N/A"}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Booth Number</span>
-                <span className="font-bold text-slate-900 dark:text-white">{voter.boothNo ? `Booth #${voter.boothNo}` : "N/A"}</span>
-              </div>
-              <div className="flex justify-between py-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Section Number</span>
-                <span className="font-bold text-slate-900 dark:text-white">{voter.sectionNo ? `Section #${voter.sectionNo}` : "N/A"}</span>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Mobile Horizontal Section Tabs (Quick Jump on small screens) */}
+        <div className="lg:hidden flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none w-full">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveSection(item.id as any)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                  isActive
+                    ? "bg-[#13538A] text-white shadow-md shadow-blue-900/20"
+                    : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Card 3: Family & Household Details (परिवार एवं घरेलू विवरण) */}
-        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
-          <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40 flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#13538A] dark:text-[#38bdf8]" />
-              <span>Family & Household Details (परिवार एवं घरेलू विवरण)</span>
-            </CardTitle>
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingPortalMember(null);
-                setPortalMemberForm(initialPortalMemberForm);
-                setPortalFamilyModalOpen(true);
-              }}
-              className="bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-xl font-bold text-xs gap-1.5 shadow-md"
-            >
-              <Plus className="w-4 h-4" /> Add Family Member
-            </Button>
-          </CardHeader>
+        {/* Right Main Content Area */}
+        <main className="flex-1 min-w-0 space-y-6">
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 1: OVERVIEW DASHBOARD */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          {activeSection === "overview" && (
+            <div className="space-y-6">
+              {/* Welcome Constituent Hero Banner */}
+              <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-blue-900 via-[#13538A] to-slate-900 text-white shadow-2xl relative overflow-hidden">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="space-y-2">
+                    <Badge className="bg-white/20 text-white border-white/30 text-xs font-bold px-3 py-1">
+                      Constituency Citizen Portal • {voter.tenant?.constituencyName || "Constituency"}
+                    </Badge>
+                    <h2 className="text-2xl md:text-3xl font-black tracking-tight">
+                      Welcome back, {voter.name}!
+                    </h2>
+                    <p className="text-xs md:text-sm text-blue-100 max-w-xl leading-relaxed">
+                      Manage your voter profile, file civic grievances directly with {voter.tenant?.representativeName || "your representative"}, explore welfare schemes, and access 24x7 emergency helplines.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setActiveSection("grievances");
+                        setActiveGrievanceTab("submit");
+                      }}
+                      className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold rounded-2xl h-11 px-5 shadow-lg shadow-amber-500/25 gap-2 cursor-pointer"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>File Grievance</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setActiveSection("schemes")}
+                      className="bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl h-11 px-5 border border-white/20 gap-2 cursor-pointer"
+                    >
+                      <Landmark className="w-4 h-4" />
+                      <span>Welfare Schemes</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4 Stat Cards Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* 1. Identity Verification */}
+                <div
+                  onClick={() => setActiveSection("verification")}
+                  className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Aadhaar Status</p>
+                  <p className="text-sm md:text-base font-black text-slate-900 dark:text-white mt-1">
+                    {isAadhaarVerified ? "Verified Citizen" : "Needs Action"}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {isAadhaarVerified ? "Profile unlocked" : "Tap to verify identity"}
+                  </p>
+                </div>
+
+                {/* 2. Civic Grievances */}
+                <div
+                  onClick={() => setActiveSection("grievances")}
+                  className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Grievances</p>
+                  <p className="text-sm md:text-base font-black text-slate-900 dark:text-white mt-1">
+                    {grievanceStats.total} Registered
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {grievanceStats.open} Open • {grievanceStats.resolved} Resolved
+                  </p>
+                </div>
+
+                {/* 3. Welfare Schemes */}
+                <div
+                  onClick={() => setActiveSection("schemes")}
+                  className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                      <Landmark className="w-5 h-5" />
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Welfare Schemes</p>
+                  <p className="text-sm md:text-base font-black text-slate-900 dark:text-white mt-1">
+                    {schemes.length} Available
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {myApplications.length} Applications filed
+                  </p>
+                </div>
+
+                {/* 4. Family Members */}
+                <div
+                  onClick={() => setActiveSection("family")}
+                  className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Household</p>
+                  <p className="text-sm md:text-base font-black text-slate-900 dark:text-white mt-1">
+                    {familyMembers.length} Members
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Manage family records
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Action Launchpad */}
+              <div className="p-6 rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xl space-y-4">
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Quick Citizen Services</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Jump directly to constituency features and applications</p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection("profile")}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 text-center transition-all flex flex-col items-center gap-2 group cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-[#13538A] dark:text-[#38bdf8] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">My Profile</p>
+                      <p className="text-[10px] text-slate-400">View Details</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection("verification")}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 text-center transition-all flex flex-col items-center gap-2 group cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Aadhaar</p>
+                      <p className="text-[10px] text-slate-400">{isAadhaarVerified ? "Verified" : "Upload Proof"}</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection("grievances");
+                      setActiveGrievanceTab("submit");
+                    }}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 text-center transition-all flex flex-col items-center gap-2 group cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Grievance</p>
+                      <p className="text-[10px] text-slate-400">Report Issue</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection("schemes")}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 text-center transition-all flex flex-col items-center gap-2 group cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Award className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Schemes</p>
+                      <p className="text-[10px] text-slate-400">Explore Benefits</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection("family")}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 text-center transition-all flex flex-col items-center gap-2 group cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Family</p>
+                      <p className="text-[10px] text-slate-400">Add Member</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection("helplines")}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 text-center transition-all flex flex-col items-center gap-2 group cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <PhoneCall className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Helplines</p>
+                      <p className="text-[10px] text-slate-400">Emergency 24x7</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Snapshot Grid: Recent Grievances & Emergency Contacts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Recent Grievance Activity */}
+                <div className="p-6 rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Recent Grievances</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSection("grievances");
+                        setActiveGrievanceTab("my_list");
+                      }}
+                      className="text-xs font-bold text-[#13538A] dark:text-[#38bdf8] hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span>View All</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {portalGrievances.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 p-4">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">No grievances submitted yet.</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          setActiveSection("grievances");
+                          setActiveGrievanceTab("submit");
+                        }}
+                        className="bg-[#13538A] text-white text-xs font-bold rounded-xl mt-2 h-8 px-3 cursor-pointer"
+                      >
+                        Report an Issue
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {portalGrievances.slice(0, 2).map((grv) => (
+                        <div
+                          key={grv.id}
+                          onClick={() => handleViewGrievanceDetail(grv)}
+                          className="p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:border-[#13538A] transition-all cursor-pointer flex items-center justify-between gap-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-black text-slate-900 dark:text-white">{grv.ticketNumber}</span>
+                              <Badge variant="outline" className="text-[10px] font-bold">{grv.category}</Badge>
+                            </div>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate mt-1">{grv.subject}</p>
+                          </div>
+                          <Badge className="text-[10px] font-extrabold uppercase px-2 py-0.5 shrink-0">
+                            {grv.status?.replace("_", " ")}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Emergency Contacts Preview */}
+                <div className="p-6 rounded-3xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <PhoneCall className="w-4 h-4 text-red-500 animate-pulse" />
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Emergency Helplines</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection("helplines")}
+                      className="text-xs font-bold text-[#13538A] dark:text-[#38bdf8] hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span>Directory</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <a
+                      href="tel:112"
+                      className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 hover:bg-red-100 flex items-center justify-between text-xs transition-colors"
+                    >
+                      <div>
+                        <p className="font-bold text-red-900 dark:text-red-200">National Emergency</p>
+                        <p className="text-[11px] text-red-700 dark:text-red-400 font-mono font-black">Dial 112</p>
+                      </div>
+                      <PhoneCall className="w-4 h-4 text-red-600" />
+                    </a>
+                    <a
+                      href="tel:108"
+                      className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 flex items-center justify-between text-xs transition-colors"
+                    >
+                      <div>
+                        <p className="font-bold text-blue-900 dark:text-blue-200">Ambulance Service</p>
+                        <p className="text-[11px] text-blue-700 dark:text-blue-400 font-mono font-black">Dial 108</p>
+                      </div>
+                      <PhoneCall className="w-4 h-4 text-[#13538A]" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 2: MY PROFILE & VOTER ID */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          {activeSection === "profile" && (
+            <div className="space-y-6">
+              {/* Verification Status Card */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="flex items-center space-x-5">
+                  {/* Avatar Frame with Upload Trigger */}
+                  <div className="relative group">
+                    <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-950 border-2 border-[#13538A]/40 overflow-hidden flex items-center justify-center relative shadow-md">
+                      {voter.photoUrl ? (
+                        <img src={getImageUrl(voter.photoUrl)} alt={voter.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-slate-400" />
+                      )}
+                      {uploadingPhoto && (
+                        <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <label
+                      htmlFor="photoUploadInput"
+                      className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-lg flex items-center justify-center cursor-pointer shadow-lg transition-transform hover:scale-110"
+                      title="Upload Profile Photo"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <input
+                        id="photoUploadInput"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{voter.name}</h2>
+                      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1 px-3 py-1 rounded-full text-xs font-bold">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Official Verified Record
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      EPIC ID: <span className="font-mono text-[#13538A] dark:text-[#38bdf8] font-bold tracking-wider">{voter.voterIdNumber}</span>
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Ward #{voter.ward?.wardNumber || "N/A"} - {voter.ward?.name || "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {isAadhaarVerified ? (
+                  <Button
+                    onClick={openEditProfileModal}
+                    className="bg-[#13538A] hover:bg-[#13538A]/90 text-white font-bold gap-2 shadow-lg shadow-[#13538A]/25 rounded-2xl px-5 h-11"
+                  >
+                    <Edit2 className="w-4 h-4" /> Edit Profile Details
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      setActiveSection("verification");
+                      setAadhaarModalOpen(true);
+                    }}
+                    className="bg-amber-600 hover:bg-amber-500 text-white font-bold gap-2 shadow-lg shadow-amber-600/25 rounded-2xl px-5 h-11"
+                  >
+                    <Lock className="w-4 h-4" /> Verify Aadhaar to Edit
+                  </Button>
+                )}
+              </div>
+
+              {/* Profile Information Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Card 1: Personal & Family Information */}
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
+                  <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40">
+                    <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <User className="w-4 h-4 text-[#13538A] dark:text-[#38bdf8]" /> Personal & Family Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-3.5">
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Full Name</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{voter.name}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Relative / Guardian</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {voter.relativeName || "Not specified"}{" "}
+                        {voter.relationType ? `(${voter.relationType === "F" ? "Father" : voter.relationType === "H" ? "Husband" : "Mother"})` : ""}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Gender</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{voter.gender}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Age</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{voter.age ? `${voter.age} Years` : "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Blood Group</span>
+                      <span className="font-bold text-[#13538A] dark:text-[#38bdf8]">{voter.bloodGroup || "Not specified"}</span>
+                    </div>
+                    <div className="flex justify-between py-2 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Mobile Number</span>
+                      <span className="font-bold text-[#13538A] dark:text-[#38bdf8] font-mono">{voter.phone || "Not linked"}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Card 2: Electoral & Location Details */}
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
+                  <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40">
+                    <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#13538A] dark:text-[#38bdf8]" /> Electoral & Location Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-3.5">
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">House Number</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{voter.houseNo || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Address</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-right max-w-xs">{voter.address || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Locality / Area</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{voter.locality || voter.wardArea?.name || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/60 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Booth Number</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{voter.boothNo ? `Booth #${voter.boothNo}` : "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between py-2 text-sm">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Section Number</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{voter.sectionNo ? `Section #${voter.sectionNo}` : "N/A"}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 3: AADHAAR IDENTITY VERIFICATION */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          {activeSection === "verification" && (
+            <div className="space-y-6">
+              {/* ─── Aadhaar Identity Verification Banner Card ─── */}
+              {isAadhaarVerified ? (
+                <Card className="bg-gradient-to-r from-emerald-900/10 via-emerald-500/5 to-teal-900/10 border-emerald-500/30 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden mb-6">
+                  <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                        <ShieldCheck className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Aadhaar Identity Verified</h3>
+                          <Badge className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">VERIFIED</Badge>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 flex items-center gap-2">
+                          {verificationInfo?.aadhaarNumber ? (
+                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                              Aadhaar: {verificationInfo.aadhaarNumber}
+                            </span>
+                          ) : (
+                            <span>Aadhaar Verification Document Uploaded</span>
+                          )}
+                          {verificationInfo?.documentUrl && (
+                            <a
+                              href={getImageUrl(verificationInfo.documentUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-bold text-[#13538A] dark:text-[#38bdf8] underline hover:opacity-80 flex items-center gap-1"
+                            >
+                              <FileText className="w-3.5 h-3.5" /> View Uploaded Document
+                            </a>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-500/40 text-xs font-semibold px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50">
+                        🔓 Profile Editing Unlocked
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-amber-500/10 border-amber-500/40 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden mb-6">
+                  <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                        <Lock className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Aadhaar Verification Required</h3>
+                          <Badge className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">LOCKED</Badge>
+                        </div>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-1 max-w-xl font-medium">
+                          Profile updates are locked. Please upload your Aadhaar Card verification document image or PDF below to complete verification and unlock editing your profile details.
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => setAadhaarModalOpen(true)}
+                      className="bg-amber-600 hover:bg-amber-500 text-white font-bold gap-2 shadow-lg shadow-amber-600/20 rounded-2xl px-5 h-11 shrink-0"
+                    >
+                      <ShieldCheck className="w-4 h-4" /> Upload Aadhaar Card
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 4: FAMILY & HOUSEHOLD */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          {activeSection === "family" && (
+            /* Card 3: Family & Household Details */
+            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40 flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-[#13538A] dark:text-[#38bdf8]" />
+                  <span>Family & Household Details</span>
+                </CardTitle>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingPortalMember(null);
+                    setPortalMemberForm(initialPortalMemberForm);
+                    setPortalFamilyModalOpen(true);
+                  }}
+                  className="bg-[#13538A] hover:bg-[#13538A]/90 text-white rounded-xl font-bold text-xs gap-1.5 shadow-md"
+                >
+                  <Plus className="w-4 h-4" /> Add Family Member
+                </Button>
+              </CardHeader>
 
           <CardContent className="p-6 space-y-4">
             {loadingFamily ? (
@@ -1978,8 +2809,13 @@ export default function VoterPortalPage() {
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Card 4: Welfare & Government Schemes (सरकारी एवं जन कल्याणकारी योजनाएं) */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {/* SECTION 5: WELFARE & SCHEMES */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {activeSection === "schemes" && (
+        /* Card 4: Welfare & Government Schemes */
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
           <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-gradient-to-r from-blue-50/50 via-slate-50/50 to-indigo-50/50 dark:from-slate-950/60 dark:via-slate-900/60 dark:to-slate-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -1987,7 +2823,7 @@ export default function VoterPortalPage() {
                 <div className="p-2 rounded-xl bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8]">
                   <Award className="w-5 h-5" />
                 </div>
-                <span>Welfare & Government Schemes (सरकारी एवं जन कल्याणकारी योजनाएं)</span>
+                <span>Welfare & Government Schemes</span>
                 <Badge className="bg-[#13538A] text-white text-xs px-2 py-0.5 rounded-full font-bold">
                   {schemes.length} Active
                 </Badge>
@@ -2058,9 +2894,9 @@ export default function VoterPortalPage() {
                     </span>
                     {[
                       { id: "all", label: "All Schemes" },
-                      { id: "CENTRAL", label: "Central (केंद्रीय)" },
-                      { id: "STATE", label: "State (राज्यीय)" },
-                      { id: "LOCAL", label: "Local (क्षेत्रीय)" },
+                      { id: "CENTRAL", label: "Central Government" },
+                      { id: "STATE", label: "State Government" },
+                      { id: "LOCAL", label: "Local / Municipal" },
                     ].map((lvl) => (
                       <button
                         key={lvl.id}
@@ -2162,7 +2998,7 @@ export default function VoterPortalPage() {
                               </div>
                               <div className="space-y-0.5">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 block">
-                                  Key Benefits (योजना के मुख्य लाभ)
+                                  Key Benefits
                                 </span>
                                 <p className="text-xs text-emerald-900 dark:text-emerald-200 font-medium line-clamp-2">
                                   {s.benefits}
@@ -2349,8 +3185,13 @@ export default function VoterPortalPage() {
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* ─── Card 4: Constituency Helplines & Emergency Services (आपातकालीन एवं नागरिक हेल्पलाइन) ─── */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {/* SECTION 6: CONSTITUENCY HELPLINES & EMERGENCY SERVICES */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {activeSection === "helplines" && (
+        /* Constituency Helplines & Emergency Services */
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl rounded-3xl overflow-hidden">
           <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 py-4 px-6 bg-slate-50/50 dark:bg-slate-950/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -2538,7 +3379,621 @@ export default function VoterPortalPage() {
             )}
           </CardContent>
         </Card>
-      </main>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════════ */}
+      {/* SECTION 7: CONSTITUENCY GRIEVANCE & CITIZEN REQUESTS */}
+      {/* ══════════════════════════════════════════════════════════════════════════ */}
+      {activeSection === "grievances" && (
+        /* CARD 6: Constituency Grievance & Citizen Requests */
+        <Card className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden">
+          <CardHeader className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800/80 bg-gradient-to-r from-amber-500/[0.04] via-orange-500/[0.02] to-transparent">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/25 shrink-0">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CardTitle className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      Constituency Grievance & Citizen Redressal
+                    </CardTitle>
+                    <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800 text-[10px] font-bold">
+                      Direct Redressal
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    Submit civic issues directly to your MLA/MP constituency office with official ticket tracking and SLA resolution.
+                  </CardDescription>
+                </div>
+              </div>
+
+              {/* Quick Counter Badges */}
+              <div className="flex items-center gap-2 flex-wrap self-start md:self-auto">
+                <div className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Total: <span className="font-extrabold text-slate-900 dark:text-white ml-1">{grievanceStats.total}</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs font-bold text-blue-700 dark:text-blue-300">
+                  Open: <span className="font-extrabold ml-1">{grievanceStats.open}</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-700 dark:text-amber-300">
+                  In Progress: <span className="font-extrabold ml-1">{grievanceStats.inProgress}</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                  Resolved: <span className="font-extrabold ml-1">{grievanceStats.resolved}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
+              <button
+                type="button"
+                onClick={() => setActiveGrievanceTab("submit")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeGrievanceTab === "submit"
+                    ? "bg-[#13538A] text-white shadow-md shadow-blue-900/20"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Submit Grievance</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveGrievanceTab("my_list");
+                  fetchMyGrievances();
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all relative ${
+                  activeGrievanceTab === "my_list"
+                    ? "bg-[#13538A] text-white shadow-md shadow-blue-900/20"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>My Grievance Status</span>
+                {portalGrievances.length > 0 && (
+                  <span
+                    className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                      activeGrievanceTab === "my_list"
+                        ? "bg-white/20 text-white"
+                        : "bg-amber-500 text-white"
+                    }`}
+                  >
+                    {portalGrievances.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-6 md:p-8">
+            {activeGrievanceTab === "submit" ? (
+              // SUBMIT GRIEVANCE FORM
+              <form onSubmit={handleSubmitGrievance} className="space-y-6">
+                {/* Routing Banner */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-indigo-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border border-blue-200/60 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <ShieldCheck className="w-5 h-5 text-[#13538A] dark:text-[#38bdf8] shrink-0" />
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">
+                        Constituent Routing:{" "}
+                        <span className="text-[#13538A] dark:text-[#38bdf8]">
+                          {voter?.ward?.name ? `Ward No. ${voter.ward.wardNumber} - ${voter.ward.name}` : "Constituency Main Division"}
+                        </span>
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                        Complainant: <span className="font-semibold text-slate-700 dark:text-slate-300">{voter?.name}</span> ({voter?.voterIdNumber}) • Phone: {voter?.phone || "Associated Registered Mobile"}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-white/80 dark:bg-slate-900 border-slate-300 dark:border-slate-700 self-start sm:self-auto text-[11px] font-semibold">
+                    <Clock className="w-3 h-3 mr-1 text-amber-500" /> SLA Guaranteed
+                  </Badge>
+                </div>
+
+                {/* Category Selection */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                    <span>Select Grievance Category *</span>
+                  </Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                    {grievanceMeta.categories.map((cat: any) => {
+                      const isSelected = grvCategory === cat.label || grvCategory === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setGrvCategory(cat.label);
+                            setGrvSubcategory("");
+                          }}
+                          className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between h-20 ${
+                            isSelected
+                              ? "bg-[#13538A]/10 border-[#13538A] dark:bg-[#13538A]/25 dark:border-[#38bdf8] shadow-sm ring-1 ring-[#13538A]"
+                              : "bg-slate-50/70 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="p-1 rounded-lg bg-white dark:bg-slate-900 shadow-xs border border-slate-200/60 dark:border-slate-800">
+                              {cat.icon === "Road" && <MapPin className="w-3.5 h-3.5 text-amber-500" />}
+                              {cat.icon === "Droplets" && <Droplets className="w-3.5 h-3.5 text-blue-500" />}
+                              {cat.icon === "Zap" && <Zap className="w-3.5 h-3.5 text-yellow-500" />}
+                              {cat.icon === "Trash2" && <Trash2 className="w-3.5 h-3.5 text-emerald-500" />}
+                              {cat.icon === "Waves" && <Waves className="w-3.5 h-3.5 text-cyan-500" />}
+                              {cat.icon === "Lightbulb" && <Lightbulb className="w-3.5 h-3.5 text-amber-400" />}
+                              {cat.icon === "HeartPulse" && <HeartPulse className="w-3.5 h-3.5 text-rose-500" />}
+                              {cat.icon === "GraduationCap" && <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />}
+                              {cat.icon === "Trees" && <Trees className="w-3.5 h-3.5 text-emerald-600" />}
+                              {cat.icon === "ShieldAlert" && <ShieldAlert className="w-3.5 h-3.5 text-red-500" />}
+                              {cat.icon === "HelpCircle" && <HelpCircle className="w-3.5 h-3.5 text-slate-400" />}
+                            </span>
+                            {isSelected && <Check className="w-4 h-4 text-[#13538A] dark:text-[#38bdf8]" />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-slate-800 dark:text-slate-200 line-clamp-2">{cat.label}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Subcategory Pills (if category selected) */}
+                {grvCategory && (() => {
+                  const selectedCatObj = grievanceMeta.categories.find(
+                    (c: any) => c.label === grvCategory || c.id === grvCategory
+                  );
+                  if (!selectedCatObj?.subcategories?.length) return null;
+                  return (
+                    <div className="space-y-1.5 p-3 rounded-2xl bg-slate-50/60 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800/60">
+                      <Label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        Common Issue Types / Sub-categories:
+                      </Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedCatObj.subcategories.map((sub: string) => (
+                          <button
+                            key={sub}
+                            type="button"
+                            onClick={() => setGrvSubcategory(grvSubcategory === sub ? "" : sub)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                              grvSubcategory === sub
+                                ? "bg-[#13538A] text-white shadow-xs"
+                                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            }`}
+                          >
+                            {sub}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Subject & Priority row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2 space-y-2">
+                    <Label htmlFor="grvSubject" className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      Issue Title / Subject *
+                    </Label>
+                    <Input
+                      id="grvSubject"
+                      placeholder="e.g. Severely damaged road with waterlogging near Community Center"
+                      value={grvSubject}
+                      onChange={(e) => setGrvSubject(e.target.value)}
+                      className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-xs font-medium"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="grvPriority" className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      Priority
+                    </Label>
+                    <Select value={grvPriority} onValueChange={(val) => setGrvPriority(val)}>
+                      <SelectTrigger id="grvPriority" className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-xs">
+                        <SelectValue placeholder="Select Priority" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
+                        <SelectItem value="LOW">🟢 Low Priority</SelectItem>
+                        <SelectItem value="MEDIUM">🔵 Medium Priority</SelectItem>
+                        <SelectItem value="HIGH">🟠 High Priority</SelectItem>
+                        <SelectItem value="URGENT">🔴 Urgent Priority</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Department & Location */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="grvDept" className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      Concerned Department (Optional)
+                    </Label>
+                    <Select value={grvDepartmentId} onValueChange={(val) => setGrvDepartmentId(val)}>
+                      <SelectTrigger id="grvDept" className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-xs">
+                        <SelectValue placeholder="Automatic Assignment or Select Department" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
+                        <SelectItem value="AUTO_ROUTING">Office Auto-Routing</SelectItem>
+                        {grievanceMeta.departments.map((d: any) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name} ({d.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="grvLoc" className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      Specific Location / Landmark
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="grvLoc"
+                        placeholder="e.g. Near Shiv Mandir, Main Market Street, Ward 4"
+                        value={grvLocation}
+                        onChange={(e) => setGrvLocation(e.target.value)}
+                        className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-xs pr-20"
+                      />
+                      {voter?.address && !grvLocation && (
+                        <button
+                          type="button"
+                          onClick={() => setGrvLocation(voter.address)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#13538A] dark:text-[#38bdf8] bg-blue-50 dark:bg-blue-950/60 px-2 py-1 rounded-md hover:underline"
+                        >
+                          Use Address
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="grvDesc" className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      Detailed Issue Description *
+                    </Label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {grvDescription.length} characters
+                    </span>
+                  </div>
+                  <Textarea
+                    id="grvDesc"
+                    rows={4}
+                    placeholder="Describe the issue clearly: how long it has persisted, exact location, impact on residents, and any prior complaints made..."
+                    value={grvDescription}
+                    onChange={(e) => setGrvDescription(e.target.value)}
+                    className="rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-xs font-normal leading-relaxed resize-none p-3.5"
+                    required
+                  />
+                </div>
+
+                {/* Evidence & Photo Upload */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center justify-between">
+                    <span>Evidence Photos / Documents</span>
+                    <span className="text-[11px] font-normal text-slate-400">Max 10 MB per file</span>
+                  </Label>
+
+                  {/* Thumbnail Previews */}
+                  {grvAttachments.length > 0 && (
+                    <div className="flex flex-wrap gap-3 p-3 rounded-2xl bg-slate-50/60 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800">
+                      {grvAttachments.map((att: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="relative group w-24 h-24 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center shadow-xs"
+                        >
+                          {att.fileType?.startsWith("image") || att.fileUrl.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                            <img
+                              src={getImageUrl(att.fileUrl)}
+                              alt={att.fileName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-center p-2">
+                              <FileText className="w-6 h-6 mx-auto text-[#13538A]" />
+                              <p className="text-[9px] font-medium text-slate-500 line-clamp-1 mt-1">{att.fileName}</p>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveGrvAttachment(idx)}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 shadow-sm"
+                            title="Remove attachment"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload input button */}
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold cursor-pointer transition-colors shadow-xs">
+                      {uploadingGrvFile ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-[#13538A]" />
+                          <span>Uploading Evidence...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Paperclip className="w-4 h-4 text-[#13538A]" />
+                          <span>Add Photo / Document Evidence</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleUploadGrvAttachment}
+                        disabled={uploadingGrvFile}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[11px] text-slate-400">
+                      Attach photo of pothole, water leak, damaged light, or written letter.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Submit button bar */}
+                <div className="pt-4 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Your grievance is recorded directly in the official MP/MLA Constituency Registry.</span>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={submittingGrievance || !grvSubject.trim() || !grvCategory || !grvDescription.trim()}
+                    className="bg-gradient-to-r from-[#13538A] to-[#0d3b63] hover:from-[#0d3b63] hover:to-[#082640] text-white font-extrabold h-12 px-8 rounded-2xl shadow-lg shadow-blue-900/25 flex items-center justify-center gap-2"
+                  >
+                    {submittingGrievance ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Registering Grievance...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Submit Grievance</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              // MY GRIEVANCES TRACKER
+              <div className="space-y-6">
+                {/* Search & Filter Header */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      placeholder="Search by ticket number, category, or keyword..."
+                      value={grievanceSearch}
+                      onChange={(e) => setGrievanceSearch(e.target.value)}
+                      className="pl-9 h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                    />
+                  </div>
+
+                  {/* Filter Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                    {["ALL", "OPEN", "IN_PROGRESS", "RESOLVED", "REJECTED"].map((st) => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setGrievanceStatusFilter(st)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                          grievanceStatusFilter === st
+                            ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                        }`}
+                      >
+                        {st === "ALL" && "All Status"}
+                        {st === "OPEN" && "Open"}
+                        {st === "IN_PROGRESS" && "In Progress"}
+                        {st === "RESOLVED" && "Resolved"}
+                        {st === "REJECTED" && "Rejected"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grievances List */}
+                {loadingGrievances ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#13538A]" />
+                  </div>
+                ) : portalGrievances.length === 0 ? (
+                  <div className="text-center py-16 border border-dashed rounded-3xl bg-slate-50/50 dark:bg-slate-950/40 p-6 space-y-3">
+                    <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 mx-auto flex items-center justify-center">
+                      <AlertTriangle className="w-7 h-7" />
+                    </div>
+                    <h4 className="font-extrabold text-base text-slate-800 dark:text-slate-200">
+                      No Grievances Submitted Yet
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                      If you are experiencing any issue regarding roads, clean water, electricity, drainage, sanitation, or safety in your ward, please click below to submit your grievance directly.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => setActiveGrievanceTab("submit")}
+                      className="bg-[#13538A] text-white text-xs font-bold rounded-xl h-10 px-5 mt-2"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1.5" /> Submit First Grievance
+                    </Button>
+                  </div>
+                ) : (() => {
+                  const filtered = portalGrievances.filter((item) => {
+                    if (grievanceStatusFilter !== "ALL" && item.status !== grievanceStatusFilter) {
+                      return false;
+                    }
+                    if (grievanceSearch.trim()) {
+                      const q = grievanceSearch.toLowerCase();
+                      const matchTicket = item.ticketNumber?.toLowerCase().includes(q);
+                      const matchSubj = item.subject?.toLowerCase().includes(q);
+                      const matchCat = item.category?.toLowerCase().includes(q);
+                      const matchDesc = item.description?.toLowerCase().includes(q);
+                      if (!matchTicket && !matchSubj && !matchCat && !matchDesc) return false;
+                    }
+                    return true;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-12 border border-dashed rounded-2xl bg-slate-50/50 dark:bg-slate-950/40">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          No grievances found matching the current filters.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3.5">
+                      {filtered.map((grv) => {
+                        const statusColors: Record<string, string> = {
+                          OPEN: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800",
+                          IN_PROGRESS: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
+                          ESCALATED: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800",
+                          RESOLVED: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
+                          CLOSED: "bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+                          REJECTED: "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800",
+                        };
+
+                        const priorityColors: Record<string, string> = {
+                          LOW: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300",
+                          MEDIUM: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300",
+                          HIGH: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300",
+                          URGENT: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 font-extrabold",
+                        };
+
+                        return (
+                          <div
+                            key={grv.id}
+                            className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs space-y-3"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                              {/* Ticket and category */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                                  <span className="font-mono font-black text-xs text-slate-900 dark:text-white">
+                                    {grv.ticketNumber}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyTicket(grv.ticketNumber)}
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-1"
+                                    title="Copy Ticket Number"
+                                  >
+                                    {copiedTicketNumber === grv.ticketNumber ? (
+                                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+
+                                <Badge variant="outline" className="text-xs font-bold bg-slate-50 dark:bg-slate-950">
+                                  {grv.category}
+                                </Badge>
+
+                                {grv.subcategory && (
+                                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                    • {grv.subcategory}
+                                  </span>
+                                )}
+
+                                <Badge className={`text-[10px] font-bold border ${priorityColors[grv.priority] || priorityColors.MEDIUM}`}>
+                                  {grv.priority}
+                                </Badge>
+                              </div>
+
+                              {/* Status Badge */}
+                              <div className="self-start sm:self-auto">
+                                <Badge className={`text-xs font-black uppercase tracking-wider border px-3 py-1 ${statusColors[grv.status] || statusColors.OPEN}`}>
+                                  {grv.status?.replace("_", " ")}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            {/* Subject & Description */}
+                            <div>
+                              <h4 className="font-bold text-sm text-slate-900 dark:text-white leading-snug">
+                                {grv.subject}
+                              </h4>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                                {grv.description}
+                              </p>
+                            </div>
+
+                            {/* Resolution Notes preview if resolved */}
+                            {grv.resolutionNotes && (
+                              <div className="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-300">
+                                <span className="font-bold flex items-center gap-1 mb-0.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Resolution Note:
+                                </span>
+                                <span>{grv.resolutionNotes}</span>
+                              </div>
+                            )}
+
+                            {/* Footer Info & Details Button */}
+                            <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                              <div className="flex items-center gap-3 flex-wrap text-[11px]">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                  Filed on {new Date(grv.createdAt).toLocaleDateString()}
+                                </span>
+                                {grv.ward && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                    Ward {grv.ward.wardNumber} ({grv.ward.name})
+                                  </span>
+                                )}
+                                {grv.department && (
+                                  <span className="flex items-center gap-1">
+                                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                                    {grv.department.name}
+                                  </span>
+                                )}
+                                {grv.attachments?.length > 0 && (
+                                  <span className="flex items-center gap-1 text-[#13538A] dark:text-[#38bdf8] font-bold">
+                                    <Paperclip className="w-3.5 h-3.5" />
+                                    {grv.attachments.length} file(s)
+                                  </span>
+                                )}
+                              </div>
+
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewGrievanceDetail(grv)}
+                                className="rounded-xl h-8 text-xs font-bold text-[#13538A] dark:text-[#38bdf8] border-[#13538A]/30 hover:bg-[#13538A]/10 self-end sm:self-auto"
+                              >
+                                <span>View Status & Timeline</span>
+                                <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </main>
+  </div>
 
       {/* Mandatory Security Setup Modal */}
       <Dialog open={forcePasswordChange} onOpenChange={() => {}}>
@@ -2928,23 +4383,23 @@ export default function VoterPortalPage() {
                     <SelectValue placeholder="Relation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SPOUSE">Spouse (पति/पत्नी)</SelectItem>
-                    <SelectItem value="SON">Son (पुत्र)</SelectItem>
-                    <SelectItem value="DAUGHTER">Daughter (पुत्री)</SelectItem>
-                    <SelectItem value="FATHER">Father (पिता)</SelectItem>
-                    <SelectItem value="MOTHER">Mother (माता)</SelectItem>
-                    <SelectItem value="BROTHER">Brother (भाई)</SelectItem>
-                    <SelectItem value="SISTER">Sister (बहन)</SelectItem>
-                    <SelectItem value="GRANDFATHER">Grandfather (दादा/नाना)</SelectItem>
-                    <SelectItem value="GRANDMOTHER">Grandmother (दादी/नानी)</SelectItem>
-                    <SelectItem value="GRANDSON">Grandson (पोता/नाती)</SelectItem>
-                    <SelectItem value="GRANDDAUGHTER">Granddaughter (पोती/नातिन)</SelectItem>
-                    <SelectItem value="UNCLE">Uncle (चाचा/ताऊ/मामा)</SelectItem>
-                    <SelectItem value="AUNT">Aunt (चाची/ताई/मामी)</SelectItem>
-                    <SelectItem value="NEPHEW">Nephew (भतीजा/भांजा)</SelectItem>
-                    <SelectItem value="NIECE">Niece (भतीजी/भांजी)</SelectItem>
-                    <SelectItem value="DEPENDENT">Dependent (अाश्रित)</SelectItem>
-                    <SelectItem value="OTHER">Other (अन्य)</SelectItem>
+                    <SelectItem value="SPOUSE">Spouse</SelectItem>
+                    <SelectItem value="SON">Son</SelectItem>
+                    <SelectItem value="DAUGHTER">Daughter</SelectItem>
+                    <SelectItem value="FATHER">Father</SelectItem>
+                    <SelectItem value="MOTHER">Mother</SelectItem>
+                    <SelectItem value="BROTHER">Brother</SelectItem>
+                    <SelectItem value="SISTER">Sister</SelectItem>
+                    <SelectItem value="GRANDFATHER">Grandfather</SelectItem>
+                    <SelectItem value="GRANDMOTHER">Grandmother</SelectItem>
+                    <SelectItem value="GRANDSON">Grandson</SelectItem>
+                    <SelectItem value="GRANDDAUGHTER">Granddaughter</SelectItem>
+                    <SelectItem value="UNCLE">Uncle</SelectItem>
+                    <SelectItem value="AUNT">Aunt</SelectItem>
+                    <SelectItem value="NEPHEW">Nephew</SelectItem>
+                    <SelectItem value="NIECE">Niece</SelectItem>
+                    <SelectItem value="DEPENDENT">Dependent</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -3208,7 +4663,7 @@ export default function VoterPortalPage() {
               <div className="p-2.5 rounded-xl bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8]">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <span>Aadhaar Identity Verification (आधार पहचान पत्र)</span>
+              <span>Aadhaar Identity Verification</span>
             </DialogTitle>
             <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">
               Upload your official Aadhaar Card document image or PDF to verify your identity and unlock profile editing.
@@ -3321,7 +4776,7 @@ export default function VoterPortalPage() {
                   <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 space-y-1.5">
                     <h5 className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
                       <IndianRupee className="w-4 h-4 text-emerald-600" />
-                      <span>Key Financial & Social Benefits (योजना के लाभ)</span>
+                      <span>Key Financial & Social Benefits</span>
                     </h5>
                     <p className="text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
                       {selectedSchemeForDetail.benefits}
@@ -3334,7 +4789,7 @@ export default function VoterPortalPage() {
                   <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 space-y-1.5">
                     <h5 className="font-bold text-[#13538A] dark:text-[#38bdf8] flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-[#13538A]" />
-                      <span>Eligibility Criteria (पात्रता मानदंड)</span>
+                      <span>Eligibility Criteria</span>
                     </h5>
                     <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
                       {selectedSchemeForDetail.eligibility}
@@ -3347,7 +4802,7 @@ export default function VoterPortalPage() {
                   <div className="space-y-1.5">
                     <h5 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs uppercase tracking-wider text-slate-500">
                       <FileText className="w-4 h-4 text-[#13538A]" />
-                      <span>Required Documents (आवश्यक दस्तावेज)</span>
+                      <span>Required Documents</span>
                     </h5>
                     <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
                       {Array.isArray(selectedSchemeForDetail.requiredDocuments) ? (
@@ -3453,7 +4908,7 @@ export default function VoterPortalPage() {
                     >
                       <div className="flex items-center gap-2 font-bold text-xs">
                         <User className="w-4 h-4 text-[#13538A]" />
-                        <span>Self (खुद के लिए)</span>
+                        <span>Self</span>
                       </div>
                       <span className="text-[11px] text-slate-500 block mt-1 truncate">
                         {voter?.name}
@@ -3546,6 +5001,204 @@ export default function VoterPortalPage() {
               </DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Grievance Detail & Live Timeline Stepper Modal */}
+      <Dialog open={grievanceDetailOpen} onOpenChange={setGrievanceDetailOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl p-6 md:p-8">
+          <DialogHeader>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-xl bg-[#13538A]/10 text-[#13538A] dark:text-[#38bdf8] font-mono font-black text-xs border border-[#13538A]/20">
+                  {selectedGrievanceForDetail?.ticketNumber}
+                </span>
+                <Badge variant="outline" className="text-xs font-bold">
+                  {selectedGrievanceForDetail?.category}
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Badge className="text-xs font-extrabold uppercase px-2.5 py-0.5">
+                  {selectedGrievanceForDetail?.status?.replace("_", " ")}
+                </Badge>
+              </div>
+            </div>
+
+            <DialogTitle className="text-lg md:text-xl font-black text-slate-900 dark:text-white mt-3 text-left">
+              {selectedGrievanceForDetail?.subject}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 text-left">
+              Registered via Voter Portal • Official Constituency Public Redressal Tracking
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingGrievanceDetail ? (
+            <div className="py-16 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#13538A]" />
+            </div>
+          ) : selectedGrievanceForDetail ? (
+            <div className="space-y-6 py-2">
+              {/* Grievance Meta Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 text-xs">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Ward</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                    {selectedGrievanceForDetail.ward?.wardNumber ? `Ward ${selectedGrievanceForDetail.ward.wardNumber}` : "Main"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Priority</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                    {selectedGrievanceForDetail.priority}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Department</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5 line-clamp-1">
+                    {selectedGrievanceForDetail.department?.name || "Constituency Cell"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Date Filed</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                    {new Date(selectedGrievanceForDetail.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Description & Location */}
+              <div className="space-y-2">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Grievance Description
+                </h5>
+                <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 text-xs leading-relaxed text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+                  {selectedGrievanceForDetail.description}
+                </div>
+              </div>
+
+              {selectedGrievanceForDetail.locationAddress && (
+                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+                  <MapPin className="w-4 h-4 text-[#13538A] shrink-0" />
+                  <span>
+                    <strong className="text-slate-800 dark:text-slate-200">Reported Landmark:</strong> {selectedGrievanceForDetail.locationAddress}
+                  </span>
+                </div>
+              )}
+
+              {/* Resolution Notes (if available) */}
+              {selectedGrievanceForDetail.resolutionNotes && (
+                <div className="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-1.5">
+                  <h5 className="font-bold text-xs text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Resolution Summary & Action Taken</span>
+                  </h5>
+                  <p className="text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
+                    {selectedGrievanceForDetail.resolutionNotes}
+                  </p>
+                </div>
+              )}
+
+              {/* Attachments */}
+              {selectedGrievanceForDetail.attachments?.length > 0 && (
+                <div className="space-y-2">
+                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span>Attached Evidence ({selectedGrievanceForDetail.attachments.length})</span>
+                  </h5>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {selectedGrievanceForDetail.attachments.map((att: any) => (
+                      <a
+                        key={att.id}
+                        href={getImageUrl(att.fileUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-[#13538A] transition-all flex items-center gap-2.5"
+                      >
+                        {att.fileType?.startsWith("image") || att.fileUrl.match(/\.(jpg|jpeg|png|webp)$/i) ? (
+                          <img
+                            src={getImageUrl(att.fileUrl)}
+                            alt={att.fileName}
+                            className="w-10 h-10 object-cover rounded-lg shrink-0"
+                          />
+                        ) : (
+                          <FileText className="w-8 h-8 text-[#13538A] shrink-0" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1 group-hover:text-[#13538A]">
+                            {att.fileName}
+                          </p>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
+                            Open <ExternalLink className="w-2.5 h-2.5" />
+                          </span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Official Timeline Stepper */}
+              <div className="space-y-3 pt-2">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-[#13538A]" />
+                  <span>Official Activity & Status Timeline</span>
+                </h5>
+
+                <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-950/40">
+                  {selectedGrievanceForDetail.timeline?.length > 0 ? (
+                    <div className="space-y-4 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+                      {selectedGrievanceForDetail.timeline.map((event: any, idx: number) => (
+                        <div key={event.id || idx} className="flex items-start gap-3 relative">
+                          <div className="w-6 h-6 rounded-full bg-white dark:bg-slate-900 border-2 border-[#13538A] dark:border-[#38bdf8] flex items-center justify-center shrink-0 z-10 shadow-xs">
+                            <div className="w-2 h-2 rounded-full bg-[#13538A] dark:bg-[#38bdf8]" />
+                          </div>
+                          <div className="min-w-0 flex-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 text-xs space-y-1">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span className="font-extrabold text-slate-900 dark:text-white">
+                                {event.action === "CREATED" && "Grievance Registered"}
+                                {event.action === "STATUS_CHANGE" && `Status Updated: ${event.toStatus || ""}`}
+                                {event.action === "ASSIGNED" && "Assigned to Department / Officer"}
+                                {event.action === "RESOLVED" && "Grievance Resolved"}
+                                {event.action === "CLOSED" && "Ticket Closed"}
+                                {!["CREATED", "STATUS_CHANGE", "ASSIGNED", "RESOLVED", "CLOSED"].includes(event.action) && event.action}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {new Date(event.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            {event.comment && (
+                              <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+                                {event.comment}
+                              </p>
+                            )}
+                            {event.changedBy && (
+                              <p className="text-[10px] text-slate-400 italic">
+                                Action taken by: {event.changedBy}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 text-center py-2">No timeline entries recorded yet.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setGrievanceDetailOpen(false)}
+              className="rounded-xl w-full sm:w-auto"
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
