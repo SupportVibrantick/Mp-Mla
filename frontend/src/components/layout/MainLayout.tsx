@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSystemSettings } from "@/contexts/SettingsContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { TenantLiveChatWidget } from "@/components/support/TenantLiveChatWidget";
 
 export type { BreadcrumbItem };
 
@@ -51,6 +52,9 @@ export function MainLayout({
           © {new Date().getFullYear()} {settings.brand_footer_text || "Vibrantick Infotech Solutions"}. All rights reserved.
         </footer>
       </div>
+
+      {/* Floating Real-Time Support Chat with Super Admin */}
+      <TenantLiveChatWidget />
     </div>
   );
 }

@@ -39,3 +39,5 @@ export function getImageUrl(path: string | null | undefined): string {
 
   return `${backendOrigin}${cleanPath}`;
 }
+
+export const getFileUrl = getImageUrl;

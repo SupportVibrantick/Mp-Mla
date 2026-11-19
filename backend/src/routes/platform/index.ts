@@ -8,6 +8,7 @@ import dashboardRoutes from "./dashboard/index.js";
 import settingsRoutes from "./settings/index.js";
 import usersRoutes from "./users/index.js";
 import backupRoutes from "./backups/index.js";
+import supportChatRoutes from "./supportChat/index.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/dashboard", dashboardRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/users", usersRoutes);
 router.use("/backups", backupRoutes);
+router.use("/support-chat", supportChatRoutes);
 
 export default router;

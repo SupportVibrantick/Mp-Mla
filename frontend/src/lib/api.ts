@@ -755,3 +755,31 @@ export const volunteerApi = {
   getMyActivity: () => api.get("/admin/volunteers/me/activity"),
   registerVoter: (data: any) => api.post("/admin/volunteers/me/voters", data),
 };
+
+export const tenantSupportApi = {
+  getActive: () => api.get("/admin/support-chat/active"),
+  listConversations: () => api.get("/admin/support-chat/conversations"),
+  createConversation: (data: {
+    subject?: string;
+    category?: string;
+    priority?: string;
+    message: string;
+    attachments?: any[];
+  }) => api.post("/admin/support-chat/conversations", data),
+  getMessages: (conversationId: string) =>
+    api.get(`/admin/support-chat/conversations/${conversationId}/messages`),
+  sendMessage: (conversationId: string, data: { message: string; attachments?: any[] }) =>
+    api.post(`/admin/support-chat/conversations/${conversationId}/messages`, data),
+  markAsRead: (conversationId: string) =>
+    api.post(`/admin/support-chat/conversations/${conversationId}/read`),
+  resolveConversation: (conversationId: string) =>
+    api.patch(`/admin/support-chat/conversations/${conversationId}/resolve`),
+  uploadAttachment: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/admin/support-chat/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+};
+

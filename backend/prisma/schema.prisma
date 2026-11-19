@@ -440,6 +440,7 @@ model Tenant {
   helplineContacts           HelplineContact[]
   wardVolunteerAssignments   WardVolunteerAssignment[]
   volunteerVoterSubmissions  VolunteerVoterSubmission[]
+  supportConversations       SupportConversation[]
 
   @@index([status])
   @@map("tenants")
@@ -465,6 +466,7 @@ model PlatformUser {
 
   refreshTokens               RefreshToken[]
   reviewedPlanUpgradeRequests PlanUpgradeRequest[] @relation("PlanUpgradeRequestReviewedBy")
+  assignedSupportChats        SupportConversation[] @relation("PlatformUserAssignedChats")
 
   @@index([role])
   @@index([isActive])
@@ -4390,5 +4392,88 @@ model HelplineContact {
   @@index([displayOrder])
   @@map("helpline_contacts")
 }
+
+// ════════════════════════════════════════════════════════
+// LIVE SUPPORT & REALTIME RESOLUTION CHAT
+// (Super Admin <-> Tenant Direct Communication)
+// ════════════════════════════════════════════════════════
+
+enum SupportChatStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SupportCategory {
+  TECHNICAL
+  BILLING
+  FEATURE_REQUEST
+  BUG_REPORT
+  GENERAL
+}
+
+enum SupportSenderType {
+  TENANT_USER
+  SUPER_ADMIN
+  SYSTEM
+}
+
+model SupportConversation {
+  id                     String              @id @default(cuid())
+  tenantId               String
+  tenant                 Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status                 SupportChatStatus   @default(OPEN)
+  priority               SupportPriority     @default(MEDIUM)
+  category               SupportCategory     @default(GENERAL)
+  subject                String              @default("Live Support Session")
+  lastMessageAt          DateTime            @default(now())
+  lastMessageText        String?             @db.Text
+  unreadCountTenant      Int                 @default(0)
+  unreadCountAdmin       Int                 @default(0)
+  
+  assignedPlatformUserId String?
+  assignedPlatformUser   PlatformUser?       @relation("PlatformUserAssignedChats", fields: [assignedPlatformUserId], references: [id], onDelete: SetNull)
+
+  messages               SupportMessage[]
+
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([priority])
+  @@index([lastMessageAt])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderType     SupportSenderType
+  senderId       String
+  senderName     String
+  senderAvatar   String?
+  senderRole     String?
+  message        String              @db.Text
+  attachments    Json?
+  isRead         Boolean             @default(false)
+  readAt         DateTime?
+
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("support_messages")
+}
+
 
 

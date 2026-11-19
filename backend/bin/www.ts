@@ -3,6 +3,7 @@ import app from "../src/app.js";
 import http from "http";
 import { startMeetingScheduler } from "../src/utils/meetingScheduler.js";
 import { startSubscriptionScheduler } from "../src/jobs/subscriptionSweep.js";
+import { initSocketServer } from "../src/services/socket.service.js";
 
 /**
  * Get port from environment and store in Express.
@@ -14,6 +15,9 @@ app.set("port", port);
  * Create HTTP server.
  */
 const server = http.createServer(app);
+
+// Initialize real-time Socket.IO server on the same HTTP server
+initSocketServer(server);
 
 /**
  * Listen on provided port, on all network interfaces.

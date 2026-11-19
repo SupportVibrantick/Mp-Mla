@@ -434,3 +434,25 @@ export const backupsApi = {
     api.post(`/platform/tenants/${tenantId}/backup`, data || {}),
 };
 
+export const platformSupportApi = {
+  getStats: () => api.get("/platform/support-chat/stats"),
+  listConversations: (params?: any) =>
+    api.get("/platform/support-chat/conversations", { params }),
+  getConversation: (id: string) =>
+    api.get(`/platform/support-chat/conversations/${id}`),
+  sendMessage: (id: string, data: { message: string; attachments?: any[] }) =>
+    api.post(`/platform/support-chat/conversations/${id}/messages`, data),
+  updateConversation: (id: string, data: any) =>
+    api.patch(`/platform/support-chat/conversations/${id}`, data),
+  markAsRead: (id: string) =>
+    api.post(`/platform/support-chat/conversations/${id}/read`),
+  uploadAttachment: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/platform/support-chat/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+};
+
+

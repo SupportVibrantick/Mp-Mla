@@ -41,6 +41,7 @@ import websiteRoutes from "./website/index.js";
 import socialRoutes, { publicOAuthCallbackRouter } from "./social/index.js";
 import helplineRoutes from "./helplines/index.js";
 import volunteerRoutes from "./volunteer/index.js";
+import supportChatRoutes from "./supportChat/index.js";
 
 const router = Router();
 
@@ -97,5 +98,6 @@ router.use("/websites", websiteRoutes);
 router.use("/social", socialRoutes);
 router.use("/helplines", helplineRoutes);
 router.use("/volunteers", requireModule("volunteers"), volunteerRoutes);
+router.use("/support-chat", supportChatRoutes);
 
 export default router;

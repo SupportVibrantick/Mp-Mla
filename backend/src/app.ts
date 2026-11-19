@@ -82,8 +82,8 @@ app.use(
         return callback(null, true);
       }
 
-      // Allow public site visitors while avoiding invalid origin: "*" with credentials
-      return callback(null, origin);
+      // In production, reject any origin that is not a platform domain or verified custom domain
+      return callback(new Error(`Origin "${origin}" is not allowed by CORS`));
     },
     credentials: true,
     allowedHeaders: [

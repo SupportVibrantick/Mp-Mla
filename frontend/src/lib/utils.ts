@@ -42,6 +42,8 @@ export function getImageUrl(path: string | null | undefined): string {
   return `${backendOrigin}${cleanPath}`;
 }
 
+export const getFileUrl = getImageUrl;
+
 export function formatChartCurrency(val: number): string {
   if (!val || val === 0 || isNaN(val)) return "₹0";
   const abs = Math.abs(val);

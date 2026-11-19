@@ -26,6 +26,7 @@ import SettingsPage from "@/pages/settings/SettingsPage";
 import PlatformUsersPage from "@/pages/admin/PlatformUsers";
 import BackupsPage from "@/pages/admin/Backups";
 import ProfilePage from "./pages/ProfilePage";
+import SupportCenterPage from "@/pages/admin/SupportCenter";
 
 function Router() {
   return (
@@ -121,6 +122,12 @@ function Router() {
       </Route>
 
       <Route path="/change-password" component={ChangePassword} />
+
+      <Route path="/support">
+        <ProtectedRoute module="dashboard" action="read">
+          <SupportCenterPage />
+        </ProtectedRoute>
+      </Route>
 
       <Route component={NotFound} />
     </Switch>

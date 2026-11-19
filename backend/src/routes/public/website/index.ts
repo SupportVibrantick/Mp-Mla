@@ -28,13 +28,12 @@ router.get("/resolve-domain", async (req: Request, res: Response): Promise<void>
     let cleanDomain = "";
     try {
       cleanDomain = normalizeDomain(rawDomain);
-    } catch {
-      cleanDomain = rawDomain
-        .toLowerCase()
-        .trim()
-        .replace(/^https?:\/\//, "")
-        .replace(/\/.*$/, "")
-        .replace(/\.$/, "");
+    } catch (normErr: any) {
+      res.status(400).json({
+        success: false,
+        message: `Invalid domain name: ${normErr?.message || "Invalid domain format"}`,
+      });
+      return;
     }
 
     const domainSelect = {
@@ -120,6 +119,16 @@ router.get("/resolve-domain", async (req: Request, res: Response): Promise<void>
       res.status(404).json({
         success: false,
         message: `Domain "${cleanDomain}" is not connected, verified, or active.`,
+      });
+      return;
+    }
+
+    // Over HTTPS or in production, ensure SSL certificate is ACTIVE
+    const isHttps = req.secure || req.get("x-forwarded-proto") === "https";
+    if ((process.env.NODE_ENV === "production" || isHttps) && domainRecord.sslStatus !== "ACTIVE") {
+      res.status(403).json({
+        success: false,
+        message: `SSL certificate for "${cleanDomain}" is not active (current status: ${domainRecord.sslStatus}). HTTPS traffic cannot be served until SSL provisioning is complete.`,
       });
       return;
     }

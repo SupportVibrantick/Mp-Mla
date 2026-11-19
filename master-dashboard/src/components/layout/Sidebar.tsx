@@ -27,6 +27,7 @@ import {
   Receipt,
   ArrowUpCircle,
   Database,
+  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -93,6 +94,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
       title: "Main Menu",
       items: [
         { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+        { label: "Live Support Desk", icon: Headphones, href: "/support" },
       ],
     },
     {
